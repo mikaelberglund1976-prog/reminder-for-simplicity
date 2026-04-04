@@ -6,13 +6,13 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Reminder for Simplicity – Glöm aldrig det som spelar roll",
+  title: "Reminder for Simplicity — Never forget what matters",
   description:
-    "En enkel påminnelsetjänst för abonnemang, födelsedagar och allt annat viktigt. Helt gratis.",
-  keywords: ["påminnelse", "abonnemang", "reminder", "födelsedag", "kalender"],
+    "A lightweight reminder product for subscriptions, birthdays, and everything else that matters. Free to get started.",
+  keywords: ["reminder", "subscription", "birthday", "renewal", "notifications"],
   openGraph: {
     title: "Reminder for Simplicity",
-    description: "Glöm aldrig det som spelar roll.",
+    description: "Never forget what matters.",
     type: "website",
   },
 };
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="sv">
+    <html lang="en">
       <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>

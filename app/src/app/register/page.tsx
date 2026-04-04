@@ -25,12 +25,11 @@ export default function RegisterPage() {
     const data = await res.json();
 
     if (!res.ok) {
-      setError(data.error ?? "Något gick fel. Försök igen.");
+      setError(data.error ?? "Something went wrong. Please try again.");
       setLoading(false);
       return;
     }
 
-    // Auto-login efter registrering
     const result = await signIn("credentials", {
       email: form.email,
       password: form.password,
@@ -45,28 +44,32 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F4F0]">
       <div className="w-full max-w-sm">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🔔</div>
-          <h1 className="text-2xl font-bold text-[#1A1A2E]">Skapa konto</h1>
-          <p className="text-gray-500 mt-1">Gratis och tar 30 sekunder</p>
+          <Link href="/" className="inline-flex items-center gap-2 mb-6">
+            <span className="text-2xl">🔔</span>
+            <span className="font-semibold text-[#1C1C28] text-[15px]">Reminder for Simplicity</span>
+          </Link>
+          <h1 className="text-[24px] font-bold text-[#1C1C28] tracking-tight">Create your account</h1>
+          <p className="text-[14px] text-[#7C7C8A] mt-1">Free. Takes 30 seconds.</p>
         </div>
 
         <div className="card">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-[14px]">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="label">Namn</label>
+              <label className="label">Full name</label>
               <input
                 type="text"
                 className="input"
-                placeholder="Ditt namn"
+                placeholder="Your name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
@@ -78,7 +81,7 @@ export default function RegisterPage() {
               <input
                 type="email"
                 className="input"
-                placeholder="din@email.se"
+                placeholder="you@example.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
@@ -86,33 +89,28 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="label">Lösenord</label>
+              <label className="label">Password</label>
               <input
                 type="password"
                 className="input"
-                placeholder="Minst 8 tecken, 1 stor bokstav, 1 siffra"
+                placeholder="At least 8 characters"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
+                minLength={8}
               />
             </div>
 
             <button type="submit" className="btn-primary w-full" disabled={loading}>
-              {loading ? "Skapar konto..." : "Skapa konto"}
+              {loading ? "Creating account…" : "Create account"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Redan konto?{" "}
-            <Link href="/login" className="text-[#4F6EF7] font-medium hover:underline">
-              Logga in
+          <p className="text-center text-[14px] text-[#7C7C8A] mt-6">
+            Already have an account?{" "}
+            <Link href="/login" className="text-[#4A5FD5] font-medium hover:underline">
+              Log in
             </Link>
-          </p>
-
-          <p className="text-center text-xs text-gray-400 mt-4">
-            Genom att skapa konto godkänner du våra{" "}
-            <Link href="/terms" className="underline">villkor</Link> och{" "}
-            <Link href="/privacy" className="underline">integritetspolicy</Link>.
           </p>
         </div>
       </div>

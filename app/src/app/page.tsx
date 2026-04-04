@@ -2,90 +2,89 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#F5F4F0]">
       {/* Navigation */}
-      <nav className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto w-full">
+      <nav className="px-6 py-5 flex items-center justify-between max-w-5xl mx-auto w-full">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🔔</span>
-          <span className="font-bold text-[#1A1A2E] text-lg">Reminder for Simplicity</span>
+          <span className="text-xl">🔔</span>
+          <span className="font-semibold text-[#1C1C28] text-[15px] tracking-tight">
+            Reminder for Simplicity
+          </span>
         </div>
         <Link
           href="/login"
-          className="text-sm font-semibold text-[#4F6EF7] hover:underline"
+          className="text-[14px] font-medium text-[#7C7C8A] hover:text-[#1C1C28] transition-colors"
         >
-          Logga in
+          Log in
         </Link>
       </nav>
 
       {/* Hero */}
-      <main className="flex-1 flex items-center justify-center px-6 py-16">
-        <div className="max-w-2xl mx-auto text-center">
+      <main className="flex-1 flex items-center justify-center px-6 py-16 sm:py-24">
+        <div className="max-w-xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-[#EEF2FF] text-[#4F6EF7] text-sm font-semibold px-4 py-1.5 rounded-full mb-8">
-            <span>✦</span>
+          <div className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#7C7C8A] mb-10 tracking-wide uppercase">
             <span>by Berget &amp; Fredde</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl font-bold text-[#1A1A2E] leading-tight mb-6">
-            Glöm aldrig det
-            <br />
-            <span className="text-[#4F6EF7]">som spelar roll.</span>
+          <h1 className="text-[42px] sm:text-[56px] font-bold text-[#1C1C28] leading-[1.1] tracking-tight mb-6">
+            Never forget<br />
+            <span className="text-[#4A5FD5]">what matters.</span>
           </h1>
 
           {/* Subtext */}
-          <p className="text-xl text-gray-500 mb-12 leading-relaxed max-w-lg mx-auto">
-            Påminnelser för abonnemang, avtalsförnyelser och allt annat viktigt —
-            direkt i din inkorg.
+          <p className="text-[18px] text-[#7C7C8A] mb-12 leading-relaxed max-w-md mx-auto">
+            Reminders for subscriptions, renewals, birthdays, and everything else important — delivered straight to your inbox.
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/register"
-              className="btn-primary text-center text-lg px-10 py-4 rounded-xl shadow-md hover:shadow-lg transition-shadow"
-            >
-              Skapa konto — det är gratis
-            </Link>
-            <Link
-              href="/login"
-              className="btn-secondary text-center text-lg px-10 py-4 rounded-xl"
-            >
-              Logga in
-            </Link>
-          </div>
+          {/* CTA */}
+          <Link
+            href="/register"
+            className="btn-primary text-[16px] px-10 py-4 rounded-xl w-full sm:w-auto"
+          >
+            Get started — it&apos;s free
+          </Link>
 
-          {/* Social proof */}
-          <p className="text-sm text-gray-400 mt-8">
-            Inget kreditkort. Inga dolda avgifter. Kom igång på 30 sekunder.
+          <p className="text-[14px] text-[#7C7C8A] mt-5">
+            Already a member?{" "}
+            <Link href="/login" className="text-[#4A5FD5] font-medium hover:underline">
+              Log in
+            </Link>
           </p>
         </div>
       </main>
 
       {/* Feature strip */}
-      <section className="border-t border-[#E5E7EB] bg-white py-10 px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+      <section className="border-t border-[#E4E3DE] bg-white py-12 px-6">
+        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-10 text-center">
           <div>
-            <div className="text-3xl mb-2">📅</div>
-            <h3 className="font-semibold text-[#1A1A2E] mb-1">Abonnemang</h3>
-            <p className="text-sm text-gray-500">Håll koll på alla dina löpande tjänster och avtal</p>
+            <div className="text-3xl mb-3">📅</div>
+            <h3 className="font-semibold text-[#1C1C28] mb-1 text-[15px]">Subscriptions</h3>
+            <p className="text-[14px] text-[#7C7C8A] leading-relaxed">
+              Keep track of every service and plan you're paying for
+            </p>
           </div>
           <div>
-            <div className="text-3xl mb-2">🎂</div>
-            <h3 className="font-semibold text-[#1A1A2E] mb-1">Födelsedagar</h3>
-            <p className="text-sm text-gray-500">Glöm aldrig en viktig dag för folk du bryr dig om</p>
+            <div className="text-3xl mb-3">🎂</div>
+            <h3 className="font-semibold text-[#1C1C28] mb-1 text-[15px]">Birthdays</h3>
+            <p className="text-[14px] text-[#7C7C8A] leading-relaxed">
+              Never miss an important day for the people you care about
+            </p>
           </div>
           <div>
-            <div className="text-3xl mb-2">✉️</div>
-            <h3 className="font-semibold text-[#1A1A2E] mb-1">Email-påminnelse</h3>
-            <p className="text-sm text-gray-500">Automatiska notiser direkt i din inkorg i god tid</p>
+            <div className="text-3xl mb-3">✉️</div>
+            <h3 className="font-semibold text-[#1C1C28] mb-1 text-[15px]">Email reminders</h3>
+            <p className="text-[14px] text-[#7C7C8A] leading-relaxed">
+              Automatic notifications in your inbox, right when you need them
+            </p>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-6 text-center text-sm text-gray-400 border-t border-[#E5E7EB]">
-        © 2025 Reminder for Simplicity · by Berget &amp; Fredde
+      <footer className="py-6 text-center text-[13px] text-[#7C7C8A] border-t border-[#E4E3DE]">
+        © 2026 Reminder for Simplicity · by Berget &amp; Fredde
       </footer>
     </div>
   );

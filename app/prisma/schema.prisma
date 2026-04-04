@@ -11,17 +11,19 @@ datasource db {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  password      String
-  name          String?
-  emailVerified DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id                String     @id @default(cuid())
+  email             String     @unique
+  password          String
+  name              String?
+  emailVerified     DateTime?
+  preferredCurrency String?    @default("SEK")
+  timezone          String?    @default("Europe/Stockholm")
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  reminders     Reminder[]
-  accounts      Account[]
-  sessions      Session[]
+  reminders         Reminder[]
+  accounts          Account[]
+  sessions          Session[]
 
   @@map("users")
 }

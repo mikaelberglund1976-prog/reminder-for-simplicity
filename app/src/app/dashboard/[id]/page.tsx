@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { format } from "date-fns";
-import { sv } from "date-fns/locale";
 import Link from "next/link";
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -16,20 +14,20 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  SUBSCRIPTION: "Abonnemang",
-  BIRTHDAY: "Födelsedag",
-  INSURANCE: "Försäkring",
-  CONTRACT: "Avtal",
-  HEALTH: "Hälsa",
-  OTHER: "Övrigt",
+  SUBSCRIPTION: "Subscription",
+  BIRTHDAY: "Birthday",
+  INSURANCE: "Insurance",
+  CONTRACT: "Contract",
+  HEALTH: "Health",
+  OTHER: "Other",
 };
 
 const RECURRENCE_LABELS: Record<string, string> = {
-  ONCE: "Engång",
-  DAILY: "Dagligen",
-  WEEKLY: "Varje vecka",
-  MONTHLY: "Varje månad",
-  YEARLY: "Varje år",
+  ONCE: "Once",
+  DAILY: "Daily",
+  WEEKLY: "Weekly",
+  MONTHLY: "Monthly",
+  YEARLY: "Yearly",
 };
 
 type Reminder = {
@@ -43,6 +41,14 @@ type Reminder = {
   note: string | null;
   reminderDaysBefore: number;
 };
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
 
 export default function ReminderDetailPage() {
   const router = useRouter();
@@ -60,7 +66,7 @@ export default function ReminderDetailPage() {
   async function fetchReminder() {
     try {
       const res = await fetch(`/api/reminders/${id}`);
-      if (!res.ok) throw new Error("Hittades inte");
+      if (!res.ok) throw new Error("Not found");
       const data = await res.json();
       setReminder(data);
     } catch {
@@ -71,7 +77,7 @@ export default function ReminderDetailPage() {
   }
 
   async function handleDelete() {
-    if (!confirm("Är du säker på att du vill ta bort denna reminder?")) return;
+    if (!confirm("Are you sure you want to delete this reminder?")) return;
     setDeleting(true);
     try {
       await fetch(`/api/reminders/${id}`, { method: "DELETE" });
@@ -83,8 +89,8 @@ export default function ReminderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin text-4xl">⏳</div>
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F4F0]">
+        <div className="text-[#7C7C8A] text-[15px]">Loading…</div>
       </div>
     );
   }
@@ -95,83 +101,97 @@ export default function ReminderDetailPage() {
     (new Date(reminder.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
   );
 
+  const daysColor =
+    daysUntil < 0
+      ? "text-[#D94F4F]"
+      : daysUntil <= 7
+      ? "text-[#E5873A]"
+      : "text-[#2A9D6F]";
+
+  const daysLabel =
+    daysUntil < 0
+      ? `${Math.abs(daysUntil)} days ago`
+      : daysUntil === 0
+      ? "Today"
+      : `${daysUntil} days left`;
+
   return (
-    <div className="min-h-screen bg-[#F8F9FC]">
-      <header className="bg-white border-b px-6 py-4">
+    <div className="min-h-screen bg-[#F5F4F0]">
+      <header className="bg-white border-b border-[#E4E3DE] px-6 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/dashboard" className="text-gray-400 hover:text-gray-600 transition-colors">
-            ← Tillbaka
+          <Link
+            href="/dashboard"
+            className="text-[14px] font-medium text-[#7C7C8A] hover:text-[#1C1C28] transition-colors"
+          >
+            ← Back
           </Link>
-          <h1 className="text-lg font-bold text-[#1A1A2E]">Reminder</h1>
+          <span className="text-[#E4E3DE]">|</span>
+          <h1 className="text-[16px] font-semibold text-[#1C1C28]">Reminder</h1>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-8">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <div className="card">
-          {/* Icon + titel */}
-          <div className="flex items-center gap-4 mb-6">
+          {/* Icon + title */}
+          <div className="flex items-center gap-4 mb-8">
             <div className="text-5xl">{CATEGORY_ICONS[reminder.category]}</div>
             <div>
-              <h2 className="text-2xl font-bold text-[#1A1A2E]">{reminder.name}</h2>
-              <p className="text-gray-500">{CATEGORY_LABELS[reminder.category]}</p>
+              <h2 className="text-[22px] font-bold text-[#1C1C28] tracking-tight">{reminder.name}</h2>
+              <p className="text-[14px] text-[#7C7C8A]">{CATEGORY_LABELS[reminder.category]}</p>
             </div>
           </div>
 
-          {/* Info-rader */}
-          <div className="space-y-4 divide-y divide-[#E5E7EB]">
-            <div className="flex justify-between items-center py-3">
-              <span className="text-gray-500 text-sm">Datum</span>
-              <span className="font-semibold">
-                {format(new Date(reminder.date), "d MMMM yyyy", { locale: sv })}
+          {/* Info rows */}
+          <div className="divide-y divide-[#E4E3DE]">
+            <div className="flex justify-between items-center py-3.5">
+              <span className="text-[14px] text-[#7C7C8A]">Date</span>
+              <span className="text-[14px] font-medium text-[#1C1C28]">{formatDate(reminder.date)}</span>
+            </div>
+
+            <div className="flex justify-between items-center py-3.5">
+              <span className="text-[14px] text-[#7C7C8A]">Days left</span>
+              <span className={`text-[16px] font-bold ${daysColor}`}>{daysLabel}</span>
+            </div>
+
+            <div className="flex justify-between items-center py-3.5">
+              <span className="text-[14px] text-[#7C7C8A]">Recurrence</span>
+              <span className="text-[14px] font-medium text-[#1C1C28]">
+                {RECURRENCE_LABELS[reminder.recurrence]}
               </span>
             </div>
 
-            <div className="flex justify-between items-center py-3">
-              <span className="text-gray-500 text-sm">Dagar kvar</span>
-              <span className={`font-bold text-lg ${
-                daysUntil < 0 ? "text-red-500" :
-                daysUntil <= 7 ? "text-orange-500" : "text-green-600"
-              }`}>
-                {daysUntil < 0 ? `${Math.abs(daysUntil)} dagar sedan` :
-                 daysUntil === 0 ? "Idag!" : `${daysUntil} dagar`}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center py-3">
-              <span className="text-gray-500 text-sm">Upprepning</span>
-              <span className="font-semibold">{RECURRENCE_LABELS[reminder.recurrence]}</span>
-            </div>
-
-            {reminder.amount && (
-              <div className="flex justify-between items-center py-3">
-                <span className="text-gray-500 text-sm">Belopp</span>
-                <span className="font-semibold text-[#4F6EF7]">
-                  {reminder.amount.toLocaleString("sv-SE")} {reminder.currency}
+            {reminder.amount != null && (
+              <div className="flex justify-between items-center py-3.5">
+                <span className="text-[14px] text-[#7C7C8A]">Amount</span>
+                <span className="text-[16px] font-bold text-[#4A5FD5]">
+                  {reminder.amount.toLocaleString("en")} {reminder.currency}
                 </span>
               </div>
             )}
 
-            <div className="flex justify-between items-center py-3">
-              <span className="text-gray-500 text-sm">Påminn</span>
-              <span className="font-semibold">{reminder.reminderDaysBefore} dagar innan</span>
+            <div className="flex justify-between items-center py-3.5">
+              <span className="text-[14px] text-[#7C7C8A]">Remind me</span>
+              <span className="text-[14px] font-medium text-[#1C1C28]">
+                {reminder.reminderDaysBefore} day{reminder.reminderDaysBefore !== 1 ? "s" : ""} before
+              </span>
             </div>
 
             {reminder.note && (
-              <div className="py-3">
-                <span className="text-gray-500 text-sm block mb-1">Anteckning</span>
-                <p className="text-[#1A1A2E]">{reminder.note}</p>
+              <div className="py-3.5">
+                <span className="text-[14px] text-[#7C7C8A] block mb-1.5">Note</span>
+                <p className="text-[14px] text-[#1C1C28] leading-relaxed">{reminder.note}</p>
               </div>
             )}
           </div>
 
-          {/* Ta bort */}
-          <div className="mt-8 pt-4 border-t border-[#E5E7EB]">
+          {/* Delete */}
+          <div className="mt-8 pt-5 border-t border-[#E4E3DE]">
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="w-full py-3 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium text-sm disabled:opacity-50"
+              className="btn-danger w-full"
             >
-              {deleting ? "Tar bort..." : "🗑 Ta bort reminder"}
+              {deleting ? "Deleting…" : "Delete reminder"}
             </button>
           </div>
         </div>

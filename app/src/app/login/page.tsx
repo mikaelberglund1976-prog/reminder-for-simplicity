@@ -24,7 +24,7 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Felaktig email eller lösenord.");
+      setError("Incorrect email or password.");
       setLoading(false);
     } else {
       router.push("/dashboard");
@@ -32,18 +32,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F4F0]">
       <div className="w-full max-w-sm">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🔔</div>
-          <h1 className="text-2xl font-bold text-[#1A1A2E]">Välkommen tillbaka</h1>
-          <p className="text-gray-500 mt-1">Logga in på ditt konto</p>
+          <Link href="/" className="inline-flex items-center gap-2 mb-6">
+            <span className="text-2xl">🔔</span>
+            <span className="font-semibold text-[#1C1C28] text-[15px]">Reminder for Simplicity</span>
+          </Link>
+          <h1 className="text-[24px] font-bold text-[#1C1C28] tracking-tight">Welcome back</h1>
+          <p className="text-[14px] text-[#7C7C8A] mt-1">Log in to your account</p>
         </div>
 
         <div className="card">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-[14px]">
                 {error}
               </div>
             )}
@@ -53,7 +57,7 @@ export default function LoginPage() {
               <input
                 type="email"
                 className="input"
-                placeholder="din@email.se"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -61,7 +65,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="label">Lösenord</label>
+              <label className="label">Password</label>
               <input
                 type="password"
                 className="input"
@@ -73,14 +77,14 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" className="btn-primary w-full" disabled={loading}>
-              {loading ? "Loggar in..." : "Logga in"}
+              {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Inget konto?{" "}
-            <Link href="/register" className="text-[#4F6EF7] font-medium hover:underline">
-              Skapa konto
+          <p className="text-center text-[14px] text-[#7C7C8A] mt-6">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="text-[#4A5FD5] font-medium hover:underline">
+              Get started free
             </Link>
           </p>
         </div>
