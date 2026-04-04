@@ -3,7 +3,7 @@ import { format } from "date-fns";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM = process.env.RESEND_FROM_EMAIL ?? "noreply@reminderapp.se";
+const FROM = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
 const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 // Send reminder email
@@ -47,7 +47,7 @@ export async function sendReminderEmail({
     ? `<p style="margin: 24px 0 0; color: #7C7C8A; font-size: 14px; line-height: 1.6; font-style: italic;">"${note}"</p>`
     : "";
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: FROM,
     to,
     subject: `Reminder: ${reminderName} — ${daysLabel}`,
@@ -109,6 +109,11 @@ export async function sendReminderEmail({
       </html>
     `,
   });
+
+  if (error) {
+    console.error("Resend error (reminder):", error);
+    throw new Error(error.message);
+  }
 }
 
 // Send welcome email
