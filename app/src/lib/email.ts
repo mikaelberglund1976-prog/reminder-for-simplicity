@@ -62,7 +62,7 @@ export async function sendReminderEmail({
           <!-- Header -->
           <div style="text-align: center; padding: 32px 0 24px;">
             <span style="font-size: 24px;">🔔</span>
-            <span style="display: block; margin-top: 8px; font-size: 14px; font-weight: 600; color: #1C1C28; letter-spacing: 0.01em;">Reminder for Simplicity</span>
+            <span style="display: block; margin-top: 8px; font-size: 14px; font-weight: 600; color: #1C1C28; letter-spacing: 0.01em;">AssistIQ</span>
           </div>
 
           <!-- Card -->
@@ -97,7 +97,7 @@ export async function sendReminderEmail({
           <!-- Footer -->
           <div style="text-align: center; padding: 24px 0 40px;">
             <p style="margin: 0; font-size: 12px; color: #7C7C8A; line-height: 1.8;">
-              You're receiving this because you set up a reminder in Reminder for Simplicity.<br>
+              You're receiving this because you set up a reminder in AssistIQ.<br>
               <a href="${APP_URL}/dashboard" style="color: #7C7C8A;">Manage reminders</a>
               &nbsp;·&nbsp;
               by Berget &amp; Fredde
@@ -129,7 +129,7 @@ export async function sendWelcomeEmail({
   await resend.emails.send({
     from: FROM,
     to,
-    subject: `Welcome to Reminder for Simplicity`,
+    subject: `Welcome to AssistIQ`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -139,13 +139,13 @@ export async function sendWelcomeEmail({
 
           <div style="text-align: center; padding: 32px 0 24px;">
             <span style="font-size: 24px;">🔔</span>
-            <span style="display: block; margin-top: 8px; font-size: 14px; font-weight: 600; color: #1C1C28;">Reminder for Simplicity</span>
+            <span style="display: block; margin-top: 8px; font-size: 14px; font-weight: 600; color: #1C1C28;">AssistIQ</span>
           </div>
 
           <div style="background: #FFFFFF; border-radius: 16px; border: 1px solid #E4E3DE; padding: 40px;">
             <h1 style="margin: 0 0 16px; font-size: 22px; color: #1C1C28;">Hi ${firstName} 👋</h1>
             <p style="color: #7C7C8A; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
-              Welcome to Reminder for Simplicity. You're all set to start remembering the things that matter.
+              Welcome to AssistIQ. You're all set to start remembering the things that matter.
             </p>
             <div style="text-align: center; margin: 32px 0;">
               <a href="${APP_URL}/dashboard"
@@ -157,7 +157,7 @@ export async function sendWelcomeEmail({
 
           <div style="text-align: center; padding: 24px 0 40px;">
             <p style="margin: 0; font-size: 12px; color: #7C7C8A;">
-              Reminder for Simplicity · by Berget &amp; Fredde
+              AssistIQ · by Berget &amp; Fredde
             </p>
           </div>
         </div>

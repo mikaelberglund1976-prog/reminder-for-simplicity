@@ -146,7 +146,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <span className="text-lg">🔔</span>
             <span className="font-semibold text-[#1C1C28] text-[15px] hidden sm:block">
-              Reminder for Simplicity
+              AssistIQ
             </span>
           </div>
           <div className="flex items-center gap-4">

@@ -6,12 +6,12 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Reminder for Simplicity — Never forget what matters",
+  title: "AssistIQ — Never forget what matters",
   description:
-    "A lightweight reminder product for subscriptions, birthdays, and everything else that matters. Free to get started.",
-  keywords: ["reminder", "subscription", "birthday", "renewal", "notifications"],
+    "Your personal life assistant for subscriptions, reminders, birthdays, and everything else that matters. Free to get started.",
+  keywords: ["reminder", "subscription", "birthday", "renewal", "notifications", "assistant"],
   openGraph: {
-    title: "Reminder for Simplicity",
+    title: "AssistIQ",
     description: "Never forget what matters.",
     type: "website",
   },

@@ -50,7 +50,7 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
             <span className="text-2xl">🔔</span>
-            <span className="font-semibold text-[#1C1C28] text-[15px]">Reminder for Simplicity</span>
+            <span className="font-semibold text-[#1C1C28] text-[15px]">AssistIQ</span>
           </Link>
           <h1 className="text-[24px] font-bold text-[#1C1C28] tracking-tight">Create your account</h1>
           <p className="text-[14px] text-[#7C7C8A] mt-1">Free. Takes 30 seconds.</p>

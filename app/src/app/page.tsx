@@ -8,7 +8,7 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <span className="text-xl">🔔</span>
           <span className="font-semibold text-[#1C1C28] text-[15px] tracking-tight">
-            Reminder for Simplicity
+            AssistIQ
           </span>
         </div>
         <Link
@@ -84,7 +84,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="py-6 text-center text-[13px] text-[#7C7C8A] border-t border-[#E4E3DE]">
-        © 2026 Reminder for Simplicity · by Berget &amp; Fredde
+        © 2026 AssistIQ · by Berget &amp; Fredde
       </footer>
     </div>
   );
