@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { differenceInDays } from "date-fns";
 import Link from "next/link";
+import { StarBackground } from "@/components/StarBackground";
 
 type Reminder = {
   id: string;
@@ -52,12 +53,12 @@ function getDaysUntil(dateStr: string) {
 
 function DaysLeft({ days }: { days: number }) {
   if (days < 0)
-    return <span className="font-semibold text-[#D94F4F] text-[13px]">{Math.abs(days)}d ago</span>;
+    return <span style={{ fontWeight: 700, color: "#ff6b6b", fontSize: 13 }}>{Math.abs(days)}d ago</span>;
   if (days === 0)
-    return <span className="font-semibold text-[#E5873A] text-[13px]">Today</span>;
+    return <span style={{ fontWeight: 700, color: "#ffaa55", fontSize: 13 }}>Today</span>;
   if (days <= 7)
-    return <span className="font-semibold text-[#E5873A] text-[13px]">{days}d</span>;
-  return <span className="font-semibold text-[#1C1C28] text-[13px]">{days}d</span>;
+    return <span style={{ fontWeight: 700, color: "#ffaa55", fontSize: 13 }}>{days}d</span>;
+  return <span style={{ fontWeight: 600, color: "rgba(200,220,255,0.8)", fontSize: 13 }}>{days}d</span>;
 }
 
 function formatDate(dateStr: string) {
@@ -117,219 +118,358 @@ export default function DashboardPage() {
   const sorted = [...reminders].sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date));
   const filtered = filter === "ALL" ? sorted : sorted.filter((r) => r.category === filter);
 
-  // Stats
   const nextRenewal = sorted.find((r) => getDaysUntil(r.date) >= 0);
   const monthlyTotal = reminders
     .filter((r) => r.recurrence === "MONTHLY" && r.amount)
     .reduce((sum, r) => sum + (r.amount || 0), 0);
-  const yearlyTotal =
-    reminders.filter((r) => r.amount).reduce((sum, r) => {
-      if (r.recurrence === "MONTHLY") return sum + (r.amount || 0) * 12;
-      return sum + (r.amount || 0);
-    }, 0);
+  const yearlyTotal = reminders.filter((r) => r.amount).reduce((sum, r) => {
+    if (r.recurrence === "MONTHLY") return sum + (r.amount || 0) * 12;
+    return sum + (r.amount || 0);
+  }, 0);
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F4F0]">
-        <div className="text-[#7C7C8A] text-[15px]">Loading…</div>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "radial-gradient(ellipse at 60% 25%, #1e3f8a 0%, #0e2268 28%, #070f3c 60%, #030820 100%)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <StarBackground />
+        <span style={{ color: "rgba(180,200,255,0.7)", fontSize: 15, position: "relative", zIndex: 1 }}>
+          Loading…
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F4F0] pb-24 sm:pb-8">
-      {/* Header */}
-      <header className="bg-white border-b border-[#E4E3DE] px-6 py-4 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🔔</span>
-            <span className="font-semibold text-[#1C1C28] text-[15px] hidden sm:block">
-              AssistIQ
-            </span>
+    <div
+      style={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(ellipse at 60% 25%, #1e3f8a 0%, #0e2268 28%, #070f3c 60%, #030820 100%)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <StarBackground />
+
+      {/* Sticky header */}
+      <header
+        style={{
+          position: "sticky", top: 0, zIndex: 20,
+          background: "rgba(7,15,60,0.88)",
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          padding: "0 32px",
+          height: 64,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}
+      >
+        {/* Logo */}
+        <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <div
+            style={{
+              width: 32, height: 32, borderRadius: "50%",
+              background: "rgba(255,255,255,0.12)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+            }}
+          >
+            🔔
           </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/profile"
-              className="text-[14px] font-medium text-[#7C7C8A] hover:text-[#1C1C28] transition-colors"
-            >
-              Profile
-            </Link>
-            <button
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-[14px] font-medium text-[#7C7C8A] hover:text-[#1C1C28] transition-colors"
-            >
-              Sign out
-            </button>
-          </div>
+          <span style={{ color: "#fff", fontWeight: 700, fontSize: 18, letterSpacing: "-0.3px" }}>
+            AssistIQ
+          </span>
+        </Link>
+
+        {/* Actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Link
+            href="/dashboard/new"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              background: "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)",
+              color: "#fff", fontWeight: 700, fontSize: 14,
+              padding: "9px 20px", borderRadius: 50, textDecoration: "none",
+              boxShadow: "0 3px 14px rgba(46,94,200,0.45)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span style={{ fontSize: 17, lineHeight: 1, marginTop: -1 }}>+</span>
+            Add reminder
+          </Link>
+
+          <Link
+            href="/profile"
+            style={{
+              color: "rgba(180,205,255,0.6)", fontSize: 14, fontWeight: 500,
+              textDecoration: "none", padding: "8px 12px",
+            }}
+          >
+            Profile
+          </Link>
+
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            style={{
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.13)",
+              color: "rgba(180,205,255,0.75)", fontSize: 14, fontWeight: 600,
+              padding: "8px 18px", borderRadius: 50, cursor: "pointer",
+              letterSpacing: "-0.1px",
+            }}
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      {/* Main */}
+      <main
+        style={{
+          position: "relative", zIndex: 10,
+          maxWidth: 1100, margin: "0 auto",
+          padding: "36px 24px 100px",
+        }}
+      >
         {/* Welcome */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-[26px] font-bold text-[#1C1C28] tracking-tight">
-              Welcome, {firstName}
-            </h1>
-            <p className="text-[14px] text-[#7C7C8A] mt-0.5">
-              {reminders.length === 0
-                ? "No reminders yet"
-                : `${reminders.length} active reminder${reminders.length === 1 ? "" : "s"}`}
-            </p>
-          </div>
-          {/* Desktop add button */}
-          <Link href="/dashboard/new" className="btn-primary hidden sm:inline-flex">
-            + Add reminder
-          </Link>
+        <div style={{ marginBottom: 32 }}>
+          <h1 style={{ color: "#fff", fontWeight: 800, fontSize: 26, letterSpacing: "-0.5px", margin: 0 }}>
+            Welcome, {firstName}
+          </h1>
+          <p style={{ color: "rgba(160,185,255,0.55)", fontSize: 14, marginTop: 5 }}>
+            {reminders.length === 0
+              ? "No reminders yet"
+              : `${reminders.length} active reminder${reminders.length === 1 ? "" : "s"}`}
+          </p>
         </div>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          <div className="card-sm">
-            <div className="text-[28px] font-bold text-[#1C1C28] leading-none">{reminders.length}</div>
-            <div className="text-[12px] text-[#7C7C8A] mt-1.5 font-medium">Active reminders</div>
-          </div>
-
-          <div className="card-sm">
-            {nextRenewal ? (
-              <>
-                <div className="text-[15px] font-bold text-[#1C1C28] leading-tight truncate">
-                  {nextRenewal.name}
+        {/* Stats */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 14, marginBottom: 36,
+          }}
+        >
+          {[
+            { value: reminders.length.toString(), label: "Active reminders", big: true },
+            {
+              value: nextRenewal ? nextRenewal.name : "—",
+              sub: nextRenewal
+                ? getDaysUntil(nextRenewal.date) === 0 ? "today" : `${getDaysUntil(nextRenewal.date)}d away`
+                : undefined,
+              label: "Next renewal",
+            },
+            {
+              value: monthlyTotal > 0 ? `${monthlyTotal.toLocaleString("en")} ${preferredCurrency}` : "—",
+              label: "Monthly cost",
+            },
+            {
+              value: yearlyTotal > 0 ? `${Math.round(yearlyTotal).toLocaleString("en")} ${preferredCurrency}` : "—",
+              label: "Yearly total",
+            },
+          ].map((stat, i) => (
+            <div
+              key={i}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 14, padding: "18px 20px",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <div
+                style={{
+                  color: "#fff", fontWeight: 800,
+                  fontSize: stat.big ? 38 : 18,
+                  lineHeight: 1.1, overflow: "hidden",
+                  textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}
+              >
+                {stat.value}
+              </div>
+              {stat.sub && (
+                <div style={{ color: "rgba(255,170,80,0.9)", fontSize: 12, fontWeight: 600, marginTop: 2 }}>
+                  {stat.sub}
                 </div>
-                <div className="text-[12px] text-[#7C7C8A] mt-1.5 font-medium">
-                  Next renewal ·{" "}
-                  <span className={getDaysUntil(nextRenewal.date) <= 7 ? "text-[#E5873A]" : ""}>
-                    {getDaysUntil(nextRenewal.date) === 0
-                      ? "today"
-                      : `${getDaysUntil(nextRenewal.date)}d`}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-[18px] font-bold text-[#7C7C8A]">—</div>
-                <div className="text-[12px] text-[#7C7C8A] mt-1.5 font-medium">Next renewal</div>
-              </>
-            )}
-          </div>
-
-          <div className="card-sm">
-            <div className="text-[20px] font-bold text-[#1C1C28] leading-none">
-              {monthlyTotal > 0
-                ? `${monthlyTotal.toLocaleString("en")} ${preferredCurrency}`
-                : "—"}
-            </div>
-            <div className="text-[12px] text-[#7C7C8A] mt-1.5 font-medium">Monthly cost</div>
-          </div>
-
-          <div className="card-sm">
-            <div className="text-[20px] font-bold text-[#1C1C28] leading-none">
-              {yearlyTotal > 0
-                ? `${Math.round(yearlyTotal).toLocaleString("en")} ${preferredCurrency}`
-                : "—"}
-            </div>
-            <div className="text-[12px] text-[#7C7C8A] mt-1.5 font-medium">
-              Yearly total
-              {reminders.some((r) => r.currency && r.currency !== preferredCurrency) && (
-                <span className="block text-[11px] text-[#7C7C8A] opacity-60 font-normal mt-0.5">
-                  not converted
-                </span>
               )}
+              <div style={{ color: "rgba(140,170,230,0.55)", fontSize: 12, fontWeight: 500, marginTop: 6 }}>
+                {stat.label}
+              </div>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Category filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 18 }}>
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat)}
-              className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all ${
-                filter === cat ? "pill-active" : "pill-inactive"
-              }`}
+              style={{
+                flexShrink: 0, padding: "7px 16px", borderRadius: 50,
+                fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer",
+                background:
+                  filter === cat
+                    ? "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)"
+                    : "rgba(255,255,255,0.07)",
+                color: filter === cat ? "#fff" : "rgba(180,205,255,0.6)",
+                boxShadow: filter === cat ? "0 2px 12px rgba(46,94,200,0.4)" : "none",
+              }}
             >
-              {cat === "ALL"
-                ? "All"
-                : `${CATEGORY_ICONS[cat]} ${CATEGORY_LABELS[cat]}`}
+              {cat === "ALL" ? "All" : `${CATEGORY_ICONS[cat]} ${CATEGORY_LABELS[cat]}`}
             </button>
           ))}
         </div>
 
-        {/* Reminder table / empty state */}
+        {/* Table */}
         {filtered.length === 0 ? (
-          <div className="card text-center py-16">
-            <div className="text-5xl mb-4">📭</div>
-            <h3 className="text-[17px] font-semibold text-[#1C1C28] mb-2">
+          <div
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 16, padding: "60px 24px", textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
+            <h3 style={{ color: "#fff", fontSize: 17, fontWeight: 700, margin: "0 0 8px" }}>
               {filter === "ALL" ? "No reminders yet" : `No ${CATEGORY_LABELS[filter]?.toLowerCase() ?? ""} reminders`}
             </h3>
-            <p className="text-[14px] text-[#7C7C8A] mb-6">
-              {filter === "ALL" ? "Add the things you don't want to forget." : "Try a different category or add a new one."}
+            <p style={{ color: "rgba(160,185,255,0.55)", fontSize: 14, margin: "0 0 24px" }}>
+              {filter === "ALL"
+                ? "Add the things you don't want to forget."
+                : "Try a different category or add a new one."}
             </p>
             {filter === "ALL" && (
-              <Link href="/dashboard/new" className="btn-primary">
-                Add your first reminder
+              <Link
+                href="/dashboard/new"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)",
+                  color: "#fff", fontWeight: 700, fontSize: 15,
+                  padding: "12px 28px", borderRadius: 50, textDecoration: "none",
+                }}
+              >
+                + Add your first reminder
               </Link>
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-[#E4E3DE] overflow-hidden">
-            {/* Table header — desktop only */}
-            <div className="hidden sm:grid grid-cols-[32px_1fr_90px_70px_90px_100px] gap-4 px-5 py-3 border-b border-[#E4E3DE] bg-[#F5F4F0]">
-              <div />
-              <div className="text-[12px] font-semibold text-[#7C7C8A] uppercase tracking-wide">Name</div>
-              <div className="text-[12px] font-semibold text-[#7C7C8A] uppercase tracking-wide">Date</div>
-              <div className="text-[12px] font-semibold text-[#7C7C8A] uppercase tracking-wide">Left</div>
-              <div className="text-[12px] font-semibold text-[#7C7C8A] uppercase tracking-wide">Recurrence</div>
-              <div className="text-[12px] font-semibold text-[#7C7C8A] uppercase tracking-wide text-right">Amount</div>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 16, overflow: "hidden",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            {/* Header row */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "40px 1fr 100px 68px 114px 130px",
+                gap: 16, padding: "13px 22px",
+                borderBottom: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.04)",
+              }}
+            >
+              {[
+                { label: "", align: "left" },
+                { label: "Name", align: "left" },
+                { label: "Date", align: "left" },
+                { label: "Left", align: "left" },
+                { label: "Recurrence", align: "left" },
+                { label: "Amount", align: "right" },
+              ].map((col, i) => (
+                <div
+                  key={i}
+                  style={{
+                    fontSize: 11, fontWeight: 700,
+                    color: "rgba(130,165,230,0.55)",
+                    textTransform: "uppercase", letterSpacing: "0.07em",
+                    textAlign: col.align as "left" | "right",
+                  }}
+                >
+                  {col.label}
+                </div>
+              ))}
             </div>
 
-            {/* Rows */}
+            {/* Data rows */}
             {filtered.map((reminder, i) => {
               const days = getDaysUntil(reminder.date);
               return (
                 <div
                   key={reminder.id}
                   onClick={() => router.push(`/dashboard/${reminder.id}`)}
-                  className={`cursor-pointer hover:bg-[#F5F4F0] transition-colors ${
-                    i !== 0 ? "border-t border-[#E4E3DE]" : ""
-                  }`}
+                  style={{
+                    borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.07)",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) =>
+                    ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.currentTarget as HTMLDivElement).style.background = "transparent")
+                  }
                 >
-                  {/* Desktop row */}
-                  <div className="hidden sm:grid grid-cols-[32px_1fr_90px_70px_90px_100px] gap-4 items-center px-5 py-4">
-                    <span className="text-[20px]">{CATEGORY_ICONS[reminder.category]}</span>
-                    <span className="font-medium text-[#1C1C28] text-[14px] truncate">{reminder.name}</span>
-                    <span className="text-[#7C7C8A] text-[13px]">{formatDate(reminder.date)}</span>
-                    <DaysLeft days={days} />
-                    <span className="text-[#7C7C8A] text-[13px]">
-                      {RECURRENCE_LABELS[reminder.recurrence]}
-                    </span>
-                    <span className="text-[14px] font-medium text-[#1C1C28] text-right">
-                      {reminder.amount
-                        ? `${reminder.amount.toLocaleString("en")} ${reminder.currency}`
-                        : <span className="text-[#7C7C8A]">—</span>}
-                    </span>
-                  </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "40px 1fr 100px 68px 114px 130px",
+                      gap: 16, alignItems: "center",
+                      padding: "14px 22px",
+                    }}
+                  >
+                    <span style={{ fontSize: 20 }}>{CATEGORY_ICONS[reminder.category]}</span>
 
-                  {/* Mobile row */}
-                  <div className="flex sm:hidden items-center gap-3 px-4 py-3.5">
-                    <span className="text-[22px] flex-shrink-0">{CATEGORY_ICONS[reminder.category]}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-[#1C1C28] text-[14px] truncate">{reminder.name}</div>
-                      <div className="text-[12px] text-[#7C7C8A] mt-0.5">
-                        {formatDate(reminder.date)} · {RECURRENCE_LABELS[reminder.recurrence]}
+                    <div style={{ overflow: "hidden" }}>
+                      <div
+                        style={{
+                          fontWeight: 600, color: "#fff", fontSize: 14,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}
+                      >
+                        {reminder.name}
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-0.5">
-                      <DaysLeft days={days} />
-                      {reminder.amount && (
-                        <span className="text-[12px] text-[#7C7C8A]">
-                          {reminder.amount.toLocaleString("en")} {reminder.currency}
-                        </span>
+                      {reminder.note && (
+                        <div
+                          style={{
+                            fontSize: 12, color: "rgba(160,185,255,0.45)", marginTop: 2,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}
+                        >
+                          {reminder.note}
+                        </div>
                       )}
                     </div>
+
+                    <span style={{ color: "rgba(175,200,255,0.65)", fontSize: 13 }}>
+                      {formatDate(reminder.date)}
+                    </span>
+
+                    <DaysLeft days={days} />
+
+                    <span style={{ color: "rgba(175,200,255,0.65)", fontSize: 13 }}>
+                      {RECURRENCE_LABELS[reminder.recurrence]}
+                    </span>
+
+                    <span
+                      style={{
+                        fontSize: 14, fontWeight: 600, textAlign: "right",
+                        color: reminder.amount ? "#fff" : "rgba(180,205,255,0.25)",
+                      }}
+                    >
+                      {reminder.amount
+                        ? `${reminder.amount.toLocaleString("en")} ${reminder.currency}`
+                        : "—"}
+                    </span>
                   </div>
                 </div>
               );
@@ -341,7 +481,16 @@ export default function DashboardPage() {
       {/* Mobile FAB */}
       <Link
         href="/dashboard/new"
-        className="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-[#4A5FD5] text-white rounded-full flex items-center justify-center text-2xl shadow-lg hover:bg-[#3A4FC5] transition-colors z-20"
+        style={{
+          position: "fixed", bottom: 24, right: 24,
+          width: 56, height: 56,
+          background: "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)",
+          color: "#fff", borderRadius: "50%",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 26, textDecoration: "none",
+          boxShadow: "0 6px 24px rgba(46,94,200,0.55)",
+          zIndex: 30,
+        }}
         aria-label="Add reminder"
       >
         +
