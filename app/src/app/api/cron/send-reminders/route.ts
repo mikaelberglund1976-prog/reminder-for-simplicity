@@ -57,6 +57,7 @@ export async function GET(req: Request) {
         currency: reminder.currency,
         note: reminder.note,
         reminderId: reminder.id,
+        category: reminder.category,
       });
 
       // Logga att vi skickat
