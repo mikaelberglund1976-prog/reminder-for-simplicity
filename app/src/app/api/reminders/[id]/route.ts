@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { z } from "zod";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -15,148 +15,108 @@ const updateSchema = z.object({
   reminderDaysBefore: z.number().int().min(0).max(30).optional(),
 });
 
-// GET /api/reminders/[id]
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const reminder = await prisma.reminder.findFirst({
+      where: { id: params.id, userId: user.id },
+    });
+    if (!reminder) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(reminder);
+  } catch (error) {
+    console.error("GET /api/reminders/[id] error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const reminder = await prisma.reminder.findFirst({
-    where: { id: params.id, userId: session.user.id, isActive: true },
-  });
-
-  if (!reminder) {
-    return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
-  }
-
-  return NextResponse.json(reminder);
 }
 
-// DELETE /api/reminders/[id]
 export async function DELETE(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    await prisma.reminder.deleteMany({
+      where: { id: params.id, userId: user.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE /api/reminders/[id] error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const existing = await prisma.reminder.findFirst({
-    where: { id: params.id, userId: session.user.id },
-  });
-
-  if (!existing) {
-    return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
-  }
-
-  await prisma.reminder.update({
-    where: { id: params.id },
-    data: { isActive: false },
-  });
-
-  return NextResponse.json({ success: true });
 }
 
-// PATCH /api/reminders/[id]
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
-  }
-
-  const existing = await prisma.reminder.findFirst({
-    where: { id: params.id, userId: session.user.id, isActive: true },
-  });
-
-  if (!existing) {
-    return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
-  }
-
   try {
-    const body = await req.json();
-    const data = updateSchema.parse(body);
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const updated = await prisma.reminder.update({
-      where: { id: params.id },
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const body = await req.json();
+    const parsed = updateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid data", details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const reminder = await prisma.reminder.updateMany({
+      where: { id: params.id, userId: user.id },
       data: {
-        ...data,
-        ...(data.date ? { date: new Date(data.date) } : {}),
+        ...(parsed.data.name !== undefined && { name: parsed.data.name }),
+        ...(parsed.data.category !== undefined && { category: parsed.data.category }),
+        ...(parsed.data.date !== undefined && { date: new Date(parsed.data.date) }),
+        ...(parsed.data.recurrence !== undefined && { recurrence: parsed.data.recurrence }),
+        ...(parsed.data.amount !== undefined && { amount: parsed.data.amount }),
+        ...(parsed.data.currency !== undefined && { currency: parsed.data.currency }),
+        ...(parsed.data.note !== undefined && { note: parsed.data.note }),
+        ...(parsed.data.reminderDaysBefore !== undefined && { reminderDaysBefore: parsed.data.reminderDaysBefore }),
       },
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json(reminder);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
-    }
-    console.error("Update reminder error:", error);
-    return NextResponse.json({ error: "Något gick fel." }, { status: 500 });
+    console.error("PATCH /api/reminders/[id] error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-
-// GET /api/reminders/[id] – Hämta en specifik reminder
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
-  }
-
-  const reminder = await prisma.reminder.findFirst({
-    where: {
-      id: params.id,
-      userId: session.user.id,
-      isActive: true,
-    },
-  });
-
-  if (!reminder) {
-    return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
-  }
-
-  return NextResponse.json(reminder);
-}
-
-// DELETE /api/reminders/[id] – Ta bort en reminder (soft delete)
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
-  }
-
-  // Kontrollera att reminderns tillhör inloggad användare
-  const existing = await prisma.reminder.findFirst({
-    where: {
-      id: params.id,
-      userId: session.user.id,
-    },
-  });
-
-  if (!existing) {
-    return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
-  }
-
-  // Soft delete – sätter isActive till false
-  await prisma.reminder.update({
-    where: { id: params.id },
-    data: { isActive: false },
-  });
-
-  return NextResponse.json({ success: true });
 }
