@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -33,473 +32,73 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#FAFAF8",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
-      }}
-    >
-      {/* Nav */}
+    <div style={{ minHeight: "100vh", background: "#FAFAF8", display: "flex", flexDirection: "column", fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" }}>
       <nav style={{ padding: "24px 40px" }}>
-        <Link
-          href="/"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 9,
-            textDecoration: "none",
-          }}
-        >
+        <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
           <span style={{ fontSize: 22 }}>&#x1F514;</span>
-          <span
-            style={{
-              color: "#111827",
-              fontWeight: 700,
-              fontSize: 18,
-              letterSpacing: "-0.3px",
-            }}
-          >
-            AssistIQ
-          </span>
+          <span style={{ color: "#111827", fontWeight: 700, fontSize: 18, letterSpacing: "-0.3px" }}>AssistIQ</span>
         </Link>
       </nav>
-
-      {/* Form */}
-      <main
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "0 24px 80px",
-        }}
-      >
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px 80px" }}>
         <div style={{ width: "100%", maxWidth: 380 }}>
-          {/* Header */}
           <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <h1
-              style={{
-                color: "#111827",
-                fontWeight: 800,
-                fontSize: 28,
-                letterSpacing: "-0.5px",
-                margin: 0,
-              }}
-            >
-              Welcome back
-            </h1>
-            <p
-              style={{
-                color: "#9CA3AF",
-                marginTop: 6,
-                fontSize: 15,
-              }}
-            >
-              Log in to your account
-            </p>
+            <h1 style={{ color: "#111827", fontWeight: 800, fontSize: 28, letterSpacing: "-0.5px", margin: 0 }}>Welcome back</h1>
+            <p style={{ color: "#9CA3AF", marginTop: 6, fontSize: 15 }}>Log in to your account</p>
           </div>
-
-          {/* Card */}
-          <div
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E5E7EB",
-              borderRadius: 16,
-              padding: "28px 28px",
-            }}
-          >
-            {/* Google button */}
+          <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 16, padding: "28px 28px" }}>
             <button
-              type="button"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                background: "#FFFFFF",
-                color: "#111827",
-                fontWeight: 600,
-                fontSize: 15,
-                padding: "12px 16px",
-                borderRadius: 10,
-                border: "1.5px solid #E5E7EB",
-                cursor: googleLoading ? "not-allowed" : "pointer",
-                opacity: googleLoading ? 0.6 : 1,
-                marginBottom: 18,
-              }}
+              style={{ width: "100%", padding: "10px 16px", border: "1px solid #E5E7EB", borderRadius: 10, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: 15, fontWeight: 500, color: "#374151", marginBottom: 20 }}
             >
-              <svg width="18" height="18" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-              </svg>
-              {googleLoading ? "Redirecting…" : "Continue with Google"}
+              <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+              {googleLoading ? "Signing in..." : "Continue with Google"}
             </button>
-
-            {/* Divider */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 18,
-              }}
-            >
-              <div style={{ flex: 1, height: 1, background: "#F3F4F6" }} />
-              <span style={{ color: "#D1D5DB", fontSize: 12, fontWeight: 500 }}>
-                or
-              </span>
-              <div style={{ flex: 1, height: 1, background: "#F3F4F6" }} />
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit}>
-              {error && (
-                <div
-                  style={{
-                    background: "#FEF2F2",
-                    border: "1px solid #FECACA",
-                    color: "#DC2626",
-                    borderRadius: 8,
-                    padding: "10px 14px",
-                    fontSize: 13,
-                    marginBottom: 16,
-                  }}
-                >
-                  {error}
-                </div>
-              )}
-
-              <div style={{ marginBottom: 14 }}>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#374151",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    marginBottom: 6,
-                  }}
-                >
-                  Email
-                </label>
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    background: "#F9FAFB",
-                    border: "1.5px solid #E5E7EB",
-                    borderRadius: 10,
-                    padding: "11px 13px",
-                    color: "#111827",
-                    fontSize: 15,
-                    outline: "none",
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 22 }}>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#374151",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    marginBottom: 6,
-                  }}
-                >
-                  Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    background: "#F9FAFB",
-                    border: "1.5px solid #E5E7EB",
-                    borderRadius: 10,
-                    padding: "11px 13px",
-                    color: "#111827",
-                    fontSize: 15,
-                    outline: "none",
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  background: loading ? "#6B7280" : "#111827",
-                  color: "#FFFFFF",
-                  fontWeight: 600,
-                  fontSize: 15,
-                  padding: "13px",
-                  borderRadius: 10,
-                  border: "none",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  letterSpacing: "-0.1px",
-                }}
-              >
-                {loading ? "Signing in…" : "Sign in"}
-              </button>
-            </form>
-
-            <p
-              style={{
-                textAlign: "center",
-                fontSize: 13,
-                color: "#9CA3AF",
-                marginTop: 20,
-                marginBottom: 0,
-              }}
-            >
-              No account?{" "}
-              <Link
-                href="/register"
-                style={{
-                  color: "#111827",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                }}
-              >
-                Get started free
-              </Link>
-            </p>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}"use client";
-
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { StarBackground } from "@/components/StarBackground";
-
-export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  async function handleGoogleSignIn() {
-    setGoogleLoading(true);
-    setError("");
-    await signIn("google", { callbackUrl: "/dashboard" });
-    // Page is redirected automatically by NextAuth
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    const result = await signIn("credentials", { email, password, redirect: false });
-    if (result?.error) {
-      setError("Incorrect email or password.");
-      setLoading(false);
-    } else {
-      router.push("/dashboard");
-    }
-  }
-
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(ellipse at 60% 25%, #1e3f8a 0%, #0e2268 28%, #070f3c 60%, #030820 100%)",
-        display: "flex",
-        flexDirection: "column",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <StarBackground />
-
-      {/* Nav */}
-      <nav style={{ position: "relative", zIndex: 10, padding: "24px 36px" }}>
-        <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <div
-            style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: "rgba(255,255,255,0.13)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17,
-            }}
-          >
-            🔔
-          </div>
-          <span style={{ color: "#fff", fontWeight: 700, fontSize: 20, letterSpacing: "-0.3px" }}>
-            AssistIQ
-          </span>
-        </Link>
-      </nav>
-
-      {/* Form */}
-      <main
-        style={{
-          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "0 24px 60px", position: "relative", zIndex: 10,
-        }}
-      >
-        <div style={{ width: "100%", maxWidth: 400 }}>
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <h1 style={{ color: "#fff", fontWeight: 800, fontSize: 30, letterSpacing: "-0.5px", margin: 0 }}>
-              Welcome back
-            </h1>
-            <p style={{ color: "rgba(180,200,255,0.7)", marginTop: 8, fontSize: 15 }}>
-              Log in to your account
-            </p>
-          </div>
-
-          <div
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 16,
-              padding: "32px 28px",
-              backdropFilter: "blur(12px)",
-            }}
-          >
-            {/* ─── Google button ──────────────────────────────────────────────────────── */}
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={googleLoading}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                background: "#fff",
-                color: "#1a1a2e",
-                fontWeight: 600,
-                fontSize: 15,
-                padding: "13px 16px",
-                borderRadius: 50,
-                border: "none",
-                cursor: googleLoading ? "not-allowed" : "pointer",
-                opacity: googleLoading ? 0.7 : 1,
-                boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
-                marginBottom: 20,
-              }}
-            >
-              {/* Google G logo */}
-              <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-              </svg>
-              {googleLoading ? "Redirecting…" : "Continue with Google"}
-            </button>
-
-            {/* ─── Divider ─────────────────────────────────────────────────────────────────────────────── */}
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.12)" }} />
-              <span style={{ color: "rgba(160,185,255,0.5)", fontSize: 13 }}>or sign in with email</span>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.12)" }} />
+              <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
+              <span style={{ color: "#9CA3AF", fontSize: 13 }}>or</span>
+              <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
             </div>
-
-            {/* ─── Email + password ────────────────────────────────────────────────────────────────── */}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {error && (
-                <div
-                  style={{
-                    background: "rgba(217,79,79,0.18)", border: "1px solid rgba(217,79,79,0.4)",
-                    color: "#ff8f8f", borderRadius: 10, padding: "12px 16px",
-                    fontSize: 14, marginBottom: 20,
-                  }}
-                >
+                <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 14px", color: "#DC2626", fontSize: 14 }}>
                   {error}
                 </div>
               )}
-
-              <div style={{ marginBottom: 18 }}>
-                <label style={{ display: "block", color: "rgba(200,215,255,0.8)", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
-                  Email
-                </label>
+              <div>
+                <label style={{ display: "block", color: "#374151", fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Email</label>
                 <input
                   type="email"
-                  placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value)}
                   required
-                  style={{
-                    width: "100%", boxSizing: "border-box",
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    borderRadius: 10, padding: "12px 14px",
-                    color: "#fff", fontSize: 15, outline: "none",
-                  }}
+                  placeholder="you@example.com"
+                  style={{ width: "100%", padding: "10px 14px", border: "1px solid #E5E7EB", borderRadius: 10, fontSize: 15, outline: "none", boxSizing: "border-box" }}
                 />
               </div>
-
-              <div style={{ marginBottom: 28 }}>
-                <label style={{ display: "block", color: "rgba(200,215,255,0.8)", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
-                  Password
-                </label>
+              <div>
+                <label style={{ display: "block", color: "#374151", fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Password</label>
                 <input
                   type="password"
-                  placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   required
-                  style={{
-                    width: "100%", boxSizing: "border-box",
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    borderRadius: 10, padding: "12px 14px",
-                    color: "#fff", fontSize: 15, outline: "none",
-                  }}
+                  placeholder="••••••••"
+                  style={{ width: "100%", padding: "10px 14px", border: "1px solid #E5E7EB", borderRadius: 10, fontSize: 15, outline: "none", boxSizing: "border-box" }}
                 />
               </div>
-
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  width: "100%",
-                  background: loading
-                    ? "rgba(74,127,220,0.5)"
-                    : "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)",
-                  color: "#fff", fontWeight: 700, fontSize: 16,
-                  padding: "14px", borderRadius: 50, border: "none",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  boxShadow: "0 4px 20px rgba(46,94,200,0.45)",
-                  letterSpacing: "-0.2px",
-                }}
+                style={{ width: "100%", padding: "11px 16px", background: "#111827", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: "pointer", marginTop: 4 }}
               >
-                {loading ? "Signing in…" : "Sign in"}
+                {loading ? "Signing in..." : "Sign in"}
               </button>
             </form>
-
-            <p style={{ textAlign: "center", fontSize: 14, color: "rgba(160,185,255,0.6)", marginTop: 24, marginBottom: 0 }}>
-              No account?{" "}
-              <Link href="/register" style={{ color: "rgba(120,170,255,0.9)", fontWeight: 600, textDecoration: "none" }}>
-                Get started free
+            <p style={{ textAlign: "center", marginTop: 20, fontSize: 14, color: "#6B7280" }}>
+              Don't have an account?{" "}
+              <Link href="/register" style={{ color: "#111827", fontWeight: 600, textDecoration: "none" }}>
+                Sign up
               </Link>
             </p>
           </div>
