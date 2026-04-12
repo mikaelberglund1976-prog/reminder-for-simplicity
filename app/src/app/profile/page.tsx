@@ -39,7 +39,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [form, setForm] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     phone: "",
     preferredCurrency: "SEK",
     timezone: "Europe/Stockholm",
@@ -61,7 +62,8 @@ export default function ProfilePage() {
         const data = await res.json();
         setProfile(data);
         setForm({
-          name: data.name || "",
+          firstName: (data.name || "").split(" ")[0],
+          lastName: (data.name || "").split(" ").slice(1).join(" "),
           phone: data.phone || "",
           preferredCurrency: data.preferredCurrency || "SEK",
           timezone: data.timezone || "Europe/Stockholm",
@@ -77,7 +79,7 @@ export default function ProfilePage() {
       const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, name: [form.firstName, form.lastName].filter(Boolean).join(" ") }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error"); }
       setSaved(true); setTimeout(() => setSaved(false), 3000);
@@ -122,11 +124,11 @@ export default function ProfilePage() {
             fontSize: 22, color: "#fff", fontWeight: 700, flexShrink: 0,
             boxShadow: "0 2px 8px rgba(91,156,245,0.35)",
           }}>
-            {form.name ? form.name[0].toUpperCase() : (session?.user?.name?.[0] ?? "?")}
+            {form.firstName ? form.firstName[0].toUpperCase() : (session?.user?.name?.[0] ?? "?")}
           </div>
           <div>
             <div style={{ fontSize: 20, fontWeight: 700, color: "#1A2340", letterSpacing: "-0.4px" }}>
-              {form.name || session?.user?.name || "My Profile"}
+              {[form.firstName, form.lastName].filter(Boolean).join(" ") || session?.user?.name || "My Profile"}
             </div>
             <div style={{ fontSize: 13, color: "#8B90A4", marginTop: 2 }}>
               {profile?.email || session?.user?.email}
@@ -149,14 +151,24 @@ export default function ProfilePage() {
 
           {/* ── Personal ── */}
           <Card title="Personal">
-            <Field label="Full name">
-              <input
-                type="text" value={form.name}
-                onChange={e => set("name", e.target.value)}
-                placeholder="Your name"
-                style={inputStyle}
-              />
-            </Field>
+            <div style={{ display: "flex", gap: 10 }}>
+              <Field label="First name">
+                <input
+                  type="text" value={form.firstName}
+                  onChange={e => set("firstName", e.target.value)}
+                  placeholder="Mikael"
+                  style={inputStyle}
+                />
+              </Field>
+              <Field label="Last name">
+                <input
+                  type="text" value={form.lastName}
+                  onChange={e => set("lastName", e.target.value)}
+                  placeholder="Berglund"
+                  style={inputStyle}
+                />
+              </Field>
+            </div>
             <Field label="Email address">
               <input
                 type="email" value={profile?.email || session?.user?.email || ""}
