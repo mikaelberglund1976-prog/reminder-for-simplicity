@@ -177,14 +177,14 @@ export default function ProfilePage() {
               />
               <Hint>Email cannot be changed.</Hint>
             </Field>
-            <Field label="Phone number">
+            <Field label="WhatsApp Number">
               <input
                 type="tel" value={form.phone}
                 onChange={e => set("phone", e.target.value)}
-                placeholder="+46 70 123 45 67"
+                placeholder="+46 70 123 45 67 (optional)"
                 style={inputStyle}
               />
-              <Hint>Optional. SMS notifications coming in a future update.</Hint>
+              <Hint>Used for future WhatsApp alerts. Optional.</Hint>
             </Field>
           </Card>
 
@@ -268,7 +268,7 @@ export default function ProfilePage() {
           </Card>
 
           {/* ── IQ Features ── */}
-          <Card title="IQ Features">
+          <Card title="Household &amp; Circles">
             <div style={{
               background: "linear-gradient(135deg, #EEF5FF 0%, #F5F0FF 100%)",
               borderRadius: 14, padding: 16, marginBottom: 14,
@@ -279,7 +279,7 @@ export default function ProfilePage() {
                 <span style={{ marginLeft: "auto", background: "#fff", color: "#8B90A4", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 50, border: "1.5px solid #E8EDF4" }}>Soon</span>
               </div>
               <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.5 }}>
-                Let trusted email senders automatically create reminders for you.
+                Manage shared reminders and invite family members to your smart ecosystem.
               </div>
             </div>
             <div style={{
@@ -294,6 +294,36 @@ export default function ProfilePage() {
               <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.5 }}>
                 Sync reminders with Google Calendar or Outlook automatically.
               </div>
+            </div>
+          </Card>
+
+          {/* ── Subscription ── */}
+          <Card title="Subscription">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 16, borderBottom: "1px solid #F0F2F7" }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#8B90A4", marginBottom: 2 }}>Current plan</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#1A2340" }}>Basic <span style={{ fontSize: 14, color: "#8B90A4", fontWeight: 500 }}>(Free)</span></div>
+              </div>
+              <span style={{ background: "#EEF5FF", color: "#5B9CF5", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50 }}>Active</span>
+            </div>
+            <div style={{ paddingTop: 16 }}>
+              <div style={{ fontSize: 13, color: "#8B90A4", marginBottom: 14, lineHeight: 1.5 }}>
+                Unlock SMS alerts, family sharing, auto-calendar sync and more with Pro.
+              </div>
+              <button
+                type="button"
+                disabled
+                style={{
+                  width: "100%", padding: "13px", borderRadius: 12,
+                  background: "#F5F6FA", border: "1.5px solid #E8EDF4",
+                  fontSize: 14, fontWeight: 700, color: "#B0B7C8",
+                  cursor: "not-allowed", fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}
+              >
+                <span style={{ fontSize: 16 }}>⚡</span>
+                Upgrade to Pro — coming soon
+              </button>
             </div>
           </Card>
 

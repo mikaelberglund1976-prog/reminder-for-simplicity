@@ -66,6 +66,7 @@ const BRAND_COLORS: Record<string, { bg: string; text: string }> = {
   zoom:      { bg: "#2D8CFF", text: "#fff" },
   hulu:      { bg: "#1CE783", text: "#000" },
   disney:    { bg: "#113CCF", text: "#fff" },
+  telia:     { bg: "#990AE3", text: "#fff" },
 };
 
 const BRAND_DOMAINS: Record<string, string> = {
@@ -88,6 +89,7 @@ const BRAND_DOMAINS: Record<string, string> = {
   zoom:      "zoom.us",
   hulu:      "hulu.com",
   disney:    "disneyplus.com",
+  telia:     "telia.com",
 };
 
 function getBrandInfo(name: string) {
@@ -101,9 +103,21 @@ function getBrandInfo(name: string) {
 }
 
 function getDaysUntil(dateStr: string) {
-  return Math.ceil(
-    (new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function getRelativeTime(dateStr: string): string {
+  const days = getDaysUntil(dateStr);
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  if (days <= 6) return "On " + new Date(dateStr).toLocaleDateString("en-GB", { weekday: "long" });
+  if (days <= 13) return "In " + days + " days";
+  if (days <= 59) return "In " + Math.ceil(days / 7) + " weeks";
+  return "In " + Math.ceil(days / 30) + " months";
 }
 
 function formatDate(dateStr: string) {
@@ -144,7 +158,8 @@ const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, str
 function IcBell()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>; }
 function IcCard()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>; }
 function IcAlert()   { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>; }
-function IcCal()     { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
+function IcCheck()   { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><polyline points="20 6 9 17 4 12"/></svg>; }
+function IcStar()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>; }
 function IcRight()   { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>; }
 function IcDown()    { return <svg width={13} height={13} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="6 9 12 15 18 9"/></svg>; }
 function IcPlus()    { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>; }
@@ -186,6 +201,8 @@ function ReminderRow({ reminder, badge, isFirst, onClick }: {
   reminder: Reminder; badge: { bg: string; color: string }; isFirst: boolean; onClick: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
+  const showAmount = reminder.amount != null && reminder.amount > 0;
+  const showRecurrence = reminder.recurrence !== "ONCE" || showAmount;
   return (
     <div onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       style={{
@@ -203,8 +220,8 @@ function ReminderRow({ reminder, badge, isFirst, onClick }: {
         </div>
         <div style={{ fontSize: 12, color: "#8B90A4", marginTop: 3 }}>
           {formatDate(reminder.date)}
-          {reminder.amount != null && <> &middot; {reminder.amount.toLocaleString("sv")} {reminder.currency}</>}
-          {" \u00b7 "}{RECURRENCE_LABELS[reminder.recurrence] ?? reminder.recurrence}
+          {showAmount && <> &middot; {reminder.amount!.toLocaleString("sv")} {reminder.currency}</>}
+          {showRecurrence && <> &middot; {RECURRENCE_LABELS[reminder.recurrence] ?? reminder.recurrence}</>}
         </div>
       </div>
       <div style={{ color: "#C0C5D0", flexShrink: 0 }}>
@@ -251,10 +268,31 @@ export default function DashboardPage() {
     } catch (e) { console.error(e); }
   }
 
+  // Stats
   const totalActive   = reminders.length;
-  const upcomingCount = reminders.filter(r => { const d = getDaysUntil(r.date); return d >= 0 && d <= 7; }).length;
   const passedCount   = reminders.filter(r => getDaysUntil(r.date) < 0).length;
-  const monthlyTotal  = reminders.filter(r => r.recurrence === "MONTHLY" && r.amount).reduce((s, r) => s + (r.amount ?? 0), 0);
+  const completedLast30 = reminders.filter(r => {
+    if (!r.lastSentAt) return false;
+    return (Date.now() - new Date(r.lastSentAt).getTime()) < 30 * 24 * 60 * 60 * 1000;
+  }).length;
+
+  // Yearly budget — annualise each amount by recurrence
+  const yearlyTotal = reminders
+    .filter(r => r.amount != null && r.amount > 0)
+    .reduce((sum, r) => {
+      const a = r.amount ?? 0;
+      switch (r.recurrence) {
+        case "MONTHLY": return sum + a * 12;
+        case "WEEKLY":  return sum + a * 52;
+        case "DAILY":   return sum + a * 365;
+        default:        return sum + a; // ONCE, YEARLY
+      }
+    }, 0);
+
+  // IQ Spotlight — nearest upcoming reminder
+  const spotlight = [...reminders]
+    .filter(r => getDaysUntil(r.date) >= 0)
+    .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date))[0] ?? null;
 
   const sorted = [...reminders].sort((a, b) => {
     if (sortBy === "date_asc")    return getDaysUntil(a.date) - getDaysUntil(b.date);
@@ -303,27 +341,59 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Stats row — 3 cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
-          <StatCard icon={<IcBell />}  iconColor="#5B9CF5" iconBg="#EBF3FF" value={totalActive}  label="Reminders" />
+        {/* IQ Spotlight */}
+        {spotlight ? (
+          <div style={{
+            background: "linear-gradient(135deg, #1A2340 0%, #2C3E6E 100%)",
+            borderRadius: 20, padding: "18px 20px", marginBottom: 12,
+            display: "flex", alignItems: "center", gap: 16,
+            boxShadow: "0 4px 20px rgba(26,35,64,0.18)",
+          }}>
+            <div style={{ background: "rgba(91,156,245,0.2)", borderRadius: 14, padding: 10, flexShrink: 0 }}>
+              <IcStar />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>
+                IQ Spotlight · Up next
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {spotlight.name}
+              </div>
+            </div>
+            <div style={{
+              background: "rgba(91,156,245,0.25)", borderRadius: 50,
+              padding: "6px 14px", fontSize: 13, fontWeight: 700, color: "#7BB8FF",
+              whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+              {getRelativeTime(spotlight.date)}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Stats row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+          <StatCard icon={<IcBell />}  iconColor="#5B9CF5" iconBg="#EBF3FF"
+            value={totalActive} label="Reminders" />
           <StatCard icon={<IcCard />}  iconColor="#2A9D6F" iconBg="#D4F4E6"
-            value={monthlyTotal > 0 ? monthlyTotal.toLocaleString("sv") : "\u2014"} label="Monthly total" />
-          <StatCard icon={<IcAlert />} iconColor="#D94F4F" iconBg="#FFE8E8" value={passedCount}  label="Passed date" />
+            value={yearlyTotal > 0 ? yearlyTotal.toLocaleString("sv") : "—"}
+            label={"Yearly budget"} />
+          <StatCard icon={<IcAlert />} iconColor="#D94F4F" iconBg="#FFE8E8"
+            value={passedCount} label="Passed date" />
         </div>
 
-        {/* Upcoming — full-width strip */}
+        {/* Activity strip */}
         <div style={{
           background: "#fff", borderRadius: 16, border: "1px solid #E8EDF4",
           padding: "14px 16px", marginBottom: 16,
           display: "flex", alignItems: "center", gap: 12,
           boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
         }}>
-          <div style={{ background: "#EBF3FF", borderRadius: 10, padding: 8, color: "#5B9CF5", display: "flex" }}><IcCal /></div>
+          <div style={{ background: "#D4F4E6", borderRadius: 10, padding: 8, color: "#2A9D6F", display: "flex" }}><IcCheck /></div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: "#8B90A4", fontWeight: 500 }}>Upcoming 7 days</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#1A2340", lineHeight: 1.1, marginTop: 2 }}>{upcomingCount}</div>
+            <div style={{ fontSize: 12, color: "#8B90A4", fontWeight: 500 }}>Completed last 30 days</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#1A2340", lineHeight: 1.1, marginTop: 2 }}>{completedLast30}</div>
           </div>
-          <div style={{ fontSize: 12, color: "#B0B7C8" }}>next 7 days</div>
+          <div style={{ fontSize: 12, color: "#B0B7C8" }}>reminders sent</div>
         </div>
 
         {/* Section selector */}
@@ -339,11 +409,11 @@ export default function DashboardPage() {
 
           <button onClick={() => setSection("coming-next")} style={sectionCardStyle(activeSection === "coming-next")}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-              <div style={{ background: "#D4F4E6", borderRadius: 10, padding: 8, color: "#2A9D6F", display: "flex" }}><IcCal /></div>
+              <div style={{ background: "#D4F4E6", borderRadius: 10, padding: 8, color: "#2A9D6F", display: "flex" }}><IcStar /></div>
               <div style={{ color: "#C0C5D0" }}><IcRight /></div>
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340", marginBottom: 4 }}>What comes next</div>
-            <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.4 }}>New features and helpful insights will appear here.</div>
+            <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.4 }}>New features and helpful insights.</div>
           </button>
         </div>
 
@@ -369,7 +439,7 @@ export default function DashboardPage() {
                 <select value={sortBy} onChange={e => setSort(e.target.value)} style={dropdownStyle}>
                   <option value="date_asc">Earliest first</option>
                   <option value="date_desc">Latest first</option>
-                  <option value="name_asc">Name A\u2013Z</option>
+                  <option value="name_asc">Name A–Z</option>
                   <option value="amount_desc">Highest amount</option>
                 </select>
                 <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#8B90A4" }}><IcDown /></div>
