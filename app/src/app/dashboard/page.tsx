@@ -269,7 +269,7 @@ export default function DashboardPage() {
   if (status === "loading" || loading) {
     return (
       <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#8B90A4", fontSize: 15 }}>Loading\u2026</div>
+        <div style={{ color: "#8B90A4", fontSize: 15 }}>AssistIQ is thinking…</div>
       </div>
     );
   }
