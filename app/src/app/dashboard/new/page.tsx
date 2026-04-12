@@ -116,7 +116,7 @@ export default function NewReminderPage() {
           reminderDaysBefore: parseInt(form.reminderDaysBefore),
         }),
       });
-      if (\!res.ok) {
+      if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Something went wrong.");
       }
@@ -276,7 +276,7 @@ export default function NewReminderPage() {
               ))}
               <button
                 type="button"
-                onClick={() => setShowMoreRec(v => \!v)}
+                onClick={() => setShowMoreRec(v => !v)}
                 style={{
                   padding: "9px 14px", borderRadius: 50, border: "none",
                   fontSize: 13, fontWeight: 600, cursor: "pointer",

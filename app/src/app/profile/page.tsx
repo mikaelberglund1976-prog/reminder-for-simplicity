@@ -79,7 +79,7 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (\!res.ok) { const d = await res.json(); throw new Error(d.error || "Error"); }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error"); }
       setSaved(true); setTimeout(() => setSaved(false), 3000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
