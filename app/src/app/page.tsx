@@ -24,9 +24,9 @@ export default function Home() {
           color: "#1A2340", lineHeight: 1.15, letterSpacing: "-1px",
           margin: "0 0 16px", maxWidth: 380,
         }}>
-          Never{" "}
-          <span style={{ color: "#5B9CF5" }}>miss</span>
-          {" "}what matters.
+          Stay{" "}
+          <span style={{ color: "#5B9CF5" }}>ahead</span>
+          {" "}of what costs you.
         </h1>
 
         {/* Subtitle */}
@@ -34,8 +34,7 @@ export default function Home() {
           fontSize: 16, color: "#8B90A4", lineHeight: 1.6,
           maxWidth: 340, margin: "0 0 40px",
         }}>
-          AssistIQ helps you stay on top of subscriptions, renewals,
-          important dates, and other things that matter.
+          Smart reminders before subscriptions, renewals, and important dates slip through the cracks — or cost you money.
         </p>
 
         {/* ── Phone mockup ── */}
