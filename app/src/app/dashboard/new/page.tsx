@@ -26,6 +26,7 @@ const RECURRENCES_MORE = [
 ];
 
 const REMINDER_DAYS = [
+  { value: "0",  label: "At time of event" },
   { value: "1",  label: "1 day before" },
   { value: "3",  label: "3 days before" },
   { value: "7",  label: "7 days before" },
@@ -33,9 +34,13 @@ const REMINDER_DAYS = [
   { value: "30", label: "30 days before" },
 ];
 
-const CURRENCIES = ["SEK", "EUR", "USD", "GBP", "NOK", "DKK"];
+const VISIBILITY_OPTIONS = [
+  { value: "JUST_ME", label: "Just me" },
+  { value: "ALL",     label: "All" },
+  { value: "PARENTS", label: "Parents" },
+];
 
-const FONT = "-apple-system, BlinkMacSystemFont, \'Inter\', \'Segoe UI\', sans-serif";
+const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
 // Default date = 1 month from today
 function defaultDate() {
@@ -44,11 +49,30 @@ function defaultDate() {
   return d.toISOString().split("T")[0];
 }
 
-function formatDisplayDate(dateStr: string) {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric", month: "long", year: "numeric",
-  });
+function nextFriday() {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun, 5=Fri
+  const daysUntilFriday = (5 - day + 7) % 7 || 7;
+  d.setDate(d.getDate() + daysUntilFriday);
+  return d.toISOString().split("T")[0];
+}
+
+function addDays(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
+function today() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function tomorrow() {
+  return addDays(1);
+}
+
+function in30Days() {
+  return addDays(30);
 }
 
 export default function NewReminderPage() {
@@ -66,6 +90,7 @@ export default function NewReminderPage() {
     currency: "SEK",
     note: "",
     reminderDaysBefore: "1",
+    visibility: "JUST_ME",
   });
 
   function set(field: string, value: string) {
@@ -91,7 +116,7 @@ export default function NewReminderPage() {
           reminderDaysBefore: parseInt(form.reminderDaysBefore),
         }),
       });
-      if (!res.ok) {
+      if (\!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Something went wrong.");
       }
@@ -106,6 +131,13 @@ export default function NewReminderPage() {
   const allRec = showMoreRec
     ? [...RECURRENCES_MAIN, ...RECURRENCES_MORE]
     : RECURRENCES_MAIN;
+
+  const QUICK_DATES = [
+    { label: "Today",       value: today() },
+    { label: "Tomorrow",    value: tomorrow() },
+    { label: "Next Friday", value: nextFriday() },
+    { label: "In 30 days",  value: in30Days() },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", background: "#F5F6FA", fontFamily: FONT, paddingBottom: 40 }}>
@@ -152,7 +184,7 @@ export default function NewReminderPage() {
               type="text"
               value={form.name}
               onChange={e => set("name", e.target.value)}
-              placeholder="e.g. Spotify, Netflix, Mom\'s"
+              placeholder="e.g. Spotify, Netflix, Mom's"
               required
               autoFocus
               style={inputStyle}
@@ -182,6 +214,27 @@ export default function NewReminderPage() {
 
           {/* Date */}
           <Section label="Date *">
+            {/* Quick date selection */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+              {QUICK_DATES.map(qd => (
+                <button
+                  key={qd.label}
+                  type="button"
+                  onClick={() => set("date", qd.value)}
+                  style={{
+                    padding: "7px 14px", borderRadius: 50,
+                    border: form.date === qd.value ? "none" : "1.5px solid #E8EDF4",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    background: form.date === qd.value ? "#5B9CF5" : "#fff",
+                    color: form.date === qd.value ? "#fff" : "#8B90A4",
+                    transition: "all 0.15s",
+                    fontFamily: FONT,
+                  }}
+                >
+                  {qd.label}
+                </button>
+              ))}
+            </div>
             <div style={{ position: "relative" }}>
               <input
                 type="date"
@@ -223,7 +276,7 @@ export default function NewReminderPage() {
               ))}
               <button
                 type="button"
-                onClick={() => setShowMoreRec(v => !v)}
+                onClick={() => setShowMoreRec(v => \!v)}
                 style={{
                   padding: "9px 14px", borderRadius: 50, border: "none",
                   fontSize: 13, fontWeight: 600, cursor: "pointer",
@@ -240,34 +293,20 @@ export default function NewReminderPage() {
             </div>
           </Section>
 
-          {/* Remind me + currency */}
+          {/* Remind me */}
           <Section label="Remind me">
-            <div style={{ display: "flex", gap: 10 }}>
-              <div style={{ position: "relative", flex: 1 }}>
-                <select
-                  value={form.reminderDaysBefore}
-                  onChange={e => set("reminderDaysBefore", e.target.value)}
-                  style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 36, cursor: "pointer" }}
-                >
-                  {REMINDER_DAYS.map(d => (
-                    <option key={d.value} value={d.value}>{d.label}</option>
-                  ))}
-                </select>
-                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#8B90A4" }}>
-                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-                </div>
-              </div>
-              <div style={{ position: "relative", width: 90 }}>
-                <select
-                  value={form.currency}
-                  onChange={e => set("currency", e.target.value)}
-                  style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 28, cursor: "pointer" }}
-                >
-                  {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#8B90A4" }}>
-                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-                </div>
+            <div style={{ position: "relative" }}>
+              <select
+                value={form.reminderDaysBefore}
+                onChange={e => set("reminderDaysBefore", e.target.value)}
+                style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 36, cursor: "pointer" }}
+              >
+                {REMINDER_DAYS.map(d => (
+                  <option key={d.value} value={d.value}>{d.label}</option>
+                ))}
+              </select>
+              <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#8B90A4" }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
               </div>
             </div>
           </Section>
@@ -291,6 +330,30 @@ export default function NewReminderPage() {
                 style={{ ...inputStyle, flex: 1, color: "#8B90A4", cursor: "default" }}
               />
             </div>
+          </Section>
+
+          {/* Visibility */}
+          <Section label="Visible to">
+            <div style={{ display: "flex", gap: 8 }}>
+              {VISIBILITY_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => set("visibility", opt.value)}
+                  style={pillStyle(form.visibility === opt.value)}
+                >
+                  {form.visibility === opt.value && (
+                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: 12, color: "#B0B7C8", margin: "8px 0 0" }}>
+              Family sharing — coming soon
+            </p>
           </Section>
 
           {/* Notes */}
@@ -336,7 +399,7 @@ export default function NewReminderPage() {
   );
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// -- Helpers --
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 24 }}>
@@ -359,7 +422,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: 15,
   color: "#1A2340",
   outline: "none",
-  fontFamily: "-apple-system, BlinkMacSystemFont, \'Inter\', \'Segoe UI\', sans-serif",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
   boxSizing: "border-box",
   boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
 };
@@ -373,6 +436,6 @@ function pillStyle(active: boolean): React.CSSProperties {
     background: active ? "#5B9CF5" : "#fff",
     color: active ? "#fff" : "#8B90A4",
     transition: "all 0.15s",
-    fontFamily: "-apple-system, BlinkMacSystemFont, \'Inter\', \'Segoe UI\', sans-serif",
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
   };
 }
