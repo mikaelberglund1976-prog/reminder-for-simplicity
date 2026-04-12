@@ -34,7 +34,7 @@ export default function Home() {
           fontSize: 16, color: "#8B90A4", lineHeight: 1.6,
           maxWidth: 340, margin: "0 0 40px",
         }}>
-          Smart reminders before subscriptions, renewals, and important dates slip through the cracks — or cost you money.
+          Smart reminders before subscriptions, renewals, and important dates slip through the cracks or cost you money.
         </p>
 
         {/* ── Phone mockup ── */}
