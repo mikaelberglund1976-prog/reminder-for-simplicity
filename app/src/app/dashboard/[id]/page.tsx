@@ -156,7 +156,7 @@ function Row({ icon, label, value, valueColor }: {
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#8B90A4" }}>
         {icon}
-        <span style={{ fontSize: 15, color: "#8B90A4", fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 14, color: "#6B7280", fontWeight: 500 }}>{label}</span>
       </div>
       <span style={{ fontSize: 15, fontWeight: 600, color: valueColor ?? "#1A2340" }}>{value}</span>
     </div>
@@ -217,7 +217,7 @@ export default function ReminderDetailPage() {
     ? Math.abs(daysUntil) + " days ago"
     : daysUntil === 0 ? "Today"
     : daysUntil + " days left";
-  const statusColor = daysUntil < 0 ? "#D94F4F" : daysUntil <= 7 ? "#C06010" : "#2A9D6F";
+  const statusColor = daysUntil < 0 ? "#DC2626" : daysUntil <= 3 ? "#B45309" : "#15803D";
   const badge = CATEGORY_BADGE[reminder.category] ?? CATEGORY_BADGE.OTHER;
 
   return (
@@ -227,8 +227,8 @@ export default function ReminderDetailPage() {
         {/* Back */}
         <Link href="/dashboard" style={{
           display: "inline-flex", alignItems: "center", gap: 4,
-          color: "#5B9CF5", fontSize: 15, fontWeight: 600,
-          textDecoration: "underline", marginBottom: 20,
+          color: "#2563EB", fontSize: 14, fontWeight: 600,
+          textDecoration: "none", marginBottom: 20,
         }}>
           <IcBack /> Back
         </Link>
@@ -238,7 +238,7 @@ export default function ReminderDetailPage() {
           <h1 style={{ fontSize: 28, fontWeight: 700, color: "#1A2340", margin: 0, letterSpacing: "-0.5px" }}>
             Reminder
           </h1>
-          <p style={{ fontSize: 14, color: "#8B90A4", margin: "6px 0 0" }}>
+          <p style={{ fontSize: 14, color: "#4B5563", margin: "6px 0 0" }}>
             Edit the details or remove this reminder.
           </p>
         </div>
@@ -270,7 +270,7 @@ export default function ReminderDetailPage() {
 
           {/* Date row — no icon, just label: value */}
           <div style={{ borderTop: "1px solid #F0F3F8", padding: "15px 0 0" }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: "#1A2340" }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#0F172A" }}>
               Date: {formatDate(reminder.date)}
             </span>
           </div>
@@ -298,10 +298,10 @@ export default function ReminderDetailPage() {
         <Link href={"/dashboard/" + reminder.id + "/edit"} style={{
           display: "flex", alignItems: "center", justifyContent: "center",
           width: "100%", padding: "17px", borderRadius: 50,
-          background: "#fff", border: "1.5px solid #E8EDF4",
-          fontSize: 16, fontWeight: 600, color: "#1A2340",
+          background: "#1A2340", border: "none",
+          fontSize: 16, fontWeight: 700, color: "#fff",
           textDecoration: "none", boxSizing: "border-box",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)", marginBottom: 10,
+          boxShadow: "0 2px 10px rgba(26,35,64,0.22)", marginBottom: 10,
         }}>
           Edit reminder
         </Link>

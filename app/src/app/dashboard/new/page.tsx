@@ -162,7 +162,7 @@ export default function NewReminderPage() {
           <h1 style={{ fontSize: 28, fontWeight: 700, color: "#1A2340", margin: 0, letterSpacing: "-0.5px" }}>
             New reminder
           </h1>
-          <p style={{ fontSize: 14, color: "#8B90A4", margin: "6px 0 0", lineHeight: 1.5 }}>
+          <p style={{ fontSize: 14, color: "#4B5563", margin: "6px 0 0", lineHeight: 1.5 }}>
             Add a reminder for something you<br />do not want to miss.
           </p>
         </div>
@@ -351,7 +351,7 @@ export default function NewReminderPage() {
                 </button>
               ))}
             </div>
-            <p style={{ fontSize: 12, color: "#B0B7C8", margin: "8px 0 0" }}>
+            <p style={{ fontSize: 12, color: "#9CA3AF", margin: "8px 0 0" }}>
               Family sharing — coming soon
             </p>
           </Section>
@@ -379,12 +379,12 @@ export default function NewReminderPage() {
               disabled={loading}
               style={{
                 width: "100%", padding: "17px", borderRadius: 50,
-                background: "#fff",
-                border: "1.5px solid #E8EDF4",
-                fontSize: 16, fontWeight: 600,
-                color: loading ? "#B0B7C8" : "#5B9CF5",
+                background: loading ? "#8B90A4" : "#1A2340",
+                border: "none",
+                fontSize: 16, fontWeight: 700,
+                color: "#fff",
                 cursor: loading ? "not-allowed" : "pointer",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                boxShadow: loading ? "none" : "0 2px 10px rgba(26,35,64,0.22)",
                 fontFamily: FONT,
                 transition: "all 0.15s",
               }}
@@ -404,7 +404,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   return (
     <div style={{ marginBottom: 24 }}>
       {label && (
-        <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2340", marginBottom: 10 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A", marginBottom: 10 }}>
           {label}
         </div>
       )}

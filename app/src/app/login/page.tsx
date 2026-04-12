@@ -50,7 +50,7 @@ export default function LoginPage() {
           <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1A2340", margin: 0, letterSpacing: "-0.5px" }}>
             Welcome back
           </h1>
-          <p style={{ fontSize: 15, color: "#8B90A4", margin: "8px 0 0" }}>
+          <p style={{ fontSize: 15, color: "#4B5563", margin: "8px 0 0" }}>
             Log in to your account.
           </p>
         </div>
@@ -90,7 +90,7 @@ export default function LoginPage() {
         {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
           <div style={{ flex: 1, height: 1, background: "#E8EDF4" }} />
-          <span style={{ color: "#B0B7C8", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
+          <span style={{ color: "#6B7280", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
             or sign in with email
           </span>
           <div style={{ flex: 1, height: 1, background: "#E8EDF4" }} />
@@ -154,11 +154,11 @@ export default function LoginPage() {
             disabled={loading}
             style={{
               width: "100%", padding: "17px", borderRadius: 50,
-              background: "#fff", border: "1.5px solid #E8EDF4",
-              fontSize: 16, fontWeight: 600,
-              color: loading ? "#B0B7C8" : "#1A2340",
+              background: loading ? "#8B90A4" : "#1A2340", border: "none",
+              fontSize: 16, fontWeight: 700,
+              color: "#fff",
               cursor: loading ? "not-allowed" : "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+              boxShadow: loading ? "none" : "0 2px 10px rgba(26,35,64,0.22)",
               fontFamily: FONT, transition: "all 0.15s",
             }}
           >
@@ -168,9 +168,9 @@ export default function LoginPage() {
         </form>
 
         {/* Create account */}
-        <p style={{ textAlign: "center", fontSize: 14, color: "#8B90A4", marginTop: 24 }}>
+        <p style={{ textAlign: "center", fontSize: 14, color: "#4B5563", marginTop: 24 }}>
           No account?{" "}
-          <Link href="/register" style={{ color: "#1A2340", fontWeight: 600, textDecoration: "underline" }}>
+          <Link href="/register" style={{ color: "#2563EB", fontWeight: 600, textDecoration: "none" }}>
             Create account
           </Link>
         </p>

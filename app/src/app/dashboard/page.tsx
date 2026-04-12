@@ -175,8 +175,8 @@ function StatCard({ icon, iconColor, iconBg, value, label }: {
   return (
     <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E8EDF4", padding: "14px 12px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
       <div style={{ background: iconBg, borderRadius: 10, padding: 8, color: iconColor, display: "inline-flex", marginBottom: 10 }}>{icon}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: "#1A2340", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#8B90A4", fontWeight: 500, marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginTop: 4 }}>{label}</div>
     </div>
   );
 }
@@ -213,7 +213,7 @@ function ReminderRow({ reminder, badge, isFirst, onClick }: {
       <ServiceLogo name={reminder.name} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2340" }}>{reminder.name}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>{reminder.name}</span>
           <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 50, fontSize: 11, fontWeight: 600, background: badge.bg, color: badge.color }}>
             {CATEGORY_LABELS[reminder.category] ?? reminder.category}
           </span>
@@ -333,10 +333,10 @@ export default function DashboardPage() {
 
         {/* Welcome */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: "#1A2340", margin: 0, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0F172A", margin: 0, letterSpacing: "-0.5px" }}>
             Welcome back, {firstName}
           </h1>
-          <p style={{ fontSize: 14, color: "#8B90A4", margin: "6px 0 0", lineHeight: 1.5 }}>
+          <p style={{ fontSize: 14, color: "#4B5563", margin: "6px 0 0", lineHeight: 1.5 }}>
             Get a quick overview of what is coming up and what needs your attention.
           </p>
         </div>
@@ -356,7 +356,7 @@ export default function DashboardPage() {
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>
                 IQ Spotlight · Up next
               </div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {spotlight.name}
               </div>
             </div>
@@ -390,10 +390,10 @@ export default function DashboardPage() {
         }}>
           <div style={{ background: "#D4F4E6", borderRadius: 10, padding: 8, color: "#2A9D6F", display: "flex" }}><IcCheck /></div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: "#8B90A4", fontWeight: 500 }}>Completed last 30 days</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#1A2340", lineHeight: 1.1, marginTop: 2 }}>{completedLast30}</div>
+            <div style={{ fontSize: 12, color: "#6B7280", fontWeight: 600 }}>Completed last 30 days</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", lineHeight: 1.1, marginTop: 2 }}>{completedLast30}</div>
           </div>
-          <div style={{ fontSize: 12, color: "#B0B7C8" }}>reminders sent</div>
+          <div style={{ fontSize: 12, color: "#6B7280", fontWeight: 500 }}>reminders sent</div>
         </div>
 
         {/* Section selector */}
@@ -477,9 +477,11 @@ export default function DashboardPage() {
           </>
         ) : (
           <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", padding: "56px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-            <div style={{ fontSize: 40, marginBottom: 14 }}>&#10024;</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 8 }}>Coming soon</div>
-            <div style={{ fontSize: 14, color: "#8B90A4", lineHeight: 1.6 }}>New features and helpful insights will appear here.</div>
+            <div style={{ fontSize: 36, marginBottom: 14 }}>🚀</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>What&apos;s next for AssistIQ</div>
+            <div style={{ fontSize: 14, color: "#4B5563", lineHeight: 1.7, maxWidth: 280, margin: "0 auto" }}>
+              Smart spending insights, shared household reminders, and auto-detected subscriptions — all on the roadmap.
+            </div>
           </div>
         )}
 

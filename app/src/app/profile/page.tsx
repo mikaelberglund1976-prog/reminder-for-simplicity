@@ -408,10 +408,10 @@ export default function ProfilePage() {
               disabled={saving}
               style={{
                 width: "100%", padding: "17px", borderRadius: 50,
-                background: "#5B9CF5", border: "none",
+                background: "#1A2340", border: "none",
                 fontSize: 16, fontWeight: 600, color: "#fff",
                 cursor: saving ? "not-allowed" : "pointer",
-                boxShadow: "0 2px 10px rgba(91,156,245,0.35)",
+                boxShadow: "0 2px 10px rgba(26,35,64,0.22)",
                 fontFamily: FONT, transition: "all 0.15s",
                 opacity: saving ? 0.7 : 1,
               }}
@@ -424,7 +424,7 @@ export default function ProfilePage() {
               style={{
                 width: "100%", padding: "17px", borderRadius: 50,
                 background: "#fff", border: "1.5px solid #E8EDF4",
-                fontSize: 16, fontWeight: 600, color: "#8B90A4",
+                fontSize: 16, fontWeight: 600, color: "#4B5563",
                 cursor: "pointer", fontFamily: FONT, transition: "all 0.15s",
               }}
             >
@@ -452,7 +452,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
       marginBottom: 16, border: "1.5px solid #E8EDF4",
       boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
     }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#B0B7C8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 18 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 18 }}>
         {title}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -465,14 +465,14 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2340", marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A", marginBottom: 8 }}>{label}</div>
       {children}
     </div>
   );
 }
 
 function Hint({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 12, color: "#B0B7C8", marginTop: 6 }}>{children}</div>;
+  return <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 6 }}>{children}</div>;
 }
 
 function SelectWrap({ children }: { children: React.ReactNode }) {
