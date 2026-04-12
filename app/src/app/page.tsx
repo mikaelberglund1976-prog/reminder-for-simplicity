@@ -1,210 +1,213 @@
 "use client";
 import Link from "next/link";
 
+const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
+
 export default function Home() {
   return (
     <div style={{
-      minHeight: "100vh",
-      background: "#FFFFFF",
-      display: "flex",
-      flexDirection: "column",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
+      minHeight: "100vh", background: "#F5F6FA",
+      display: "flex", flexDirection: "column",
+      fontFamily: FONT, overflowX: "hidden",
     }}>
-      {/* Nav */}
-      <nav style={{
-        padding: "24px 40px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-          <span style={{ fontSize: 22 }}>&#x1F514;</span>
-          <span style={{ color: "#111827", fontWeight: 700, fontSize: 18, letterSpacing: "-0.3px" }}>
-            AssistIQ
-          </span>
-        </div>
-        <Link href="/login" style={{
-          color: "#6B7280",
-          fontSize: 15,
-          fontWeight: 500,
-          textDecoration: "none",
-        }}>
-          Log in
-        </Link>
-      </nav>
 
-      {/* Hero */}
+      {/* ── Hero ── */}
       <main style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        textAlign: "center",
-        padding: "40px 24px 60px",
+        flex: 1, display: "flex", flexDirection: "column",
+        alignItems: "center", textAlign: "center",
+        padding: "64px 24px 0",
       }}>
+
+        {/* Title */}
         <h1 style={{
-          color: "#1A2340",
-          fontWeight: 800,
-          fontSize: "clamp(32px, 5.5vw, 52px)",
-          lineHeight: 1.15,
-          letterSpacing: "-1.5px",
-          marginBottom: 18,
-          maxWidth: 560,
+          fontSize: "clamp(34px, 8vw, 48px)", fontWeight: 800,
+          color: "#1A2340", lineHeight: 1.15, letterSpacing: "-1px",
+          margin: "0 0 16px", maxWidth: 380,
         }}>
           Never{" "}
-          <span style={{ color: "#4A80E8" }}>miss</span>
+          <span style={{ color: "#5B9CF5" }}>miss</span>
           {" "}what matters.
         </h1>
 
+        {/* Subtitle */}
         <p style={{
-          color: "#6B7280",
-          fontSize: "clamp(15px, 2vw, 17px)",
-          lineHeight: 1.65,
-          maxWidth: 420,
-          marginBottom: 36,
+          fontSize: 16, color: "#8B90A4", lineHeight: 1.6,
+          maxWidth: 340, margin: "0 0 40px",
         }}>
           AssistIQ helps you stay on top of subscriptions, renewals,
           important dates, and other things that matter.
         </p>
 
-        {/* Buttons */}
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginBottom: 48 }}>
-          <Link href="/register" style={{
-            display: "inline-flex",
-            alignItems: "center",
-            background: "#DDE8F8",
-            color: "#1A2340",
-            fontWeight: 600,
-            fontSize: 16,
-            padding: "14px 30px",
-            borderRadius: 14,
-            textDecoration: "none",
-            letterSpacing: "-0.1px",
-          }}>
-            Create account
-          </Link>
-          <Link href="/login" style={{
-            display: "inline-flex",
-            alignItems: "center",
-            background: "#FFFFFF",
-            color: "#374151",
-            fontWeight: 600,
-            fontSize: 16,
-            padding: "14px 30px",
-            borderRadius: 14,
-            textDecoration: "none",
-            border: "1.5px solid #E5E7EB",
-            letterSpacing: "-0.1px",
-          }}>
-            Log in
-          </Link>
-        </div>
+        {/* ── Phone mockup ── */}
+        <div style={{ position: "relative", width: 280, height: 420, margin: "0 auto 0" }}>
 
-        {/* Phone hero illustration */}
-        <div style={{ position: "relative", width: "100%", maxWidth: 340 }}>
-          {/* Floating elements behind phone */}
-          <div style={{ position: "absolute", left: 0, top: "30%", width: 48, height: 48, background: "#EBF2FC", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(74,128,232,0.12)" }}>
-            <span style={{ fontSize: 22 }}>✉️</span>
-          </div>
-          <div style={{ position: "absolute", right: 0, top: "20%", width: 44, height: 44, background: "#EBF2FC", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(74,128,232,0.12)" }}>
-            <span style={{ fontSize: 20 }}>📅</span>
-          </div>
-          <div style={{ position: "absolute", right: 10, bottom: "25%", width: 40, height: 40, background: "#EBF2FC", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(74,128,232,0.1)" }}>
-            <span style={{ fontSize: 18 }}>⏰</span>
-          </div>
-          <div style={{ position: "absolute", left: 10, bottom: "20%", width: 36, height: 36, background: "#EBF2FC", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(74,128,232,0.1)" }}>
-            <span style={{ fontSize: 16 }}>🔔</span>
-          </div>
-
-          {/* Phone frame */}
+          {/* Glow background */}
           <div style={{
+            position: "absolute", inset: -40,
+            background: "radial-gradient(ellipse at center, #D6E8FF 0%, transparent 70%)",
+            zIndex: 0,
+          }} />
+
+          {/* Phone shell */}
+          <div style={{
+            position: "relative", zIndex: 1,
+            width: 230, height: 400,
             margin: "0 auto",
-            width: 220,
             background: "#1A2340",
-            borderRadius: 32,
-            padding: "14px 10px",
-            boxShadow: "0 24px 60px rgba(26,35,64,0.25)",
+            borderRadius: 40,
+            padding: 3,
+            boxShadow: "0 30px 80px rgba(26,35,64,0.22), 0 8px 24px rgba(26,35,64,0.12)",
           }}>
-            {/* Phone notch */}
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
-              <div style={{ width: 60, height: 6, background: "#2E3D5C", borderRadius: 99 }} />
-            </div>
-            {/* Phone screen */}
+            {/* Screen */}
             <div style={{
-              background: "#F4F7FC",
-              borderRadius: 22,
-              padding: "14px 10px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
+              width: "100%", height: "100%",
+              background: "#fff",
+              borderRadius: 38,
+              overflow: "hidden",
+              display: "flex", flexDirection: "column",
             }}>
-              {/* Card 1 - Birthday */}
+              {/* Status bar */}
               <div style={{
-                background: "#FFFFFF",
-                borderRadius: 12,
-                padding: "10px 12px",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                background: "#fff", padding: "10px 16px 6px",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FFF0E6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>🎂</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 12, color: "#1A2340", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Julias Birthday</div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF" }}>Tomorrow</div>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#1A2340" }}>14:18</span>
+                <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+                  <div style={{ width: 12, height: 8, borderRadius: 2, background: "#1A2340" }} />
+                  <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#1A2340" }} />
+                  <div style={{ width: 14, height: 8, border: "1.5px solid #1A2340", borderRadius: 2, position: "relative" }}>
+                    <div style={{ position: "absolute", left: 2, top: 1, bottom: 1, width: "60%", background: "#1A2340", borderRadius: 1 }} />
+                  </div>
                 </div>
-                <div style={{ fontSize: 10, color: "#9CA3AF", flexShrink: 0 }}>1d</div>
               </div>
 
-              {/* Card 2 - Netflix */}
+              {/* Notch */}
               <div style={{
-                background: "#FFFFFF",
-                borderRadius: 12,
-                padding: "10px 12px",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: "#E50914", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span style={{ color: "#fff", fontWeight: 900, fontSize: 14, fontFamily: "Georgia, serif" }}>N</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 12, color: "#1A2340" }}>Netflix</div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF" }}>Renews Tomorrow</div>
-                </div>
-                <div style={{ fontSize: 10, color: "#9CA3AF", flexShrink: 0 }}>1d</div>
-              </div>
+                width: 80, height: 18, background: "#1A2340",
+                borderRadius: "0 0 16px 16px", margin: "0 auto 12px",
+              }} />
 
-              {/* Card 3 - GoDaddy */}
-              <div style={{
-                background: "#FFFFFF",
-                borderRadius: 12,
-                padding: "10px 12px",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1BAA6B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>G</span>
+              {/* Notification cards */}
+              <div style={{ padding: "0 10px", display: "flex", flexDirection: "column", gap: 8 }}>
+
+                {/* Julia's Birthday */}
+                <div style={{
+                  background: "#fff", borderRadius: 14, padding: "10px 12px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: "#FFE8F5", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 18,
+                  }}>🎂</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1A2340" }}>Julias Birthday</div>
+                    <div style={{ fontSize: 10, color: "#8B90A4" }}>Tomorrow</div>
+                  </div>
+                  <div style={{ fontSize: 9, color: "#5B9CF5", fontWeight: 600 }}>Tomorrow</div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 12, color: "#1A2340" }}>GoDaddy</div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF" }}>Expires in 3 days</div>
+
+                {/* Netflix */}
+                <div style={{
+                  background: "#fff", borderRadius: 14, padding: "10px 12px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: "#E50914", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 900, fontSize: 16, color: "#fff", fontStyle: "italic",
+                  }}>N</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1A2340" }}>Netflix</div>
+                    <div style={{ fontSize: 10, color: "#8B90A4" }}>Renews Tomorrow</div>
+                  </div>
+                  <div style={{ fontSize: 9, color: "#E5873A", fontWeight: 600 }}>Tomorrow</div>
                 </div>
-                <div style={{ fontSize: 10, color: "#9CA3AF", flexShrink: 0 }}>3d</div>
+
+                {/* Telia */}
+                <div style={{
+                  background: "#fff", borderRadius: 14, padding: "10px 12px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: "#6E0DDA", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 800, fontSize: 13, color: "#fff",
+                  }}>T</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1A2340" }}>Telia</div>
+                    <div style={{ fontSize: 10, color: "#8B90A4" }}>Renews in 3 days</div>
+                  </div>
+                  <div style={{ fontSize: 9, color: "#8B90A4", fontWeight: 600 }}>3 days</div>
+                </div>
+
               </div>
             </div>
           </div>
+
+          {/* Floating decoration — envelope */}
+          <div style={{
+            position: "absolute", top: 40, left: -10, zIndex: 2,
+            width: 44, height: 44, borderRadius: 14,
+            background: "linear-gradient(135deg, #D6E8FF, #EBF3FF)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(91,156,245,0.25)",
+            fontSize: 20,
+          }}>✉️</div>
+
+          {/* Floating decoration — calendar */}
+          <div style={{
+            position: "absolute", top: 30, right: -10, zIndex: 2,
+            width: 44, height: 44, borderRadius: 14,
+            background: "linear-gradient(135deg, #D4F4E6, #EBF3FF)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(42,157,111,0.2)",
+            fontSize: 20,
+          }}>📅</div>
+
+          {/* Floating decoration — bell */}
+          <div style={{
+            position: "absolute", bottom: 80, right: -14, zIndex: 2,
+            width: 40, height: 40, borderRadius: 12,
+            background: "linear-gradient(135deg, #FFF0E0, #FFE8D4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 14px rgba(229,135,58,0.2)",
+            fontSize: 18,
+          }}>🔔</div>
+
         </div>
       </main>
 
-      {/* Footer */}
-      <footer style={{ textAlign: "center", paddingBottom: 32, color: "#D1D5DB", fontSize: 13 }}>
-        by Berget &amp; Fredde
-      </footer>
+      {/* ── Bottom buttons ── */}
+      <div style={{
+        padding: "32px 24px 48px",
+        display: "flex", gap: 12, maxWidth: 480, margin: "0 auto", width: "100%",
+        boxSizing: "border-box",
+      }}>
+        <Link href="/register" style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "17px", borderRadius: 50,
+          background: "#E8EDF4", border: "none",
+          fontSize: 16, fontWeight: 600, color: "#1A2340",
+          textDecoration: "none",
+        }}>
+          Create account
+        </Link>
+        <Link href="/login" style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "17px", borderRadius: 50,
+          background: "#fff", border: "1.5px solid #E8EDF4",
+          fontSize: 16, fontWeight: 600, color: "#1A2340",
+          textDecoration: "none",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+        }}>
+          Log in
+        </Link>
+      </div>
+
     </div>
   );
 }
