@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 const reminderSchema = z.object({
   name: z.string().min(1, "Namn krävs").max(200),
-  category: z.enum(["SUBSCRIPTION", "BIRTHDAY", "INSURANCE", "CONTRACT", "HEALTH", "OTHER"]),
+  category: z.enum(["SUBSCRIPTION", "BIRTHDAY", "INSURANCE", "CONTRACT", "HEALTH", "BILL", "OTHER"]),
   date: z.string().datetime(),
   recurrence: z.enum(["ONCE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).default("YEARLY"),
   amount: z.number().positive().optional().nullable(),

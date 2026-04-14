@@ -12,32 +12,37 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      createdAt: true,
-      preferredCurrency: true,
-      _count: { select: { reminders: { where: { isActive: true } } } },
-    },
-  });
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        preferredCurrency: true,
+        _count: { select: { reminders: { where: { isActive: true } } } },
+      },
+    });
 
-  // Stats
-  const totalReminders = await prisma.reminder.count({ where: { isActive: true } });
-  const emailsSent = await prisma.reminderLog.count({
-    where: { sentAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
-  });
-  const lastLog = await prisma.reminderLog.findFirst({ orderBy: { sentAt: "desc" } });
+    // Stats
+    const totalReminders = await prisma.reminder.count({ where: { isActive: true } });
+    const emailsSent = await prisma.reminderLog.count({
+      where: { sentAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+    });
+    const lastLog = await prisma.reminderLog.findFirst({ orderBy: { sentAt: "desc" } });
 
-  return NextResponse.json({
-    users,
-    stats: {
-      totalUsers: users.length,
-      totalReminders,
-      emailsSent30Days: emailsSent,
-      lastEmailSent: lastLog?.sentAt ?? null,
-    },
-  });
+    return NextResponse.json({
+      users,
+      stats: {
+        totalUsers: users.length,
+        totalReminders,
+        emailsSent30Days: emailsSent,
+        lastEmailSent: lastLog?.sentAt ?? null,
+      },
+    });
+  } catch (err) {
+    console.error("Admin users error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

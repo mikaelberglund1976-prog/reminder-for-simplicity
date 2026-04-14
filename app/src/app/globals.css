@@ -3,13 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --background: #F5F4F0;
+  --background: #F5F6FA;
   --surface: #FFFFFF;
-  --foreground: #1C1C28;
-  --muted: #7C7C8A;
-  --accent: #4A5FD5;
-  --accent-hover: #3A4FC5;
-  --border: #E4E3DE;
+  --foreground: #1A2340;
+  --muted: #8B90A4;
+  --accent: #5B9CF5;
+  --accent-hover: #4A8AE8;
+  --accent-light: #EBF3FF;
+  --border: #E8EDF4;
   --success: #2A9D6F;
   --warning: #E5873A;
   --danger: #D94F4F;
@@ -17,10 +18,11 @@
 
 @layer base {
   body {
-    @apply bg-[#F5F4F0] text-[#1C1C28] antialiased;
+    @apply bg-[#F5F6FA] text-[#1A2340] antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
   }
   * {
-    @apply border-[#E4E3DE];
+    @apply border-[#E8EDF4];
   }
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight;
@@ -28,51 +30,74 @@
 }
 
 @layer components {
+  /* Primary — dark filled pill */
   .btn-primary {
-    @apply inline-flex items-center justify-center bg-[#4A5FD5] text-white px-6 py-3 rounded-[10px] font-semibold text-[15px] leading-none hover:bg-[#3A4FC5] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center bg-[#1A2340] text-white px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[#2A3350] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  /* Secondary — outlined pill */
   .btn-secondary {
-    @apply inline-flex items-center justify-center bg-white text-[#1C1C28] border border-[#E4E3DE] px-6 py-3 rounded-[10px] font-semibold text-[15px] leading-none hover:bg-[#F5F4F0] transition-colors disabled:opacity-50;
+    @apply inline-flex items-center justify-center bg-white text-[#1A2340] border border-[#E8EDF4] px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[#F5F6FA] transition-colors disabled:opacity-50;
   }
 
+  /* Ghost */
   .btn-ghost {
-    @apply inline-flex items-center justify-center text-[#7C7C8A] px-4 py-2 rounded-lg text-[14px] font-medium hover:text-[#1C1C28] hover:bg-[#E4E3DE] transition-colors;
+    @apply inline-flex items-center justify-center text-[#8B90A4] px-4 py-2 rounded-full text-[14px] font-medium hover:text-[#1A2340] hover:bg-[#E8EDF4] transition-colors;
   }
 
+  /* Danger — light red pill */
   .btn-danger {
-    @apply inline-flex items-center justify-center border border-[#D94F4F] text-[#D94F4F] px-6 py-3 rounded-[10px] font-semibold text-[15px] leading-none hover:bg-red-50 transition-colors disabled:opacity-50;
+    @apply inline-flex items-center justify-center bg-[#FFF0F0] text-[#D94F4F] px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-red-100 transition-colors disabled:opacity-50;
   }
 
+  /* Blue accent pill */
+  .btn-accent {
+    @apply inline-flex items-center justify-center bg-[#5B9CF5] text-white px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[#4A8AE8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Card */
   .card {
-    @apply bg-white rounded-xl border border-[#E4E3DE] p-6;
+    @apply bg-white rounded-2xl border border-[#E8EDF4] p-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)];
   }
 
   .card-sm {
-    @apply bg-white rounded-xl border border-[#E4E3DE] p-4;
+    @apply bg-white rounded-xl border border-[#E8EDF4] p-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)];
   }
 
+  /* Input */
   .input {
-    @apply w-full border border-[#E4E3DE] rounded-lg px-4 py-3 text-[#1C1C28] placeholder-[#7C7C8A] bg-white focus:outline-none focus:ring-2 focus:ring-[#4A5FD5] focus:border-transparent transition-all text-[15px];
+    @apply w-full border border-[#E8EDF4] rounded-xl px-4 py-3 text-[#1A2340] placeholder-[#B0B7C8] bg-[#F8FAFD] focus:outline-none focus:ring-2 focus:ring-[#5B9CF5] focus:border-transparent transition-all text-[15px];
   }
 
+  /* Label */
   .label {
-    @apply block text-[13px] font-medium text-[#1C1C28] mb-1.5;
+    @apply block text-[13px] font-semibold text-[#1A2340] mb-1.5;
   }
 
+  /* Badge */
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-[12px] font-semibold;
+  }
+  .badge-blue {
+    @apply bg-[#D6E8FF] text-[#3A78D4];
+  }
+  .badge-green {
+    @apply bg-[#D4F4E6] text-[#1E7D52];
+  }
+  .badge-orange {
+    @apply bg-[#FFF0E0] text-[#C06010];
   }
 
-  .divider {
-    @apply border-t border-[#E4E3DE];
-  }
-
+  /* Category pill toggle */
   .pill-active {
-    @apply bg-[#4A5FD5] text-white border-transparent;
+    @apply bg-[#5B9CF5] text-white border-transparent shadow-sm;
+  }
+  .pill-inactive {
+    @apply bg-white text-[#8B90A4] border border-[#E8EDF4] hover:bg-[#F5F6FA] hover:text-[#1A2340];
   }
 
-  .pill-inactive {
-    @apply bg-white text-[#7C7C8A] border border-[#E4E3DE] hover:bg-[#F5F4F0] hover:text-[#1C1C28];
+  /* Divider */
+  .divider {
+    @apply border-t border-[#E8EDF4];
   }
 }

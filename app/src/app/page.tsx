@@ -1,250 +1,212 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
 
-function StarField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    function drawStars(ctx: CanvasRenderingContext2D, w: number, h: number) {
-      ctx.clearRect(0, 0, w, h);
-      let seed = 42;
-      function rand() {
-        seed = (seed * 16807 + 0) % 2147483647;
-        return (seed - 1) / 2147483646;
-      }
-      // Small dim stars
-      for (let i = 0; i < 220; i++) {
-        const x = rand() * w;
-        const y = rand() * h;
-        const r = rand() * 1.2 + 0.3;
-        const opacity = rand() * 0.6 + 0.2;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${opacity.toFixed(2)})`;
-        ctx.fill();
-      }
-      // Larger bright stars
-      seed = 99;
-      for (let i = 0; i < 20; i++) {
-        const x = rand() * w;
-        const y = rand() * h;
-        const r = rand() * 1.0 + 1.2;
-        const opacity = rand() * 0.4 + 0.55;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(210,225,255,${opacity.toFixed(2)})`;
-        ctx.fill();
-      }
-    }
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      drawStars(ctx, canvas.width, canvas.height);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: "fixed",
-        inset: 0,
-        pointerEvents: "none",
-        zIndex: 0,
-      }}
-    />
-  );
-}
+const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
 export default function Home() {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(ellipse at 60% 25%, #1e3f8a 0%, #0e2268 28%, #070f3c 60%, #030820 100%)",
-        position: "relative",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <StarField />
+    <div style={{
+      minHeight: "100vh", background: "#F5F6FA",
+      display: "flex", flexDirection: "column",
+      fontFamily: FONT, overflowX: "hidden",
+    }}>
 
-      {/* Nav */}
-      <nav
-        style={{
-          position: "relative",
-          zIndex: 10,
-          padding: "28px 36px",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.13)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 17,
-            }}
-          >
-            🔔
-          </div>
-          <span
-            style={{
-              color: "#ffffff",
-              fontWeight: 700,
-              fontSize: 20,
-              letterSpacing: "-0.3px",
-            }}
-          >
-            AssistIQ
-          </span>
-        </div>
-      </nav>
+      {/* ── Hero ── */}
+      <main style={{
+        flex: 1, display: "flex", flexDirection: "column",
+        alignItems: "center", textAlign: "center",
+        padding: "64px 24px 0",
+      }}>
 
-      {/* Hero */}
-      <main
-        style={{
-          position: "relative",
-          zIndex: 10,
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          padding: "0 24px 80px",
-        }}
-      >
-        <h1
-          style={{
-            color: "#ffffff",
-            fontWeight: 800,
-            fontSize: "clamp(30px, 5vw, 56px)",
-            lineHeight: 1.12,
-            letterSpacing: "-1px",
-            marginBottom: 22,
-            maxWidth: 680,
-          }}
-        >
-          Never forget what matters.
+        {/* Title */}
+        <h1 style={{
+          fontSize: "clamp(34px, 8vw, 48px)", fontWeight: 800,
+          color: "#1A2340", lineHeight: 1.15, letterSpacing: "-1px",
+          margin: "0 0 16px", maxWidth: 380,
+        }}>
+          Stay{" "}
+          <span style={{ color: "#5B9CF5" }}>ahead</span>
+          {" "}of what costs you.
         </h1>
 
-        <p
-          style={{
-            color: "rgba(185,205,255,0.88)",
-            fontSize: "clamp(15px, 2vw, 18px)",
-            lineHeight: 1.65,
-            maxWidth: 560,
-            marginBottom: 14,
-          }}
-        >
-          AssistIQ helps you remember the things that are easy to miss but
-          important to keep on top of — subscriptions, renewals, birthdays, and
-          everyday commitments.
+        {/* Subtitle */}
+        <p style={{
+          fontSize: 16, color: "#8B90A4", lineHeight: 1.6,
+          maxWidth: 340, margin: "0 0 40px",
+        }}>
+          Smart reminders before subscriptions, renewals, and important dates slip through the cracks or cost you money.
         </p>
 
-        <p
-          style={{
-            color: "rgba(160,185,255,0.60)",
-            fontSize: "clamp(13px, 1.5vw, 16px)",
-            marginBottom: 52,
-          }}
-        >
-          Simple reminders. Clear timing. Delivered straight to your inbox.
-        </p>
+        {/* ── Phone mockup ── */}
+        <div style={{ position: "relative", width: 280, height: 420, margin: "0 auto 0" }}>
 
-        {/* Buttons */}
-        <div
-          style={{
-            display: "flex",
-            gap: 16,
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
-        >
-          {/* Create account */}
-          <Link
-            href="/register"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              background: "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)",
-              color: "#ffffff",
-              fontWeight: 700,
-              fontSize: 17,
-              padding: "17px 40px",
-              borderRadius: 50,
-              textDecoration: "none",
-              boxShadow: "0 4px 26px rgba(46,94,200,0.50)",
-              letterSpacing: "-0.2px",
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.9 }}>
-              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-            </svg>
-            Create account
-          </Link>
+          {/* Glow background */}
+          <div style={{
+            position: "absolute", inset: -40,
+            background: "radial-gradient(ellipse at center, #D6E8FF 0%, transparent 70%)",
+            zIndex: 0,
+          }} />
 
-          {/* Log in */}
-          <Link
-            href="/login"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              background: "linear-gradient(160deg, #1e3875 0%, #111e55 100%)",
-              color: "#ffffff",
-              fontWeight: 700,
-              fontSize: 17,
-              padding: "17px 40px",
-              borderRadius: 50,
-              textDecoration: "none",
-              border: "1.5px solid rgba(255,255,255,0.14)",
-              boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
-              letterSpacing: "-0.2px",
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.9 }}>
-              <path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.4-3.1 3.1-3.1 1.7 0 3.1 1.4 3.1 3.1v2z" />
-            </svg>
-            Log in
-          </Link>
+          {/* Phone shell */}
+          <div style={{
+            position: "relative", zIndex: 1,
+            width: 230, height: 400,
+            margin: "0 auto",
+            background: "#1A2340",
+            borderRadius: 40,
+            padding: 3,
+            boxShadow: "0 30px 80px rgba(26,35,64,0.22), 0 8px 24px rgba(26,35,64,0.12)",
+          }}>
+            {/* Screen */}
+            <div style={{
+              width: "100%", height: "100%",
+              background: "#fff",
+              borderRadius: 38,
+              overflow: "hidden",
+              display: "flex", flexDirection: "column",
+            }}>
+              {/* Status bar */}
+              <div style={{
+                background: "#fff", padding: "10px 16px 6px",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#1A2340" }}>14:18</span>
+                <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+                  <div style={{ width: 12, height: 8, borderRadius: 2, background: "#1A2340" }} />
+                  <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#1A2340" }} />
+                  <div style={{ width: 14, height: 8, border: "1.5px solid #1A2340", borderRadius: 2, position: "relative" }}>
+                    <div style={{ position: "absolute", left: 2, top: 1, bottom: 1, width: "60%", background: "#1A2340", borderRadius: 1 }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Notch */}
+              <div style={{
+                width: 80, height: 18, background: "#1A2340",
+                borderRadius: "0 0 16px 16px", margin: "0 auto 12px",
+              }} />
+
+              {/* Notification cards */}
+              <div style={{ padding: "0 10px", display: "flex", flexDirection: "column", gap: 8 }}>
+
+                {/* Julia's Birthday */}
+                <div style={{
+                  background: "#fff", borderRadius: 14, padding: "10px 12px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: "#FFE8F5", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 18,
+                  }}>🎂</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1A2340" }}>Julias Birthday</div>
+                    <div style={{ fontSize: 10, color: "#8B90A4" }}>Tomorrow</div>
+                  </div>
+                  <div style={{ fontSize: 9, color: "#5B9CF5", fontWeight: 600 }}>Tomorrow</div>
+                </div>
+
+                {/* Netflix */}
+                <div style={{
+                  background: "#fff", borderRadius: 14, padding: "10px 12px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: "#E50914", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 900, fontSize: 16, color: "#fff", fontStyle: "italic",
+                  }}>N</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1A2340" }}>Netflix</div>
+                    <div style={{ fontSize: 10, color: "#8B90A4" }}>Renews Tomorrow</div>
+                  </div>
+                  <div style={{ fontSize: 9, color: "#E5873A", fontWeight: 600 }}>Tomorrow</div>
+                </div>
+
+                {/* Telia */}
+                <div style={{
+                  background: "#fff", borderRadius: 14, padding: "10px 12px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                  display: "flex", alignItems: "center", gap: 10,
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: "#6E0DDA", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 800, fontSize: 13, color: "#fff",
+                  }}>T</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1A2340" }}>Telia</div>
+                    <div style={{ fontSize: 10, color: "#8B90A4" }}>Renews in 3 days</div>
+                  </div>
+                  <div style={{ fontSize: 9, color: "#8B90A4", fontWeight: 600 }}>3 days</div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          {/* Floating decoration — envelope */}
+          <div style={{
+            position: "absolute", top: 40, left: -10, zIndex: 2,
+            width: 44, height: 44, borderRadius: 14,
+            background: "linear-gradient(135deg, #D6E8FF, #EBF3FF)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(91,156,245,0.25)",
+            fontSize: 20,
+          }}>✉️</div>
+
+          {/* Floating decoration — calendar */}
+          <div style={{
+            position: "absolute", top: 30, right: -10, zIndex: 2,
+            width: 44, height: 44, borderRadius: 14,
+            background: "linear-gradient(135deg, #D4F4E6, #EBF3FF)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(42,157,111,0.2)",
+            fontSize: 20,
+          }}>📅</div>
+
+          {/* Floating decoration — bell */}
+          <div style={{
+            position: "absolute", bottom: 80, right: -14, zIndex: 2,
+            width: 40, height: 40, borderRadius: 12,
+            background: "linear-gradient(135deg, #FFF0E0, #FFE8D4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 14px rgba(229,135,58,0.2)",
+            fontSize: 18,
+          }}>🔔</div>
+
         </div>
       </main>
 
-      {/* Footer */}
-      <footer
-        style={{
-          position: "relative",
-          zIndex: 10,
-          textAlign: "center",
-          paddingBottom: 36,
-          color: "rgba(140,165,220,0.45)",
-          fontSize: 14,
-        }}
-      >
-        by Berget &amp; Fredde
-      </footer>
+      {/* ── Bottom buttons ── */}
+      <div style={{
+        padding: "32px 24px 48px",
+        display: "flex", gap: 12, maxWidth: 480, margin: "0 auto", width: "100%",
+        boxSizing: "border-box",
+      }}>
+        <Link href="/register" style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "17px", borderRadius: 50,
+          background: "#E8EDF4", border: "none",
+          fontSize: 16, fontWeight: 600, color: "#1A2340",
+          textDecoration: "none",
+        }}>
+          Create account
+        </Link>
+        <Link href="/login" style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "17px", borderRadius: 50,
+          background: "#fff", border: "1.5px solid #E8EDF4",
+          fontSize: 16, fontWeight: 600, color: "#1A2340",
+          textDecoration: "none",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+        }}>
+          Log in
+        </Link>
+      </div>
+
     </div>
   );
 }

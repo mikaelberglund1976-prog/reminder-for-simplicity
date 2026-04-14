@@ -41,6 +41,7 @@ export default function AdminPage() {
   const [actionMsg, setActionMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [triggering, setTriggering] = useState(false);
+  const [cronLog, setCronLog] = useState<string[] | null>(null);
   const [testingEmail, setTestingEmail] = useState(false);
 
   useEffect(() => {
@@ -85,9 +86,11 @@ export default function AdminPage() {
     setTriggering(true);
     try {
       const res = await fetch("/api/admin/trigger-cron", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      notify("ok", `Cron ran ✓ — Sent: ${data.sent}, Errors: ${data.errors}`);
+      let data: Record<string, unknown> = {};
+      try { data = await res.json(); } catch { /* empty or non-JSON response */ }
+      if (!res.ok) throw new Error((data.error as string) || `Server error ${res.status}`);
+      notify("ok", `Cron ran ✓ — Sent: ${data.sent}, Skipped: ${data.skipped ?? 0}, Errors: ${data.errors}`);
+      if (data.log) setCronLog(data.log as string[]);
       fetchData();
     } catch (e: unknown) { notify("err", e instanceof Error ? e.message : "Failed."); }
     finally { setTriggering(false); }
@@ -181,6 +184,14 @@ export default function AdminPage() {
             <button onClick={handleTriggerCron} disabled={triggering} style={{ background: triggering ? "rgba(74,127,220,0.4)" : "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)", color: "#fff", fontWeight: 700, fontSize: 14, padding: "10px 22px", borderRadius: 50, border: "none", cursor: triggering ? "not-allowed" : "pointer", boxShadow: "0 3px 14px rgba(46,94,200,0.4)" }}>
               {triggering ? "Running…" : "▶ Trigger reminder cron now"}
             </button>
+            {cronLog && (
+              <div style={{ marginTop: 16, background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: "14px 16px", maxHeight: 300, overflowY: "auto" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(130,165,230,0.6)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>Cron debug log</div>
+                {cronLog.map((line, i) => (
+                  <div key={i} style={{ fontSize: 12, color: line.includes("ERROR") ? "#ff8f8f" : line.includes("sent to") ? "#5ee8a8" : "rgba(180,205,255,0.7)", fontFamily: "monospace", lineHeight: 1.7 }}>{line}</div>
+                ))}
+              </div>
+            )}
             <button onClick={handleTestEmail} disabled={testingEmail} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(200,220,255,0.85)", fontWeight: 600, fontSize: 14, padding: "10px 22px", borderRadius: 50, cursor: testingEmail ? "not-allowed" : "pointer" }}>
               {testingEmail ? "Sending…" : "✉ Send test email to me"}
             </button>
