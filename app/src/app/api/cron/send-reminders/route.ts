@@ -1,51 +1,58 @@
-/**
- * Cron Job – Skicka email-påminnelser
- *
- * Körs dagligen via Vercel Cron (konfigurera i vercel.json)
- * Hitta reminders som ska skickas idag och skicka email.
- *
- * Skyddat med CRON_SECRET för att förhindra obehörig åtkomst.
- */
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendReminderEmail } from "@/lib/email";
-import { addDays, startOfDay, endOfDay } from "date-fns";
+import { addDays, addWeeks, addMonths, addYears } from "date-fns";
+
+// Formats a Date to "YYYY-MM-DD" using UTC — safe for all timezones
+function toDateStr(d: Date): string {
+  return d.toISOString().split("T")[0];
+}
 
 export async function GET(req: Request) {
-  // Verifiera att anropet kommer från Vercel Cron
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const today = new Date();
-  let sent = 0;
-  let errors = 0;
+  const now = new Date();
+  const todayStr = toDateStr(now); // e.g. "2026-04-14"
 
-  // Hämta alla aktiva reminders
+  let sent = 0;
+  let skipped = 0;
+  let errors = 0;
+  const log: string[] = [];
+
   const reminders = await prisma.reminder.findMany({
     where: { isActive: true },
     include: { user: true },
   });
 
+  log.push(`Today: ${todayStr}`);
+  log.push(`Active reminders: ${reminders.length}`);
+
   for (const reminder of reminders) {
-    // Beräkna när påminnelsen ska skickas (datum - X dagar innan)
-    const sendDate = addDays(reminder.date, -reminder.reminderDaysBefore);
-    const isToday =
-      sendDate >= startOfDay(today) && sendDate <= endOfDay(today);
+    const sendDate = addDays(new Date(reminder.date), -reminder.reminderDaysBefore);
+    const sendDateStr = toDateStr(sendDate);
+    const isToday = sendDateStr === todayStr;
 
-    if (!isToday) continue;
+    log.push(`[${reminder.name}] reminderDate=${toDateStr(new Date(reminder.date))} daysBefore=${reminder.reminderDaysBefore} sendOn=${sendDateStr} matchesToday=${isToday}`);
 
-    // Kolla om vi redan skickat idag
+    if (!isToday) { skipped++; continue; }
+
+    // Already sent today?
+    const startOfToday = new Date(todayStr + "T00:00:00.000Z");
     const alreadySent = await prisma.reminderLog.findFirst({
       where: {
         reminderId: reminder.id,
-        sentAt: { gte: startOfDay(today) },
+        sentAt: { gte: startOfToday },
       },
     });
 
-    if (alreadySent) continue;
+    if (alreadySent) {
+      log.push(`  -> already sent today`);
+      skipped++;
+      continue;
+    }
 
     try {
       await sendReminderEmail({
@@ -60,45 +67,39 @@ export async function GET(req: Request) {
         category: reminder.category,
       });
 
-      // Logga att vi skickat
       await prisma.reminderLog.create({
         data: { reminderId: reminder.id, type: "email" },
       });
 
-      // Hantera återkommande reminders – flytta till nästa datum
+      await prisma.reminder.update({
+        where: { id: reminder.id },
+        data: { lastSentAt: now },
+      });
+
       if (reminder.recurrence !== "ONCE") {
-        await updateNextDate(reminder.id, reminder.date, reminder.recurrence);
+        await updateNextDate(reminder.id, new Date(reminder.date), reminder.recurrence);
       }
 
+      log.push(`  -> sent to ${reminder.user.email}`);
       sent++;
     } catch (err) {
       console.error(`Failed to send reminder ${reminder.id}:`, err);
+      log.push(`  -> ERROR: ${String(err)}`);
       errors++;
     }
   }
 
-  return NextResponse.json({
-    success: true,
-    sent,
-    errors,
-    timestamp: today.toISOString(),
-  });
+  return NextResponse.json({ success: true, sent, skipped, errors, todayStr, log });
 }
 
 async function updateNextDate(id: string, currentDate: Date, recurrence: string) {
-  const { addDays, addWeeks, addMonths, addYears } = await import("date-fns");
-
-  const nextDate = {
-    DAILY: addDays(currentDate, 1),
-    WEEKLY: addWeeks(currentDate, 1),
+  const map: Record<string, Date> = {
+    DAILY:   addDays(currentDate, 1),
+    WEEKLY:  addWeeks(currentDate, 1),
     MONTHLY: addMonths(currentDate, 1),
-    YEARLY: addYears(currentDate, 1),
-  }[recurrence];
-
-  if (nextDate) {
-    await prisma.reminder.update({
-      where: { id },
-      data: { date: nextDate },
-    });
+    YEARLY:  addYears(currentDate, 1),
+  };
+  if (map[recurrence]) {
+    await prisma.reminder.update({ where: { id }, data: { date: map[recurrence] } });
   }
 }
