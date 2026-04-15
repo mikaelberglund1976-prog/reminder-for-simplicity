@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -14,7 +14,7 @@ type InviteInfo = {
   invitedEmail: string;
 };
 
-export default function JoinHouseholdPage() {
+function JoinHouseholdContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -151,5 +151,17 @@ export default function JoinHouseholdPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function JoinHouseholdPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <span style={{ color: "#8B90A4", fontSize: 15 }}>Loading…</span>
+      </div>
+    }>
+      <JoinHouseholdContent />
+    </Suspense>
   );
 }
