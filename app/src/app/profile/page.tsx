@@ -449,9 +449,7 @@ export default function ProfilePage() {
                 )}
               </>
             ) : (
-              <div style={{ textAlign: "center", padding: "8px 0" }}>
-                <div style={{ fontSize: 14, color: "#8B90A4" }}>No household found. Contact admin.</div>
-              </div>
+              <CreateHousehold onCreated={fetchHousehold} />
             )}
           </Card>
 
@@ -597,6 +595,60 @@ export default function ProfilePage() {
 
         </form>
       </main>
+    </div>
+  );
+}
+
+// ── CreateHousehold ──
+function CreateHousehold({ onCreated }: { onCreated: () => void }) {
+  const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function handle(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true); setErr("");
+    try {
+      const res = await fetch("/api/household", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      onCreated();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Something went wrong.");
+    } finally { setCreating(false); }
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 14, color: "#8B90A4", marginBottom: 16, textAlign: "center" }}>
+        You don&apos;t have a household yet. Create one to invite family members.
+      </div>
+      {err && (
+        <div style={{ background: "#FFF0F0", border: "1px solid #F5CCCC", color: "#D94F4F", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 12 }}>
+          {err}
+        </div>
+      )}
+      <form onSubmit={handle} style={{ display: "flex", gap: 8 }}>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="e.g. Berglund Family"
+          style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E8EDF4", fontSize: 14, fontFamily: FONT, background: "#F9FAFB", outline: "none", color: "#1A2340" }}
+        />
+        <button
+          type="submit"
+          disabled={creating}
+          style={{ padding: "12px 18px", background: "#1A2340", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: creating ? "not-allowed" : "pointer", fontFamily: FONT, flexShrink: 0, opacity: creating ? 0.6 : 1 }}
+        >
+          {creating ? "…" : "Create"}
+        </button>
+      </form>
     </div>
   );
 }

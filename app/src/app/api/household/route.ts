@@ -3,6 +3,36 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// POST /api/household — create a new household (user becomes OWNER)
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const { name } = await req.json().catch(() => ({}));
+
+    // Can't already be in a household
+    const existing = await prisma.householdMember.findFirst({
+      where: { userId: session.user.id },
+    });
+    if (existing) return NextResponse.json({ error: "You are already in a household" }, { status: 400 });
+
+    const household = await prisma.household.create({
+      data: {
+        name: name?.trim() || `${session.user.name ?? "My"}'s Household`,
+        members: {
+          create: { userId: session.user.id, role: "OWNER" },
+        },
+      },
+    });
+
+    return NextResponse.json({ household });
+  } catch (err) {
+    console.error("Create household error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
 // GET /api/household — get the current user's household with members
 export async function GET() {
   const session = await getServerSession(authOptions);
