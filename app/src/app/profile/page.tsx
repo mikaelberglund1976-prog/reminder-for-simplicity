@@ -71,6 +71,9 @@ export default function ProfilePage() {
   const [inviteMsg, setInviteMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [reassignData, setReassignData] = useState<{ removedUser: { name: string | null; email: string }; assignedReminders: { id: string; name: string; date: string }[] } | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [newHouseholdName, setNewHouseholdName] = useState("");
+  const [renamingHousehold, setRenamingHousehold] = useState(false);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
   useEffect(() => {
@@ -123,6 +126,24 @@ export default function ProfilePage() {
     } catch (err: unknown) {
       setInviteMsg({ type: "err", text: err instanceof Error ? err.message : "Something went wrong." });
     } finally { setInviting(false); }
+  }
+
+  async function handleRenameHousehold() {
+    if (!newHouseholdName.trim()) return;
+    setRenamingHousehold(true);
+    try {
+      const res = await fetch("/api/household", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newHouseholdName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setEditingName(false);
+      fetchHousehold();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to rename.");
+    } finally { setRenamingHousehold(false); }
   }
 
   async function handleRemoveMember(memberId: string) {
@@ -341,14 +362,37 @@ export default function ProfilePage() {
               <>
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 14, borderBottom: "1px solid #F0F2F7" }}>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340" }}>🏠 {household.name ?? "My Household"}</div>
+                  <div style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
+                    {editingName && householdRole === "OWNER" ? (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input
+                          autoFocus
+                          type="text"
+                          value={newHouseholdName}
+                          onChange={e => setNewHouseholdName(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleRenameHousehold(); } if (e.key === "Escape") setEditingName(false); }}
+                          style={{ flex: 1, padding: "6px 10px", borderRadius: 8, border: "1.5px solid #5B9CF5", fontSize: 15, fontWeight: 700, fontFamily: FONT, outline: "none", color: "#1A2340" }}
+                        />
+                        <button type="button" onClick={handleRenameHousehold} disabled={renamingHousehold} style={{ padding: "6px 12px", background: "#1A2340", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: FONT }}>
+                          {renamingHousehold ? "…" : "Save"}
+                        </button>
+                        <button type="button" onClick={() => setEditingName(false)} style={{ padding: "6px 10px", background: "none", border: "1.5px solid #E8EDF4", borderRadius: 8, fontSize: 12, color: "#8B90A4", cursor: "pointer", fontFamily: FONT }}>✕</button>
+                      </div>
+                    ) : (
+                      <div
+                        style={{ display: "flex", alignItems: "center", gap: 6, cursor: householdRole === "OWNER" ? "pointer" : "default" }}
+                        onClick={() => { if (householdRole === "OWNER") { setNewHouseholdName(household.name ?? ""); setEditingName(true); } }}
+                      >
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340" }}>🏠 {household.name ?? "My Household"}</div>
+                        {householdRole === "OWNER" && <span style={{ fontSize: 11, color: "#C0C7D6" }}>✎</span>}
+                      </div>
+                    )}
                     <div style={{ fontSize: 12, color: "#8B90A4", marginTop: 2 }}>{household.members.length} member{household.members.length !== 1 ? "s" : ""}</div>
                   </div>
                   {household.is_pro ? (
-                    <span style={{ background: "linear-gradient(135deg,#EEF5FF,#F0EDFF)", border: "1.5px solid #C7BBFF", color: "#5B4ECC", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50 }}>⚡ Pro</span>
+                    <span style={{ background: "linear-gradient(135deg,#EEF5FF,#F0EDFF)", border: "1.5px solid #C7BBFF", color: "#5B4ECC", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50, flexShrink: 0 }}>⚡ Pro</span>
                   ) : (
-                    <span style={{ background: "#F5F6FA", color: "#8B90A4", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50, border: "1.5px solid #E8EDF4" }}>Free</span>
+                    <span style={{ background: "#F5F6FA", color: "#8B90A4", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50, border: "1.5px solid #E8EDF4", flexShrink: 0 }}>Free</span>
                   )}
                 </div>
 
@@ -606,8 +650,7 @@ function CreateHousehold({ onCreated }: { onCreated: () => void }) {
   const [creating, setCreating] = useState(false);
   const [err, setErr] = useState("");
 
-  async function handle(e: React.FormEvent) {
-    e.preventDefault();
+  async function handle() {
     setCreating(true); setErr("");
     try {
       const res = await fetch("/api/household", {
@@ -633,22 +676,24 @@ function CreateHousehold({ onCreated }: { onCreated: () => void }) {
           {err}
         </div>
       )}
-      <form onSubmit={handle} style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 8 }}>
         <input
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="e.g. Berglund Family"
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handle(); } }}
           style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E8EDF4", fontSize: 14, fontFamily: FONT, background: "#F9FAFB", outline: "none", color: "#1A2340" }}
         />
         <button
-          type="submit"
+          type="button"
+          onClick={handle}
           disabled={creating}
           style={{ padding: "12px 18px", background: "#1A2340", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: creating ? "not-allowed" : "pointer", fontFamily: FONT, flexShrink: 0, opacity: creating ? 0.6 : 1 }}
         >
           {creating ? "…" : "Create"}
         </button>
-      </form>
+      </div>
     </div>
   );
 }

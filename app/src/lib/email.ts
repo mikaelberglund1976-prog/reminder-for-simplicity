@@ -156,7 +156,7 @@ export async function sendReminderEmail({
 export async function sendHouseholdInviteEmail({
   to, fromName, householdName, joinUrl,
 }: { to: string; fromName: string; householdName: string; joinUrl: string }) {
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: FROM,
     to,
     subject: `${fromName} invited you to join ${householdName} on AssistIQ`,
@@ -186,6 +186,10 @@ export async function sendHouseholdInviteEmail({
 </div>
 </body></html>`,
   });
+  if (error) {
+    console.error("Resend error (household invite):", error);
+    throw new Error(error.message);
+  }
 }
 
 // ─── Handover request email ───────────────────────────────────────────────────

@@ -33,6 +33,33 @@ export async function POST(req: Request) {
   }
 }
 
+// PATCH /api/household — rename the household (OWNER only)
+export async function PATCH(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const { name } = await req.json();
+    if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
+
+    const membership = await prisma.householdMember.findFirst({
+      where: { userId: session.user.id },
+    });
+    if (!membership) return NextResponse.json({ error: "No household found" }, { status: 404 });
+    if (membership.role !== "OWNER") return NextResponse.json({ error: "Only the owner can rename" }, { status: 403 });
+
+    const household = await prisma.household.update({
+      where: { id: membership.householdId },
+      data: { name: name.trim() },
+    });
+
+    return NextResponse.json({ household });
+  } catch (err) {
+    console.error("Rename household error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
 // GET /api/household — get the current user's household with members
 export async function GET() {
   const session = await getServerSession(authOptions);
