@@ -34,12 +34,12 @@ export async function POST(req: Request) {
       await prisma.householdMember.delete({ where: { id: existingMembership.id } });
     }
 
-    // Add to new household
+    // Add to new household with the role specified in the invite
     await prisma.householdMember.create({
       data: {
         householdId: invite.householdId,
         userId: session.user.id,
-        role: "MEMBER",
+        role: invite.role ?? "MEMBER",
       },
     });
 

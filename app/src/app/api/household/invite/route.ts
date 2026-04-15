@@ -10,10 +10,12 @@ export async function POST(req: Request) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { email } = await req.json();
+    const { email, role } = await req.json();
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
+    const validRoles = ["PARENT", "ADULT", "CHILD", "MEMBER"];
+    const inviteRole = validRoles.includes(role) ? role : "ADULT";
 
     // Get user's household and verify OWNER role
     const membership = await prisma.householdMember.findFirst({
@@ -48,6 +50,7 @@ export async function POST(req: Request) {
       data: {
         householdId: membership.householdId,
         email,
+        role: inviteRole as "PARENT" | "ADULT" | "CHILD" | "MEMBER",
         expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
       },
     });

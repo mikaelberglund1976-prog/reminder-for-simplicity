@@ -67,6 +67,7 @@ export default function ProfilePage() {
   const [household, setHousehold] = useState<HouseholdData | null>(null);
   const [householdRole, setHouseholdRole] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("ADULT");
   const [inviting, setInviting] = useState(false);
   const [inviteMsg, setInviteMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
@@ -116,7 +117,7 @@ export default function ProfilePage() {
       const res = await fetch("/api/household/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail }),
+        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
@@ -442,6 +443,27 @@ export default function ProfilePage() {
                         {inviteMsg.text}
                       </div>
                     )}
+                    {/* Role selector */}
+                    <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+                      {[
+                        { value: "PARENT", label: "🧑‍🦱 Parent" },
+                        { value: "ADULT",  label: "🧑 Adult" },
+                        { value: "CHILD",  label: "👦 Child" },
+                      ].map(r => (
+                        <button
+                          key={r.value}
+                          type="button"
+                          onClick={() => setInviteRole(r.value)}
+                          style={{
+                            padding: "7px 14px", borderRadius: 50, fontSize: 12, fontWeight: 600,
+                            border: inviteRole === r.value ? "none" : "1.5px solid #E8EDF4",
+                            background: inviteRole === r.value ? "#1A2340" : "#fff",
+                            color: inviteRole === r.value ? "#fff" : "#8B90A4",
+                            cursor: "pointer", fontFamily: FONT, transition: "all 0.15s",
+                          }}
+                        >{r.label}</button>
+                      ))}
+                    </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <input
                         type="email"

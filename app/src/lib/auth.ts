@@ -117,6 +117,9 @@ export const authOptions: NextAuthOptions = {
 
         // Sätt user.id till vår DB-id (används i jwt-callback nedan)
         user.id = dbUser.id;
+
+        // Auto-join: kolla om det finns en väntande inbjudan för den här e-postadressen
+        await autoJoinPendingInvite(dbUser.id, user.email!);
       }
       return true;
     },
@@ -131,8 +134,9 @@ export const authOptions: NextAuthOptions = {
         });
         if (dbUser) token.id = dbUser.id;
       } else if (user) {
-        // Credentials-login
+        // Credentials-login: kör auto-join här eftersom signIn-callbacken inte körs
         token.id = user.id;
+        if (user.email) await autoJoinPendingInvite(user.id, user.email);
       }
       return token;
     },
@@ -146,3 +150,40 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
+
+// ─── Hjälpfunktion: auto-gå med i hushåll via väntande inbjudan ──────────────
+async function autoJoinPendingInvite(userId: string, email: string) {
+  try {
+    const invite = await prisma.householdInvite.findFirst({
+      where: {
+        email,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!invite) return;
+
+    // Ta bort från eventuellt befintligt hushåll
+    await prisma.householdMember.deleteMany({ where: { userId } });
+
+    // Gå med i inbjudna hushållet
+    await prisma.householdMember.create({
+      data: {
+        householdId: invite.householdId,
+        userId,
+        role: invite.role ?? "MEMBER",
+      },
+    });
+
+    // Markera inbjudan som använd
+    await prisma.householdInvite.update({
+      where: { id: invite.id },
+      data: { usedAt: new Date() },
+    });
+  } catch (err) {
+    // Logga men krascha inte inloggningen
+    console.error("Auto-join invite error:", err);
+  }
+}

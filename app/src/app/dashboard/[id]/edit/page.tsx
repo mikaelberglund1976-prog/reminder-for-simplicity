@@ -37,9 +37,16 @@ const REMINDER_DAYS = [
 
 const CURRENCIES = ["SEK", "EUR", "USD", "GBP", "NOK", "DKK"];
 
+const VISIBILITY_OPTIONS = [
+  { value: "PRIVATE",   label: "Just me" },
+  { value: "HOUSEHOLD", label: "All" },
+  { value: "PARENTS",   label: "Parents" },
+];
+
 type FormState = {
   name: string; category: string; date: string; recurrence: string;
   amount: string; currency: string; note: string; reminderDaysBefore: string;
+  visibility: string;
 };
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -75,13 +82,20 @@ export default function EditReminderPage() {
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState("");
   const [showMoreRec, setShowMoreRec] = useState(false);
+  const [hasProHousehold, setHasProHousehold] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     name: "", category: "SUBSCRIPTION", date: "", recurrence: "MONTHLY",
-    amount: "", currency: "SEK", note: "", reminderDaysBefore: "1",
+    amount: "", currency: "SEK", note: "", reminderDaysBefore: "1", visibility: "PRIVATE",
   });
 
   useEffect(() => { if (id) fetchReminder(); }, [id]);
+
+  useEffect(() => {
+    fetch("/api/household").then(r => r.json()).then(d => {
+      if (d.household?.is_pro) setHasProHousehold(true);
+    }).catch(() => {});
+  }, []);
 
   async function fetchReminder() {
     try {
@@ -99,6 +113,7 @@ export default function EditReminderPage() {
         currency: data.currency || "SEK",
         note: data.note || "",
         reminderDaysBefore: String(data.reminderDaysBefore ?? 1),
+        visibility: data.visibility || "PRIVATE",
       });
     } catch {
       router.push("/dashboard");
@@ -127,6 +142,7 @@ export default function EditReminderPage() {
           currency: form.currency || "SEK",
           note: form.note || null,
           reminderDaysBefore: parseInt(form.reminderDaysBefore),
+          visibility: form.visibility,
         }),
       });
       if (!res.ok) {
@@ -283,6 +299,29 @@ export default function EditReminderPage() {
               <input type="text" value={form.currency} readOnly style={{ ...inputStyle, flex: 1, color: "#8B90A4", cursor: "default" }} />
             </div>
           </Section>
+
+          {/* Visibility — only if Pro household */}
+          {hasProHousehold && (
+            <Section label="Visible to">
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {VISIBILITY_OPTIONS.map(opt => (
+                  <button key={opt.value} type="button" onClick={() => set("visibility", opt.value)} style={pillStyle(form.visibility === opt.value)}>
+                    {form.visibility === opt.value && (
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p style={{ fontSize: 12, color: "#9CA3AF", margin: "8px 0 0" }}>
+                {form.visibility === "PRIVATE" && "Only you will see this reminder."}
+                {form.visibility === "HOUSEHOLD" && "All household members will see this."}
+                {form.visibility === "PARENTS" && "Only parents and adults in the household will see this."}
+              </p>
+            </Section>
+          )}
 
           {/* Notes */}
           <Section label="">

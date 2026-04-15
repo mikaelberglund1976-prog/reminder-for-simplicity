@@ -148,13 +148,14 @@ model HouseholdMember {
 }
 
 model HouseholdInvite {
-  id          String    @id @default(cuid())
+  id          String        @id @default(cuid())
   householdId String
   email       String
-  token       String    @unique @default(cuid())
+  token       String        @unique @default(cuid())
+  role        HouseholdRole @default(ADULT)
   expiresAt   DateTime
   usedAt      DateTime?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime      @default(now())
 
   household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
@@ -163,6 +164,9 @@ model HouseholdInvite {
 
 enum HouseholdRole {
   OWNER
+  PARENT
+  ADULT
+  CHILD
   MEMBER
 }
 
@@ -187,6 +191,7 @@ enum Recurrence {
 enum Visibility {
   PRIVATE
   HOUSEHOLD
+  PARENTS
 }
 
 enum HandoverState {

@@ -13,6 +13,7 @@ const updateSchema = z.object({
   currency: z.string().max(3).optional(),
   note: z.string().max(500).optional().nullable(),
   reminderDaysBefore: z.number().int().min(0).max(30).optional(),
+  visibility: z.enum(["PRIVATE", "HOUSEHOLD", "PARENTS"]).optional(),
 });
 
 // GET /api/reminders/[id] – Hämta en specifik reminder
@@ -50,19 +51,14 @@ export async function DELETE(
     return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
   }
 
-  // Kontrollera att reminderns tillhör inloggad användare
   const existing = await prisma.reminder.findFirst({
-    where: {
-      id: params.id,
-      userId: session.user.id,
-    },
+    where: { id: params.id, userId: session.user.id },
   });
 
   if (!existing) {
     return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
   }
 
-  // Soft delete – sätter isActive till false
   await prisma.reminder.update({
     where: { id: params.id },
     data: { isActive: false },
@@ -82,11 +78,7 @@ export async function PATCH(
   }
 
   const existing = await prisma.reminder.findFirst({
-    where: {
-      id: params.id,
-      userId: session.user.id,
-      isActive: true,
-    },
+    where: { id: params.id, userId: session.user.id, isActive: true },
   });
 
   if (!existing) {
@@ -97,11 +89,26 @@ export async function PATCH(
     const body = await req.json();
     const data = updateSchema.parse(body);
 
+    // Hantera visibility och householdId
+    let householdId: string | null | undefined = undefined; // undefined = behåll befintligt
+    if (data.visibility !== undefined) {
+      if (data.visibility === "PRIVATE") {
+        householdId = null;
+      } else {
+        const membership = await prisma.householdMember.findFirst({
+          where: { userId: session.user.id },
+          include: { household: { select: { is_pro: true } } },
+        });
+        householdId = membership?.household?.is_pro ? membership.householdId : null;
+      }
+    }
+
     const updated = await prisma.reminder.update({
       where: { id: params.id },
       data: {
         ...data,
         ...(data.date ? { date: new Date(data.date) } : {}),
+        ...(householdId !== undefined ? { householdId } : {}),
       },
     });
 

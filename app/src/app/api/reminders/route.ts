@@ -13,19 +13,56 @@ const reminderSchema = z.object({
   currency: z.string().max(3).optional().default("SEK"),
   note: z.string().max(500).optional().nullable(),
   reminderDaysBefore: z.number().int().min(0).max(30).default(3),
+  visibility: z.enum(["PRIVATE", "HOUSEHOLD", "PARENTS"]).default("PRIVATE"),
 });
 
-// GET /api/reminders – Hämta alla reminders för inloggad användare
+// GET /api/reminders – Hämta reminders för inloggad användare + delade från household
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
   }
 
-  const reminders = await prisma.reminder.findMany({
-    where: { userId: session.user.id, isActive: true },
-    orderBy: { date: "asc" },
+  // Kolla om användaren är i ett hushåll
+  const membership = await prisma.householdMember.findFirst({
+    where: { userId: session.user.id },
   });
+
+  let reminders;
+
+  if (membership) {
+    // Avgör vilka visibility-nivåer användaren kan se
+    const isAdultRole = ["OWNER", "PARENT", "ADULT"].includes(membership.role);
+    const visibleLevels = isAdultRole
+      ? ["HOUSEHOLD", "PARENTS"]
+      : ["HOUSEHOLD"]; // barn ser inte PARENTS-only påminnelser
+
+    reminders = await prisma.reminder.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { userId: session.user.id }, // egna påminnelser alltid
+          {
+            householdId: membership.householdId,
+            visibility: { in: visibleLevels as ("HOUSEHOLD" | "PARENTS")[] },
+            userId: { not: session.user.id }, // delade från andra
+          },
+        ],
+      },
+      orderBy: { date: "asc" },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
+    });
+  } else {
+    reminders = await prisma.reminder.findMany({
+      where: { userId: session.user.id, isActive: true },
+      orderBy: { date: "asc" },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
+    });
+  }
 
   return NextResponse.json(reminders);
 }
@@ -41,12 +78,26 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = reminderSchema.parse(body);
 
+    // Hämta household om visibility är delad
+    let householdId: string | null = null;
+    if (data.visibility !== "PRIVATE") {
+      const membership = await prisma.householdMember.findFirst({
+        where: { userId: session.user.id },
+        include: { household: { select: { is_pro: true } } },
+      });
+      if (membership?.household?.is_pro) {
+        householdId = membership.householdId;
+      }
+    }
+
     const reminder = await prisma.reminder.create({
       data: {
         ...data,
         date: new Date(data.date),
         userId: session.user.id,
+        householdId,
       },
+      include: { user: { select: { id: true, name: true } } },
     });
 
     return NextResponse.json(reminder, { status: 201 });

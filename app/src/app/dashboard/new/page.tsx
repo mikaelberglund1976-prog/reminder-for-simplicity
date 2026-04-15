@@ -35,9 +35,9 @@ const REMINDER_DAYS = [
 ];
 
 const VISIBILITY_OPTIONS = [
-  { value: "JUST_ME", label: "Just me" },
-  { value: "ALL",     label: "All" },
-  { value: "PARENTS", label: "Parents" },
+  { value: "PRIVATE",   label: "Just me" },
+  { value: "HOUSEHOLD", label: "All" },
+  { value: "PARENTS",   label: "Parents" },
 ];
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
@@ -80,6 +80,7 @@ export default function NewReminderPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showMoreRec, setShowMoreRec] = useState(false);
+  const [hasProHousehold, setHasProHousehold] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -90,7 +91,14 @@ export default function NewReminderPage() {
     currency: "SEK",
     note: "",
     reminderDaysBefore: "1",
-    visibility: "JUST_ME",
+    visibility: "PRIVATE",
+  });
+
+  // Kolla om användaren har ett Pro-hushåll
+  useState(() => {
+    fetch("/api/household").then(r => r.json()).then(d => {
+      if (d.household?.is_pro) setHasProHousehold(true);
+    }).catch(() => {});
   });
 
   function set(field: string, value: string) {
@@ -114,6 +122,7 @@ export default function NewReminderPage() {
           currency: form.currency || "SEK",
           note: form.note || null,
           reminderDaysBefore: parseInt(form.reminderDaysBefore),
+          visibility: form.visibility,
         }),
       });
       if (!res.ok) {
@@ -332,29 +341,33 @@ export default function NewReminderPage() {
             </div>
           </Section>
 
-          {/* Visibility */}
-          <Section label="Visible to">
-            <div style={{ display: "flex", gap: 8 }}>
-              {VISIBILITY_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => set("visibility", opt.value)}
-                  style={pillStyle(form.visibility === opt.value)}
-                >
-                  {form.visibility === opt.value && (
-                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <p style={{ fontSize: 12, color: "#9CA3AF", margin: "8px 0 0" }}>
-              Family sharing — coming soon
-            </p>
-          </Section>
+          {/* Visibility — only if Pro household */}
+          {hasProHousehold && (
+            <Section label="Visible to">
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {VISIBILITY_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => set("visibility", opt.value)}
+                    style={pillStyle(form.visibility === opt.value)}
+                  >
+                    {form.visibility === opt.value && (
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p style={{ fontSize: 12, color: "#9CA3AF", margin: "8px 0 0" }}>
+                {form.visibility === "PRIVATE" && "Only you will see this reminder."}
+                {form.visibility === "HOUSEHOLD" && "All household members will see this."}
+                {form.visibility === "PARENTS" && "Only parents and adults in the household will see this."}
+              </p>
+            </Section>
+          )}
 
           {/* Notes */}
           <Section label="">
