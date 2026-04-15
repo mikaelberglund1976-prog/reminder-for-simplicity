@@ -5,6 +5,19 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+type HouseholdMember = {
+  id: string;
+  role: string;
+  user: { id: string; name: string | null; email: string };
+};
+type HouseholdData = {
+  id: string;
+  name: string | null;
+  is_pro: boolean;
+  members: HouseholdMember[];
+  invites: { id: string; email: string; createdAt: string }[];
+};
+
 const CURRENCIES = [
   { value: "SEK", label: "SEK — Swedish Krona" },
   { value: "EUR", label: "EUR — Euro" },
@@ -51,9 +64,18 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [household, setHousehold] = useState<HouseholdData | null>(null);
+  const [householdRole, setHouseholdRole] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [inviteMsg, setInviteMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [reassignData, setReassignData] = useState<{ removedUser: { name: string | null; email: string }; assignedReminders: { id: string; name: string; date: string }[] } | null>(null);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
-  useEffect(() => { if (status === "authenticated") fetchProfile(); }, [status]);
+  useEffect(() => {
+    if (status === "authenticated") { fetchProfile(); fetchHousehold(); }
+  }, [status]);
 
   async function fetchProfile() {
     try {
@@ -71,6 +93,52 @@ export default function ProfilePage() {
         });
       }
     } catch (e) { console.error(e); } finally { setLoading(false); }
+  }
+
+  async function fetchHousehold() {
+    try {
+      const res = await fetch("/api/household");
+      if (res.ok) {
+        const data = await res.json();
+        setHousehold(data.household);
+        setHouseholdRole(data.role ?? null);
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault();
+    setInviting(true); setInviteMsg(null);
+    try {
+      const res = await fetch("/api/household/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setInviteEmail("");
+      setInviteMsg({ type: "ok", text: `Invite sent to ${inviteEmail} ✓` });
+      fetchHousehold();
+    } catch (err: unknown) {
+      setInviteMsg({ type: "err", text: err instanceof Error ? err.message : "Something went wrong." });
+    } finally { setInviting(false); }
+  }
+
+  async function handleRemoveMember(memberId: string) {
+    if (!confirm("Remove this member from the household?")) return;
+    setRemovingMemberId(memberId);
+    try {
+      const res = await fetch(`/api/household/members/${memberId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      if (data.assignedReminders?.length > 0) {
+        setReassignData({ removedUser: data.removedUser, assignedReminders: data.assignedReminders });
+      }
+      fetchHousehold();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to remove member.");
+    } finally { setRemovingMemberId(null); }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -267,34 +335,124 @@ export default function ProfilePage() {
             </div>
           </Card>
 
-          {/* ── IQ Features ── */}
-          <Card title="Household &amp; Circles">
-            <div style={{
-              background: "linear-gradient(135deg, #EEF5FF 0%, #F5F0FF 100%)",
-              borderRadius: 14, padding: 16, marginBottom: 14,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 18 }}>✉️</span>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340" }}>Approved senders</div>
-                <span style={{ marginLeft: "auto", background: "#fff", color: "#8B90A4", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 50, border: "1.5px solid #E8EDF4" }}>Soon</span>
+          {/* ── Household ── */}
+          <Card title="Household">
+            {household ? (
+              <>
+                {/* Header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 14, borderBottom: "1px solid #F0F2F7" }}>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340" }}>🏠 {household.name ?? "My Household"}</div>
+                    <div style={{ fontSize: 12, color: "#8B90A4", marginTop: 2 }}>{household.members.length} member{household.members.length !== 1 ? "s" : ""}</div>
+                  </div>
+                  {household.is_pro ? (
+                    <span style={{ background: "linear-gradient(135deg,#EEF5FF,#F0EDFF)", border: "1.5px solid #C7BBFF", color: "#5B4ECC", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50 }}>⚡ Pro</span>
+                  ) : (
+                    <span style={{ background: "#F5F6FA", color: "#8B90A4", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50, border: "1.5px solid #E8EDF4" }}>Free</span>
+                  )}
+                </div>
+
+                {/* Members list */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {household.members.map((m) => (
+                    <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#EEF5FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#5B9CF5", flexShrink: 0 }}>
+                        {(m.user.name ?? m.user.email)[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2340", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {m.user.name ?? m.user.email}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#8B90A4" }}>{m.role === "OWNER" ? "Owner" : "Member"}</div>
+                      </div>
+                      {householdRole === "OWNER" && m.role !== "OWNER" && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMember(m.id)}
+                          disabled={removingMemberId === m.id}
+                          style={{ background: "none", border: "none", color: "#D94F4F", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "4px 8px", borderRadius: 8, flexShrink: 0 }}
+                        >
+                          {removingMemberId === m.id ? "…" : "Remove"}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pending invites */}
+                {household.invites.length > 0 && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #F0F2F7" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#8B90A4", marginBottom: 8 }}>Pending invites</div>
+                    {household.invites.map(inv => (
+                      <div key={inv.id} style={{ fontSize: 13, color: "#B0B7C8", padding: "4px 0" }}>✉ {inv.email}</div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Invite form (OWNER + Pro only) */}
+                {householdRole === "OWNER" && household.is_pro ? (
+                  <form onSubmit={handleInvite} style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid #F0F2F7" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2340", marginBottom: 10 }}>Invite a member</div>
+                    {inviteMsg && (
+                      <div style={{ background: inviteMsg.type === "ok" ? "#F0FFF6" : "#FFF0F0", border: `1px solid ${inviteMsg.type === "ok" ? "#B8F0D0" : "#F5CCCC"}`, color: inviteMsg.type === "ok" ? "#2E9A5F" : "#D94F4F", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 12 }}>
+                        {inviteMsg.text}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={e => setInviteEmail(e.target.value)}
+                        placeholder="partner@email.com"
+                        required
+                        style={{ ...inputStyle, flex: 1 }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={inviting}
+                        style={{ padding: "12px 18px", background: "#1A2340", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: inviting ? "not-allowed" : "pointer", fontFamily: FONT, flexShrink: 0, opacity: inviting ? 0.6 : 1 }}
+                      >
+                        {inviting ? "…" : "Send invite"}
+                      </button>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 8 }}>They&apos;ll receive an email with a link to join. Valid for 48 hours.</div>
+                  </form>
+                ) : householdRole === "OWNER" && !household.is_pro ? (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #F0F2F7", background: "linear-gradient(135deg,#EEF5FF,#F5F0FF)", borderRadius: 12, padding: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 18 }}>⚡</span>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340" }}>Inviting requires Pro</div>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.5 }}>Ask your admin to enable Pro for your household to invite family members.</div>
+                  </div>
+                ) : null}
+
+                {/* Re-assignment wizard */}
+                {reassignData && (
+                  <div style={{ marginTop: 16, background: "#FFF9E6", border: "1.5px solid #F6E05E", borderRadius: 14, padding: 16 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#B7791F", marginBottom: 8 }}>
+                      ⚠ {reassignData.removedUser.name ?? reassignData.removedUser.email} left — {reassignData.assignedReminders.length} reminder{reassignData.assignedReminders.length !== 1 ? "s" : ""} need a new owner
+                    </div>
+                    {reassignData.assignedReminders.map(r => (
+                      <div key={r.id} style={{ fontSize: 13, color: "#1A2340", padding: "4px 0", borderTop: "1px solid rgba(246,224,94,0.4)" }}>
+                        📌 <Link href={`/dashboard/${r.id}`} style={{ color: "#5B9CF5", textDecoration: "none", fontWeight: 600 }}>{r.name}</Link>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setReassignData(null)}
+                      style={{ marginTop: 12, padding: "8px 16px", background: "#1A2340", border: "none", borderRadius: 50, fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer", fontFamily: FONT }}
+                    >
+                      Got it — I&apos;ll reassign them
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ textAlign: "center", padding: "8px 0" }}>
+                <div style={{ fontSize: 14, color: "#8B90A4" }}>No household found. Contact admin.</div>
               </div>
-              <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.5 }}>
-                Manage shared reminders and invite family members to your smart ecosystem.
-              </div>
-            </div>
-            <div style={{
-              background: "linear-gradient(135deg, #EEF5FF 0%, #F0FFF8 100%)",
-              borderRadius: 14, padding: 16,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 18 }}>📅</span>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340" }}>Auto calendar sync</div>
-                <span style={{ marginLeft: "auto", background: "#fff", color: "#8B90A4", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 50, border: "1.5px solid #E8EDF4" }}>Soon</span>
-              </div>
-              <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.5 }}>
-                Sync reminders with Google Calendar or Outlook automatically.
-              </div>
-            </div>
+            )}
           </Card>
 
           {/* ── Subscription ── */}
@@ -302,29 +460,28 @@ export default function ProfilePage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 16, borderBottom: "1px solid #F0F2F7" }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#8B90A4", marginBottom: 2 }}>Current plan</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#1A2340" }}>Basic <span style={{ fontSize: 14, color: "#8B90A4", fontWeight: 500 }}>(Free)</span></div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#1A2340" }}>
+                  {household?.is_pro ? (
+                    <>Pro <span style={{ fontSize: 14, color: "#5B9CF5", fontWeight: 500 }}>(Active)</span></>
+                  ) : (
+                    <>Basic <span style={{ fontSize: 14, color: "#8B90A4", fontWeight: 500 }}>(Free)</span></>
+                  )}
+                </div>
               </div>
-              <span style={{ background: "#EEF5FF", color: "#5B9CF5", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50 }}>Active</span>
+              <span style={{ background: household?.is_pro ? "linear-gradient(135deg,#EEF5FF,#F0EDFF)" : "#EEF5FF", color: household?.is_pro ? "#5B4ECC" : "#5B9CF5", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50, border: household?.is_pro ? "1.5px solid #C7BBFF" : "none" }}>
+                {household?.is_pro ? "⚡ Pro" : "Active"}
+              </span>
             </div>
-            <div style={{ paddingTop: 16 }}>
-              <div style={{ fontSize: 13, color: "#8B90A4", marginBottom: 14, lineHeight: 1.5 }}>
-                Unlock SMS alerts, family sharing, auto-calendar sync and more with Pro.
+            {!household?.is_pro && (
+              <div style={{ paddingTop: 16 }}>
+                <div style={{ fontSize: 13, color: "#8B90A4", marginBottom: 14, lineHeight: 1.5 }}>
+                  Unlock family sharing, handovers, safety net and more with Pro.
+                </div>
+                <div style={{ background: "linear-gradient(135deg,#EEF5FF,#F5F0FF)", borderRadius: 12, padding: 14, fontSize: 13, color: "#5B4ECC", fontWeight: 600, textAlign: "center" }}>
+                  ⚡ Pro is enabled by your admin during the evaluation period
+                </div>
               </div>
-              <button
-                type="button"
-                disabled
-                style={{
-                  width: "100%", padding: "13px", borderRadius: 12,
-                  background: "#F5F6FA", border: "1.5px solid #E8EDF4",
-                  fontSize: 14, fontWeight: 700, color: "#B0B7C8",
-                  cursor: "not-allowed", fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                }}
-              >
-                <span style={{ fontSize: 16 }}>⚡</span>
-                Upgrade to Pro — coming soon
-              </button>
-            </div>
+            )}
           </Card>
 
           {/* ── Security ── */}

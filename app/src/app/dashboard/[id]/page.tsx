@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
@@ -88,6 +89,8 @@ function getBrandInfo(name: string) {
   return { color: { bg: "#5B9CF5", text: "#fff" }, domain: null };
 }
 
+type HouseholdMember = { id: string; userId: string; user: { id: string; name: string | null; email: string } };
+
 type Reminder = {
   id: string;
   name: string;
@@ -99,6 +102,10 @@ type Reminder = {
   note: string | null;
   reminderDaysBefore: number;
   lastSentAt: string | null;
+  assignedTo: string | null;
+  handoverState: string;
+  handoverTo: string | null;
+  urgencyLevel: string;
 };
 
 function formatDate(dateStr: string) {
@@ -164,6 +171,7 @@ function Row({ icon, label, value, valueColor }: {
 }
 
 export default function ReminderDetailPage() {
+  const { data: session } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
@@ -173,9 +181,69 @@ export default function ReminderDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // Household & handover state
+  const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
+  const [isPro, setIsPro] = useState(false);
+  const [showHandoverPanel, setShowHandoverPanel] = useState(false);
+  const [selectedHandoverUser, setSelectedHandoverUser] = useState("");
+  const [handoverLoading, setHandoverLoading] = useState(false);
+  const [handoverMsg, setHandoverMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [respondingHandover, setRespondingHandover] = useState(false);
+
   useEffect(() => {
     if (id) fetchReminder();
+    fetchHousehold();
   }, [id]);
+
+  async function fetchHousehold() {
+    try {
+      const res = await fetch("/api/household");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.household) {
+          setIsPro(data.household.is_pro);
+          setHouseholdMembers(data.household.members ?? []);
+        }
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function handleInitiateHandover(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedHandoverUser) return;
+    setHandoverLoading(true);
+    try {
+      const res = await fetch(`/api/reminders/${id}/handover`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toUserId: selectedHandoverUser }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setHandoverMsg({ type: "ok", text: "Handover request sent ✓" });
+      setShowHandoverPanel(false);
+      fetchReminder();
+    } catch (err: unknown) {
+      setHandoverMsg({ type: "err", text: err instanceof Error ? err.message : "Failed" });
+    } finally { setHandoverLoading(false); }
+  }
+
+  async function handleRespondHandover(action: "accept" | "reject") {
+    setRespondingHandover(true);
+    try {
+      const res = await fetch(`/api/reminders/${id}/handover`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setHandoverMsg({ type: "ok", text: action === "accept" ? "You accepted the handover ✓" : "Handover declined." });
+      fetchReminder();
+    } catch (err: unknown) {
+      setHandoverMsg({ type: "err", text: err instanceof Error ? err.message : "Failed" });
+    } finally { setRespondingHandover(false); }
+  }
 
   async function fetchReminder() {
     try {
@@ -293,6 +361,100 @@ export default function ReminderDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Handover message */}
+        {handoverMsg && (
+          <div style={{ background: handoverMsg.type === "ok" ? "#F0FFF6" : "#FFF0F0", border: `1px solid ${handoverMsg.type === "ok" ? "#B8F0D0" : "#F5CCCC"}`, color: handoverMsg.type === "ok" ? "#2E9A5F" : "#D94F4F", borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 12 }}>
+            {handoverMsg.text}
+          </div>
+        )}
+
+        {/* Pending handover — receiver sees Accept/Reject */}
+        {reminder.handoverState === "PENDING" && reminder.handoverTo === session?.user?.id && (
+          <div style={{ background: "#FFF9E6", border: "1.5px solid #F6E05E", borderRadius: 18, padding: 20, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#B7791F", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>🤝 Pending handover — your response needed</div>
+            <p style={{ fontSize: 14, color: "#4A3728", lineHeight: 1.5, marginBottom: 16 }}>
+              Someone wants to transfer <strong>{reminder.name}</strong> to you. If you accept, you become the responsible owner.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => handleRespondHandover("accept")}
+                disabled={respondingHandover}
+                style={{ flex: 1, padding: "13px", background: "#2A9D6F", border: "none", borderRadius: 50, fontSize: 14, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: FONT, opacity: respondingHandover ? 0.6 : 1 }}
+              >
+                ✓ Accept
+              </button>
+              <button
+                onClick={() => handleRespondHandover("reject")}
+                disabled={respondingHandover}
+                style={{ flex: 1, padding: "13px", background: "#fff", border: "1.5px solid #E8EDF4", borderRadius: 50, fontSize: 14, fontWeight: 600, color: "#D94F4F", cursor: "pointer", fontFamily: FONT, opacity: respondingHandover ? 0.6 : 1 }}
+              >
+                ✕ Decline
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Pending handover indicator — for initiator */}
+        {reminder.handoverState === "PENDING" && reminder.handoverTo !== session?.user?.id && (
+          <div style={{ background: "#FFF9E6", border: "1.5px solid #F6E05E", borderRadius: 14, padding: "14px 16px", marginBottom: 12, fontSize: 14, color: "#B7791F", fontWeight: 600 }}>
+            🕐 Handover pending — waiting for response
+          </div>
+        )}
+
+        {/* Handover button (Pro only, not already pending) */}
+        {isPro && reminder.handoverState === "NONE" && householdMembers.length > 1 && (
+          <>
+            {!showHandoverPanel ? (
+              <button
+                onClick={() => setShowHandoverPanel(true)}
+                style={{ width: "100%", padding: "15px", borderRadius: 50, background: "#fff", border: "1.5px solid #E8EDF4", fontSize: 15, fontWeight: 600, color: "#1A2340", cursor: "pointer", fontFamily: FONT, marginBottom: 10, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
+              >
+                🤝 Hand over to someone
+              </button>
+            ) : (
+              <form onSubmit={handleInitiateHandover} style={{ background: "#F8FAFD", border: "1.5px solid #E8EDF4", borderRadius: 18, padding: 20, marginBottom: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340", marginBottom: 14 }}>Hand over to:</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                  {householdMembers
+                    .filter(m => m.userId !== session?.user?.id)
+                    .map(m => (
+                      <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: selectedHandoverUser === m.userId ? "#EEF5FF" : "#fff", border: `1.5px solid ${selectedHandoverUser === m.userId ? "#5B9CF5" : "#E8EDF4"}`, borderRadius: 12, cursor: "pointer" }}>
+                        <input type="radio" name="handoverUser" value={m.userId} checked={selectedHandoverUser === m.userId} onChange={() => setSelectedHandoverUser(m.userId)} style={{ accentColor: "#5B9CF5" }} />
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#EEF5FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#5B9CF5" }}>
+                          {(m.user.name ?? m.user.email)[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2340" }}>{m.user.name ?? m.user.email}</div>
+                          <div style={{ fontSize: 12, color: "#8B90A4" }}>{m.user.email}</div>
+                        </div>
+                      </label>
+                    ))}
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button type="button" onClick={() => setShowHandoverPanel(false)} style={{ flex: 1, padding: "13px", background: "#fff", border: "1.5px solid #E8EDF4", borderRadius: 50, fontSize: 14, fontWeight: 600, color: "#8B90A4", cursor: "pointer", fontFamily: FONT }}>Cancel</button>
+                  <button type="submit" disabled={!selectedHandoverUser || handoverLoading} style={{ flex: 2, padding: "13px", background: selectedHandoverUser ? "#1A2340" : "#E8EDF4", border: "none", borderRadius: 50, fontSize: 14, fontWeight: 700, color: selectedHandoverUser ? "#fff" : "#B0B7C8", cursor: selectedHandoverUser ? "pointer" : "not-allowed", fontFamily: FONT, opacity: handoverLoading ? 0.6 : 1 }}>
+                    {handoverLoading ? "Sending…" : "Send handover request"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </>
+        )}
+
+        {/* Upsell card — shown when not Pro */}
+        {!isPro && (
+          <div style={{ background: "linear-gradient(135deg,#EEF5FF,#F5F0FF)", border: "1.5px solid #D4CCFF", borderRadius: 18, padding: 18, marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <span style={{ fontSize: 22 }}>⚡</span>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340" }}>Pro feature — Handover</div>
+            </div>
+            <div style={{ fontSize: 13, color: "#6B7080", lineHeight: 1.5 }}>
+              Transfer responsibility to a family member with a digital handshake. They confirm before ownership shifts.
+            </div>
+            <div style={{ fontSize: 12, color: "#8B80C8", marginTop: 10, fontWeight: 600 }}>Ask your admin to enable Pro →</div>
+          </div>
+        )}
 
         {/* Edit button */}
         <Link href={"/dashboard/" + reminder.id + "/edit"} style={{

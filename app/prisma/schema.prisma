@@ -1,4 +1,4 @@
-// Prisma Schema – Reminder for Simplicity
+// Prisma Schema – AssistIQ
 // Databas: PostgreSQL via Supabase
 
 generator client {
@@ -6,14 +6,15 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
   id                String     @id @default(cuid())
   email             String     @unique
-  password          String?    // Null för Google-användare
+  password          String?
   name              String?
   emailVerified     DateTime?
   preferredCurrency String?    @default("SEK")
@@ -25,31 +26,45 @@ model User {
   accounts          Account[]
   sessions          Session[]
   householdMembers  HouseholdMember[]
+  assignedReminders Reminder[]  @relation("AssignedReminders")
+  fallbackReminders Reminder[]  @relation("FallbackReminders")
+  handoverReminders Reminder[]  @relation("HandoverReminders")
 
   @@map("users")
 }
 
 model Reminder {
-  id              String          @id @default(cuid())
-  userId          String
-  // Steg 2: householdId gör påminnelsen delad med hela hushållet (null = privat)
-  householdId     String?
-  name            String
-  category        ReminderCategory @default(OTHER)
-  date            DateTime
-  recurrence      Recurrence      @default(ONCE)
-  amount          Float?
-  currency        String?         @default("SEK")
-  note            String?
-  reminderDaysBefore Int          @default(3)
-  isActive        Boolean         @default(true)
-  lastSentAt      DateTime?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                  String           @id @default(cuid())
+  userId              String
+  householdId         String?
+  name                String
+  category            ReminderCategory @default(OTHER)
+  date                DateTime
+  recurrence          Recurrence       @default(ONCE)
+  amount              Float?
+  currency            String?          @default("SEK")
+  note                String?
+  reminderDaysBefore  Int              @default(3)
+  isActive            Boolean          @default(true)
+  lastSentAt          DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  household       Household?      @relation(fields: [householdId], references: [id])
-  logs            ReminderLog[]
+  // Pro fields
+  assignedTo          String?
+  fallbackTo          String?
+  visibility          Visibility       @default(PRIVATE)
+  handoverState       HandoverState    @default(NONE)
+  handoverTo          String?
+  handoverInitiatedAt DateTime?
+  urgencyLevel        UrgencyLevel     @default(STANDARD)
+
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household           Household?       @relation(fields: [householdId], references: [id])
+  assignedUser        User?            @relation("AssignedReminders", fields: [assignedTo], references: [id], onDelete: SetNull)
+  fallbackUser        User?            @relation("FallbackReminders", fields: [fallbackTo], references: [id], onDelete: SetNull)
+  handoverUser        User?            @relation("HandoverReminders", fields: [handoverTo], references: [id], onDelete: SetNull)
+  logs                ReminderLog[]
 
   @@map("reminders")
 }
@@ -65,7 +80,7 @@ model ReminderLog {
   @@map("reminder_logs")
 }
 
-// NextAuth-tabeller
+// NextAuth tables
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -104,19 +119,16 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// ─── Household (familjedelning – steg 2) ───────────────────────────────────
-// MVP: varje ny användare får ett eget household skapades automatiskt.
-// Steg 2: bjud in partner/familj → de blir MEMBER i samma household.
-// En reminder med householdId är synlig för alla i hushållet.
-
 model Household {
   id        String   @id @default(cuid())
   name      String?
+  is_pro    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   members   HouseholdMember[]
   reminders Reminder[]
+  invites   HouseholdInvite[]
 
   @@map("households")
 }
@@ -135,25 +147,56 @@ model HouseholdMember {
   @@map("household_members")
 }
 
+model HouseholdInvite {
+  id          String    @id @default(cuid())
+  householdId String
+  email       String
+  token       String    @unique @default(cuid())
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@map("household_invites")
+}
+
 enum HouseholdRole {
   OWNER
   MEMBER
 }
 
 enum ReminderCategory {
-  SUBSCRIPTION  // Abonnemang
-  BIRTHDAY      // Födelsedag
-  INSURANCE     // Försäkring
-  CONTRACT      // Avtal
-  HEALTH        // Hälsa
-  BILL          // Räkning
-  OTHER         // Övrigt
+  SUBSCRIPTION
+  BIRTHDAY
+  INSURANCE
+  CONTRACT
+  HEALTH
+  BILL
+  OTHER
 }
 
 enum Recurrence {
-  ONCE          // Engång
-  DAILY         // Daglig
-  WEEKLY        // Veckovis
-  MONTHLY       // Månadsvis
-  YEARLY        // Årsvis
+  ONCE
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum Visibility {
+  PRIVATE
+  HOUSEHOLD
+}
+
+enum HandoverState {
+  NONE
+  PENDING
+  ACCEPTED
+}
+
+enum UrgencyLevel {
+  STANDARD
+  HIGH
+  CRITICAL
 }

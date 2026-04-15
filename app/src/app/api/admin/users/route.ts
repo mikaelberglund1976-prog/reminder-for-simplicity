@@ -22,6 +22,13 @@ export async function GET() {
         createdAt: true,
         preferredCurrency: true,
         _count: { select: { reminders: { where: { isActive: true } } } },
+        householdMembers: {
+          select: {
+            role: true,
+            household: { select: { id: true, name: true, is_pro: true } },
+          },
+          take: 1,
+        },
       },
     });
 
@@ -43,6 +50,4 @@ export async function GET() {
     });
   } catch (err) {
     console.error("Admin users error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
-}
+    return NextResponse.json({ e

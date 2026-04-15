@@ -15,6 +15,7 @@ type User = {
   createdAt: string;
   preferredCurrency: string | null;
   _count: { reminders: number };
+  householdMembers: { role: string; household: { id: string; name: string | null; is_pro: boolean } }[];
 };
 
 type Stats = {
@@ -25,7 +26,6 @@ type Stats = {
 };
 
 const bg = "radial-gradient(ellipse at 60% 25%, #1e3f8a 0%, #0e2268 28%, #070f3c 60%, #030820 100%)";
-
 const card: React.CSSProperties = {
   background: "rgba(255,255,255,0.04)",
   border: "1px solid rgba(255,255,255,0.1)",
@@ -40,6 +40,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingProId, setTogglingProId] = useState<string | null>(null);
   const [triggering, setTriggering] = useState(false);
   const [cronLog, setCronLog] = useState<string[] | null>(null);
   const [testingEmail, setTestingEmail] = useState(false);
@@ -69,6 +70,24 @@ export default function AdminPage() {
     setTimeout(() => setActionMsg(null), 5000);
   }
 
+  async function handleTogglePro(householdId: string) {
+    setTogglingProId(householdId);
+    try {
+      const res = await fetch(`/api/admin/households/${householdId}/toggle-pro`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setUsers(prev => prev.map(u => {
+        const hm = u.householdMembers[0];
+        if (hm && hm.household.id === householdId) {
+          return { ...u, householdMembers: [{ ...hm, household: { ...hm.household, is_pro: data.is_pro } }] };
+        }
+        return u;
+      }));
+      notify("ok", `Pro ${data.is_pro ? "enabled" : "disabled"} ✓`);
+    } catch (e: unknown) { notify("err", e instanceof Error ? e.message : "Failed."); }
+    finally { setTogglingProId(null); }
+  }
+
   async function handleDelete(userId: string, email: string) {
     if (!confirm(`Delete user ${email} and all their data? Cannot be undone.`)) return;
     setDeletingId(userId);
@@ -87,7 +106,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/trigger-cron", { method: "POST" });
       let data: Record<string, unknown> = {};
-      try { data = await res.json(); } catch { /* empty or non-JSON response */ }
+      try { data = await res.json(); } catch { /* empty response */ }
       if (!res.ok) throw new Error((data.error as string) || `Server error ${res.status}`);
       notify("ok", `Cron ran ✓ — Sent: ${data.sent}, Skipped: ${data.skipped ?? 0}, Errors: ${data.errors}`);
       if (data.log) setCronLog(data.log as string[]);
@@ -146,7 +165,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main style={{ position: "relative", zIndex: 10, maxWidth: 1100, margin: "0 auto", padding: "36px 24px 100px" }}>
+      <main style={{ position: "relative", zIndex: 10, maxWidth: 1200, margin: "0 auto", padding: "36px 24px 100px" }}>
 
         {/* Action message */}
         {actionMsg && (
@@ -184,14 +203,6 @@ export default function AdminPage() {
             <button onClick={handleTriggerCron} disabled={triggering} style={{ background: triggering ? "rgba(74,127,220,0.4)" : "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)", color: "#fff", fontWeight: 700, fontSize: 14, padding: "10px 22px", borderRadius: 50, border: "none", cursor: triggering ? "not-allowed" : "pointer", boxShadow: "0 3px 14px rgba(46,94,200,0.4)" }}>
               {triggering ? "Running…" : "▶ Trigger reminder cron now"}
             </button>
-            {cronLog && (
-              <div style={{ marginTop: 16, background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: "14px 16px", maxHeight: 300, overflowY: "auto" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(130,165,230,0.6)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>Cron debug log</div>
-                {cronLog.map((line, i) => (
-                  <div key={i} style={{ fontSize: 12, color: line.includes("ERROR") ? "#ff8f8f" : line.includes("sent to") ? "#5ee8a8" : "rgba(180,205,255,0.7)", fontFamily: "monospace", lineHeight: 1.7 }}>{line}</div>
-                ))}
-              </div>
-            )}
             <button onClick={handleTestEmail} disabled={testingEmail} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(200,220,255,0.85)", fontWeight: 600, fontSize: 14, padding: "10px 22px", borderRadius: 50, cursor: testingEmail ? "not-allowed" : "pointer" }}>
               {testingEmail ? "Sending…" : "✉ Send test email to me"}
             </button>
@@ -199,6 +210,14 @@ export default function AdminPage() {
               ↻ Refresh
             </button>
           </div>
+          {cronLog && (
+            <div style={{ marginTop: 16, background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: "14px 16px", maxHeight: 300, overflowY: "auto" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(130,165,230,0.6)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>Cron debug log</div>
+              {cronLog.map((line, i) => (
+                <div key={i} style={{ fontSize: 12, color: line.includes("ERROR") ? "#ff8f8f" : line.includes("sent to") ? "#5ee8a8" : "rgba(180,205,255,0.7)", fontFamily: "monospace", lineHeight: 1.7 }}>{line}</div>
+              ))}
+            </div>
+          )}
           <p style={{ color: "rgba(140,165,220,0.45)", fontSize: 12, marginTop: 14 }}>
             Trigger cron runs the full reminder job right now. Test email sends a sample to <strong style={{ color: "rgba(180,205,255,0.7)" }}>{session?.user?.email}</strong>.
           </p>
@@ -210,11 +229,12 @@ export default function AdminPage() {
             <h2 style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>
               Users <span style={{ color: "rgba(160,185,255,0.5)", fontWeight: 400 }}>({users.length})</span>
             </h2>
+            <span style={{ fontSize: 12, color: "rgba(160,185,255,0.45)" }}>Toggle ⚡ Pro to enable family sharing for a household</span>
           </div>
 
           {/* Table header */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 110px 90px 80px 70px", gap: 16, padding: "11px 22px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
-            {["Name", "Email", "Joined", "Reminders", "Currency", ""].map((h, i) => (
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.4fr 110px 80px 70px 100px 70px", gap: 12, padding: "11px 22px", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
+            {["Name", "Email", "Joined", "Reminders", "Currency", "Pro", ""].map((h, i) => (
               <div key={i} style={{ fontSize: 11, fontWeight: 700, color: "rgba(130,165,230,0.55)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{h}</div>
             ))}
           </div>
@@ -228,7 +248,7 @@ export default function AdminPage() {
               onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)")}
               onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = "transparent")}
             >
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 110px 90px 80px 70px", gap: 16, alignItems: "center", padding: "14px 22px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.4fr 110px 80px 70px 100px 70px", gap: 12, alignItems: "center", padding: "14px 22px" }}>
                 <span style={{ fontWeight: 600, color: user.name ? "#fff" : "rgba(160,185,255,0.4)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontStyle: user.name ? "normal" : "italic" }}>
                   {user.name ?? "No name"}
                 </span>
@@ -236,6 +256,30 @@ export default function AdminPage() {
                 <span style={{ color: "rgba(175,200,255,0.65)", fontSize: 13 }}>{formatDate(user.createdAt)}</span>
                 <span style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{user._count.reminders}</span>
                 <span style={{ color: "rgba(175,200,255,0.65)", fontSize: 13 }}>{user.preferredCurrency ?? "SEK"}</span>
+                <div>
+                  {user.householdMembers[0] ? (
+                    <button
+                      onClick={() => handleTogglePro(user.householdMembers[0].household.id)}
+                      disabled={togglingProId === user.householdMembers[0].household.id}
+                      title={user.householdMembers[0].household.name ?? "Household"}
+                      style={{
+                        background: user.householdMembers[0].household.is_pro
+                          ? "rgba(74,127,220,0.3)" : "rgba(255,255,255,0.06)",
+                        border: `1px solid ${user.householdMembers[0].household.is_pro ? "rgba(74,127,220,0.6)" : "rgba(255,255,255,0.15)"}`,
+                        color: user.householdMembers[0].household.is_pro ? "#7BB8FF" : "rgba(180,200,255,0.45)",
+                        fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 50,
+                        cursor: togglingProId === user.householdMembers[0].household.id ? "not-allowed" : "pointer",
+                        textTransform: "uppercase", letterSpacing: "0.05em", transition: "all 0.15s",
+                      }}
+                    >
+                      {togglingProId === user.householdMembers[0].household.id
+                        ? "…"
+                        : user.householdMembers[0].household.is_pro ? "⚡ Pro ON" : "Free"}
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: 12, color: "rgba(160,185,255,0.3)" }}>No household</span>
+                  )}
+                </div>
                 <div>
                   {user.email !== ADMIN_EMAIL && (
                     <button onClick={() => handleDelete(user.id, user.email)} disabled={deletingId === user.id} style={{ background: "none", border: "none", color: deletingId === user.id ? "rgba(255,107,107,0.4)" : "rgba(255,107,107,0.8)", fontSize: 13, fontWeight: 600, cursor: deletingId === user.id ? "not-allowed" : "pointer", padding: 0 }}>
