@@ -435,7 +435,7 @@ export default function ProfilePage() {
 
                 {/* Invite form (OWNER + Pro only) */}
                 {householdRole === "OWNER" && household.is_pro ? (
-                  <form onSubmit={handleInvite} style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid #F0F2F7" }}>
+                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid #F0F2F7" }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2340", marginBottom: 10 }}>Invite a member</div>
                     {inviteMsg && (
                       <div style={{ background: inviteMsg.type === "ok" ? "#F0FFF6" : "#FFF0F0", border: `1px solid ${inviteMsg.type === "ok" ? "#B8F0D0" : "#F5CCCC"}`, color: inviteMsg.type === "ok" ? "#2E9A5F" : "#D94F4F", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 12 }}>
@@ -447,20 +447,21 @@ export default function ProfilePage() {
                         type="email"
                         value={inviteEmail}
                         onChange={e => setInviteEmail(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleInvite(e as unknown as React.FormEvent); } }}
                         placeholder="partner@email.com"
-                        required
                         style={{ ...inputStyle, flex: 1 }}
                       />
                       <button
-                        type="submit"
+                        type="button"
                         disabled={inviting}
+                        onClick={handleInvite as unknown as React.MouseEventHandler}
                         style={{ padding: "12px 18px", background: "#1A2340", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: inviting ? "not-allowed" : "pointer", fontFamily: FONT, flexShrink: 0, opacity: inviting ? 0.6 : 1 }}
                       >
                         {inviting ? "…" : "Send invite"}
                       </button>
                     </div>
                     <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 8 }}>They&apos;ll receive an email with a link to join. Valid for 48 hours.</div>
-                  </form>
+                  </div>
                 ) : householdRole === "OWNER" && !household.is_pro ? (
                   <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #F0F2F7", background: "linear-gradient(135deg,#EEF5FF,#F5F0FF)", borderRadius: 12, padding: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
