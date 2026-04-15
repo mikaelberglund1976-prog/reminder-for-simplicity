@@ -152,6 +152,9 @@ function IcBell() {
 function IcBack() {
   return <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>;
 }
+function IcUser() {
+  return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+}
 
 function Row({ icon, label, value, valueColor }: {
   icon: React.ReactNode; label: string; value: string; valueColor?: string;
@@ -288,6 +291,13 @@ export default function ReminderDetailPage() {
   const statusColor = daysUntil < 0 ? "#DC2626" : daysUntil <= 3 ? "#B45309" : "#15803D";
   const badge = CATEGORY_BADGE[reminder.category] ?? CATEGORY_BADGE.OTHER;
 
+  const ownerMember = reminder.assignedTo
+    ? householdMembers.find(m => m.userId === reminder.assignedTo)
+    : null;
+  const ownerDisplayName = ownerMember
+    ? (ownerMember.user.name ?? ownerMember.user.email)
+    : "Unassigned";
+
   return (
     <div style={{ minHeight: "100vh", background: "#F5F6FA", fontFamily: FONT, paddingBottom: 40 }}>
       <main style={{ maxWidth: 480, margin: "0 auto", padding: "24px 20px 0" }}>
@@ -352,6 +362,11 @@ export default function ReminderDetailPage() {
           )}
           <Row icon={<IcBell />} label="Remind me"
             value={reminder.reminderDaysBefore + " day" + (reminder.reminderDaysBefore !== 1 ? "s" : "") + " before"} />
+          {householdMembers.length > 0 && (
+            <Row icon={<IcUser />} label="Owner"
+              value={ownerDisplayName}
+              valueColor={reminder.assignedTo ? undefined : "#9CA3AF"} />
+          )}
 
           {/* Note if present */}
           {reminder.note && (
@@ -402,19 +417,19 @@ export default function ReminderDetailPage() {
           </div>
         )}
 
-        {/* Handover button (Pro only, not already pending) */}
-        {isPro && reminder.handoverState === "NONE" && householdMembers.length > 1 && (
+        {/* Assign owner button — visible to all household members */}
+        {householdMembers.length > 1 && reminder.handoverState === "NONE" && (
           <>
             {!showHandoverPanel ? (
               <button
                 onClick={() => setShowHandoverPanel(true)}
                 style={{ width: "100%", padding: "15px", borderRadius: 50, background: "#fff", border: "1.5px solid #E8EDF4", fontSize: 15, fontWeight: 600, color: "#1A2340", cursor: "pointer", fontFamily: FONT, marginBottom: 10, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
               >
-                🤝 Hand over to someone
+                🤝 Assign owner
               </button>
             ) : (
               <form onSubmit={handleInitiateHandover} style={{ background: "#F8FAFD", border: "1.5px solid #E8EDF4", borderRadius: 18, padding: 20, marginBottom: 10 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340", marginBottom: 14 }}>Hand over to:</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340", marginBottom: 14 }}>Assign owner:</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                   {householdMembers
                     .filter(m => m.userId !== session?.user?.id)
@@ -501,7 +516,7 @@ export default function ReminderDetailPage() {
                   background: "#fff", border: "1.5px solid #E8EDF4",
                   fontSize: 14, fontWeight: 600, color: "#1A2340",
                   cursor: "pointer", fontFamily: FONT,
-                }}
+                 }}
               >
                 Cancel
               </button>
@@ -516,7 +531,7 @@ export default function ReminderDetailPage() {
                   opacity: deleting ? 0.6 : 1, fontFamily: FONT,
                 }}
               >
-                {deleting ? "Deleting…" : "Yes, delete"}
+                {deleting ? "Deleting\u2026" : "Yes, delete"}
               </button>
             </div>
           </div>

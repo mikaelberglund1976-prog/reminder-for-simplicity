@@ -335,26 +335,6 @@ export default function ProfilePage() {
                 padding: "4px 12px", borderRadius: 50,
               }}>Active</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 16, opacity: 0.45 }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2340" }}>SMS</div>
-                <div style={{ fontSize: 12, color: "#8B90A4", marginTop: 2 }}>Text message alerts</div>
-              </div>
-              <span style={{
-                background: "#F5F6FA", color: "#8B90A4", fontSize: 12, fontWeight: 700,
-                padding: "4px 12px", borderRadius: 50, border: "1.5px solid #E8EDF4",
-              }}>Coming soon</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 16, opacity: 0.45 }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2340" }}>Push notifications</div>
-                <div style={{ fontSize: 12, color: "#8B90A4", marginTop: 2 }}>Browser & mobile app alerts</div>
-              </div>
-              <span style={{
-                background: "#F5F6FA", color: "#8B90A4", fontSize: 12, fontWeight: 700,
-                padding: "4px 12px", borderRadius: 50, border: "1.5px solid #E8EDF4",
-              }}>Coming soon</span>
-            </div>
           </Card>
 
           {/* ── Household ── */}

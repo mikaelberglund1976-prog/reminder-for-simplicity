@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+type HouseholdMember = { id: string; userId: string; user: { id: string; name: string | null; email: string } };
+
 type Reminder = {
   id: string;
   name: string;
@@ -18,6 +20,7 @@ type Reminder = {
   lastSentAt: string | null;
   userId: string;
   visibility: string;
+  assignedTo?: string | null;
   user?: { id: string; name: string | null };
 };
 
@@ -200,14 +203,17 @@ function NavBtn({ label, icon, active, onClick }: {
   );
 }
 
-function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId }: {
-  reminder: Reminder; badge: { bg: string; color: string }; isFirst: boolean; onClick: () => void; currentUserId?: string;
+function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, householdMembers = [] }: {
+  reminder: Reminder; badge: { bg: string; color: string }; isFirst: boolean; onClick: () => void; currentUserId?: string; householdMembers?: HouseholdMember[];
 }) {
   const [hovered, setHovered] = useState(false);
   const showAmount = reminder.amount != null && reminder.amount > 0;
   const showRecurrence = reminder.recurrence !== "ONCE" || showAmount;
   const isShared = reminder.user && reminder.user.id !== currentUserId;
   const sharedByName = isShared ? (reminder.user?.name?.split(" ")[0] ?? "someone") : null;
+  const ownerMember = reminder.assignedTo ? householdMembers.find(m => m.userId === reminder.assignedTo) : null;
+  const ownerName = ownerMember ? (ownerMember.user.name?.split(" ")[0] ?? ownerMember.user.email.split("@")[0]) : null;
+  const isUnassigned = householdMembers.length > 1 && !reminder.assignedTo;
   return (
     <div onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       style={{
@@ -225,6 +231,16 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId }: {
           {isShared && (
             <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#EEF5FF", color: "#3A78D4", gap: 3 }}>
               👤 {sharedByName}
+            </span>
+          )}
+          {ownerName && !isShared && (
+            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#EEF5FF", color: "#3A78D4", gap: 3 }}>
+              👤 {ownerName}
+            </span>
+          )}
+          {isUnassigned && !isShared && (
+            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#F5F6FA", color: "#9CA3AF" }}>
+              Unassigned
             </span>
           )}
         </div>
@@ -254,6 +270,7 @@ export default function DashboardPage() {
   const [sortBy, setSort]                = useState("date_asc");
   const [activeTab, setTab]              = useState<"reminders" | "history" | "settings">("reminders");
   const [hasHousehold, setHasHousehold]  = useState(false);
+  const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -282,13 +299,22 @@ export default function DashboardPage() {
   async function fetchHousehold() {
     try {
       const res = await fetch("/api/household");
-      if (res.ok) { const d = await res.json(); if (d.household) setHasHousehold(true); }
+      if (res.ok) {
+        const d = await res.json();
+        if (d.household) {
+          setHasHousehold(true);
+          setHouseholdMembers(d.household.members ?? []);
+        }
+      }
     } catch (e) { console.error(e); }
   }
 
   // Stats
   const totalActive   = reminders.length;
   const passedCount   = reminders.filter(r => getDaysUntil(r.date) < 0).length;
+  const attentionItems = [...reminders]
+    .filter(r => getDaysUntil(r.date) <= 7)
+    .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date));
   const completedLast30 = reminders.filter(r => {
     if (!r.lastSentAt) return false;
     return (Date.now() - new Date(r.lastSentAt).getTime()) < 30 * 24 * 60 * 60 * 1000;
@@ -323,8 +349,9 @@ export default function DashboardPage() {
     return 0;
   });
   const filtered = sorted.filter(r => {
-    if (filterCategory === "FAMILY") return r.user && r.user.id !== session?.user?.id;
-    if (filterCategory !== "ALL") return r.category === filterCategory;
+    if (filterCategory === "FAMILY")     return r.user && r.user.id !== session?.user?.id;
+    if (filterCategory === "UNASSIGNED") return !r.assignedTo;
+    if (filterCategory !== "ALL")        return r.category === filterCategory;
     return true;
   });
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
@@ -366,6 +393,36 @@ export default function DashboardPage() {
           </p>
         </div>
 
+        {/* Needs your attention */}
+        {attentionItems.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#0F172A", margin: 0 }}>
+                Needs your attention
+              </h2>
+              <span style={{ fontSize: 12, color: "#DC2626", fontWeight: 700 }}>
+                {attentionItems.length} item{attentionItems.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div style={{ background: "#fff", borderRadius: 20, border: "1.5px solid #FFD9D4", overflow: "hidden", boxShadow: "0 1px 6px rgba(220,38,38,0.07)" }}>
+              {attentionItems.slice(0, 3).map((r, i) => (
+                <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
+                  isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} />
+              ))}
+              {attentionItems.length > 3 && (
+                <div style={{ padding: "12px 16px", borderTop: "1px solid #F0F3F8", textAlign: "center" }}>
+                  <button
+                    onClick={() => { setSort("date_asc"); setSection("reminders"); }}
+                    style={{ background: "none", border: "none", color: "#DC2626", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}
+                  >
+                    View all {attentionItems.length} items →
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* IQ Spotlight */}
         {spotlight ? (
           <div style={{
@@ -396,14 +453,36 @@ export default function DashboardPage() {
         ) : null}
 
         {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
           <StatCard icon={<IcBell />}  iconColor="#5B9CF5" iconBg="#EBF3FF"
             value={totalActive} label="Reminders" />
-          <StatCard icon={<IcCard />}  iconColor="#2A9D6F" iconBg="#D4F4E6"
-            value={yearlyTotal > 0 ? yearlyTotal.toLocaleString("sv") : "—"}
-            label={"Yearly budget"} />
           <StatCard icon={<IcAlert />} iconColor="#D94F4F" iconBg="#FFE8E8"
-            value={passedCount} label="Passed date" />
+            value={passedCount} label="Needs attention" />
+        </div>
+
+        {/* Budget action card */}
+        <div
+          onClick={() => { setSort("amount_desc"); setSection("reminders"); }}
+          style={{
+            background: "#fff", borderRadius: 16, border: "1px solid #E8EDF4",
+            padding: "16px", marginBottom: 12, cursor: "pointer",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            display: "flex", alignItems: "center", gap: 14,
+          }}
+        >
+          <div style={{ background: "#D4F4E6", borderRadius: 10, padding: 8, color: "#2A9D6F", display: "inline-flex", flexShrink: 0 }}>
+            <IcCard />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: "#6B7280", fontWeight: 600 }}>Recurring costs this year</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", lineHeight: 1.1, marginTop: 2 }}>
+              {yearlyTotal > 0 ? yearlyTotal.toLocaleString("sv") + " " + preferredCurrency : "—"}
+            </div>
+            <div style={{ fontSize: 12, color: "#8B90A4", marginTop: 3 }}>See what&apos;s coming up and where you can cut back</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 700, color: "#2A9D6F", flexShrink: 0 }}>
+            Review costs <IcRight />
+          </div>
         </div>
 
         {/* Activity strip */}
@@ -461,6 +540,9 @@ export default function DashboardPage() {
                   {hasHousehold && sharedReminders.length > 0 && (
                     <option value="FAMILY">👪 Family shared</option>
                   )}
+                  {hasHousehold && (
+                    <option value="UNASSIGNED">👤 Unassigned</option>
+                  )}
                   <option value="SUBSCRIPTION">Subscriptions</option>
                   <option value="BIRTHDAY">Birthdays</option>
                   <option value="INSURANCE">Insurance</option>
@@ -473,7 +555,7 @@ export default function DashboardPage() {
               </div>
               <div style={{ position: "relative", flex: 1 }}>
                 <select value={sortBy} onChange={e => setSort(e.target.value)} style={dropdownStyle}>
-                  <option value="date_asc">Earliest first</option>
+                  <option value="date_asc">Due soonest</option>
                   <option value="date_desc">Latest first</option>
                   <option value="name_asc">Name A–Z</option>
                   <option value="amount_desc">Highest amount</option>
@@ -496,9 +578,9 @@ export default function DashboardPage() {
               <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 12 }}>
                 {filtered.map((r, i) => (
                   <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
-                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} />
+                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} />
                 ))}
-              </div>
+                  </div>
             )}
 
             {/* Add reminder */}
@@ -518,12 +600,12 @@ export default function DashboardPage() {
               <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
                 {sharedReminders.map((r, i) => (
                   <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
-                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} />
+                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} />
                 ))}
               </div>
             ) : (
               <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>🏠</div>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>&#127968;</div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 6 }}>No shared reminders yet</div>
                 <div style={{ fontSize: 14, color: "#8B90A4", lineHeight: 1.6 }}>
                   When a family member shares a reminder with you, it will appear here.
@@ -532,13 +614,13 @@ export default function DashboardPage() {
             )
           ) : (
             <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🏠</div>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>&#127968;</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 6 }}>Family sharing</div>
               <div style={{ fontSize: 14, color: "#8B90A4", lineHeight: 1.6, maxWidth: 260, margin: "0 auto 24px" }}>
                 Invite your family to share reminders and never miss what matters together.
               </div>
               <Link href="/profile" style={{ display: "inline-block", padding: "12px 24px", background: "#1A2340", color: "#fff", borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
-                Set up family sharing →
+                Set up family sharing \u2192
               </Link>
             </div>
           )

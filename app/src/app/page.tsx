@@ -24,9 +24,9 @@ export default function Home() {
           color: "#1A2340", lineHeight: 1.15, letterSpacing: "-1px",
           margin: "0 0 16px", maxWidth: 380,
         }}>
-          Stay{" "}
-          <span style={{ color: "#5B9CF5" }}>ahead</span>
-          {" "}of what costs you.
+          Share the{" "}
+          <span style={{ color: "#5B9CF5" }}>mental load</span>
+          {" "}of your household
         </h1>
 
         {/* Subtitle */}
@@ -34,7 +34,7 @@ export default function Home() {
           fontSize: 16, color: "#8B90A4", lineHeight: 1.6,
           maxWidth: 340, margin: "0 0 40px",
         }}>
-          Smart reminders before subscriptions, renewals, and important dates slip through the cracks or cost you money.
+          Keep track of recurring costs, important dates, and shared responsibilities — so nothing gets missed, forgotten, or left to one person.
         </p>
 
         {/* ── Phone mockup ── */}
@@ -89,7 +89,7 @@ export default function Home() {
               {/* Notification cards */}
               <div style={{ padding: "0 10px", display: "flex", flexDirection: "column", gap: 8 }}>
 
-                {/* Julia's Birthday */}
+                {/* Julia Birthday */}
                 <div style={{
                   background: "#fff", borderRadius: 14, padding: "10px 12px",
                   boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
@@ -193,7 +193,7 @@ export default function Home() {
           fontSize: 16, fontWeight: 600, color: "#1A2340",
           textDecoration: "none",
         }}>
-          Create account
+          Get started free
         </Link>
         <Link href="/login" style={{
           flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
@@ -203,7 +203,7 @@ export default function Home() {
           textDecoration: "none",
           boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
         }}>
-          Log in
+          See how it works
         </Link>
       </div>
 
