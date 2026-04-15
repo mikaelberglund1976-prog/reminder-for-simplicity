@@ -102,6 +102,8 @@ export async function PUT(
       return NextResponse.json({ error: "No pending handover on this reminder" }, { status: 400 });
     }
 
+    const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
     if (action === "accept") {
       await prisma.reminder.update({
         where: { id: params.id },
@@ -114,7 +116,6 @@ export async function PUT(
       });
 
       // Notify original owner
-      const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
       await sendHandoverResponseEmail({
         to: reminder.user.email,
         toName: reminder.user.name,
