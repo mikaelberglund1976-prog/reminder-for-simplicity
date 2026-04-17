@@ -140,15 +140,16 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: pinChildName.trim(), pin: pinChildPin }),
       });
-      const data = await res.json();
+      let data: { error?: string } = {};
+      try { data = await res.json(); } catch { data = { error: `Server error ${res.status}` }; }
       if (res.ok) {
         setPinChildName(""); setPinChildPin(""); setPinChildPinConfirm("");
         setShowAddPinChild(false);
         if (household?.id) fetchPinChildren(household.id);
       } else {
-        setPinChildError(data.error ?? "Something went wrong");
+        setPinChildError(data.error ?? `Error ${res.status}`);
       }
-    } catch { setPinChildError("Network error"); }
+    } catch (e) { setPinChildError("Could not reach server: " + String(e)); }
     finally { setAddingPinChild(false); }
   }
 
