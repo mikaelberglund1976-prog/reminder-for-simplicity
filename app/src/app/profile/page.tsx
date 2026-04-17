@@ -75,6 +75,14 @@ export default function ProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [newHouseholdName, setNewHouseholdName] = useState("");
   const [renamingHousehold, setRenamingHousehold] = useState(false);
+  const [pinChildren, setPinChildren] = useState<{ id: string; name: string }[]>([]);
+  const [showAddPinChild, setShowAddPinChild] = useState(false);
+  const [pinChildName, setPinChildName] = useState("");
+  const [pinChildPin, setPinChildPin] = useState("");
+  const [pinChildPinConfirm, setPinChildPinConfirm] = useState("");
+  const [pinChildError, setPinChildError] = useState("");
+  const [addingPinChild, setAddingPinChild] = useState(false);
+  const [pinChildCopied, setPinChildCopied] = useState(false);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
   useEffect(() => {
@@ -106,8 +114,42 @@ export default function ProfilePage() {
         const data = await res.json();
         setHousehold(data.household);
         setHouseholdRole(data.role ?? null);
+        if (data.household?.id) fetchPinChildren(data.household.id);
       }
     } catch (e) { console.error(e); }
+  }
+
+  async function fetchPinChildren(hid: string) {
+    try {
+      const res = await fetch(`/api/family/children?h=${hid}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPinChildren(data.children ?? []);
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function createPinChild() {
+    if (!pinChildName.trim()) { setPinChildError("Enter a name"); return; }
+    if (!/^[0-9]{4}$/.test(pinChildPin)) { setPinChildError("PIN must be exactly 4 digits"); return; }
+    if (pinChildPin !== pinChildPinConfirm) { setPinChildError("PINs do not match"); return; }
+    setAddingPinChild(true); setPinChildError("");
+    try {
+      const res = await fetch("/api/family/child-profiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: pinChildName.trim(), pin: pinChildPin }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPinChildName(""); setPinChildPin(""); setPinChildPinConfirm("");
+        setShowAddPinChild(false);
+        if (household?.id) fetchPinChildren(household.id);
+      } else {
+        setPinChildError(data.error ?? "Something went wrong");
+      }
+    } catch { setPinChildError("Network error"); }
+    finally { setAddingPinChild(false); }
   }
 
   async function handleInvite(e: React.FormEvent) {
@@ -473,6 +515,81 @@ export default function ProfilePage() {
                     <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.5 }}>Ask your admin to enable Pro for your household to invite family members.</div>
                   </div>
                 ) : null}
+
+                {/* Child profiles with PIN */}
+                {householdRole === "OWNER" && (
+                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid #F0F2F7" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2340" }}>Child profiles (PIN login)</div>
+                      {!showAddPinChild && (
+                        <button type="button" onClick={() => setShowAddPinChild(true)}
+                          style={{ background: "#EBF3FF", border: "none", borderRadius: 50, padding: "6px 14px", fontSize: 12, fontWeight: 700, color: "#1A3A6E", cursor: "pointer", fontFamily: FONT }}>
+                          + Add child
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12, lineHeight: 1.5 }}>
+                      Children log in with their name and a 4-digit PIN — no email needed.
+                    </div>
+
+                    {pinChildren.length > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                        {pinChildren.map(c => (
+                          <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "#F9FAFB", borderRadius: 12, border: "1.5px solid #E8EDF4" }}>
+                            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1A2340", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13 }}>
+                              {c.name.charAt(0).toUpperCase()}
+                            </div>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#1A2340" }}>{c.name}</span>
+                            <span style={{ marginLeft: "auto", fontSize: 11, color: "#9CA3AF", fontWeight: 600 }}>PIN login</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {showAddPinChild && (
+                      <div style={{ background: "#F9FAFB", borderRadius: 14, border: "1.5px solid #E8EDF4", padding: 16, marginBottom: 12 }}>
+                        <div style={{ marginBottom: 12 }}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>Name</label>
+                          <input value={pinChildName} onChange={e => setPinChildName(e.target.value)} placeholder="e.g. Emma" autoComplete="off" style={inputStyle} />
+                        </div>
+                        <div style={{ marginBottom: 12 }}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>4-digit PIN</label>
+                          <input value={pinChildPin} onChange={e => setPinChildPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
+                            style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
+                        </div>
+                        <div style={{ marginBottom: 12 }}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>Confirm PIN</label>
+                          <input value={pinChildPinConfirm} onChange={e => setPinChildPinConfirm(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
+                            style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
+                        </div>
+                        {pinChildError && (
+                          <div style={{ fontSize: 13, color: "#C44444", background: "#FFF0F0", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>{pinChildError}</div>
+                        )}
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button type="button" onClick={createPinChild} disabled={addingPinChild}
+                            style={{ flex: 1, background: "#1A2340", color: "#fff", border: "none", borderRadius: 50, padding: "12px", fontSize: 14, fontWeight: 700, cursor: addingPinChild ? "not-allowed" : "pointer", fontFamily: FONT, opacity: addingPinChild ? 0.6 : 1 }}>
+                            {addingPinChild ? "Saving…" : "Save child"}
+                          </button>
+                          <button type="button" onClick={() => { setShowAddPinChild(false); setPinChildName(""); setPinChildPin(""); setPinChildPinConfirm(""); setPinChildError(""); }}
+                            style={{ padding: "12px 20px", borderRadius: 50, background: "#F0F3FA", border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {household?.id && (
+                      <button type="button" onClick={() => {
+                        navigator.clipboard.writeText(window.location.origin + "/family?h=" + household.id);
+                        setPinChildCopied(true);
+                        setTimeout(() => setPinChildCopied(false), 2000);
+                      }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, background: pinChildCopied ? "#D4F4E6" : "#EBF3FF", color: pinChildCopied ? "#1E7D52" : "#1A3A6E", border: "none", borderRadius: 50, padding: "9px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+                        {pinChildCopied ? "✓ Copied!" : "Copy children's login link"}
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Re-assignment wizard */}
                 {reassignData && (
