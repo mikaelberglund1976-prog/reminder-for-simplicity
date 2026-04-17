@@ -59,14 +59,48 @@ model Reminder {
   handoverInitiatedAt DateTime?
   urgencyLevel        UrgencyLevel     @default(STANDARD)
 
+  // Family chore fields
+  requiresApproval    Boolean          @default(false)
+  choreRecurrenceDays String?          // e.g. "1,2,3,4,5" = Mon–Fri; null = uses recurrence field
+
   user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   household           Household?       @relation(fields: [householdId], references: [id])
   assignedUser        User?            @relation("AssignedReminders", fields: [assignedTo], references: [id], onDelete: SetNull)
   fallbackUser        User?            @relation("FallbackReminders", fields: [fallbackTo], references: [id], onDelete: SetNull)
   handoverUser        User?            @relation("HandoverReminders", fields: [handoverTo], references: [id], onDelete: SetNull)
   logs                ReminderLog[]
+  completions         ChoreCompletion[]
 
   @@map("reminders")
+}
+
+model ChoreCompletion {
+  id           String      @id @default(cuid())
+  reminderId   String
+  childId      String      // userId of who completed it
+  weekStart    DateTime    // Monday 00:00 UTC of the relevant week
+  status       ChoreStatus @default(DONE)
+  approvedBy   String?     // userId of approving adult
+  approvedAt   DateTime?
+  createdAt    DateTime    @default(now())
+
+  reminder     Reminder    @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+
+  @@unique([reminderId, childId, weekStart])
+  @@map("chore_completions")
+}
+
+model FamilyTrial {
+  id          String    @id @default(cuid())
+  householdId String    @unique
+  startedAt   DateTime  @default(now())
+  expiresAt   DateTime
+  childId     String    // userId of the 1 trial child
+  createdBy   String    // userId of the adult who started it
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@map("family_trials")
 }
 
 model ReminderLog {
@@ -126,9 +160,10 @@ model Household {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members   HouseholdMember[]
-  reminders Reminder[]
-  invites   HouseholdInvite[]
+  members     HouseholdMember[]
+  reminders   Reminder[]
+  invites     HouseholdInvite[]
+  familyTrial FamilyTrial?
 
   @@map("households")
 }
@@ -177,6 +212,7 @@ enum ReminderCategory {
   CONTRACT
   HEALTH
   BILL
+  CHORE
   OTHER
 }
 
@@ -204,4 +240,10 @@ enum UrgencyLevel {
   STANDARD
   HIGH
   CRITICAL
+}
+
+enum ChoreStatus {
+  DONE
+  PENDING_APPROVAL
+  APPROVED
 }

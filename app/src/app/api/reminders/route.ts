@@ -5,8 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const reminderSchema = z.object({
-  name: z.string().min(1, "Namn krävs").max(200),
-  category: z.enum(["SUBSCRIPTION", "BIRTHDAY", "INSURANCE", "CONTRACT", "HEALTH", "BILL", "OTHER"]),
+  name: z.string().min(1, "Namn kravs").max(200),
+  category: z.enum(["SUBSCRIPTION", "BIRTHDAY", "INSURANCE", "CONTRACT", "HEALTH", "BILL", "CHORE", "OTHER"]),
   date: z.string().datetime(),
   recurrence: z.enum(["ONCE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).default("YEARLY"),
   amount: z.number().positive().optional().nullable(),
@@ -16,14 +16,13 @@ const reminderSchema = z.object({
   visibility: z.enum(["PRIVATE", "HOUSEHOLD", "PARENTS"]).default("PRIVATE"),
 });
 
-// GET /api/reminders – Hämta reminders för inloggad användare + delade från household
+// GET /api/reminders
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
   }
 
-  // Kolla om användaren är i ett hushåll
   const membership = await prisma.householdMember.findFirst({
     where: { userId: session.user.id },
   });
@@ -31,21 +30,21 @@ export async function GET() {
   let reminders;
 
   if (membership) {
-    // Avgör vilka visibility-nivåer användaren kan se
     const isAdultRole = ["OWNER", "PARENT", "ADULT"].includes(membership.role);
     const visibleLevels = isAdultRole
       ? ["HOUSEHOLD", "PARENTS"]
-      : ["HOUSEHOLD"]; // barn ser inte PARENTS-only påminnelser
+      : ["HOUSEHOLD"];
 
     reminders = await prisma.reminder.findMany({
       where: {
         isActive: true,
+        category: { not: "CHORE" as never },
         OR: [
-          { userId: session.user.id }, // egna påminnelser alltid
+          { userId: session.user.id },
           {
             householdId: membership.householdId,
             visibility: { in: visibleLevels as ("HOUSEHOLD" | "PARENTS")[] },
-            userId: { not: session.user.id }, // delade från andra
+            userId: { not: session.user.id },
           },
         ],
       },
@@ -56,7 +55,7 @@ export async function GET() {
     });
   } else {
     reminders = await prisma.reminder.findMany({
-      where: { userId: session.user.id, isActive: true },
+      where: { userId: session.user.id, isActive: true, category: { not: "CHORE" as never } },
       orderBy: { date: "asc" },
       include: {
         user: { select: { id: true, name: true } },
@@ -67,7 +66,7 @@ export async function GET() {
   return NextResponse.json(reminders);
 }
 
-// POST /api/reminders – Skapa ny reminder
+// POST /api/reminders
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -78,7 +77,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = reminderSchema.parse(body);
 
-    // Hämta household om visibility är delad
     let householdId: string | null = null;
     if (data.visibility !== "PRIVATE") {
       const membership = await prisma.householdMember.findFirst({
@@ -91,8 +89,9 @@ export async function POST(req: Request) {
     }
 
     const reminder = await prisma.reminder.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
-        ...data,
+        ...(data as any),
         date: new Date(data.date),
         userId: session.user.id,
         householdId,
@@ -106,6 +105,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }
     console.error("Create reminder error:", error);
-    return NextResponse.json({ error: "Något gick fel." }, { status: 500 });
+    return NextResponse.json({ error: "Nagot gick fel." }, { status: 500 });
   }
 }

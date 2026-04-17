@@ -513,18 +513,14 @@ export default function DashboardPage() {
             </div>
           </button>
 
-          <button onClick={() => setSection("family")} style={sectionCardStyle(activeSection === "family")}>
+          <button onClick={() => router.push("/dashboard/family")} style={sectionCardStyle(activeSection === "family")}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
               <div style={{ background: hasHousehold ? "#FFF0D4" : "#F0F2F7", borderRadius: 10, padding: 8, color: hasHousehold ? "#C06010" : "#B0B7C8", display: "flex", fontSize: 18, lineHeight: 1 }}>🏠</div>
               <div style={{ color: "#C0C5D0" }}><IcRight /></div>
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340", marginBottom: 4 }}>Family</div>
             <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.4 }}>
-              {hasHousehold
-                ? sharedReminders.length > 0
-                  ? `${sharedReminders.length} shared reminder${sharedReminders.length !== 1 ? "s" : ""}`
-                  : "No shared reminders yet"
-                : "Invite family to get started"}
+              Chores, responsibilities & routines
             </div>
           </button>
         </div>
