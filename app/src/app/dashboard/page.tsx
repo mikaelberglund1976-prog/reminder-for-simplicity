@@ -271,14 +271,13 @@ export default function DashboardPage() {
   const [activeTab, setTab]              = useState<"reminders" | "history" | "settings">("reminders");
   const [hasHousehold, setHasHousehold]  = useState(false);
   const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
-  const [familySummary, setFamilySummary] = useState<{ childId: string; childName: string; total: number; done: number; pending: number }[]>([]);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
   useEffect(() => {
-    if (status === "authenticated") { fetchReminders(); fetchProfile(); fetchHousehold(); fetchFamilyData(); }
+    if (status === "authenticated") { fetchReminders(); fetchProfile(); fetchHousehold(); }
   }, [status]);
 
   async function fetchReminders() {
@@ -305,21 +304,6 @@ export default function DashboardPage() {
         if (d.household) {
           setHasHousehold(true);
           setHouseholdMembers(d.household.members ?? []);
-        }
-      }
-    } catch (e) { console.error(e); }
-  }
-
-  async function fetchFamilyData() {
-    try {
-      const trialRes = await fetch("/api/family/trial");
-      if (!trialRes.ok) return;
-      const trialData = await trialRes.json();
-      if (trialData.trialActive || trialData.isPro) {
-        const weekRes = await fetch("/api/family/week");
-        if (weekRes.ok) {
-          const weekData = await weekRes.json();
-          setFamilySummary(weekData.summary ?? []);
         }
       }
     } catch (e) { console.error(e); }
@@ -371,16 +355,6 @@ export default function DashboardPage() {
     return true;
   });
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
-
-  // Pre-compute family card display values (avoids complex JSX expressions)
-  const familyCardRows = familySummary.slice(0, 2).map(c => ({
-    id: c.childId,
-    name: c.childName,
-    label: c.done + "/" + c.total,
-    pct: c.total > 0 ? Math.round((c.done / c.total) * 100) : 0,
-    allDone: c.done === c.total && c.total > 0,
-  }));
-  const pendingApprovals = familySummary.reduce((s, c) => s + c.pending, 0);
 
   if (status === "loading" || loading) {
     return (
@@ -540,35 +514,14 @@ export default function DashboardPage() {
           </button>
 
           <button onClick={() => router.push("/dashboard/family")} style={sectionCardStyle(activeSection === "family")}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
               <div style={{ background: hasHousehold ? "#FFF0D4" : "#F0F2F7", borderRadius: 10, padding: 8, color: hasHousehold ? "#C06010" : "#B0B7C8", display: "flex", fontSize: 18, lineHeight: 1 }}>🏠</div>
               <div style={{ color: "#C0C5D0" }}><IcRight /></div>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340", marginBottom: 6 }}>Family</div>
-            {familyCardRows.length > 0 ? (
-              <div>
-                {familyCardRows.map(row => (
-                  <div key={row.id} style={{ marginBottom: 7 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>{row.name}</span>
-                      <span style={{ fontSize: 11, color: "#8B90A4" }}>{row.label}</span>
-                    </div>
-                    <div style={{ height: 5, background: "#E8EDF4", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 3, background: row.allDone ? "#2A9D6F" : "#5B9CF5", width: row.pct + "%" }} />
-                    </div>
-                  </div>
-                ))}
-                {pendingApprovals > 0 && (
-                  <div style={{ fontSize: 11, color: "#B45309", fontWeight: 700, marginTop: 4 }}>
-                    {pendingApprovals} waiting approval
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.4 }}>
-                Chores, responsibilities &amp; routines
-              </div>
-            )}
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340", marginBottom: 4 }}>Family</div>
+            <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.4 }}>
+              Chores, responsibilities & routines
+            </div>
           </button>
         </div>
 
@@ -656,4 +609,37 @@ export default function DashboardPage() {
               </div>
             )
           ) : (
-            <div style={{ backgr
+            <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>&#127968;</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 6 }}>Family sharing</div>
+              <div style={{ fontSize: 14, color: "#8B90A4", lineHeight: 1.6, maxWidth: 260, margin: "0 auto 24px" }}>
+                Invite your family to share reminders and never miss what matters together.
+              </div>
+              <Link href="/profile" style={{ display: "inline-block", padding: "12px 24px", background: "#1A2340", color: "#fff", borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+                Set up family sharing \u2192
+              </Link>
+            </div>
+          )
+        )}
+
+      </main>
+
+      {/* Bottom nav */}
+      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: "1px solid #E8EDF4", paddingBottom: "env(safe-area-inset-bottom)", zIndex: 20 }}>
+        <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", alignItems: "center", height: 64 }}>
+          <NavBtn label="Reminders" icon={<IcNavCal />} active={activeTab === "reminders"}
+            onClick={() => { setTab("reminders"); setSection("reminders"); }} />
+          <Link href="/dashboard/new" style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", textDecoration: "none" }}>
+            <div style={{ width: 50, height: 50, borderRadius: "50%", background: "#1A2340", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, boxShadow: "0 4px 16px rgba(26,35,64,0.28)" }}>
+              <IcPlus />
+            </div>
+          </Link>
+          <NavBtn label="History" icon={<IcHistory />} active={activeTab === "history"}
+            onClick={() => setTab("history")} />
+          <NavBtn label="Settings" icon={<IcGear />} active={activeTab === "settings"}
+            onClick={() => { setTab("settings"); router.push("/profile"); }} />
+        </div>
+      </nav>
+    </div>
+  );
+}

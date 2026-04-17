@@ -45,7 +45,6 @@ export async function GET() {
     daysLeft,
     trialChildId: trial?.childId ?? null,
     isAdult,
-    householdId: membership.householdId,
     childMembers: childMembers.map(m => ({
       id: m.userId,
       name: m.user.name ?? m.user.email.split("@")[0],
@@ -94,4 +93,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return Next
+  return NextResponse.json({ trial, daysLeft: 7 });
+}

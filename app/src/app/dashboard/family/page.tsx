@@ -261,52 +261,65 @@ export default function FamilyPage() {
             ))}
           </div>
 
-          {/* Child picker */}
-          {children.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 10 }}>Select the child to start with</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {children.map(c => (
-                  <button key={c.id} onClick={() => setSelectedChild(c.id)}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-                      background: selectedChild === c.id ? "#EBF3FF" : "#fff",
-                      border: selectedChild === c.id ? "2px solid #5B9CF5" : "1.5px solid #E8EDF4",
-                      borderRadius: 14, cursor: "pointer", textAlign: "left", fontFamily: FONT,
-                    }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#1A2340", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                      {c.name.charAt(0).toUpperCase()}
-                    </div>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: "#0F172A" }}>{c.name}</span>
-                    {selectedChild === c.id && <div style={{ marginLeft: "auto", color: "#5B9CF5" }}><IcCheck /></div>}
-                  </button>
-                ))}
-              </div>
+          {/* Step 1: Add / pick a child */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#0F172A", marginBottom: 12, letterSpacing: "0.02em" }}>
+              Step 1 — Add your child
             </div>
-          )}
 
-          {/* Add child profile */}
-          {!showAddChild ? (
-            <button onClick={() => setShowAddChild(true)}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                padding: "14px 16px", borderRadius: 14, cursor: "pointer", fontFamily: FONT,
-                background: "#fff", border: "2px dashed #CBD5E1", fontSize: 14, fontWeight: 700, color: "#4B5563",
-                marginBottom: 16,
-              }}>
-              <span style={{ fontSize: 20 }}>👶</span>
-              Create child profile (name + PIN)
-            </button>
-          ) : (
-            <AddChildForm
-              name={newChildName} setName={setNewChildName}
-              pin={newChildPin} setPin={setNewChildPin}
-              pinConfirm={newChildPinConfirm} setPinConfirm={setNewChildPinConfirm}
-              error={addChildError} loading={addingChild}
-              onSave={createChildProfile}
-              onCancel={resetAddChildForm}
-            />
-          )}
+            {/* Create new profile (PIN-based) */}
+            {!showAddChild ? (
+              <button onClick={() => setShowAddChild(true)}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 14,
+                  padding: "16px 18px", borderRadius: 14, cursor: "pointer", fontFamily: FONT,
+                  background: "#EBF3FF", border: "2px solid #5B9CF5",
+                  marginBottom: children.length > 0 ? 10 : 0,
+                  textAlign: "left",
+                }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#5B9CF5", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                  <IcPlus />
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#1A3A6E" }}>Create child profile</div>
+                  <div style={{ fontSize: 12, color: "#4B6EA8", marginTop: 2 }}>Name + 4-digit PIN — no email needed</div>
+                </div>
+              </button>
+            ) : (
+              <AddChildForm
+                name={newChildName} setName={setNewChildName}
+                pin={newChildPin} setPin={setNewChildPin}
+                pinConfirm={newChildPinConfirm} setPinConfirm={setNewChildPinConfirm}
+                error={addChildError} loading={addingChild}
+                onSave={createChildProfile}
+                onCancel={resetAddChildForm}
+              />
+            )}
+
+            {/* Existing children */}
+            {children.length > 0 && !showAddChild && (
+              <div>
+                <div style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 600, textAlign: "center", margin: "10px 0" }}>or select existing</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {children.map(c => (
+                    <button key={c.id} onClick={() => setSelectedChild(c.id)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
+                        background: selectedChild === c.id ? "#EBF3FF" : "#fff",
+                        border: selectedChild === c.id ? "2px solid #5B9CF5" : "1.5px solid #E8EDF4",
+                        borderRadius: 14, cursor: "pointer", textAlign: "left", fontFamily: FONT,
+                      }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#1A2340", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                        {c.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: "#0F172A" }}>{c.name}</span>
+                      {selectedChild === c.id && <div style={{ marginLeft: "auto", color: "#5B9CF5" }}><IcCheck /></div>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {children.length > 0 && !showAddChild && (
             <button onClick={startTrial} disabled={!selectedChild || starting}
