@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PhoneInput from "@/components/PhoneInput";
 
 type HouseholdMember = {
   id: string;
@@ -83,6 +84,7 @@ export default function ProfilePage() {
   const [pinChildError, setPinChildError] = useState("");
   const [addingPinChild, setAddingPinChild] = useState(false);
   const [pinChildCopied, setPinChildCopied] = useState(false);
+  const [phoneValid, setPhoneValid] = useState(true);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
   useEffect(() => {
@@ -207,7 +209,12 @@ export default function ProfilePage() {
   }
 
   async function handleSave(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true); setError(""); setSaved(false);
+    e.preventDefault();
+    if (!phoneValid) {
+      setError("Please fix the phone number before saving.");
+      return;
+    }
+    setSaving(true); setError(""); setSaved(false);
     try {
       const res = await fetch("/api/profile", {
         method: "PUT",
@@ -311,13 +318,13 @@ export default function ProfilePage() {
               <Hint>Email cannot be changed.</Hint>
             </Field>
             <Field label="WhatsApp Number">
-              <input
-                type="tel" value={form.phone}
-                onChange={e => set("phone", e.target.value)}
-                placeholder="+46 70 123 45 67 (optional)"
-                style={inputStyle}
+              <PhoneInput
+                value={form.phone}
+                onChange={(e164) => set("phone", e164)}
+                onValidChange={setPhoneValid}
+                placeholder="70 123 45 67"
               />
-              <Hint>Used for future WhatsApp alerts. Optional.</Hint>
+              <Hint>Select your country, then enter the number. Used for future WhatsApp alerts. Optional.</Hint>
             </Field>
           </Card>
 

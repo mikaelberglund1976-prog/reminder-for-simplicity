@@ -4,8 +4,20 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// Accepts E.164 format: + followed by 7–15 digits.
+// Empty string is allowed (user clearing the field).
+const phoneSchema = z
+  .string()
+  .trim()
+  .refine(
+    (v) => v === "" || /^\+[1-9]\d{6,14}$/.test(v),
+    "Enter a valid phone number in international format (e.g. +46701234567)"
+  )
+  .optional();
+
 const profileSchema = z.object({
   name: z.string().min(1).max(100).optional(),
+  phone: phoneSchema,
   preferredCurrency: z.enum(["SEK", "EUR", "USD", "GBP", "NOK", "DKK"]).optional(),
   timezone: z.string().max(100).optional(),
 });
@@ -23,6 +35,7 @@ export async function GET() {
       id: true,
       name: true,
       email: true,
+      phone: true,
       preferredCurrency: true,
       timezone: true,
       createdAt: true,
@@ -45,7 +58,22 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
-    const data = profileSchema.parse(body);
+    const parsed = profileSchema.parse(body);
+
+    // Normalize empty phone to null so the column can be cleared.
+    const data: {
+      name?: string;
+      phone?: string | null;
+      preferredCurrency?: "SEK" | "EUR" | "USD" | "GBP" | "NOK" | "DKK";
+      timezone?: string;
+    } = {
+      name: parsed.name,
+      preferredCurrency: parsed.preferredCurrency,
+      timezone: parsed.timezone,
+    };
+    if (parsed.phone !== undefined) {
+      data.phone = parsed.phone === "" ? null : parsed.phone;
+    }
 
     const updated = await prisma.user.update({
       where: { id: session.user.id },
@@ -54,6 +82,7 @@ export async function PUT(req: Request) {
         id: true,
         name: true,
         email: true,
+        phone: true,
         preferredCurrency: true,
         timezone: true,
         createdAt: true,

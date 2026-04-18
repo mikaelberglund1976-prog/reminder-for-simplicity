@@ -17,10 +17,13 @@ model User {
   password          String?
   name              String?
   emailVerified     DateTime?
+  phone             String?
   preferredCurrency String?    @default("SEK")
   timezone          String?    @default("Europe/Stockholm")
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
+
+  isChildProfile    Boolean    @default(false)
 
   reminders         Reminder[]
   accounts          Account[]
