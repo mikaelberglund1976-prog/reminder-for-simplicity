@@ -39,6 +39,7 @@ export async function GET() {
       preferredCurrency: true,
       timezone: true,
       createdAt: true,
+      isChildProfile: true,
     },
   });
 

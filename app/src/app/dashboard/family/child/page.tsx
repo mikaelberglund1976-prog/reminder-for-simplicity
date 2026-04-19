@@ -31,6 +31,13 @@ function ChildViewContent() {
   const [childName, setChildName] = useState("My chores");
   const [access, setAccess] = useState<string>("TRIAL");
 
+  // Add-chore form (self-service for kids)
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newNote, setNewNote] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
@@ -66,6 +73,38 @@ function ChildViewContent() {
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
+  }
+
+  async function handleAddChore(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setAdding(true);
+    setAddError(null);
+    try {
+      const res = await fetch("/api/family/chores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName.trim(),
+          note: newNote.trim() || undefined,
+          recurrence: "WEEKLY",
+        }),
+      });
+      if (res.ok) {
+        setNewName("");
+        setNewNote("");
+        setShowAdd(false);
+        await fetchChores();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setAddError(data?.error ?? "Could not add chore");
+      }
+    } catch (err) {
+      console.error(err);
+      setAddError("Something went wrong");
+    } finally {
+      setAdding(false);
+    }
   }
 
   async function toggleChore(choreId: string) {
@@ -140,6 +179,96 @@ function ChildViewContent() {
           </div>
         )}
 
+        {/* Add chore — self-service for kids */}
+        {access !== "LOCKED" && (
+          <div style={{ marginBottom: 16 }}>
+            {!showAdd ? (
+              <button
+                onClick={() => { setShowAdd(true); setAddError(null); }}
+                style={{
+                  width: "100%", padding: "14px 16px", borderRadius: 14,
+                  background: "#fff", border: "1.5px dashed #C7D2E3", color: "#3B4B7A",
+                  fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1 }}>+</span>
+                Add a chore
+              </button>
+            ) : (
+              <form onSubmit={handleAddChore} style={{
+                background: "#fff", borderRadius: 18, border: "1px solid #E8EDF4",
+                padding: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.04)",
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2340", marginBottom: 10 }}>
+                  New chore
+                </div>
+                <input
+                  type="text"
+                  placeholder="What will you do?"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  disabled={adding}
+                  autoFocus
+                  style={{
+                    width: "100%", padding: "12px 14px", borderRadius: 12,
+                    background: "#F5F6FA", border: "1.5px solid #E8EDF4",
+                    fontSize: 14, color: "#1A2340", outline: "none",
+                    fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Note (optional)"
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  disabled={adding}
+                  style={{
+                    width: "100%", padding: "12px 14px", borderRadius: 12,
+                    background: "#F5F6FA", border: "1.5px solid #E8EDF4",
+                    fontSize: 14, color: "#1A2340", outline: "none",
+                    fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
+                  }}
+                />
+                {addError && (
+                  <div style={{ fontSize: 12, color: "#D94F4F", marginBottom: 10 }}>{addError}</div>
+                )}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => { setShowAdd(false); setNewName(""); setNewNote(""); setAddError(null); }}
+                    disabled={adding}
+                    style={{
+                      flex: 1, padding: "12px 14px", borderRadius: 12,
+                      background: "#F5F6FA", border: "1.5px solid #E8EDF4",
+                      color: "#4B5563", fontSize: 14, fontWeight: 700,
+                      cursor: adding ? "not-allowed" : "pointer", fontFamily: FONT,
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={adding || !newName.trim()}
+                    style={{
+                      flex: 1, padding: "12px 14px", borderRadius: 12,
+                      background: !newName.trim() || adding ? "#9AB0DB" : "#1A2340",
+                      border: "none", color: "#fff", fontSize: 14, fontWeight: 700,
+                      cursor: adding || !newName.trim() ? "not-allowed" : "pointer",
+                      fontFamily: FONT,
+                    }}
+                  >
+                    {adding ? "Adding…" : "Add chore"}
+                  </button>
+                </div>
+                <div style={{ fontSize: 11, color: "#8B90A4", marginTop: 10, textAlign: "center" }}>
+                  A parent will approve it when you mark it done.
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
         {/* To-do chores */}
         {todo.length > 0 && (
           <div style={{ marginBottom: 16 }}>
@@ -188,11 +317,13 @@ function ChildViewContent() {
           </div>
         )}
 
-        {chores.length === 0 && access !== "LOCKED" && (
-          <div style={{ textAlign: "center", padding: "60px 24px" }}>
+        {chores.length === 0 && access !== "LOCKED" && !showAdd && (
+          <div style={{ textAlign: "center", padding: "40px 24px 20px" }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 8 }}>No chores assigned</div>
-            <div style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.5 }}>Ask a parent to add chores for you.</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 8 }}>No chores yet</div>
+            <div style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.5 }}>
+              Tap <strong>Add a chore</strong> above to get started.
+            </div>
           </div>
         )}
       </main>

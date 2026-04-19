@@ -293,7 +293,16 @@ export default function DashboardPage() {
   async function fetchProfile() {
     try {
       const res = await fetch("/api/profile");
-      if (res.ok) { const d = await res.json(); if (d.preferredCurrency) setCurrency(d.preferredCurrency); }
+      if (res.ok) {
+        const d = await res.json();
+        // Child profiles should never see the main reminder dashboard.
+        // Kick them to their own chore overview.
+        if (d.isChildProfile) {
+          router.replace("/dashboard/family/child");
+          return;
+        }
+        if (d.preferredCurrency) setCurrency(d.preferredCurrency);
+      }
     } catch (e) { console.error(e); }
   }
 

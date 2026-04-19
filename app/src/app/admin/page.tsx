@@ -8,19 +8,6 @@ import { StarBackground } from "@/components/StarBackground";
 
 const ADMIN_EMAIL = "mikaelberglund1976@gmail.com";
 
-type User = {
-  id: string;
-  name: string | null;
-  email: string;
-  createdAt: string;
-  preferredCurrency: string | null;
-  _count: { reminders: number };
-  householdMembers: {
-    role: string;
-    household: { id: string; name: string | null; is_pro: boolean };
-  }[];
-};
-
 type Stats = {
   totalUsers: number;
   totalReminders: number;
@@ -49,46 +36,42 @@ type HouseholdAdmin = {
   invites: HouseholdInvite[];
 };
 
+type UserLite = {
+  id: string;
+  name: string | null;
+  email: string;
+  createdAt: string;
+  _count: { reminders: number };
+  householdMembers: { household: { id: string } }[];
+};
+
 const bg =
   "radial-gradient(ellipse at 60% 25%, #1e3f8a 0%, #0e2268 28%, #070f3c 60%, #030820 100%)";
-const card: React.CSSProperties = {
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: 16,
-  padding: 24,
-};
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>([]);
+
+  const [users, setUsers] = useState<UserLite[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [households, setHouseholds] = useState<HouseholdAdmin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionMsg, setActionMsg] = useState<
-    { type: "ok" | "err"; text: string } | null
-  >(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [togglingProId, setTogglingProId] = useState<string | null>(null);
+  const [actionMsg, setActionMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [triggering, setTriggering] = useState(false);
   const [cronLog, setCronLog] = useState<string[] | null>(null);
   const [testingEmail, setTestingEmail] = useState(false);
-  const [revokingInviteId, setRevokingInviteId] = useState<string | null>(null);
-  const [addMemberState, setAddMemberState] = useState<{
-    [householdId: string]: { email: string; loading: boolean };
-  }>({});
-  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<"families" | "users">("families");
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
-    if (status === "authenticated" && session?.user?.email !== ADMIN_EMAIL)
+    if (status === "authenticated" && session?.user?.email !== ADMIN_EMAIL) {
       router.push("/dashboard");
+    }
   }, [status, session, router]);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.email === ADMIN_EMAIL)
-      fetchData();
+    if (status === "authenticated" && session?.user?.email === ADMIN_EMAIL) fetchData();
   }, [status, session]);
 
   async function fetchData() {
@@ -119,66 +102,6 @@ export default function AdminPage() {
     setTimeout(() => setActionMsg(null), 5000);
   }
 
-  function getHouseholdForUser(user: User): HouseholdAdmin | null {
-    const hm = user.householdMembers[0];
-    if (!hm) return null;
-    return households.find((h) => h.id === hm.household.id) ?? null;
-  }
-
-  async function handleTogglePro(householdId: string) {
-    setTogglingProId(householdId);
-    try {
-      const res = await fetch(
-        `/api/admin/households/${householdId}/toggle-pro`,
-        { method: "POST" }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setUsers((prev) =>
-        prev.map((u) => {
-          const hm = u.householdMembers[0];
-          if (hm && hm.household.id === householdId) {
-            return {
-              ...u,
-              householdMembers: [
-                { ...hm, household: { ...hm.household, is_pro: data.is_pro } },
-              ],
-            };
-          }
-          return u;
-        })
-      );
-      setHouseholds((prev) =>
-        prev.map((h) =>
-          h.id === householdId ? { ...h, is_pro: data.is_pro } : h
-        )
-      );
-      notify("ok", `Pro ${data.is_pro ? "enabled" : "disabled"} ✓`);
-    } catch (e: unknown) {
-      notify("err", e instanceof Error ? e.message : "Failed.");
-    } finally {
-      setTogglingProId(null);
-    }
-  }
-
-  async function handleDelete(userId: string, email: string) {
-    if (!confirm(`Delete user ${email} and all their data? Cannot be undone.`))
-      return;
-    setDeletingId(userId);
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed");
-      setUsers((u) => u.filter((x) => x.id !== userId));
-      setStats((s) => (s ? { ...s, totalUsers: s.totalUsers - 1 } : s));
-      if (expandedUserId === userId) setExpandedUserId(null);
-      notify("ok", `User ${email} deleted.`);
-    } catch {
-      notify("err", "Failed to delete user.");
-    } finally {
-      setDeletingId(null);
-    }
-  }
-
   async function handleTriggerCron() {
     setTriggering(true);
     try {
@@ -187,10 +110,9 @@ export default function AdminPage() {
       try {
         data = await res.json();
       } catch {
-        /* empty response */
+        /* empty */
       }
-      if (!res.ok)
-        throw new Error((data.error as string) || `Server error ${res.status}`);
+      if (!res.ok) throw new Error((data.error as string) || `Server error ${res.status}`);
       notify(
         "ok",
         `Cron ran ✓ — Sent: ${data.sent}, Skipped: ${data.skipped ?? 0}, Errors: ${data.errors}`
@@ -217,71 +139,16 @@ export default function AdminPage() {
     }
   }
 
-  function setAddMemberEmail(householdId: string, email: string) {
-    setAddMemberState((prev) => ({
-      ...prev,
-      [householdId]: {
-        email,
-        loading: prev[householdId]?.loading ?? false,
-      },
-    }));
-  }
-
-  async function handleAddMember(householdId: string) {
-    const state = addMemberState[householdId];
-    if (!state?.email?.includes("@")) {
-      notify("err", "Enter a valid email.");
-      return;
-    }
-    setAddMemberState((prev) => ({
-      ...prev,
-      [householdId]: { ...prev[householdId], loading: true },
-    }));
+  async function handleDeleteUser(userId: string, email: string) {
+    if (!confirm(`Delete user ${email} and all their data? Cannot be undone.`)) return;
     try {
-      const res = await fetch(
-        `/api/admin/households/${householdId}/add-member`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: state.email }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      notify("ok", `${data.userName} added to household ✓`);
-      setAddMemberState((prev) => ({
-        ...prev,
-        [householdId]: { email: "", loading: false },
-      }));
-      fetchData();
-    } catch (e: unknown) {
-      notify("err", e instanceof Error ? e.message : "Failed.");
-      setAddMemberState((prev) => ({
-        ...prev,
-        [householdId]: { ...prev[householdId], loading: false },
-      }));
-    }
-  }
-
-  async function handleRevokeInvite(inviteId: string, inviteEmail: string) {
-    if (!confirm(`Revoke invite for ${inviteEmail}?`)) return;
-    setRevokingInviteId(inviteId);
-    try {
-      const res = await fetch(`/api/admin/invites/${inviteId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed");
-      setHouseholds((prev) =>
-        prev.map((h) => ({
-          ...h,
-          invites: h.invites.filter((inv) => inv.id !== inviteId),
-        }))
-      );
-      notify("ok", `Invite for ${inviteEmail} revoked ✓`);
+      setUsers((u) => u.filter((x) => x.id !== userId));
+      setStats((s) => (s ? { ...s, totalUsers: s.totalUsers - 1 } : s));
+      notify("ok", `User ${email} deleted.`);
     } catch {
-      notify("err", "Failed to revoke invite.");
-    } finally {
-      setRevokingInviteId(null);
+      notify("err", "Failed to delete user.");
     }
   }
 
@@ -302,14 +169,6 @@ export default function AdminPage() {
     return `${d}d ago`;
   }
 
-  function timeUntil(dateStr: string) {
-    const diff = new Date(dateStr).getTime() - Date.now();
-    const h = Math.floor(diff / 3600000);
-    if (h <= 0) return "expired";
-    if (h < 24) return `${h}h left`;
-    return `${Math.floor(h / 24)}d left`;
-  }
-
   if (status === "loading" || loading)
     return (
       <div
@@ -322,38 +181,42 @@ export default function AdminPage() {
         }}
       >
         <StarBackground />
-        <span
-          style={{
-            color: "rgba(180,200,255,0.7)",
-            fontSize: 15,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
+        <span style={{ color: "rgba(180,200,255,0.7)", fontSize: 15, position: "relative", zIndex: 1 }}>
           Loading…
         </span>
       </div>
     );
 
   const q = query.trim().toLowerCase();
-  const filteredUsers = q
+
+  // Derive the Families list from households — add a helper for the OWNER email
+  const familiesFiltered = q
+    ? households.filter((h) => {
+        const ownerEmail = h.members.find((m) => m.role === "OWNER")?.user.email ?? "";
+        return (
+          (h.name ?? "").toLowerCase().includes(q) ||
+          ownerEmail.toLowerCase().includes(q) ||
+          h.members.some(
+            (m) =>
+              (m.user.name ?? "").toLowerCase().includes(q) ||
+              m.user.email.toLowerCase().includes(q)
+          )
+        );
+      })
+    : households;
+
+  // Users-without-household list (for the "Users" tab)
+  const usersFiltered = q
     ? users.filter(
         (u) =>
           (u.name ?? "").toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q) ||
-          (u.householdMembers[0]?.household.name ?? "").toLowerCase().includes(q)
+          u.email.toLowerCase().includes(q)
       )
     : users;
+  const usersWithoutHousehold = usersFiltered.filter((u) => u.householdMembers.length === 0);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: bg,
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    <div style={{ minHeight: "100vh", background: bg, position: "relative", overflow: "hidden" }}>
       <StarBackground />
 
       {/* Header */}
@@ -374,15 +237,7 @@ export default function AdminPage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <Link
-            href="/"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              textDecoration: "none",
-            }}
-          >
+          <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <div
               style={{
                 width: 32,
@@ -397,25 +252,12 @@ export default function AdminPage() {
             >
               🔔
             </div>
-            <span
-              style={{
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 18,
-                letterSpacing: "-0.3px",
-              }}
-            >
+            <span style={{ color: "#fff", fontWeight: 700, fontSize: 18, letterSpacing: "-0.3px" }}>
               AssistIQ
             </span>
           </Link>
           <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 18 }}>|</span>
-          <span
-            style={{
-              color: "rgba(130,180,255,0.8)",
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
+          <span style={{ color: "rgba(130,180,255,0.8)", fontSize: 14, fontWeight: 600 }}>
             Admin Console
           </span>
         </div>
@@ -435,41 +277,19 @@ export default function AdminPage() {
           >
             Admin
           </span>
-          <Link
-            href="/dashboard"
-            style={{
-              color: "rgba(180,205,255,0.6)",
-              fontSize: 14,
-              textDecoration: "none",
-            }}
-          >
+          <Link href="/dashboard" style={{ color: "rgba(180,205,255,0.6)", fontSize: 14, textDecoration: "none" }}>
             ← Dashboard
           </Link>
         </div>
       </header>
 
-      <main
-        style={{
-          position: "relative",
-          zIndex: 10,
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: "36px 24px 100px",
-        }}
-      >
+      <main style={{ position: "relative", zIndex: 10, maxWidth: 1200, margin: "0 auto", padding: "36px 24px 100px" }}>
         {/* Action message */}
         {actionMsg && (
           <div
             style={{
-              background:
-                actionMsg.type === "ok"
-                  ? "rgba(42,157,111,0.2)"
-                  : "rgba(217,79,79,0.18)",
-              border: `1px solid ${
-                actionMsg.type === "ok"
-                  ? "rgba(42,157,111,0.4)"
-                  : "rgba(217,79,79,0.4)"
-              }`,
+              background: actionMsg.type === "ok" ? "rgba(42,157,111,0.2)" : "rgba(217,79,79,0.18)",
+              border: `1px solid ${actionMsg.type === "ok" ? "rgba(42,157,111,0.4)" : "rgba(217,79,79,0.4)"}`,
               color: actionMsg.type === "ok" ? "#5ee8a8" : "#ff8f8f",
               borderRadius: 10,
               padding: "12px 18px",
@@ -483,24 +303,12 @@ export default function AdminPage() {
 
         {/* Stats */}
         {stats && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 14,
-              marginBottom: 24,
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
             {[
+              { value: households.length, label: "Families" },
               { value: stats.totalUsers, label: "Total users" },
               { value: stats.totalReminders, label: "Active reminders" },
               { value: stats.emailsSent30Days, label: "Emails sent (30d)" },
-              {
-                value: stats.lastEmailSent
-                  ? timeAgo(stats.lastEmailSent)
-                  : "—",
-                label: "Last email sent",
-              },
             ].map((s, i) => (
               <div
                 key={i}
@@ -512,24 +320,8 @@ export default function AdminPage() {
                   backdropFilter: "blur(8px)",
                 }}
               >
-                <div
-                  style={{
-                    color: "#fff",
-                    fontWeight: 800,
-                    fontSize: 28,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {s.value}
-                </div>
-                <div
-                  style={{
-                    color: "rgba(140,170,230,0.55)",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    marginTop: 6,
-                  }}
-                >
+                <div style={{ color: "#fff", fontWeight: 800, fontSize: 28, lineHeight: 1.1 }}>{s.value}</div>
+                <div style={{ color: "rgba(140,170,230,0.55)", fontSize: 12, fontWeight: 500, marginTop: 6 }}>
                   {s.label}
                 </div>
               </div>
@@ -538,7 +330,15 @@ export default function AdminPage() {
         )}
 
         {/* System controls */}
-        <div style={{ ...card, marginBottom: 24 }}>
+        <div
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 16,
+            padding: 24,
+            marginBottom: 24,
+          }}
+        >
           <p
             style={{
               fontSize: 11,
@@ -556,9 +356,7 @@ export default function AdminPage() {
               onClick={handleTriggerCron}
               disabled={triggering}
               style={{
-                background: triggering
-                  ? "rgba(74,127,220,0.4)"
-                  : "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)",
+                background: triggering ? "rgba(74,127,220,0.4)" : "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)",
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 14,
@@ -647,7 +445,7 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* Users table (clickable rows → expand to household admin) */}
+        {/* Tabs + search */}
         <div
           style={{
             background: "rgba(255,255,255,0.04)",
@@ -659,7 +457,7 @@ export default function AdminPage() {
         >
           <div
             style={{
-              padding: "18px 22px",
+              padding: "14px 22px",
               borderBottom: "1px solid rgba(255,255,255,0.1)",
               display: "flex",
               alignItems: "center",
@@ -668,22 +466,17 @@ export default function AdminPage() {
               flexWrap: "wrap",
             }}
           >
-            <h2
-              style={{
-                color: "#fff",
-                fontSize: 15,
-                fontWeight: 700,
-                margin: 0,
-              }}
-            >
-              Users{" "}
-              <span style={{ color: "rgba(160,185,255,0.5)", fontWeight: 400 }}>
-                ({users.length})
-              </span>
-            </h2>
+            <div style={{ display: "flex", gap: 8 }}>
+              <TabButton active={tab === "families"} onClick={() => setTab("families")}>
+                Families ({households.length})
+              </TabButton>
+              <TabButton active={tab === "users"} onClick={() => setTab("users")}>
+                Users without family ({users.filter((u) => u.householdMembers.length === 0).length})
+              </TabButton>
+            </div>
             <input
               type="search"
-              placeholder="Search by name, email, or household…"
+              placeholder={tab === "families" ? "Search family, owner, member…" : "Search by name or email…"}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{
@@ -701,238 +494,10 @@ export default function AdminPage() {
             />
           </div>
 
-          {/* Column headers */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "28px 1.2fr 1.4fr 1.1fr 110px 80px 70px",
-              gap: 12,
-              padding: "11px 22px",
-              borderBottom: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.03)",
-            }}
-          >
-            {["", "Name", "Email", "Household", "Joined", "Reminders", ""].map(
-              (h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "rgba(130,165,230,0.55)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.07em",
-                  }}
-                >
-                  {h}
-                </div>
-              )
-            )}
-          </div>
-
-          {filteredUsers.length === 0 ? (
-            <div
-              style={{
-                padding: "48px 24px",
-                textAlign: "center",
-                color: "rgba(160,185,255,0.5)",
-                fontSize: 14,
-              }}
-            >
-              {users.length === 0 ? "No users yet." : "No users match your search."}
-            </div>
+          {tab === "families" ? (
+            <FamilyTable families={familiesFiltered} formatDate={formatDate} timeAgo={timeAgo} />
           ) : (
-            filteredUsers.map((user, i) => {
-              const hm = user.householdMembers[0];
-              const household = getHouseholdForUser(user);
-              const isExpanded = expandedUserId === user.id;
-
-              return (
-                <div
-                  key={user.id}
-                  style={{
-                    borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.07)",
-                  }}
-                >
-                  <div
-                    onClick={() =>
-                      setExpandedUserId(isExpanded ? null : user.id)
-                    }
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "28px 1.2fr 1.4fr 1.1fr 110px 80px 70px",
-                      gap: 12,
-                      alignItems: "center",
-                      padding: "14px 22px",
-                      cursor: "pointer",
-                      background: isExpanded
-                        ? "rgba(74,127,220,0.08)"
-                        : "transparent",
-                      transition: "background 0.15s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isExpanded)
-                        (e.currentTarget as HTMLDivElement).style.background =
-                          "rgba(255,255,255,0.04)";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isExpanded)
-                        (e.currentTarget as HTMLDivElement).style.background =
-                          "transparent";
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: "rgba(130,165,230,0.7)",
-                        transform: isExpanded
-                          ? "rotate(90deg)"
-                          : "rotate(0deg)",
-                        transition: "transform 0.15s",
-                      }}
-                    >
-                      ▶
-                    </span>
-                    <span
-                      style={{
-                        fontWeight: 600,
-                        color: user.name ? "#fff" : "rgba(160,185,255,0.4)",
-                        fontSize: 14,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontStyle: user.name ? "normal" : "italic",
-                      }}
-                    >
-                      {user.name ?? "No name"}
-                    </span>
-                    <span
-                      style={{
-                        color: "rgba(175,200,255,0.65)",
-                        fontSize: 13,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {user.email}
-                    </span>
-                    <span>
-                      {hm ? (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            background: hm.household.is_pro
-                              ? "rgba(74,127,220,0.2)"
-                              : "rgba(255,255,255,0.05)",
-                            border: `1px solid ${
-                              hm.household.is_pro
-                                ? "rgba(74,127,220,0.4)"
-                                : "rgba(255,255,255,0.12)"
-                            }`,
-                            color: hm.household.is_pro
-                              ? "#7BB8FF"
-                              : "rgba(200,220,255,0.75)",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: "4px 10px",
-                            borderRadius: 50,
-                            maxWidth: "100%",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={hm.household.name ?? "Household"}
-                        >
-                          🏠 {hm.household.name ?? "Household"}
-                          {hm.household.is_pro && " ⚡"}
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            fontSize: 12,
-                            color: "rgba(160,185,255,0.3)",
-                          }}
-                        >
-                          —
-                        </span>
-                      )}
-                    </span>
-                    <span style={{ color: "rgba(175,200,255,0.65)", fontSize: 13 }}>
-                      {formatDate(user.createdAt)}
-                    </span>
-                    <span style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>
-                      {user._count.reminders}
-                    </span>
-                    <div>
-                      {user.email !== ADMIN_EMAIL && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(user.id, user.email);
-                          }}
-                          disabled={deletingId === user.id}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color:
-                              deletingId === user.id
-                                ? "rgba(255,107,107,0.4)"
-                                : "rgba(255,107,107,0.8)",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            cursor:
-                              deletingId === user.id ? "not-allowed" : "pointer",
-                            padding: 0,
-                          }}
-                        >
-                          {deletingId === user.id ? "Deleting…" : "Delete"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Expanded admin panel */}
-                  {isExpanded && (
-                    <div
-                      style={{
-                        padding: "16px 22px 22px 58px",
-                        background: "rgba(74,127,220,0.05)",
-                        borderTop: "1px solid rgba(74,127,220,0.15)",
-                      }}
-                    >
-                      {household ? (
-                        <HouseholdAdminPanel
-                          household={household}
-                          togglingProId={togglingProId}
-                          revokingInviteId={revokingInviteId}
-                          addMemberState={addMemberState}
-                          onTogglePro={handleTogglePro}
-                          onAddMember={handleAddMember}
-                          onRevokeInvite={handleRevokeInvite}
-                          onSetAddMemberEmail={setAddMemberEmail}
-                          formatDate={formatDate}
-                          timeAgo={timeAgo}
-                          timeUntil={timeUntil}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            color: "rgba(180,205,255,0.6)",
-                            fontSize: 14,
-                            padding: "10px 0",
-                          }}
-                        >
-                          This user hasn&apos;t created a household yet.
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })
+            <UserTable users={usersWithoutHousehold} formatDate={formatDate} onDelete={handleDeleteUser} />
           )}
         </div>
       </main>
@@ -940,254 +505,284 @@ export default function AdminPage() {
   );
 }
 
-// ── Household admin panel (used inside the expanded user row) ──
-
-function HouseholdAdminPanel({
-  household,
-  togglingProId,
-  revokingInviteId,
-  addMemberState,
-  onTogglePro,
-  onAddMember,
-  onRevokeInvite,
-  onSetAddMemberEmail,
-  formatDate,
-  timeAgo,
-  timeUntil,
+function TabButton({
+  active,
+  onClick,
+  children,
 }: {
-  household: HouseholdAdmin;
-  togglingProId: string | null;
-  revokingInviteId: string | null;
-  addMemberState: { [householdId: string]: { email: string; loading: boolean } };
-  onTogglePro: (id: string) => void;
-  onAddMember: (id: string) => void;
-  onRevokeInvite: (inviteId: string, email: string) => void;
-  onSetAddMemberEmail: (id: string, email: string) => void;
-  formatDate: (d: string) => string;
-  timeAgo: (d: string) => string;
-  timeUntil: (d: string) => string;
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
 }) {
   return (
-    <>
-      {/* Household header */}
+    <button
+      onClick={onClick}
+      style={{
+        background: active ? "rgba(74,127,220,0.25)" : "transparent",
+        border: `1px solid ${active ? "rgba(74,127,220,0.5)" : "rgba(255,255,255,0.12)"}`,
+        color: active ? "#7BB8FF" : "rgba(200,220,255,0.7)",
+        fontSize: 13,
+        fontWeight: 700,
+        padding: "7px 14px",
+        borderRadius: 8,
+        cursor: "pointer",
+        fontFamily: "inherit",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Families table ────────────────────────────────────────────────
+
+function FamilyTable({
+  families,
+  formatDate,
+  timeAgo,
+}: {
+  families: HouseholdAdmin[];
+  formatDate: (d: string) => string;
+  timeAgo: (d: string) => string;
+}) {
+  if (families.length === 0) {
+    return (
+      <div style={{ padding: "48px 24px", textAlign: "center", color: "rgba(160,185,255,0.5)", fontSize: 14 }}>
+        No families yet.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Column headers */}
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
+          display: "grid",
+          gridTemplateColumns: "1.4fr 1.6fr 110px 100px 110px 100px",
           gap: 12,
-          marginBottom: 12,
-          flexWrap: "wrap",
+          padding: "11px 22px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(255,255,255,0.03)",
         }}
       >
-        <span style={{ fontWeight: 700, color: "#fff", fontSize: 15 }}>
-          🏠 {household.name ?? "Unnamed household"}
-        </span>
-        <button
-          onClick={() => onTogglePro(household.id)}
-          disabled={togglingProId === household.id}
-          style={{
-            background: household.is_pro
-              ? "rgba(74,127,220,0.3)"
-              : "rgba(255,255,255,0.06)",
-            border: `1px solid ${
-              household.is_pro
-                ? "rgba(74,127,220,0.6)"
-                : "rgba(255,255,255,0.15)"
-            }`,
-            color: household.is_pro ? "#7BB8FF" : "rgba(180,200,255,0.45)",
-            fontSize: 11,
-            fontWeight: 700,
-            padding: "3px 10px",
-            borderRadius: 50,
-            cursor: togglingProId === household.id ? "not-allowed" : "pointer",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
-          {togglingProId === household.id
-            ? "…"
-            : household.is_pro
-              ? "⚡ Pro ON"
-              : "Free — click to enable Pro"}
-        </button>
-        <span style={{ fontSize: 12, color: "rgba(140,170,220,0.5)" }}>
-          Created {formatDate(household.createdAt)}
-        </span>
-      </div>
-
-      {/* Members */}
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          color: "rgba(130,165,230,0.55)",
-          textTransform: "uppercase",
-          letterSpacing: "0.07em",
-          marginBottom: 8,
-        }}
-      >
-        Members ({household.members.length})
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-        {household.members.length === 0 ? (
-          <span
-            style={{
-              fontSize: 13,
-              color: "rgba(160,185,255,0.5)",
-            }}
-          >
-            No members.
-          </span>
-        ) : (
-          household.members.map((m) => (
-            <div
-              key={m.user.id}
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 8,
-                padding: "5px 12px",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <span style={{ fontSize: 12, color: "#fff", fontWeight: 600 }}>
-                {m.user.name ?? m.user.email}
-              </span>
-              <span
-                style={{
-                  fontSize: 10,
-                  color:
-                    m.role === "OWNER"
-                      ? "#ffd080"
-                      : "rgba(160,185,255,0.5)",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                }}
-              >
-                {m.role}
-              </span>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Add member */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        <input
-          type="email"
-          placeholder="Add by email (must have an account)"
-          value={addMemberState[household.id]?.email ?? ""}
-          onChange={(e) => onSetAddMemberEmail(household.id, e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              onAddMember(household.id);
-            }
-          }}
-          style={{
-            flex: 1,
-            background: "rgba(255,255,255,0.07)",
-            border: "1px solid rgba(255,255,255,0.15)",
-            borderRadius: 8,
-            padding: "7px 12px",
-            color: "#fff",
-            fontSize: 13,
-            fontFamily: "inherit",
-            outline: "none",
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => onAddMember(household.id)}
-          disabled={addMemberState[household.id]?.loading}
-          style={{
-            background: "rgba(74,127,220,0.25)",
-            border: "1px solid rgba(74,127,220,0.4)",
-            color: "#7BB8FF",
-            fontSize: 12,
-            fontWeight: 700,
-            padding: "7px 16px",
-            borderRadius: 8,
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
-        >
-          {addMemberState[household.id]?.loading ? "Adding…" : "Add member"}
-        </button>
-      </div>
-
-      {/* Pending invites */}
-      {household.invites.length > 0 && (
-        <div
-          style={{
-            background: "rgba(255,180,50,0.06)",
-            border: "1px solid rgba(255,180,50,0.2)",
-            borderRadius: 10,
-            padding: "10px 14px",
-          }}
-        >
+        {["Family", "Owner", "Members", "Plan", "Created", ""].map((h, i) => (
           <div
+            key={i}
             style={{
               fontSize: 11,
               fontWeight: 700,
-              color: "rgba(255,200,80,0.7)",
+              color: "rgba(130,165,230,0.55)",
               textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              marginBottom: 8,
+              letterSpacing: "0.07em",
             }}
           >
-            Pending invites
+            {h}
           </div>
-          {household.invites.map((inv) => (
-            <div
-              key={inv.id}
+        ))}
+      </div>
+
+      {families.map((fam, i) => {
+        const owner = fam.members.find((m) => m.role === "OWNER");
+        const childCount = fam.members.filter((m) => m.role === "CHILD").length;
+        const adultCount = fam.members.length - childCount;
+
+        return (
+          <Link
+            key={fam.id}
+            href={`/admin/families/${fam.id}`}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.4fr 1.6fr 110px 100px 110px 100px",
+              gap: 12,
+              alignItems: "center",
+              padding: "14px 22px",
+              borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.07)",
+              textDecoration: "none",
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = "rgba(74,127,220,0.08)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+            }}
+          >
+            <span
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingTop: 6,
-                paddingBottom: 6,
-                borderTop: "1px solid rgba(255,180,50,0.1)",
+                fontWeight: 700,
+                color: "#fff",
+                fontSize: 14,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 13, color: "rgba(220,235,255,0.85)" }}>
-                  ✉ {inv.email}
-                </span>
-                <span
-                  style={{ fontSize: 11, color: "rgba(160,185,255,0.45)" }}
-                >
-                  Sent {timeAgo(inv.createdAt)}
-                </span>
-                <span style={{ fontSize: 11, color: "rgba(255,200,80,0.55)" }}>
-                  {timeUntil(inv.expiresAt)}
-                </span>
+              🏠 {fam.name ?? "Unnamed household"}
+            </span>
+            <span
+              style={{
+                color: "rgba(200,220,255,0.75)",
+                fontSize: 13,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {owner ? owner.user.email : "— no owner —"}
+            </span>
+            <span style={{ color: "rgba(200,220,255,0.75)", fontSize: 13 }}>
+              {adultCount} adult{adultCount === 1 ? "" : "s"}, {childCount} child
+              {childCount === 1 ? "" : "ren"}
+            </span>
+            <span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  background: fam.is_pro ? "rgba(74,127,220,0.2)" : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${fam.is_pro ? "rgba(74,127,220,0.4)" : "rgba(255,255,255,0.12)"}`,
+                  color: fam.is_pro ? "#7BB8FF" : "rgba(200,220,255,0.7)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "3px 9px",
+                  borderRadius: 50,
+                }}
+              >
+                {fam.is_pro ? "⚡ Pro" : "Free"}
+              </span>
+            </span>
+            <span style={{ color: "rgba(175,200,255,0.6)", fontSize: 12 }}>
+              {formatDate(fam.createdAt)}
+              <div style={{ fontSize: 10, color: "rgba(140,170,220,0.45)", marginTop: 2 }}>
+                {timeAgo(fam.createdAt)}
               </div>
+            </span>
+            <span
+              style={{
+                color: "rgba(130,180,255,0.85)",
+                fontSize: 12,
+                fontWeight: 700,
+                textAlign: "right",
+              }}
+            >
+              Open →
+            </span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Users-without-family table (secondary tab) ────────────────────
+
+function UserTable({
+  users,
+  formatDate,
+  onDelete,
+}: {
+  users: UserLite[];
+  formatDate: (d: string) => string;
+  onDelete: (id: string, email: string) => void;
+}) {
+  if (users.length === 0) {
+    return (
+      <div style={{ padding: "48px 24px", textAlign: "center", color: "rgba(160,185,255,0.5)", fontSize: 14 }}>
+        No orphan users — everyone belongs to a family.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.4fr 1.6fr 110px 90px 80px",
+          gap: 12,
+          padding: "11px 22px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(255,255,255,0.03)",
+        }}
+      >
+        {["Name", "Email", "Joined", "Reminders", ""].map((h, i) => (
+          <div
+            key={i}
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: "rgba(130,165,230,0.55)",
+              textTransform: "uppercase",
+              letterSpacing: "0.07em",
+            }}
+          >
+            {h}
+          </div>
+        ))}
+      </div>
+
+      {users.map((user, i) => (
+        <div
+          key={user.id}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.4fr 1.6fr 110px 90px 80px",
+            gap: 12,
+            alignItems: "center",
+            padding: "14px 22px",
+            borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          <span
+            style={{
+              fontWeight: 600,
+              color: user.name ? "#fff" : "rgba(160,185,255,0.4)",
+              fontSize: 14,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontStyle: user.name ? "normal" : "italic",
+            }}
+          >
+            {user.name ?? "No name"}
+          </span>
+          <span
+            style={{
+              color: "rgba(175,200,255,0.65)",
+              fontSize: 13,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {user.email}
+          </span>
+          <span style={{ color: "rgba(175,200,255,0.65)", fontSize: 13 }}>
+            {formatDate(user.createdAt)}
+          </span>
+          <span style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{user._count.reminders}</span>
+          <div>
+            {user.email !== ADMIN_EMAIL && (
               <button
-                onClick={() => onRevokeInvite(inv.id, inv.email)}
-                disabled={revokingInviteId === inv.id}
+                onClick={() => onDelete(user.id, user.email)}
                 style={{
                   background: "none",
                   border: "none",
-                  color:
-                    revokingInviteId === inv.id
-                      ? "rgba(255,107,107,0.4)"
-                      : "rgba(255,107,107,0.8)",
-                  fontSize: 12,
+                  color: "rgba(255,107,107,0.8)",
+                  fontSize: 13,
                   fontWeight: 600,
-                  cursor:
-                    revokingInviteId === inv.id ? "not-allowed" : "pointer",
+                  cursor: "pointer",
                   padding: 0,
                 }}
               >
-                {revokingInviteId === inv.id ? "Revoking…" : "Revoke"}
+                Delete
               </button>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
-      )}
-    </>
+      ))}
+    </div>
   );
 }

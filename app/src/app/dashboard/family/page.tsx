@@ -23,6 +23,14 @@ type ChildSummary = {
   chores: { id: string; name: string; requiresApproval: boolean; completion: { status: string } | null }[];
 };
 
+type ChildStats = {
+  childId: string;
+  childName: string;
+  last7Days: number;
+  thisMonth: number;
+  lastMonth: number;
+};
+
 type TrialInfo = {
   status: "NO_HOUSEHOLD" | "NO_TRIAL" | "TRIAL" | "TRIAL_EXPIRED" | "PRO";
   isPro: boolean;
@@ -41,6 +49,7 @@ export default function FamilyPage() {
 
   const [trial, setTrial] = useState<TrialInfo | null>(null);
   const [summary, setSummary] = useState<ChildSummary[]>([]);
+  const [stats, setStats] = useState<ChildStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [starting, setStarting] = useState(false);
@@ -75,6 +84,7 @@ export default function FamilyPage() {
         if ((data.trialActive || data.isPro) && data.childMembers?.length > 0) {
           setSelectedChild(data.trialChildId ?? data.childMembers[0]?.id ?? "");
           fetchSummary();
+          fetchStats();
         }
       }
     } catch (e) { console.error(e); }
@@ -87,6 +97,16 @@ export default function FamilyPage() {
       if (res.ok) {
         const data = await res.json();
         setSummary(data.summary ?? []);
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function fetchStats() {
+    try {
+      const res = await fetch("/api/family/stats");
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data.stats ?? []);
       }
     } catch (e) { console.error(e); }
   }
@@ -149,6 +169,7 @@ export default function FamilyPage() {
         body: JSON.stringify({ action, childId }),
       });
       await fetchSummary();
+      await fetchStats();
     } catch (e) { console.error(e); }
     finally { setApprovingId(null); }
   }
@@ -335,6 +356,7 @@ export default function FamilyPage() {
   // ── Trial active or Pro: main overview ────────────────────────
   const isActive = trial?.trialActive || trial?.isPro;
   const viewChild = summary.find(c => c.childId === selectedChild) ?? summary[0];
+  const viewStats = stats.find(s => s.childId === (viewChild?.childId ?? selectedChild));
 
   return (
     <Screen title="Family" onBack={() => router.push("/dashboard")}>
@@ -455,6 +477,35 @@ export default function FamilyPage() {
               <Link href="/dashboard/family/new" style={{ color: "#5B9CF5", fontWeight: 600 }}>Add one →</Link>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Over-time stats card */}
+      {viewChild && viewStats && (
+        <div style={{
+          background: "#fff", borderRadius: 18, border: "1px solid #E8EDF4",
+          padding: "20px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>
+            Done over time
+          </div>
+          <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 14 }}>
+            Tasks {viewStats.childName} has completed.
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            {[
+              { value: viewStats.last7Days,  label: "Last 7 days" },
+              { value: viewStats.thisMonth,  label: "This month" },
+              { value: viewStats.lastMonth,  label: "Last month" },
+            ].map(s => (
+              <div key={s.label} style={{
+                background: "#F5F6FA", borderRadius: 12, padding: "12px 8px", textAlign: "center",
+              }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1A2340", lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginTop: 4 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

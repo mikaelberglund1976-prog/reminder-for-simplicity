@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -17,100 +16,130 @@ function getWeekStart(date: Date): Date {
 
 // GET /api/family/chores
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const membership = await prisma.householdMember.findFirst({
-    where: { userId: session.user.id },
-    include: {
-      household: {
-        include: {
-          familyTrial: true,
-          members: { include: { user: { select: { id: true, name: true, email: true } } } },
+    const membership = await prisma.householdMember.findFirst({
+      where: { userId: session.user.id },
+      include: {
+        household: {
+          include: {
+            familyTrial: true,
+            members: { include: { user: { select: { id: true, name: true, email: true } } } },
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!membership) return NextResponse.json({ chores: [], access: "NO_HOUSEHOLD" });
+    if (!membership) return NextResponse.json({ chores: [], access: "NO_HOUSEHOLD" });
 
-  const { household } = membership;
-  const isPro = household.is_pro;
-  const trial = household.familyTrial;
-  const now = new Date();
-  const trialActive = trial ? trial.expiresAt > now : false;
+    const { household } = membership;
+    const isPro = household.is_pro;
+    const trial = household.familyTrial;
+    const now = new Date();
+    const trialActive = trial ? trial.expiresAt > now : false;
 
-  if (!isPro && !trialActive) {
-    return NextResponse.json({ chores: [], access: "LOCKED" });
+    if (!isPro && !trialActive) {
+      return NextResponse.json({ chores: [], access: "LOCKED" });
+    }
+
+    const weekStart = getWeekStart(now);
+    const isChild = membership.role === "CHILD";
+    const whereFilter: Record<string, unknown> = {
+      householdId: membership.householdId,
+      category: "CHORE",
+      isActive: true,
+    };
+    if (isChild) {
+      whereFilter.assignedTo = session.user.id;
+    }
+
+    const chores = await prisma.reminder.findMany({
+      where: whereFilter,
+      include: {
+        completions: { where: { weekStart } },
+        assignedUser: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return NextResponse.json({ chores, weekStart, access: isPro ? "PRO" : "TRIAL" });
+  } catch (err) {
+    console.error("Chore GET error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const weekStart = getWeekStart(now);
-  const isChild = membership.role === "CHILD";
-  const whereFilter: Record<string, unknown> = {
-    householdId: membership.householdId,
-    category: "CHORE",
-    isActive: true,
-  };
-  if (isChild) {
-    whereFilter.assignedTo = session.user.id;
-  }
-
-  const chores = await prisma.reminder.findMany({
-    where: whereFilter,
-    include: {
-      completions: { where: { weekStart } },
-      assignedUser: { select: { id: true, name: true, email: true } },
-    },
-    orderBy: { createdAt: "asc" },
-  });
-
-  return NextResponse.json({ chores, weekStart, access: isPro ? "PRO" : "TRIAL" });
 }
 
 // POST /api/family/chores
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const membership = await prisma.householdMember.findFirst({
-    where: { userId: session.user.id },
-    include: { household: { include: { familyTrial: true } } },
-  });
+    const membership = await prisma.householdMember.findFirst({
+      where: { userId: session.user.id },
+      include: { household: { include: { familyTrial: true } } },
+    });
 
-  if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
-  if (!ADULT_ROLES.includes(membership.role)) return NextResponse.json({ error: "Adults only" }, { status: 403 });
+    if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
 
-  const isPro = membership.household.is_pro;
-  const trial = membership.household.familyTrial;
-  const now = new Date();
-  const trialActive = trial ? trial.expiresAt > now : false;
-  if (!isPro && !trialActive) return NextResponse.json({ error: "Trial or Pro required" }, { status: 403 });
+    const isChild = membership.role === "CHILD";
+    const isAdult = ADULT_ROLES.includes(membership.role);
 
-  const { name, assignedTo, recurrence, recurrenceDays, startDate, requiresApproval, note } = await req.json();
+    if (!isChild && !isAdult) {
+      return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+    }
 
-  if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
-  if (!assignedTo) return NextResponse.json({ error: "assignedTo required" }, { status: 400 });
+    const isPro = membership.household.is_pro;
+    const trial = membership.household.familyTrial;
+    const now = new Date();
+    const trialActive = trial ? trial.expiresAt > now : false;
+    if (!isPro && !trialActive) {
+      return NextResponse.json({ error: "Trial or Pro required" }, { status: 403 });
+    }
 
-  if (!isPro && trial?.childId && assignedTo !== trial.childId) {
-    return NextResponse.json({ error: "Trial only supports 1 child" }, { status: 403 });
+    const body = await req.json().catch(() => ({}));
+    const { name, assignedTo, recurrence, recurrenceDays, startDate, requiresApproval, note } = body ?? {};
+
+    if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
+
+    // Children can only create chores for themselves (auto self-assign, ignore any assignedTo in body)
+    let finalAssignedTo: string;
+    if (isChild) {
+      finalAssignedTo = session.user.id;
+    } else {
+      if (!assignedTo) return NextResponse.json({ error: "assignedTo required" }, { status: 400 });
+      finalAssignedTo = assignedTo;
+    }
+
+    // Trial child-limit: on non-Pro trial, only the trial's one child is allowed
+    if (!isPro && trial?.childId && finalAssignedTo !== trial.childId) {
+      return NextResponse.json({ error: "Trial only supports 1 child" }, { status: 403 });
+    }
+
+    const chore = await prisma.reminder.create({
+      data: {
+        name: name.trim(),
+        category: "CHORE",
+        userId: session.user.id,
+        householdId: membership.householdId,
+        assignedTo: finalAssignedTo,
+        recurrence: recurrence ?? "WEEKLY",
+        choreRecurrenceDays: recurrenceDays ?? null,
+        date: startDate ? new Date(startDate) : new Date(),
+        visibility: "HOUSEHOLD",
+        // Children can't bypass approval — if a child creates a chore, it still requires parent approval when done.
+        requiresApproval: isChild ? true : !!requiresApproval,
+        note: note ?? null,
+      },
+      include: { assignedUser: { select: { id: true, name: true } } },
+    });
+
+    return NextResponse.json(chore, { status: 201 });
+  } catch (err) {
+    console.error("Chore POST error:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: `Server error: ${message}` }, { status: 500 });
   }
-
-  const chore = await prisma.reminder.create({
-    data: {
-      name: name.trim(),
-      category: "CHORE",
-      userId: session.user.id,
-      householdId: membership.householdId,
-      assignedTo,
-      recurrence: recurrence ?? "WEEKLY",
-      choreRecurrenceDays: recurrenceDays ?? null,
-      date: startDate ? new Date(startDate) : new Date(),
-      visibility: "HOUSEHOLD",
-      requiresApproval: !!requiresApproval,
-      note: note ?? null,
-    },
-    include: { assignedUser: { select: { id: true, name: true } } },
-  });
-
-  return NextResponse.json(chore, { status: 201 });
 }
