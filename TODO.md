@@ -107,4 +107,6 @@ Byggde igenom hela P0-listan. Tog självständiga beslut på alla fyra öppna fr
 - [ ] Mobil/webb-vy: växla till Web view på en bred skärm, bläddra runt, växla tillbaka.
 
 ## 8. Nästa steg
-- [ ] Bestäm om du vill fortsätta på Fas 1-resten (beta-inbjudningar) eller fortsätta bygga ut Familj/Pro-spåret.
+- [x] **Beslut 2026-07-27 kväll:** Fas 1 (beta-inbjudningar) väntar. Prioritet är att få de tre kärnflödena – **Reminders, Wishlist, Grocery (inköpslista)** – helt på plats och pålitliga först. Konkret: klar deploy (se 4h) + full klicktest av dessa tre (se punkt 7) innan beta-inbjudningar blir aktuellt.
+- [ ] När deployen (4h) är klar: klicktesta Reminders, Wishlist och Grocery grundligt (punkt 7), fixa det som inte fungerar.
+- [ ] Därefter: ta ställning till Fas 1-beta vs. fortsätta på Fas 2.
