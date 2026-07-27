@@ -106,6 +106,22 @@ Byggde igenom hela P0-listan. Tog självständiga beslut på alla fyra öppna fr
 - [ ] Ny startsida: kolla att den ser bra ut skarpt (bara läst koden, inte sett den renderad).
 - [ ] Mobil/webb-vy: växla till Web view på en bred skärm, bläddra runt, växla tillbaka.
 
+## 4i. Inköpslistan jämförd med OurGroceries/Listonic, "gör allt vi kan" (2026-07-27, kväll)
+Du skickade skärmbilder av OurGroceries och Listonic och tyckte vår lista kändes "trött och död". Byggde följande:
+
+- [x] **Visuell uppfräschning:** färgade kategorirubriker (`#4A5FD5` + emoji per hylla), tonad grön "redan i kundvagnen"-sektion, "Clear bought items" som pill-knapp. (Committat separat innan den här punkten, se `b1a3bdd`.)
+- [x] **Kategori-katalog quick-add:** `lib/shoppingCatalog.ts` – en kurerad lista vanliga varor per hylla (motsvarande Listonics "Katalog"-flik), expanderbar panel under "+"-formuläret, tryck för att lägga till direkt. Ingen extern produktdatabas, ingen schemaändring.
+- [x] **"Recent"-förslag:** `/api/family/shopping-list/suggestions` – chips med senast använda varunamn från `ShoppingCategoryMemory` (motsvarande Listonics "Senaste"-flik). Ingen schemaändring, ingen ny räknare.
+- [x] **Delningslänk utan konto:** ny knapp i sidhuvudet (delnings-ikon) → `navigator.share()` på mobil (öppnar OS:ens delningsmeny, samma känsla som Listonics "Dela denna lista"), kopierar länken på desktop. `Household.shoppingListShareToken` + `/api/family/shopping-list/share` (av/på) + publika `/api/public/shopping-list/[token]` + `/shop/[token]`-sidan (ingen inloggning krävs, full läs/skriv). **Kräver `npx prisma db push` (se punkt 6) innan det funkar i produktion — annars 500-fel på dela-knappen.**
+
+**Medvetet inte byggt nu (för stort/behöver beslut från dig):**
+- **AI-assistent** (Listonics chattbot för matinköpsförslag) – kräver ett LLM-API-konto (kostnad per meddelande) och ett beslut om vilken leverantör. Inte byggt utan din tillåtelse.
+- **Streckkod/foto-scan** – tekniskt möjligt (kamera + gratis Open Food Facts-API, inget nytt konto behövs), men kräver test på en riktig telefon (samma begränsning som PWA-testet i punkt 7). Inte byggt den här omgången.
+- **Flera separata listor per hushåll** (som OurGroceries/Listonics "Handla"/"Handla Spanien"/"Önskelista X") – större arkitekturändring (`ShoppingListItem` skulle behöva höra till en namngiven lista, inte bara hushållet). Föreslår som eget jobb om du vill ha det.
+- **Premium-nivå/betalvägg** – redan medvetet uppskjutet till Fas 2, se punkt 4 och `ROADMAP.md`.
+
+- [ ] Klicktesta delningslänken (öppna `/shop/[token]` i en annan flik/inkognito, lägg till/bocka av en vara, verifiera att den dyker upp i huvudappen).
+
 ## 8. Nästa steg
 - [x] **Beslut 2026-07-27 kväll:** Fas 1 (beta-inbjudningar) väntar. Prioritet är att få de tre kärnflödena – **Reminders, Wishlist, Grocery (inköpslista)** – helt på plats och pålitliga först. Konkret: klar deploy (se 4h) + full klicktest av dessa tre (se punkt 7) innan beta-inbjudningar blir aktuellt.
 - [ ] När deployen (4h) är klar: klicktesta Reminders, Wishlist och Grocery grundligt (punkt 7), fixa det som inte fungerar.

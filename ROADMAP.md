@@ -70,7 +70,7 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 - [ ] Riktig betalvägg (Stripe) – ersätter dagens admin-manuella Pro-toggle
 - [ ] **Streckkodsskanning/foto-tillägg av varor** *(P1.1 i beställningen 2026-07-27 – snabb inköpslista-tillägg via kamera)*
 - [ ] **Enkel receptimport → inköpslista** *(P1.2 – lägg till ingredienser med ett klick)*
-- [ ] **Delningslänk till släktingar för önskelista** *(P1.3 – öppnas utan konto i appen. Rekommendation när det byggs: återanvänd `HouseholdInvite`-mönstret – cuid-token + utgångsdatum, förslag 30 dagars giltighet, endast visa+reservera, ingen inloggning krävs)*
+- [x] **Delningslänk för inköpslistan (2026-07-27)** *(P1.3-varianten för Grocery, byggd efter jämförelse med OurGroceries/Listonic)* — `Household.shoppingListShareToken`, `/api/family/shopping-list/share` (av/på + länk), publika `/api/public/shopping-list/[token]` + `/shop/[token]`-sidan. Ingen inloggning krävs, full läs/skriv-åtkomst (samma förtroendemodell som `HouseholdInvite`-token). Wishlist-varianten (P1.3 för barnens önskelista, delning till släktingar) är fortfarande inte byggd.
 - [ ] **Butiksläge** *(P1.4 – fullskärmsvy för användning i affären: stor text, en-handsvänlig)*
 
 ---
