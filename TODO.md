@@ -1,6 +1,7 @@
 # Todo – Reminder for Simplicity
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
 **Uppdaterad:** 2026-07-27 (kväll) – hamburgermeny + admin-åtkomst byggd, alla md-filer (PRODUCT_SPEC, ROADMAP, BRAND, OPERATIONS, TODO) synkade mot nuläget. Sektionerna nedan är nu i kronologisk ordning (döpte om 4d0→4e osv, som tidigare låg fel i ordning).
+**Uppdaterad igen:** 2026-07-27 (sen kväll) – punkt 16 klar: delningslänk, kategori-katalog/Recent-chips och PIN-inloggning klicktestade på skarpa `www.assistiq.se` (commit `1ad791d`). Se 4i/4j nedan för detaljer och en liten kosmetisk bugg som hittades under testet.
 
 ---
 
@@ -92,6 +93,7 @@ Byggde igenom hela P0-listan. Tog självständiga beslut på alla fyra öppna fr
 - [ ] Prisma flaggar 5.22.0 → 7.9.0 (major). Samma resonemang som ovan – låg prioritet så länge 5.22 fungerar.
 - [x] ~~Kör `npx prisma generate && npx prisma db push`~~ **Klart 2026-07-27** – kört av Mikael lokalt, gick igenom rent.
 - [ ] Kör `npm install` lokalt för att synka `node_modules` om det inte redan är gjort. **Försökt i sandboxen 2026-07-27 kväll och avbröts** – `node_modules` innehåller redan native-binärer byggda för darwin-arm64 (din Mac), medan sandboxen är linux-arm64, så en install här hade ändå inte hjälpt dig. Genuint ett "kör på din egen dator"-jobb.
+- [ ] **Kosmetisk bugg (hittad 2026-07-27 sen kväll):** efter inloggning via PIN visar Profile → Security "Change password" istället för "Signed in with Google" för ett Google-konto. Se 4j för detaljer. Låg prioritet.
 - **Städtips (inte akut):** sandboxen jag jobbar i kunde inte ta bort `.bak`-filer som skapades under en bulk-sök-och-ersätt (samma gamla filsystemsbegränsning, bekräftat igen 2026-07-27 kväll). De ligger kvar i `app/src/**/*.bak` men är nu i `.gitignore` så de committas inte – kör `find . -name "*.bak" -delete` lokalt om du vill ha bort dem helt.
 
 ## 7. Konsoliderad klicktest-lista (allt som kräver en riktig webbläsare/telefon, inte min sandbox)
@@ -120,7 +122,7 @@ Du skickade skärmbilder av OurGroceries och Listonic och tyckte vår lista kän
 - **Flera separata listor per hushåll** (som OurGroceries/Listonics "Handla"/"Handla Spanien"/"Önskelista X") – större arkitekturändring (`ShoppingListItem` skulle behöva höra till en namngiven lista, inte bara hushållet). Föreslår som eget jobb om du vill ha det.
 - **Premium-nivå/betalvägg** – redan medvetet uppskjutet till Fas 2, se punkt 4 och `ROADMAP.md`.
 
-- [ ] Klicktesta delningslänken (öppna `/shop/[token]` i en annan flik/inkognito, lägg till/bocka av en vara, verifiera att den dyker upp i huvudappen).
+- [x] **Klicktestat 2026-07-27 (sen kväll), skarpt på `www.assistiq.se`:** delningslänk (aktiverade delning, öppnade `/shop/[token]` i en andra flik, lade till varor utan inloggning, båda syntes i huvudappen med "Added by ..." och notis-pricken tände), kategori-katalogen ("Browse common items" – expanderar, quick-add fungerar) och Recent-chipsen (fylls på med senaste varorna, klick lägger till direkt). Test-varorna städades bort efteråt, delningslänken lämnades påslagen.
 
 ## 4j. Auth-genomgång: riktig email för alla + frivillig PIN för vuxna (2026-07-27, kväll)
 Du funderade på hushålls-modellen (ett hushåll per person, beslut: behåll det) och landade på: alla konton ska ha en riktig email, och man ska kunna lägga till PIN-inloggning som ett extra alternativ vid sidan av lösenordet. Byggt:
@@ -133,9 +135,12 @@ Du funderade på hushålls-modellen (ett hushåll per person, beslut: behåll de
 
 **Kräver `npx prisma db push` innan det funkar i produktion** (samma körning som täcker `shoppingListShareToken` från 4i — du behöver bara köra det en gång för båda).
 
-- [ ] Klicktesta: skapa en barnprofil med riktig email, logga in som barnet via PIN. Sätt en egen PIN på ditt vuxna konto (Profile → Security), logga ut, gå till familje-länken, logga in med PIN, verifiera att du hamnar på vanliga dashboarden (inte barn-vyn).
+- [x] **Klicktestat 2026-07-27 (sen kväll):** satte en egen PIN på Mikaels konto (Profile → Security → "Set a PIN") → sparades korrekt ("PIN login is on"). Loggade ut, gick till familje-länken (`/family?h=...`) – Mikael visas nu i profilväljaren märkt "Adult", precis som tänkt. Loggade in med PIN → hamnade rätt på `/dashboard` (inte barn-vyn) – **bekräftar att redirect-buggen som hittades under bygget verkligen är fixad.** Test-PIN:et togs bort igen efteråt ("No PIN set") eftersom Mikael inte kände till det – han kan sätta sin egen när han vill ha funktionen aktiv.
+- [ ] Kvarstår: skapa en riktig barnprofil med email via Profile → "+ Add child" och logga in som barnet via PIN, end-to-end. (Email-valideringen i sig är kodgranskad men inte klickat igenom.)
+- **Litet fynd (inte akut):** efter inloggning via PIN visade Security-sektionen "Change password" istället för "Signed in with Google" – kosmetiskt, påverkar inte Google-kopplingen eller kontots säkerhet. Trolig orsak: sidan avgör vilken text som visas utifrån NextAuth-providern i den *aktuella sessionen* (`"pin"`) snarare än hur kontot ursprungligen skapades. Inte fixat än.
 
 ## 8. Nästa steg
 - [x] **Beslut 2026-07-27 kväll:** Fas 1 (beta-inbjudningar) väntar. Prioritet är att få de tre kärnflödena – **Reminders, Wishlist, Grocery (inköpslista)** – helt på plats och pålitliga först. Konkret: klar deploy (se 4h) + full klicktest av dessa tre (se punkt 7) innan beta-inbjudningar blir aktuellt.
-- [ ] När deployen (4h) är klar: klicktesta Reminders, Wishlist och Grocery grundligt (punkt 7), fixa det som inte fungerar.
-- [ ] Därefter: ta ställning till Fas 1-beta vs. fortsätta på Fas 2.
+- [x] Deploy klar och klicktestad (4h, 4i, 4j) – delningslänk, katalog, Recent-chips och PIN-inloggning fungerar skarpt.
+- [ ] Kvarstår innan Fas 1-beta: klicktesta barnprofil-med-email end-to-end (se 4j), och gå igenom resten av punkt 7-listan (glömt lösenord, PWA på mobil, bottenmeny/hamburgermeny) som inte är avbockad än.
+- [ ] Därefter: ta ställning till Fas 1-beta vs. fortsätta på Fas 2 (t.ex. Wishlist-delningslänk, som fortfarande inte är byggd – se `ROADMAP.md` Fas 2).

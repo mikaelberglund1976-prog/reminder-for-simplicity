@@ -1,5 +1,6 @@
 # Roadmap – Reminder for Simplicity
 **Senast uppdaterad:** 2026-07-27 kväll (hamburgermeny + mobil/webb-vy-växlare tillagda, ovanpå dagens tidigare inköpslista/önskelista/bottenmeny-arbete)
+**Uppdaterad igen:** 2026-07-27 sen kväll – riktig email för barnprofiler + frivillig PIN-inloggning för vuxna tillagd under Fas 1.5; delningslänk för inköpslistan klicktestad skarpt.
 
 ---
 
@@ -53,6 +54,7 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 - [x] **Bottenmeny (2026-07-27):** Reminders/Shopping list/Wishlist alltid synlig på `/dashboard/*`, ett tryck för att byta, notis-prick vid nya varor/önskningar sedan senaste besök
 - [x] **Hamburgermeny (2026-07-27):** Family/Settings/Admin/Sign out samlade i en meny i sidhuvudet – `/admin` gick tidigare bara att nå via direkt URL, nu länkad (villkorat på admin-email)
 - [x] **Mobil/webb-vy-växlare (2026-07-27):** en CSS-variabel styr sidbredden app-brett; växlare i Profile → Preferences ger en bredare enkolumns-vy på dator. Inte en full desktop-omdesign – se PRODUCT_SPEC 4b.12
+- [x] **Riktig email + frivillig PIN-inloggning (2026-07-27, kväll):** barnprofiler kräver nu en riktig email vid skapande (ingen påhittad intern adress längre). Vuxna kan valfritt lägga till en 4-siffrig PIN (Profile → Security) som ett extra sätt att växla profil på en delad familjeenhet, utan att det ersätter det riktiga lösenordet. Familje-switchern visar nu både barn och PIN-aktiverade vuxna. Klicktestat skarpt 2026-07-27 sen kväll – se `TODO.md` 4j.
 
 **Detta bör dokumenteras formellt i PRODUCT_SPEC.md** – se uppdaterad version (4b.8–4b.10).
 
@@ -70,7 +72,7 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 - [ ] Riktig betalvägg (Stripe) – ersätter dagens admin-manuella Pro-toggle
 - [ ] **Streckkodsskanning/foto-tillägg av varor** *(P1.1 i beställningen 2026-07-27 – snabb inköpslista-tillägg via kamera)*
 - [ ] **Enkel receptimport → inköpslista** *(P1.2 – lägg till ingredienser med ett klick)*
-- [x] **Delningslänk för inköpslistan (2026-07-27)** *(P1.3-varianten för Grocery, byggd efter jämförelse med OurGroceries/Listonic)* — `Household.shoppingListShareToken`, `/api/family/shopping-list/share` (av/på + länk), publika `/api/public/shopping-list/[token]` + `/shop/[token]`-sidan. Ingen inloggning krävs, full läs/skriv-åtkomst (samma förtroendemodell som `HouseholdInvite`-token). Wishlist-varianten (P1.3 för barnens önskelista, delning till släktingar) är fortfarande inte byggd.
+- [x] **Delningslänk för inköpslistan (2026-07-27, klicktestad skarpt 2026-07-27 sen kväll)** *(P1.3-varianten för Grocery, byggd efter jämförelse med OurGroceries/Listonic)* — `Household.shoppingListShareToken`, `/api/family/shopping-list/share` (av/på + länk), publika `/api/public/shopping-list/[token]` + `/shop/[token]`-sidan. Ingen inloggning krävs, full läs/skriv-åtkomst (samma förtroendemodell som `HouseholdInvite`-token). Wishlist-varianten (P1.3 för barnens önskelista, delning till släktingar) är fortfarande inte byggd.
 - [ ] **Butiksläge** *(P1.4 – fullskärmsvy för användning i affären: stor text, en-handsvänlig)*
 
 ---
@@ -105,6 +107,7 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 - ~~**Språkmotsägelse:** Hela den byggda appen är på engelska, men `PRODUCT_SPEC.md` §9 angav svenska som primärspråk för MVP.~~ **Löst 2026-07-26:** engelska är primärspråk, matchar redan byggd app. PRODUCT_SPEC.md uppdaterad.
 - ~~Arbetskopian hade CRLF-radslut (Windows-kopiering), `app/.gitignore` var UTF-16-kodad och innehöll bara `app/.env`, och `app/.env.local` var likaså UTF-16-kodad vilket gjorde att flera miljövariabler tystnat föll bort.~~ **Löst 2026-07-27:** `.gitattributes` tillagd + renormaliserat, `.gitignore` (rot + app) omskrivna i UTF-8, `.env.local` omskriven i UTF-8 med alla nycklar ifyllda (`GOOGLE_CLIENT_ID/SECRET` medvetet tomma – se Todo).
 - **Nytt fynd (2026-07-27):** `npm audit` visar att Next.js 14.2 har flera kända säkerhetsluckor (DoS, cache-poisoning, SSRF). Full fix kräver major-uppgradering till Next 16 – för stort/riskabelt för att göra utan din granskning, se Todo punkt 5.
+- **Nytt fynd (2026-07-27, sen kväll):** kosmetisk bugg – efter att ha loggat in via PIN visar Profile → Security "Change password" istället för "Signed in with Google" på ett Google-konto. Inte ett säkerhetsproblem, se `TODO.md` punkt 6.
 
 ---
 

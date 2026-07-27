@@ -1,6 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.3 | **Uppdaterad:** 2026-07-27 (kväll) | **Ägare:** Mikael Berglund
-**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda.
+**Version:** 2.4 | **Uppdaterad:** 2026-07-27 (sen kväll) | **Ägare:** Mikael Berglund
+**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda. 2026-07-27 (sen kväll): 4b.2 uppdaterad med kravet på riktig email, 4b.13 (frivillig PIN-inloggning för vuxna) tillagd, båda klicktestade skarpt.
 
 ---
 
@@ -97,8 +97,9 @@ Denna funktionalitet finns i kodbasen (Prisma-modeller `Household`, `HouseholdMe
 - Admin kan manuellt hantera medlemmar (lägga till/ta bort) via adminpanelen
 
 ### 4b.2 Barnprofiler
-- Barn kan få en egen profil (`isChildProfile = true`) med **PIN-inloggning** istället för email/lösenord
+- Barn kan få en egen profil (`isChildProfile = true`) med **PIN-inloggning** istället för email/lösenord i vardagen
 - Föräldrar skapar och hanterar barnprofiler från profilsidan
+- **Kräver riktig email (beslut 2026-07-27):** varje konto ska ha en äkta email på fil, som kontots grundläggande identitet – även barn som aldrig använder den för att logga in. Föräldern skriver in valfri riktig adress vid skapandet (sin egen, ett alias som `du+barnnamn@gmail.com`, eller barnets egen). Ersätter den tidigare påhittade `child_xxx@reminder-for-simplicity.internal`-adressen. Beslutet: **ett hushåll per person** (inte multi-hushåll), men alla konton – vuxna och barn – ska ha en riktig email.
 
 ### 4b.3 Sysslor (Chores)
 - Reminders med kategori `CHORE` kan tilldelas ett barn, med valfritt krav på godkännande (`requiresApproval`)
@@ -176,6 +177,18 @@ En enkel lösning på att appens smala kolumn (480px) ser gles ut på en stor da
 
 ---
 
+### 4b.13 Frivillig PIN-inloggning för vuxna (byggd 2026-07-27, kväll)
+
+Utöver barnens PIN-inloggning kan en vuxen valfritt lägga till en egen 4-siffrig PIN som ett extra, snabbare sätt att växla profil på en delad familjeenhet – utan att det ersätter det riktiga lösenordet (eller Google-inloggningen).
+
+- **Profile → Security → "PIN login":** sätt/ändra/stäng av en 4-siffrig PIN. Sparas i ett eget `User.pin`-fält, helt separat från `password` så det riktiga lösenordet aldrig påverkas.
+- Ny NextAuth-provider `"pin"` (separat från `"credentials"`) – kollar `pin`-fältet för vuxna, `password`-fältet för barn (bakåtkompatibelt med befintliga barnprofiler).
+- Familje-switchern (`/family?h=...`, numpad-skärmen) visar nu både barn och PIN-aktiverade vuxna i profilväljaren, vuxna märkta "Adult". Redirect efter inloggning kollar om profilen faktiskt är ett barn innan den skickar användaren till barnens sysslo-vy eller den vanliga dashboarden.
+- `/api/profile` returnerar `hasPin` så profilsidan vet vad den ska visa.
+- **Klicktestat skarpt 2026-07-27 (sen kväll):** satte en PIN, loggade in via familje-länken, bekräftade korrekt omdirigering till den vanliga dashboarden. Känt kosmetiskt fel: Security-sektionen kan visa "Change password" istället för "Signed in with Google" efter en PIN-inloggning – se `TODO.md` punkt 6.
+
+---
+
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
 - [ ] **WhatsApp-påminnelser** – Alternativ kanal till email, högre öppningsgrad
@@ -244,13 +257,13 @@ En enkel lösning på att appens smala kolumn (480px) ser gles ut på en stor da
 ### Datamodell (nuläge, ur `app/prisma/schema.prisma`)
 
 **User**
-`id, email, password?, name?, emailVerified?, phone?, preferredCurrency, timezone, isChildProfile`
+`id, email, password?, pin? (tillagd 2026-07-27, se 4b.13), name?, emailVerified?, phone?, preferredCurrency, timezone, isChildProfile`
 
 **Reminder**
 `id, userId, householdId?, name, category, date, recurrence, amount?, currency, note?, reminderDaysBefore, isActive, lastSentAt?` + Pro-fält: `assignedTo, fallbackTo, visibility, handoverState, handoverTo, handoverInitiatedAt, urgencyLevel` + Chore-fält: `requiresApproval, choreRecurrenceDays`
 
 **Household / HouseholdMember / HouseholdInvite**
-Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar med token + utgångsdatum
+Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar med token + utgångsdatum. `Household.shoppingListShareToken?` *(tillagd 2026-07-27)* – valfri token för den inloggningsfria delningslänken till inköpslistan, se 4b.8.
 
 **ChoreCompletion**
 `id, reminderId, childId, weekStart, status (DONE/PENDING_APPROVAL/APPROVED), approvedBy?, approvedAt?`
