@@ -1,61 +1,50 @@
-// Auto-categorization for the shared shopping list (P0.2 in the 2026-07-27 order).
+// Auto-categorization + category management for the shared shopping list.
+//
+// 2026-07-27: categories moved from a fixed ShoppingCategory enum to
+// household-editable rows (ShoppingCategoryDef) so a household can add a
+// missing category and rename existing ones. See prisma/schema.prisma and
+// scripts/backfill-shopping-categories.js for the migration.
 //
 // Two-step lookup on every add:
 //   1. Has this household categorized an item with this exact name before?
 //      -> reuse that choice (ShoppingCategoryMemory).
-//   2. Otherwise, guess from a keyword list.
-//   3. Otherwise, UNSORTED — the user can set it manually and we'll remember it.
-//
-// Keeping this in one file makes it easy to extend the keyword list without
-// touching the API routes.
+//   2. Otherwise, guess from a keyword list, matched against the household's
+//      own category rows via a stable `slug` (renaming a category doesn't
+//      break the guess).
+//   3. Otherwise, uncategorized (categoryId = null) — the user can set it
+//      manually and we'll remember it next time.
 
 import { prisma } from "@/lib/prisma";
-import { ShoppingCategory } from "@prisma/client";
 
-export const CATEGORY_LABELS: Record<ShoppingCategory, string> = {
-  PRODUCE: "Fruit & vegetables",
-  DAIRY: "Dairy",
-  BREAD: "Bread",
-  FROZEN: "Frozen",
-  PANTRY: "Pantry",
-  HOUSEHOLD: "Household",
-  MEAT_FISH: "Meat & fish",
-  OTHER: "Other",
-  UNSORTED: "Unsorted",
+export type CategoryDef = {
+  id: string;
+  slug: string | null;
+  label: string;
+  icon: string;
+  sortOrder: number;
 };
 
-// Small emoji per aisle, shown on the colored category header bar in the UI.
-// Matches the existing app-wide convention of emoji category icons (BRAND.md §4).
-export const CATEGORY_ICONS: Record<ShoppingCategory, string> = {
-  PRODUCE: "🥦",
-  DAIRY: "🥛",
-  BREAD: "🍞",
-  FROZEN: "🧊",
-  PANTRY: "🥫",
-  HOUSEHOLD: "🧻",
-  MEAT_FISH: "🍗",
-  OTHER: "📦",
-  UNSORTED: "❔",
-};
-
-// Ordered the way a typical store is laid out, so grouped lists read naturally.
-export const CATEGORY_ORDER: ShoppingCategory[] = [
-  "PRODUCE",
-  "BREAD",
-  "DAIRY",
-  "MEAT_FISH",
-  "FROZEN",
-  "PANTRY",
-  "HOUSEHOLD",
-  "OTHER",
-  "UNSORTED",
+// The 8 starter categories every household gets. Ordered the way a typical
+// store is laid out, so grouped lists read naturally. Slugs are stable
+// identifiers used for keyword auto-guessing — renaming `label` never
+// changes `slug`. Custom categories a household adds themselves have
+// slug = null and just sort after these by creation order.
+export const DEFAULT_CATEGORIES: { slug: string; label: string; icon: string }[] = [
+  { slug: "produce", label: "Fruit & vegetables", icon: "🥦" },
+  { slug: "bread", label: "Bread", icon: "🍞" },
+  { slug: "dairy", label: "Dairy", icon: "🥛" },
+  { slug: "meat_fish", label: "Meat & fish", icon: "🍗" },
+  { slug: "frozen", label: "Frozen", icon: "🧊" },
+  { slug: "pantry", label: "Pantry", icon: "🥫" },
+  { slug: "household", label: "Household", icon: "🧻" },
+  { slug: "other", label: "Other", icon: "📦" },
 ];
 
 // English + Swedish keywords, since the app is English-first but the
 // household is Swedish — see PRODUCT_SPEC.md §9 language decision.
-const KEYWORD_MAP: Array<{ category: ShoppingCategory; words: string[] }> = [
+const KEYWORD_MAP: Array<{ slug: string; words: string[] }> = [
   {
-    category: "PRODUCE",
+    slug: "produce",
     words: [
       "apple", "äpple", "banana", "banan", "orange", "apelsin", "grape", "vindruv",
       "tomato", "tomat", "cucumber", "gurka", "lettuce", "sallad", "salad",
@@ -67,23 +56,23 @@ const KEYWORD_MAP: Array<{ category: ShoppingCategory; words: string[] }> = [
     ],
   },
   {
-    category: "DAIRY",
+    slug: "dairy",
     words: [
-      "milk", "mjölk", "cheese", "ost", "yogurt", "yoghurt", "yoghurt", "butter",
+      "milk", "mjölk", "cheese", "ost", "yogurt", "yoghurt", "butter",
       "smör", "cream", "grädde", "egg", "ägg", "quark", "kvarg", "fil",
       "creme fraiche", "crème fraîche", "philadelphia",
     ],
   },
   {
-    category: "BREAD",
+    slug: "bread",
     words: ["bread", "bröd", "bun", "bulle", "bagel", "baguette", "toast", "tortilla", "roll", "limpa", "knäckebröd", "crispbread"],
   },
   {
-    category: "FROZEN",
+    slug: "frozen",
     words: ["frozen", "fryst", "ice cream", "glass", "fish sticks", "fiskpinnar", "pizza", "berries frozen"],
   },
   {
-    category: "MEAT_FISH",
+    slug: "meat_fish",
     words: [
       "chicken", "kyckling", "beef", "nötkött", "pork", "fläsk", "meat", "kött",
       "mince", "köttfärs", "sausage", "korv", "bacon", "fish", "fisk", "salmon",
@@ -91,7 +80,7 @@ const KEYWORD_MAP: Array<{ category: ShoppingCategory; words: string[] }> = [
     ],
   },
   {
-    category: "PANTRY",
+    slug: "pantry",
     words: [
       "pasta", "rice", "ris", "flour", "mjöl", "sugar", "socker", "salt", "oil",
       "olja", "vinegar", "vinäger", "cereal", "flingor", "coffee", "kaffe",
@@ -102,7 +91,7 @@ const KEYWORD_MAP: Array<{ category: ShoppingCategory; words: string[] }> = [
     ],
   },
   {
-    category: "HOUSEHOLD",
+    slug: "household",
     words: [
       "soap", "tvål", "detergent", "tvättmedel", "toilet paper", "toapapper",
       "paper towel", "hushållspapper", "tissue", "napkin", "servett", "sponge",
@@ -113,13 +102,13 @@ const KEYWORD_MAP: Array<{ category: ShoppingCategory; words: string[] }> = [
   },
 ];
 
-export function guessCategory(rawName: string): ShoppingCategory {
+export function guessCategorySlug(rawName: string): string | null {
   const name = rawName.trim().toLowerCase();
-  if (!name) return "UNSORTED";
-  for (const { category, words } of KEYWORD_MAP) {
-    if (words.some((w) => name.includes(w))) return category;
+  if (!name) return null;
+  for (const { slug, words } of KEYWORD_MAP) {
+    if (words.some((w) => name.includes(w))) return slug;
   }
-  return "UNSORTED";
+  return null;
 }
 
 function normalizeItemName(name: string): string {
@@ -127,32 +116,62 @@ function normalizeItemName(name: string): string {
 }
 
 /**
- * Resolve the category for a newly-added item: household memory first,
- * then keyword guess, then UNSORTED.
+ * Returns a household's categories, sorted for display. Lazily seeds the 8
+ * defaults on first use — covers households created before the backfill
+ * script ran, and any created after this feature shipped.
  */
-export async function resolveCategory(householdId: string, name: string): Promise<ShoppingCategory> {
+export async function ensureHouseholdCategories(householdId: string): Promise<CategoryDef[]> {
+  const existing = await prisma.shoppingCategoryDef.findMany({
+    where: { householdId },
+    orderBy: { sortOrder: "asc" },
+  });
+  if (existing.length > 0) return existing;
+
+  await prisma.$transaction(
+    DEFAULT_CATEGORIES.map((def, i) =>
+      prisma.shoppingCategoryDef.upsert({
+        where: { householdId_slug: { householdId, slug: def.slug } },
+        update: {},
+        create: { householdId, slug: def.slug, label: def.label, icon: def.icon, sortOrder: i },
+      })
+    )
+  );
+
+  return prisma.shoppingCategoryDef.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } });
+}
+
+/**
+ * Resolve the categoryId for a newly-added item: household memory first,
+ * then a keyword guess against the household's own categories, then null
+ * (uncategorized).
+ */
+export async function resolveCategoryId(householdId: string, name: string): Promise<string | null> {
   const key = normalizeItemName(name);
-  if (!key) return "UNSORTED";
+  if (!key) return null;
 
   const remembered = await prisma.shoppingCategoryMemory.findUnique({
     where: { householdId_itemName: { householdId, itemName: key } },
   });
-  if (remembered) return remembered.category;
+  if (remembered) return remembered.categoryId;
 
-  return guessCategory(name);
+  const slug = guessCategorySlug(name);
+  if (!slug) return null;
+
+  const defs = await ensureHouseholdCategories(householdId);
+  return defs.find((d) => d.slug === slug)?.id ?? null;
 }
 
 /**
  * Call whenever a user explicitly sets/changes an item's category, so the
  * household doesn't have to re-categorize the same item next time.
  */
-export async function rememberCategory(householdId: string, name: string, category: ShoppingCategory): Promise<void> {
+export async function rememberCategory(householdId: string, name: string, categoryId: string | null): Promise<void> {
   const key = normalizeItemName(name);
   if (!key) return;
 
   await prisma.shoppingCategoryMemory.upsert({
     where: { householdId_itemName: { householdId, itemName: key } },
-    update: { category },
-    create: { householdId, itemName: key, category },
+    update: { categoryId },
+    create: { householdId, itemName: key, categoryId, category: "UNSORTED" },
   });
 }

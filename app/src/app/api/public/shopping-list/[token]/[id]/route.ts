@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rememberCategory } from "@/lib/shoppingCategories";
-import { ShoppingCategory } from "@prisma/client";
-
-const VALID_CATEGORIES: ShoppingCategory[] = ["PRODUCE", "DAIRY", "BREAD", "FROZEN", "PANTRY", "HOUSEHOLD", "MEAT_FISH", "OTHER", "UNSORTED"];
 
 async function householdForToken(token: string) {
   return prisma.household.findUnique({ where: { shoppingListShareToken: token } });
@@ -21,25 +18,31 @@ export async function PATCH(req: Request, { params }: { params: { token: string;
     }
 
     const body = await req.json().catch(() => ({}));
-    const { isPurchased, category } = body ?? {};
+    const { isPurchased, categoryId } = body ?? {};
 
     const data: Record<string, unknown> = {};
     if (typeof isPurchased === "boolean") {
       data.isPurchased = isPurchased;
       // No guest User to attribute the purchase to — leave purchasedBy unset,
-      // purchasedAt still records when, which is what the 24h auto-clear uses.
+      // purchasedAt still records when it happened.
       data.purchasedBy = null;
       data.purchasedAt = isPurchased ? new Date() : null;
     }
-    if (typeof category === "string" && VALID_CATEGORIES.includes(category as ShoppingCategory)) {
-      data.category = category;
-      await rememberCategory(household.id, item.name, category as ShoppingCategory);
+    if (categoryId !== undefined) {
+      if (categoryId !== null) {
+        const owned = await prisma.shoppingCategoryDef.findUnique({ where: { id: categoryId } });
+        if (!owned || owned.householdId !== household.id) {
+          return NextResponse.json({ error: "Unknown category" }, { status: 400 });
+        }
+      }
+      data.categoryId = categoryId;
+      await rememberCategory(household.id, item.name, categoryId);
     }
 
     const updated = await prisma.shoppingListItem.update({
       where: { id: params.id },
       data,
-      include: { adder: { select: { id: true, name: true } } },
+      include: { adder: { select: { id: true, name: true } }, categoryDef: true },
     });
 
     return NextResponse.json(updated);

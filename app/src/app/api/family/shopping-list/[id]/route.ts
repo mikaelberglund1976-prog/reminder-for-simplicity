@@ -3,12 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rememberCategory } from "@/lib/shoppingCategories";
-import { ShoppingCategory } from "@prisma/client";
-
-const VALID_CATEGORIES: ShoppingCategory[] = ["PRODUCE", "DAIRY", "BREAD", "FROZEN", "PANTRY", "HOUSEHOLD", "MEAT_FISH", "OTHER", "UNSORTED"];
 
 // PATCH /api/family/shopping-list/[id]
-// Body: { isPurchased?: boolean, name?: string, quantity?: string | null, category?: ShoppingCategory }
+// Body: { isPurchased?: boolean, name?: string, quantity?: string | null, categoryId?: string | null }
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,7 +22,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     const body = await req.json().catch(() => ({}));
-    const { isPurchased, name, quantity, category } = body ?? {};
+    const { isPurchased, name, quantity, categoryId } = body ?? {};
 
     const data: Record<string, unknown> = {};
     if (typeof isPurchased === "boolean") {
@@ -35,10 +32,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
     if (typeof name === "string" && name.trim()) data.name = name.trim();
     if (quantity !== undefined) data.quantity = quantity?.toString().trim() || null;
-    if (typeof category === "string" && VALID_CATEGORIES.includes(category as ShoppingCategory)) {
-      data.category = category;
+    if (categoryId !== undefined) {
+      // null is a valid choice (explicitly uncategorized); a non-empty
+      // string must belong to this household.
+      if (categoryId !== null) {
+        const owned = await prisma.shoppingCategoryDef.findUnique({ where: { id: categoryId } });
+        if (!owned || owned.householdId !== membership.householdId) {
+          return NextResponse.json({ error: "Unknown category" }, { status: 400 });
+        }
+      }
+      data.categoryId = categoryId;
       // Remember the household's manual choice against the (possibly updated) name.
-      await rememberCategory(membership.householdId, (typeof name === "string" && name.trim()) ? name : item.name, category as ShoppingCategory);
+      await rememberCategory(membership.householdId, (typeof name === "string" && name.trim()) ? name : item.name, categoryId);
     }
 
     const updated = await prisma.shoppingListItem.update({
@@ -47,6 +52,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       include: {
         adder: { select: { id: true, name: true } },
         purchaser: { select: { id: true, name: true } },
+        categoryDef: true,
       },
     });
 

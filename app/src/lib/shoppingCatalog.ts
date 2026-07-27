@@ -4,30 +4,27 @@
 // API/account needed). Tapping an item adds it straight to the list; the
 // item still goes through the normal auto-categorize/remember flow.
 //
+// Keyed by the default category `slug` (see shoppingCategories.ts) rather
+// than a household-specific categoryId, since this catalog is the same for
+// everyone regardless of how a household has renamed its categories. The UI
+// matches a household's own category by slug to show the right label/icon.
+//
 // Kept intentionally short per category (8-10 items) so the panel stays
 // scannable instead of turning into a supermarket inventory.
 
-import { CATEGORY_ORDER, CATEGORY_LABELS, CATEGORY_ICONS } from "@/lib/shoppingCategories";
-import type { ShoppingCategory } from "@prisma/client";
-
-export const CATALOG_ITEMS: Record<ShoppingCategory, string[]> = {
-  PRODUCE: ["Bananas", "Apples", "Tomatoes", "Cucumber", "Potatoes", "Onion", "Garlic", "Lettuce", "Avocado", "Lemon"],
-  BREAD: ["Bread", "Bagels", "Tortillas", "Crispbread", "Buns"],
-  DAIRY: ["Milk", "Eggs", "Butter", "Cheese", "Yogurt", "Cream", "Quark"],
-  MEAT_FISH: ["Chicken", "Minced meat", "Salmon", "Bacon", "Sausages"],
-  FROZEN: ["Frozen berries", "Ice cream", "Frozen pizza", "Fish sticks"],
-  PANTRY: ["Pasta", "Rice", "Coffee", "Olive oil", "Sugar", "Flour", "Canned tomatoes", "Ketchup"],
-  HOUSEHOLD: ["Toilet paper", "Paper towels", "Dish soap", "Laundry detergent", "Trash bags", "Toothpaste"],
-  OTHER: [],
-  UNSORTED: [],
+export const CATALOG_ITEMS: Record<string, string[]> = {
+  produce: ["Bananas", "Apples", "Tomatoes", "Cucumber", "Potatoes", "Onion", "Garlic", "Lettuce", "Avocado", "Lemon"],
+  bread: ["Bread", "Bagels", "Tortillas", "Crispbread", "Buns"],
+  dairy: ["Milk", "Eggs", "Butter", "Cheese", "Yogurt", "Cream", "Quark"],
+  meat_fish: ["Chicken", "Minced meat", "Salmon", "Bacon", "Sausages"],
+  frozen: ["Frozen berries", "Ice cream", "Frozen pizza", "Fish sticks"],
+  pantry: ["Pasta", "Rice", "Coffee", "Olive oil", "Sugar", "Flour", "Canned tomatoes", "Ketchup"],
+  household: ["Toilet paper", "Paper towels", "Dish soap", "Laundry detergent", "Trash bags", "Toothpaste"],
+  other: [],
 };
 
-export type CatalogCategory = ShoppingCategory;
-
-// Categories in the order they should render in the UI, skipping any with
-// no curated items (OTHER/UNSORTED have none — they're catch-alls, not aisles).
-export const CATALOG_CATEGORY_ORDER: CatalogCategory[] = CATEGORY_ORDER.filter(
-  (c) => (CATALOG_ITEMS[c as ShoppingCategory] ?? []).length > 0
+// Slugs in the order they should render in the UI, skipping any with no
+// curated items ("other" has none — it's a catch-all, not an aisle).
+export const CATALOG_SLUG_ORDER: string[] = Object.keys(CATALOG_ITEMS).filter(
+  (slug) => (CATALOG_ITEMS[slug] ?? []).length > 0
 );
-
-export { CATEGORY_LABELS as CATALOG_CATEGORY_LABELS, CATEGORY_ICONS as CATALOG_CATEGORY_ICONS };

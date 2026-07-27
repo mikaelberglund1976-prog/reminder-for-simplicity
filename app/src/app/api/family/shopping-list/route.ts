@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { resolveCategory, rememberCategory } from "@/lib/shoppingCategories";
-import { ShoppingCategory } from "@prisma/client";
-
-const VALID_CATEGORIES: ShoppingCategory[] = ["PRODUCE", "DAIRY", "BREAD", "FROZEN", "PANTRY", "HOUSEHOLD", "MEAT_FISH", "OTHER", "UNSORTED"];
+import { resolveCategoryId, rememberCategory } from "@/lib/shoppingCategories";
 
 // GET /api/family/shopping-list
 export async function GET() {
@@ -34,8 +31,11 @@ export async function GET() {
       include: {
         adder: { select: { id: true, name: true } },
         purchaser: { select: { id: true, name: true } },
+        categoryDef: true,
       },
-      // Purchased items sink to the bottom (P0.3); within each group, newest first.
+      // Purchased items sink to the bottom (P0.3); within each group, newest
+      // first. Alphabetical sort within a category happens client-side, on
+      // top of this ordering.
       orderBy: [{ isPurchased: "asc" }, { createdAt: "desc" }],
     });
 
@@ -67,31 +67,32 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { name, quantity, category: explicitCategory } = body ?? {};
+    const { name, quantity, categoryId: explicitCategoryId } = body ?? {};
 
     if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
 
     // Manual category wins and is remembered for next time; otherwise fall
     // back to household memory, then a keyword guess (see shoppingCategories.ts).
-    let category: ShoppingCategory;
-    if (explicitCategory && VALID_CATEGORIES.includes(explicitCategory)) {
-      category = explicitCategory;
-      await rememberCategory(membership.householdId, name, category);
+    let categoryId: string | null;
+    if (explicitCategoryId !== undefined) {
+      categoryId = explicitCategoryId || null;
+      await rememberCategory(membership.householdId, name, categoryId);
     } else {
-      category = await resolveCategory(membership.householdId, name);
+      categoryId = await resolveCategoryId(membership.householdId, name);
     }
 
     const item = await prisma.shoppingListItem.create({
       data: {
         name: name.trim(),
         quantity: quantity?.toString().trim() || null,
-        category,
+        categoryId,
         householdId: membership.householdId,
         addedBy: session.user.id,
       },
       include: {
         adder: { select: { id: true, name: true } },
         purchaser: { select: { id: true, name: true } },
+        categoryDef: true,
       },
     });
 
@@ -105,8 +106,6 @@ export async function POST(req: Request) {
 
 // DELETE /api/family/shopping-list — clears every purchased item ("Clear bought items" button).
 // Individual items are deleted via DELETE /api/family/shopping-list/[id].
-// The same cleanup also runs automatically ~24h after purchase via the daily cron (see lib/cron.ts) —
-// this button is for anyone who wants the list tidy sooner. See PRODUCT_SPEC 4b.8 open-question decision.
 export async function DELETE() {
   try {
     const session = await getServerSession(authOptions);

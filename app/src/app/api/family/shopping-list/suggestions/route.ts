@@ -23,14 +23,14 @@ export async function GET() {
       where: { householdId: membership.householdId },
       orderBy: { updatedAt: "desc" },
       take: 12,
-      select: { itemName: true, category: true },
+      select: { itemName: true, categoryDef: { select: { icon: true } } },
     });
 
     // itemName is stored lowercase/trimmed for matching; title-case it back
     // for display so suggestion chips don't read "mjölk" / "toilet paper" oddly.
     const recent = remembered.map((r) => ({
       name: r.itemName.replace(/\b\w/g, (c) => c.toUpperCase()),
-      category: r.category,
+      icon: r.categoryDef?.icon ?? "❔",
     }));
 
     return NextResponse.json({ recent });

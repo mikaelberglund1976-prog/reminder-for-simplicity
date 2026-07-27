@@ -86,20 +86,11 @@ export async function runReminderCron() {
     }
   }
 
-  const cleanup = await cleanupPurchasedShoppingItems();
-  log.push(`Shopping list cleanup: removed ${cleanup.removed} item(s) purchased more than 24h ago`);
+  // Purchased shopping-list items used to auto-clear ~24h after purchase.
+  // Removed 2026-07-27: bought items are reused often enough (same groceries
+  // every week) that households wanted them to stick around as a quick
+  // reference/re-add list instead of disappearing on a timer. Clearing is
+  // now only ever manual, via the "Clear bought items" button.
 
-  return { success: true, sent, skipped, errors, todayStr, log, shoppingListCleared: cleanup.removed };
-}
-
-// Auto-clears purchased shopping-list items ~24h after purchase, so lists don't
-// accumulate stale "already in the cart" clutter. Anyone can also clear bought
-// items immediately via the "Clear bought items" button in the app.
-// Decision recorded in PRODUCT_SPEC.md 4b.8 (open question 4 in the 2026-07-27 order).
-export async function cleanupPurchasedShoppingItems() {
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const { count } = await prisma.shoppingListItem.deleteMany({
-    where: { isPurchased: true, purchasedAt: { lte: cutoff } },
-  });
-  return { removed: count };
+  return { success: true, sent, skipped, errors, todayStr, log };
 }

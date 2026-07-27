@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resolveCategory } from "@/lib/shoppingCategories";
+import { resolveCategoryId } from "@/lib/shoppingCategories";
 
 // Public, token-gated shopping list access — no login required. Used for the
 // "share this list" link (e.g. with a relative or babysitter who isn't a
@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
 
     const items = await prisma.shoppingListItem.findMany({
       where: { householdId: household.id },
-      include: { adder: { select: { id: true, name: true } } },
+      include: { adder: { select: { id: true, name: true } }, categoryDef: true },
       orderBy: [{ isPurchased: "asc" }, { createdAt: "desc" }],
     });
 
@@ -46,7 +46,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
     const { name, quantity } = body ?? {};
     if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
 
-    const category = await resolveCategory(household.id, name);
+    const categoryId = await resolveCategoryId(household.id, name);
 
     // Guests don't have a User account, but addedBy is a required FK on
     // ShoppingListItem. We attribute the item to whichever household member
@@ -60,11 +60,11 @@ export async function POST(req: Request, { params }: { params: { token: string }
       data: {
         name: name.trim(),
         quantity: quantity?.toString().trim() || null,
-        category,
+        categoryId,
         householdId: household.id,
         addedBy: anyMember.userId,
       },
-      include: { adder: { select: { id: true, name: true } } },
+      include: { adder: { select: { id: true, name: true } }, categoryDef: true },
     });
 
     return NextResponse.json(item, { status: 201 });

@@ -54,7 +54,13 @@ model ShoppingListItem {
   householdId  String
   name         String
   quantity     String?
+  // Deprecated 2026-07-27: replaced by categoryId/categoryDef below, which
+  // supports per-household custom categories. Left in place (unused by app
+  // code) so the household-scoped backfill script has a source column to
+  // read from — see scripts/backfill-shopping-categories.ts. Safe to drop
+  // in a later migration once every household has been backfilled.
   category     ShoppingCategory @default(UNSORTED)
+  categoryId   String?
   isPurchased  Boolean   @default(false)
   addedBy      String
   purchasedBy  String?
@@ -65,6 +71,7 @@ model ShoppingListItem {
   household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   adder        User      @relation("ShoppingListAdded", fields: [addedBy], references: [id], onDelete: Cascade)
   purchaser    User?     @relation("ShoppingListPurchased", fields: [purchasedBy], references: [id], onDelete: SetNull)
+  categoryDef  ShoppingCategoryDef? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@map("shopping_list_items")
 }
@@ -76,13 +83,40 @@ model ShoppingCategoryMemory {
   id          String           @id @default(cuid())
   householdId String
   itemName    String           // stored lowercase/trimmed, matched case-insensitively
+  // Deprecated 2026-07-27 — see ShoppingListItem.category comment above.
   category    ShoppingCategory
+  categoryId  String?
   updatedAt   DateTime         @updatedAt
 
   household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  categoryDef ShoppingCategoryDef? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@unique([householdId, itemName])
   @@map("shopping_category_memory")
+}
+
+// Household-editable aisle categories for the shopping list — replaces the
+// fixed ShoppingCategory enum (2026-07-27) so households can add a missing
+// category and rename existing ones. `slug` identifies the 8 built-in
+// defaults ("produce", "dairy", ...) so keyword auto-categorization keeps
+// working even after a household renames one; custom categories a household
+// adds themselves have slug = null. There's no "Unsorted" row — an item with
+// categoryId = null is simply uncategorized and shown in an Unsorted group.
+model ShoppingCategoryDef {
+  id          String   @id @default(cuid())
+  householdId String
+  slug        String?
+  label       String
+  icon        String   @default("📦")
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  items       ShoppingListItem[]
+  memory      ShoppingCategoryMemory[]
+
+  @@unique([householdId, slug])
+  @@map("shopping_category_defs")
 }
 
 // A child's personal wish list. Purchase/reservation status is intentionally
@@ -269,6 +303,7 @@ model Household {
   familyTrial FamilyTrial?
   shoppingListItems ShoppingListItem[]
   shoppingCategoryMemory ShoppingCategoryMemory[]
+  shoppingCategoryDefs ShoppingCategoryDef[]
   wishlistItems WishlistItem[]
 
   @@map("households")

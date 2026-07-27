@@ -1,24 +1,29 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CATEGORY_LABELS, CATEGORY_ORDER, CATEGORY_ICONS } from "@/lib/shoppingCategories";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 const POLL_MS = 5000;
 
-type ShoppingCategory = keyof typeof CATEGORY_LABELS;
+const UNSORTED_LABEL = "Unsorted";
+const UNSORTED_ICON = "❔";
 
 type Item = {
   id: string;
   name: string;
   quantity: string | null;
-  category: ShoppingCategory;
+  categoryId: string | null;
+  categoryDef: { id: string; label: string; icon: string; sortOrder: number } | null;
   isPurchased: boolean;
 };
 
 function IcPlus() { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>; }
 function IcTrash() { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>; }
+
+function sortByName(items: Item[]): Item[] {
+  return [...items].sort((a, b) => a.name.localeCompare(b.name, "sv", { sensitivity: "base" }));
+}
 
 // Public, no-login shopping list view for the "share this list" link — see
 // /api/family/shopping-list/share and /api/public/shopping-list/[token].
@@ -30,8 +35,6 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
   const [state, setState] = useState<"loading" | "ok" | "not-found">("loading");
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);
 
   async function fetchItems() {
     try {
@@ -57,45 +60,58 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Optimistic like the in-app list — the action shows up instantly, the
+  // network call happens in the background, and only rolls back on failure.
+
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
-    setAdding(true);
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    const tempId = `temp-${Date.now()}`;
+    setItems((prev) => [{ id: tempId, name: trimmedName, quantity: quantity.trim() || null, categoryId: null, categoryDef: null, isPurchased: false }, ...prev]);
+    setName("");
+    setQuantity("");
     try {
-      await fetch(`/api/public/shopping-list/${params.token}`, {
+      const res = await fetch(`/api/public/shopping-list/${params.token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, quantity: quantity || undefined }),
+        body: JSON.stringify({ name: trimmedName, quantity: quantity || undefined }),
       });
-      setName("");
-      setQuantity("");
-      await fetchItems();
-    } finally {
-      setAdding(false);
+      if (res.ok) {
+        const data = await res.json();
+        setItems((prev) => prev.map((i) => (i.id === tempId ? data : i)));
+      } else {
+        setItems((prev) => prev.filter((i) => i.id !== tempId));
+      }
+    } catch {
+      setItems((prev) => prev.filter((i) => i.id !== tempId));
     }
   }
 
   async function toggle(item: Item) {
-    setBusyId(item.id);
+    const wasPurchased = item.isPurchased;
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: !wasPurchased } : i)));
     try {
-      await fetch(`/api/public/shopping-list/${params.token}/${item.id}`, {
+      const res = await fetch(`/api/public/shopping-list/${params.token}/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPurchased: !item.isPurchased }),
+        body: JSON.stringify({ isPurchased: !wasPurchased }),
       });
-      await fetchItems();
-    } finally {
-      setBusyId(null);
+      if (!res.ok) setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: wasPurchased } : i)));
+    } catch {
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: wasPurchased } : i)));
     }
   }
 
   async function remove(id: string) {
-    setBusyId(id);
+    const removed = items.find((i) => i.id === id);
+    setItems((prev) => prev.filter((i) => i.id !== id));
     try {
-      await fetch(`/api/public/shopping-list/${params.token}/${id}`, { method: "DELETE" });
-      await fetchItems();
-    } finally {
-      setBusyId(null);
+      const res = await fetch(`/api/public/shopping-list/${params.token}/${id}`, { method: "DELETE" });
+      if (!res.ok && removed) setItems((prev) => [...prev, removed]);
+    } catch {
+      if (removed) setItems((prev) => [...prev, removed]);
     }
   }
 
@@ -117,9 +133,19 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
 
   const pending = items.filter((i) => !i.isPurchased);
   const purchased = items.filter((i) => i.isPurchased);
-  const grouped = CATEGORY_ORDER
-    .map((category) => ({ category: category as ShoppingCategory, items: pending.filter((i) => i.category === category) }))
-    .filter((g) => g.items.length > 0);
+
+  const categoryMap: Record<string, { id: string; label: string; icon: string; sortOrder: number }> = {};
+  for (const item of pending) {
+    if (item.categoryDef && !categoryMap[item.categoryDef.id]) {
+      categoryMap[item.categoryDef.id] = item.categoryDef;
+    }
+  }
+  const groups = [
+    ...Object.values(categoryMap)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((def) => ({ key: def.id, label: def.label, icon: def.icon, items: sortByName(pending.filter((i) => i.categoryId === def.id)) })),
+    { key: "unsorted", label: UNSORTED_LABEL, icon: UNSORTED_ICON, items: sortByName(pending.filter((i) => !i.categoryId)) },
+  ].filter((g) => g.items.length > 0);
 
   return (
     <Shell>
@@ -145,8 +171,8 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
           />
           <button
             type="submit"
-            disabled={adding || !name.trim()}
-            style={{ width: 48, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#1C1C28", color: "#fff", border: "none", borderRadius: 12, cursor: adding || !name.trim() ? "not-allowed" : "pointer", opacity: adding || !name.trim() ? 0.5 : 1 }}
+            disabled={!name.trim()}
+            style={{ width: 48, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#1C1C28", color: "#fff", border: "none", borderRadius: 12, cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1 }}
           >
             <IcPlus />
           </button>
@@ -160,18 +186,19 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
       {pending.length === 0 ? (
         <div style={{ textAlign: "center", padding: "24px 0 32px", color: "#9CA3AF", fontSize: 13 }}>Nothing on the list right now.</div>
       ) : (
-        <div style={{ marginBottom: 24 }}>
-          {grouped.map((group) => (
-            <div key={group.category} style={{ marginBottom: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#4A5FD5", color: "#fff", borderRadius: 10, padding: "7px 14px", fontSize: 12, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                <span style={{ fontSize: 14 }}>{CATEGORY_ICONS[group.category]}</span>
-                {CATEGORY_LABELS[group.category]}
+        <div style={{ background: "#fff", border: "1px solid #E4E3DE", borderRadius: 18, padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 24 }}>
+          {groups.map((group, gi) => (
+            <div key={group.key}>
+              <div style={{
+                fontSize: 11, fontWeight: 800, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase",
+                padding: gi === 0 ? "10px 0 4px" : "14px 0 4px", borderTop: gi === 0 ? "none" : "1px solid #F0F3F8",
+                display: "flex", alignItems: "center", gap: 6,
+              }}>
+                <span>{group.icon}</span>{group.label}
               </div>
-              <div style={{ background: "#fff", borderRadius: "0 0 18px 18px", border: "1px solid #E4E3DE", borderTop: "none", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-                {group.items.map((item, i) => (
-                  <Row key={item.id} item={item} isFirst={i === 0} busy={busyId === item.id} onToggle={() => toggle(item)} onRemove={() => remove(item.id)} />
-                ))}
-              </div>
+              {group.items.map((item, i) => (
+                <Row key={item.id} item={item} isFirst={i === 0} onToggle={() => toggle(item)} onRemove={() => remove(item.id)} />
+              ))}
             </div>
           ))}
         </div>
@@ -184,7 +211,7 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
           </div>
           <div style={{ background: "rgba(42,157,111,0.06)", borderRadius: 18, border: "1px solid rgba(42,157,111,0.25)", padding: "4px 16px" }}>
             {purchased.map((item, i) => (
-              <Row key={item.id} item={item} isFirst={i === 0} busy={busyId === item.id} onToggle={() => toggle(item)} onRemove={() => remove(item.id)} />
+              <Row key={item.id} item={item} isFirst={i === 0} onToggle={() => toggle(item)} onRemove={() => remove(item.id)} />
             ))}
           </div>
         </>
@@ -197,21 +224,20 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
   );
 }
 
-function Row({ item, isFirst, busy, onToggle, onRemove }: { item: Item; isFirst: boolean; busy: boolean; onToggle: () => void; onRemove: () => void }) {
+function Row({ item, isFirst, onToggle, onRemove }: { item: Item; isFirst: boolean; onToggle: () => void; onRemove: () => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: isFirst ? "none" : "1px solid #F0F3F8", padding: "12px 0" }}>
       <button
         onClick={onToggle}
-        disabled={busy}
         aria-label={item.isPurchased ? "Mark as not bought" : "Mark as bought"}
-        style={{ width: 24, height: 24, borderRadius: "50%", flexShrink: 0, cursor: busy ? "not-allowed" : "pointer", border: item.isPurchased ? "none" : "2px solid #E4E3DE", background: item.isPurchased ? "#2A9D6F" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}
+        style={{ width: 24, height: 24, borderRadius: "50%", flexShrink: 0, cursor: "pointer", border: item.isPurchased ? "none" : "2px solid #E4E3DE", background: item.isPurchased ? "#2A9D6F" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}
       >
         {item.isPurchased && <svg width={14} height={14} viewBox="0 0 24 24" {...STR} stroke="#fff"><polyline points="20 6 9 17 4 12" /></svg>}
       </button>
       <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: item.isPurchased ? "#9CA3AF" : "#0F172A", textDecoration: item.isPurchased ? "line-through" : "none" }}>
         {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
       </div>
-      <button onClick={onRemove} disabled={busy} aria-label="Remove item" style={{ background: "none", border: "none", cursor: busy ? "not-allowed" : "pointer", color: "#C0C5D0", padding: 6, flexShrink: 0 }}>
+      <button onClick={onRemove} aria-label="Remove item" style={{ background: "none", border: "none", cursor: "pointer", color: "#C0C5D0", padding: 6, flexShrink: 0 }}>
         <IcTrash />
       </button>
     </div>
