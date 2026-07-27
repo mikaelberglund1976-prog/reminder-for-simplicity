@@ -72,10 +72,11 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 
 ## 5. Deploy
 
-> ⚠️ **Uppdaterat 2026-07-27:** automatisk deploy vid `git push` slutade fungera (GitHub-webhooken till Vercel triggar inte längre – bekräftat via Vercel API att flera pushar efter commit `ad58f32` inte gav några nya deployments). Orsaken är inte fastställd; ett försök att koppla om Git-integrationen i Vercel-dashboarden gav `Error: Project Link not found`. Tills det är löst (se `TODO.md` 5b) är nedan den faktiska rutinen:
+> ✅ **Löst 2026-07-27 (natt):** automatisk deploy vid `git push` fungerar igen. Problemet var att Vercels GitHub-integration hade tappat webhooken (visade "ansluten" men triggade inget) – ett känt, återkommande Vercel-fel. Fixat genom en riktig **Disconnect** + ny **Connect Git Repository** i Vercel-dashboarden (Project Settings → Git). Bekräftat: en vanlig `git push` triggade en ny production-deployment automatiskt.
 
-- **Trigger (nuläge):** manuell körning av `npx vercel --prod` från `app/`-mappen (kräver `npx vercel login` + `npx vercel link` en gång per dator, kopplat till projektet `reminder-for-simplicity` i teamet `mikaelberglund1976-progs-projects`). **Fungerar och bekräftat testat** 2026-07-27.
-- **Trigger (avsett, ej fungerande just nu):** push till `master` på GitHub *(inte `main` – repots default branch heter `master`, tidigare version av det här dokumentet hade fel)* skulle trigga automatisk deploy via Vercels GitHub-integration.
+- **Trigger (nuläge, normalfallet):** push till `master` på GitHub *(inte `main` – repots default branch heter `master`)*. Vercel deployar automatiskt via GitHub-integrationen.
+- **Trigger (manuell nödlösning, om webhooken skulle tappas igen):** `npx vercel --prod` från `app/`-mappen (kräver `npx vercel login` + `npx vercel link` en gång per dator, kopplat till projektet `reminder-for-simplicity` i teamet `mikaelberglund1976-progs-projects`).
+- **Om auto-deploy tystnar igen:** gör om samma Disconnect/Connect-steg i Vercel-dashboarden först – det är den kända fixen för detta specifika Vercel-fel.
 - **Build:** `prisma generate && next build` (se `package.json`), oavsett trigger-metod.
 - **Databasändringar:** körs INTE automatiskt vid deploy. Efter en schema-ändring: kör `npx prisma db push` manuellt (eller sätt upp en riktig migration-strategi längre fram – idag används `db push`, inte `prisma migrate`, vilket är enklare men ger ingen migrationshistorik)
 - **Rollback:** Vercel → Deployments → "Promote to Production" på en tidigare deploy. Databasändringar rullas INTE tillbaka automatiskt av detta – om en deploy innehöll en destruktiv schemaändring krävs manuell databas-rollback.
@@ -88,7 +89,7 @@ Om något är trasigt i produktion:
 1. Kolla Vercel function-loggar för den drabbade routen (särskilt `/api/cron/send-reminders` för mailproblem)
 2. Kolla Supabase → Logs för databasfel
 3. Kolla Resend → Logs för leveransproblem
-4. Om det är en kodbugg: fixa lokalt, verifiera, pusha till `master` **och** kör `npx vercel --prod` (se §5 – push ensam räcker inte just nu)
+4. Om det är en kodbugg: fixa lokalt, verifiera, pusha till `master` (se §5 – deployar automatiskt)
 5. Om det är databas-relaterat: **fråga Mikael innan du kör något destruktivt** (se eskalationsregler i `CLAUDE_COMPANY_FRAMEWORK.md` §8 – betaldata och pivotbeslut kräver alltid hans godkännande, och databas-incidenter bör behandlas med samma försiktighet)
 
 Det finns ingen statussida eller automatiserad kundkommunikation vid driftstörning – med dagens användarantal (pre-beta) hanteras det manuellt via direktkontakt om det behövs.

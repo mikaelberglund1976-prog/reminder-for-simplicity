@@ -2,6 +2,7 @@
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
 **Uppdaterad:** 2026-07-27 (kväll) – hamburgermeny + admin-åtkomst byggd, alla md-filer (PRODUCT_SPEC, ROADMAP, BRAND, OPERATIONS, TODO) synkade mot nuläget. Sektionerna nedan är nu i kronologisk ordning (döpte om 4d0→4e osv, som tidigare låg fel i ordning).
 **Uppdaterad igen:** 2026-07-27 (sen kväll) – punkt 16 klar: delningslänk, kategori-katalog/Recent-chips och PIN-inloggning klicktestade på skarpa `www.assistiq.se` (commit `1ad791d`). Se 4i/4j nedan för detaljer och en liten kosmetisk bugg som hittades under testet.
+**Uppdaterad igen:** 2026-07-27 (natt) – git-auto-deploy till Vercel löst (se punkt 5): Disconnect/Connect av Git-integrationen i Vercel-dashboarden löste webhook-problemet. `git push` till `master` räcker nu för att deploya, ingen manuell `vercel --prod` behövs längre.
 
 ---
 
@@ -81,12 +82,10 @@ Byggde igenom hela P0-listan. Tog självständiga beslut på alla fyra öppna fr
 - **Konsekvens:** punkt 7 (klicktester) går inte att göra meningsfullt förrän deployen är klar – skarpa sajten visar fortfarande gamla versionen.
 
 ## 5. Deploy-status – läs detta innan nästa gång du deployar
-- **Automatisk deploy vid `git push` funkar inte just nu.** GitHub-webhooken till Vercel triggar inte längre (bekräftat: pushar efter commit `ad58f32` gav noll nya deployments i Vercel, trots att koden landade korrekt på GitHub). Försök att koppla om Git-integrationen via Vercel-dashboarden (Settings → Git → Disconnect/Connect) gav `Error: Project Link not found`.
-- **Fungerande workaround:** `npx vercel --prod` från `app/`-mappen (efter `npx vercel login` + `npx vercel link` en gång, koppla till befintliga projektet `reminder-for-simplicity`). Deployar direkt till `www.assistiq.se`. Bekräftat fungerande 2026-07-27.
-- **`npx vercel git connect` funkar inte heller** – `Error: No local Git repository found`, trots att `git` fungerar fint i samma mapp. Misstänker att mellanslagen i mappnamnet ("Reminder for simplicity") stör Vercel CLI:s git-detektion. Inte undersökt djupare – inte akut eftersom CLI-deploy funkar.
-- [x] **Utrett 2026-07-27 kväll:** Vercel-projektdata visar att alla senaste "production"-deployningar har `gitDirty: true` och samma commit-sha flera gånger i rad – dvs de kom från CLI (`vercel --prod`), inte från webhooken. Det här är ett **känt, vanligt Vercel-fel** (bekräftat i flera Vercel Community-trådar 2026): GitHub-appen visas som ansluten men skapar aldrig själva webhooken på GitHub-sidan. Inte specifikt kopplat till mellanslaget i mappnamnet.
-- [ ] **Åtgärda git-auto-deploy** när du har tid – tre alternativ, prova i den här ordningen: 1) kolla GitHub-repots Settings → Webhooks och se om en Vercel-webhook överhuvudtaget finns där, 2) i Vercel-dashboarden, gör en riktig **Disconnect** och sedan ny **Connect Git Repository** (inte CLI:ns `git connect`), 3) mer robust permanent lösning: skapa ett **Deploy Hook** i Vercel (Project Settings → Git → Deploy Hooks) och lägg till en enkel GitHub Action som anropar den vid push – då slipper du bero på den opålitliga webhooken helt.
-- [x] `OPERATIONS.md` §5 korrigerad – sa tidigare felaktigt "push till main" (repot heter `master`, och triggern funkar inte just nu oavsett).
+- [x] **Löst 2026-07-27 (kväll):** automatisk deploy vid `git push` fungerar igen. Orsak: Vercels GitHub-integration hade tappat webhooken (känt, vanligt Vercel-fel – appen visade "ansluten" men skapade aldrig webhooken på GitHub-sidan). **Fix:** riktig **Disconnect** + ny **Connect Git Repository** i Vercel-dashboarden (Project Settings → Git). Testat och bekräftat: en vanlig `git add` / `git commit` / `git push` triggade en ny deployment automatiskt utan att `npx vercel --prod` kördes manuellt.
+- **Nuvarande rutin:** pusha till `master` som vanligt – Vercel deployar automatiskt. `npx vercel --prod` behövs inte längre i normalfallet, men fungerar fortfarande som manuell nödlösning om webhooken någon gång skulle sluta fungera igen.
+- **Obs, en sak att hålla koll på:** det här är ett känt återkommande Vercel-fel (bekräftat i Vercel Community-trådar 2026). Om auto-deploy tystnar igen i framtiden: gör om samma Disconnect/Connect-steg först. Om det händer ofta kan ett Vercel Deploy Hook + GitHub Action vara en mer robust backup, men det kräver att GitHub-token:et som används för `git push` har `workflow`-scope (det som fanns saknade det) – annars behöver workflow-filen läggas upp direkt på github.com istället för via `git push`. Inte byggt just nu, medvetet nedprioriterat.
+- [x] `OPERATIONS.md` §5 uppdaterad till samma nuläge.
 
 ## 6. Tekniska skulder, inte akuta
 - [ ] **Säkerhet:** `npm audit` visar att Next.js 14.2 har flera kända CVE:er (DoS, cache-poisoning, SSRF). Full fix kräver major-uppgradering till Next 16 – för stort/riskabelt utan regressionstestning. Prioritera som egen sprint innan skarp lansering med riktiga användare.
@@ -144,4 +143,3 @@ Du funderade på hushålls-modellen (ett hushåll per person, beslut: behåll de
 - [x] Deploy klar och klicktestad (4h, 4i, 4j) – delningslänk, katalog, Recent-chips och PIN-inloggning fungerar skarpt.
 - [ ] Kvarstår innan Fas 1-beta: klicktesta barnprofil-med-email end-to-end (se 4j), och gå igenom resten av punkt 7-listan (glömt lösenord, PWA på mobil, bottenmeny/hamburgermeny) som inte är avbockad än.
 - [ ] Därefter: ta ställning till Fas 1-beta vs. fortsätta på Fas 2 (t.ex. Wishlist-delningslänk, som fortfarande inte är byggd – se `ROADMAP.md` Fas 2).
-test deploy
