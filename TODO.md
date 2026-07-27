@@ -73,19 +73,26 @@ Byggde igenom hela P0-listan. Tog självständiga beslut på alla fyra öppna fr
 - [x] Placerad som en vanlig flex-sibling bredvid sidtiteln, inte en fristående flytande knapp – annars hade den riskerat att hamna ovanpå titeltexten på smala mobilskärmer (samma typ av bugg som 4e).
 - [ ] Klicktesta: öppna menyn på varje sida den finns på, verifiera att Admin bara syns för dig, testa Sign out.
 
+## 4h. Genomgång av hela listan + försök till push/deploy (2026-07-27, kväll)
+- [x] **Upptäckt:** allt arbete från 4d–4g låg okommitterat i arbetskatalogen (inkl. `HamburgerMenu.tsx`, `adminConfig.ts`, `viewMode.ts` som otrackade filer). `tsc --noEmit` kört rent, sedan committat som `68ba5e2`.
+- [ ] **`git push` blockerad:** ingen GitHub-autentisering i sandboxen (ingen credential-helper, ingen SSH-nyckel) – `fatal: could not read Username for 'https://github.com'`. Kräver att du kör `git push` själv, eller kopplar GitHub-åtkomst till sessionen.
+- [ ] **Produktionsdeploy blockerad:** `npx vercel --prod` saknar token i sandboxen (`No existing credentials found`). Vercel-MCP-kopplingen (läsläge) fungerar och bekräftar att senaste live-deployen fortfarande är commit `2c417ed` – dvs **hamburgermeny/vy-växlare/ny startsida/bottenmeny-fixen är ännu inte skarp**. Kräver att du kör `npx vercel --prod` från `app/` själv, eller ger mig ett Vercel-token.
+- **Konsekvens:** punkt 7 (klicktester) går inte att göra meningsfullt förrän deployen är klar – skarpa sajten visar fortfarande gamla versionen.
+
 ## 5. Deploy-status – läs detta innan nästa gång du deployar
 - **Automatisk deploy vid `git push` funkar inte just nu.** GitHub-webhooken till Vercel triggar inte längre (bekräftat: pushar efter commit `ad58f32` gav noll nya deployments i Vercel, trots att koden landade korrekt på GitHub). Försök att koppla om Git-integrationen via Vercel-dashboarden (Settings → Git → Disconnect/Connect) gav `Error: Project Link not found`.
 - **Fungerande workaround:** `npx vercel --prod` från `app/`-mappen (efter `npx vercel login` + `npx vercel link` en gång, koppla till befintliga projektet `reminder-for-simplicity`). Deployar direkt till `www.assistiq.se`. Bekräftat fungerande 2026-07-27.
 - **`npx vercel git connect` funkar inte heller** – `Error: No local Git repository found`, trots att `git` fungerar fint i samma mapp. Misstänker att mellanslagen i mappnamnet ("Reminder for simplicity") stör Vercel CLI:s git-detektion. Inte undersökt djupare – inte akut eftersom CLI-deploy funkar.
-- [ ] **Åtgärda git-auto-deploy** när du har tid – felsök `vercel git connect` (testa t.ex. i en mapp utan mellanslag), eller acceptera `npx vercel --prod` som standardrutin permanent (redan uppdaterat i `OPERATIONS.md` §5).
+- [x] **Utrett 2026-07-27 kväll:** Vercel-projektdata visar att alla senaste "production"-deployningar har `gitDirty: true` och samma commit-sha flera gånger i rad – dvs de kom från CLI (`vercel --prod`), inte från webhooken. Det här är ett **känt, vanligt Vercel-fel** (bekräftat i flera Vercel Community-trådar 2026): GitHub-appen visas som ansluten men skapar aldrig själva webhooken på GitHub-sidan. Inte specifikt kopplat till mellanslaget i mappnamnet.
+- [ ] **Åtgärda git-auto-deploy** när du har tid – tre alternativ, prova i den här ordningen: 1) kolla GitHub-repots Settings → Webhooks och se om en Vercel-webhook överhuvudtaget finns där, 2) i Vercel-dashboarden, gör en riktig **Disconnect** och sedan ny **Connect Git Repository** (inte CLI:ns `git connect`), 3) mer robust permanent lösning: skapa ett **Deploy Hook** i Vercel (Project Settings → Git → Deploy Hooks) och lägg till en enkel GitHub Action som anropar den vid push – då slipper du bero på den opålitliga webhooken helt.
 - [x] `OPERATIONS.md` §5 korrigerad – sa tidigare felaktigt "push till main" (repot heter `master`, och triggern funkar inte just nu oavsett).
 
 ## 6. Tekniska skulder, inte akuta
 - [ ] **Säkerhet:** `npm audit` visar att Next.js 14.2 har flera kända CVE:er (DoS, cache-poisoning, SSRF). Full fix kräver major-uppgradering till Next 16 – för stort/riskabelt utan regressionstestning. Prioritera som egen sprint innan skarp lansering med riktiga användare.
 - [ ] Prisma flaggar 5.22.0 → 7.9.0 (major). Samma resonemang som ovan – låg prioritet så länge 5.22 fungerar.
 - [x] ~~Kör `npx prisma generate && npx prisma db push`~~ **Klart 2026-07-27** – kört av Mikael lokalt, gick igenom rent.
-- [ ] Kör `npm install` lokalt för att synka `node_modules` om det inte redan är gjort.
-- **Städtips (inte akut):** sandboxen jag jobbar i kunde inte ta bort `.bak`-filer som skapades under en bulk-sök-och-ersätt (samma gamla filsystemsbegränsning). De ligger kvar i `app/src/**/*.bak` men är nu i `.gitignore` så de committas inte – kör `find . -name "*.bak" -delete` lokalt om du vill ha bort dem helt.
+- [ ] Kör `npm install` lokalt för att synka `node_modules` om det inte redan är gjort. **Försökt i sandboxen 2026-07-27 kväll och avbröts** – `node_modules` innehåller redan native-binärer byggda för darwin-arm64 (din Mac), medan sandboxen är linux-arm64, så en install här hade ändå inte hjälpt dig. Genuint ett "kör på din egen dator"-jobb.
+- **Städtips (inte akut):** sandboxen jag jobbar i kunde inte ta bort `.bak`-filer som skapades under en bulk-sök-och-ersätt (samma gamla filsystemsbegränsning, bekräftat igen 2026-07-27 kväll). De ligger kvar i `app/src/**/*.bak` men är nu i `.gitignore` så de committas inte – kör `find . -name "*.bak" -delete` lokalt om du vill ha bort dem helt.
 
 ## 7. Konsoliderad klicktest-lista (allt som kräver en riktig webbläsare/telefon, inte min sandbox)
 - [ ] Glömt lösenord end-to-end: skicka mail till dig själv → sätt nytt lösenord → logga in.
