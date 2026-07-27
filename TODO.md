@@ -122,6 +122,19 @@ Du skickade skärmbilder av OurGroceries och Listonic och tyckte vår lista kän
 
 - [ ] Klicktesta delningslänken (öppna `/shop/[token]` i en annan flik/inkognito, lägg till/bocka av en vara, verifiera att den dyker upp i huvudappen).
 
+## 4j. Auth-genomgång: riktig email för alla + frivillig PIN för vuxna (2026-07-27, kväll)
+Du funderade på hushålls-modellen (ett hushåll per person, beslut: behåll det) och landade på: alla konton ska ha en riktig email, och man ska kunna lägga till PIN-inloggning som ett extra alternativ vid sidan av lösenordet. Byggt:
+
+- [x] **Barnprofiler kräver nu riktig email** vid skapande (`/api/family/child-profiles`) istället för den påhittade `child_xxx@reminder-for-simplicity.internal`-adressen. Föräldern skriver in valfri riktig email (sin egen, ett alias som `du+barnnamn@gmail.com`, eller barnets egen om de har en). Barnet loggar fortfarande in vardagligt med namn + PIN precis som innan — email:en är bara kontots verkliga identitet i botten.
+- [x] **Frivillig PIN för vuxna:** ny `User.pin`-kolumn (separat från `password`, så det riktiga lösenordet aldrig försvagas eller skrivs över). Profile → Security → "PIN login" — sätt/ändra/stäng av en egen 4-siffrig PIN för snabbt profilbyte på en delad familjeenhet.
+- [x] Ny NextAuth-provider `"pin"` (separat från den vanliga `"credentials"`-providern) — kollar `pin`-fältet för vuxna, `password`-fältet för barn (så gamla barnprofiler funkar oförändrat).
+- [x] Familje-switchern (`/family?h=...`, numpad-skärmen) visar nu även vuxna med PIN aktiverad, inte bara barn — märkta "Adult" i väljaren. Rättade en bugg jag hittade under bygget: PIN-inloggning omdirigerade alltid till barnens sysslo-vy oavsett vem som loggade in — nu kollar den om profilen faktiskt är ett barn först.
+- [x] `/api/profile` returnerar nu `hasPin` så profilsidan vet vad den ska visa.
+
+**Kräver `npx prisma db push` innan det funkar i produktion** (samma körning som täcker `shoppingListShareToken` från 4i — du behöver bara köra det en gång för båda).
+
+- [ ] Klicktesta: skapa en barnprofil med riktig email, logga in som barnet via PIN. Sätt en egen PIN på ditt vuxna konto (Profile → Security), logga ut, gå till familje-länken, logga in med PIN, verifiera att du hamnar på vanliga dashboarden (inte barn-vyn).
+
 ## 8. Nästa steg
 - [x] **Beslut 2026-07-27 kväll:** Fas 1 (beta-inbjudningar) väntar. Prioritet är att få de tre kärnflödena – **Reminders, Wishlist, Grocery (inköpslista)** – helt på plats och pålitliga först. Konkret: klar deploy (se 4h) + full klicktest av dessa tre (se punkt 7) innan beta-inbjudningar blir aktuellt.
 - [ ] När deployen (4h) är klar: klicktesta Reminders, Wishlist och Grocery grundligt (punkt 7), fixa det som inte fungerar.

@@ -47,6 +47,8 @@ type Profile = {
   preferredCurrency: string;
   timezone: string;
   createdAt: string;
+  isChildProfile?: boolean;
+  hasPin?: boolean;
 };
 
 export default function ProfilePage() {
@@ -90,11 +92,19 @@ export default function ProfilePage() {
   }
   const [showAddPinChild, setShowAddPinChild] = useState(false);
   const [pinChildName, setPinChildName] = useState("");
+  const [pinChildEmail, setPinChildEmail] = useState("");
   const [pinChildPin, setPinChildPin] = useState("");
   const [pinChildPinConfirm, setPinChildPinConfirm] = useState("");
   const [pinChildError, setPinChildError] = useState("");
   const [addingPinChild, setAddingPinChild] = useState(false);
   const [pinChildCopied, setPinChildCopied] = useState(false);
+  const [myPin, setMyPin] = useState("");
+  const [myPinConfirm, setMyPinConfirm] = useState("");
+  const [hasPin, setHasPin] = useState(false);
+  const [showSetPin, setShowSetPin] = useState(false);
+  const [pinSaving, setPinSaving] = useState(false);
+  const [pinError, setPinError] = useState("");
+  const [pinSuccess, setPinSuccess] = useState("");
   const [phoneValid, setPhoneValid] = useState(true);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
@@ -108,6 +118,7 @@ export default function ProfilePage() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
+        setHasPin(!!data.hasPin);
         setForm({
           firstName: (data.name || "").split(" ")[0],
           lastName: (data.name || "").split(" ").slice(1).join(" "),
@@ -144,6 +155,7 @@ export default function ProfilePage() {
 
   async function createPinChild() {
     if (!pinChildName.trim()) { setPinChildError("Enter a name"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pinChildEmail.trim())) { setPinChildError("Enter a valid email — your own address, an alias like you+childname@gmail.com, or the child's own if they have one"); return; }
     if (!/^[0-9]{4}$/.test(pinChildPin)) { setPinChildError("PIN must be exactly 4 digits"); return; }
     if (pinChildPin !== pinChildPinConfirm) { setPinChildError("PINs do not match"); return; }
     setAddingPinChild(true); setPinChildError("");
@@ -151,12 +163,12 @@ export default function ProfilePage() {
       const res = await fetch("/api/family/child-profiles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: pinChildName.trim(), pin: pinChildPin }),
+        body: JSON.stringify({ name: pinChildName.trim(), email: pinChildEmail.trim(), pin: pinChildPin }),
       });
       let data: { error?: string } = {};
       try { data = await res.json(); } catch { data = { error: `Server error ${res.status}` }; }
       if (res.ok) {
-        setPinChildName(""); setPinChildPin(""); setPinChildPinConfirm("");
+        setPinChildName(""); setPinChildEmail(""); setPinChildPin(""); setPinChildPinConfirm("");
         setShowAddPinChild(false);
         if (household?.id) fetchPinChildren(household.id);
       } else {
@@ -164,6 +176,36 @@ export default function ProfilePage() {
       }
     } catch (e) { setPinChildError("Could not reach server: " + String(e)); }
     finally { setAddingPinChild(false); }
+  }
+
+  async function saveMyPin() {
+    if (!/^[0-9]{4}$/.test(myPin)) { setPinError("PIN must be exactly 4 digits"); return; }
+    if (myPin !== myPinConfirm) { setPinError("PINs do not match"); return; }
+    setPinSaving(true); setPinError(""); setPinSuccess("");
+    try {
+      const res = await fetch("/api/profile/pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: myPin }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setHasPin(true); setShowSetPin(false); setMyPin(""); setMyPinConfirm("");
+        setPinSuccess("PIN saved!");
+        setTimeout(() => setPinSuccess(""), 3000);
+      } else {
+        setPinError(data.error ?? "Something went wrong");
+      }
+    } catch { setPinError("Network error"); }
+    finally { setPinSaving(false); }
+  }
+
+  async function removeMyPin() {
+    setPinSaving(true); setPinError("");
+    try {
+      const res = await fetch("/api/profile/pin", { method: "DELETE" });
+      if (res.ok) { setHasPin(false); setMyPin(""); setMyPinConfirm(""); }
+    } finally { setPinSaving(false); }
   }
 
   async function handleInvite(e: React.FormEvent) {
@@ -569,7 +611,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12, lineHeight: 1.5 }}>
-                      Children log in with their name and a 4-digit PIN — no email needed.
+                      Children log in day-to-day with a 4-digit PIN. Every account still needs an email on file — use your own, an alias like you+childname@gmail.com, or theirs if they have one.
                     </div>
 
                     {pinChildren.length > 0 && (
@@ -593,6 +635,10 @@ export default function ProfilePage() {
                           <input value={pinChildName} onChange={e => setPinChildName(e.target.value)} placeholder="e.g. Emma" autoComplete="off" style={inputStyle} />
                         </div>
                         <div style={{ marginBottom: 12 }}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>Email</label>
+                          <input value={pinChildEmail} onChange={e => setPinChildEmail(e.target.value)} placeholder="you+emma@gmail.com" type="email" autoComplete="off" style={inputStyle} />
+                        </div>
+                        <div style={{ marginBottom: 12 }}>
                           <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>4-digit PIN</label>
                           <input value={pinChildPin} onChange={e => setPinChildPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
                             style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
@@ -610,7 +656,7 @@ export default function ProfilePage() {
                             style={{ flex: 1, background: "#1C1C28", color: "#fff", border: "none", borderRadius: 50, padding: "12px", fontSize: 14, fontWeight: 700, cursor: addingPinChild ? "not-allowed" : "pointer", fontFamily: FONT, opacity: addingPinChild ? 0.6 : 1 }}>
                             {addingPinChild ? "Saving…" : "Save child"}
                           </button>
-                          <button type="button" onClick={() => { setShowAddPinChild(false); setPinChildName(""); setPinChildPin(""); setPinChildPinConfirm(""); setPinChildError(""); }}
+                          <button type="button" onClick={() => { setShowAddPinChild(false); setPinChildName(""); setPinChildEmail(""); setPinChildPin(""); setPinChildPinConfirm(""); setPinChildError(""); }}
                             style={{ padding: "12px 20px", borderRadius: 50, background: "#F0F3FA", border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}>
                             Cancel
                           </button>
@@ -625,7 +671,7 @@ export default function ProfilePage() {
                         setTimeout(() => setPinChildCopied(false), 2000);
                       }}
                         style={{ display: "inline-flex", alignItems: "center", gap: 8, background: pinChildCopied ? "#D4F4E6" : "#E4E7FB", color: pinChildCopied ? "#1E7D52" : "#1A3A6E", border: "none", borderRadius: 50, padding: "9px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-                        {pinChildCopied ? "✓ Copied!" : "Copy children's login link"}
+                        {pinChildCopied ? "✓ Copied!" : "Copy family PIN login link"}
                       </button>
                     )}
                   </div>
@@ -713,6 +759,68 @@ export default function ProfilePage() {
                 </svg>
                 Change password
               </button>
+            )}
+
+            {/* Optional PIN login — lets an adult switch profiles quickly on a
+                shared family device without re-typing their password. Doesn't
+                touch or weaken the real email+password login above. */}
+            {!profile?.isChildProfile && (
+              <div style={{ marginTop: 12, paddingTop: 14, borderTop: "1px solid #F0F2F7" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1C28", marginBottom: 4 }}>PIN login</div>
+                <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 10, lineHeight: 1.5 }}>
+                  Optional — add a 4-digit PIN to switch to your account quickly on a shared family device, on top of your normal email + password login.
+                </div>
+
+                {pinSuccess && (
+                  <div style={{ fontSize: 13, color: "#1E7D52", background: "#EAFBF3", border: "1px solid #B8EBD4", borderRadius: 8, padding: "8px 12px", marginBottom: 10, fontWeight: 600 }}>{pinSuccess}</div>
+                )}
+
+                {!showSetPin ? (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 13, color: hasPin ? "#1C1C28" : "#9CA3AF", fontWeight: 600 }}>
+                      {hasPin ? "PIN login is on" : "No PIN set"}
+                    </span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button type="button" onClick={() => setShowSetPin(true)}
+                        style={{ background: "#E4E7FB", border: "none", borderRadius: 50, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: "#1A3A6E", cursor: "pointer", fontFamily: FONT }}>
+                        {hasPin ? "Change PIN" : "Set a PIN"}
+                      </button>
+                      {hasPin && (
+                        <button type="button" onClick={removeMyPin} disabled={pinSaving}
+                          style={{ background: "none", border: "none", color: "#D94F4F", fontSize: 12, fontWeight: 700, cursor: pinSaving ? "not-allowed" : "pointer", fontFamily: FONT }}>
+                          Turn off
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background: "#F9FAFB", borderRadius: 14, border: "1.5px solid #E4E3DE", padding: 16 }}>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>4-digit PIN</label>
+                      <input value={myPin} onChange={e => setMyPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
+                        style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>Confirm PIN</label>
+                      <input value={myPinConfirm} onChange={e => setMyPinConfirm(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
+                        style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
+                    </div>
+                    {pinError && (
+                      <div style={{ fontSize: 13, color: "#C44444", background: "#FFF0F0", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>{pinError}</div>
+                    )}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button type="button" onClick={saveMyPin} disabled={pinSaving}
+                        style={{ flex: 1, background: "#1C1C28", color: "#fff", border: "none", borderRadius: 50, padding: "12px", fontSize: 14, fontWeight: 700, cursor: pinSaving ? "not-allowed" : "pointer", fontFamily: FONT, opacity: pinSaving ? 0.6 : 1 }}>
+                        {pinSaving ? "Saving…" : "Save PIN"}
+                      </button>
+                      <button type="button" onClick={() => { setShowSetPin(false); setMyPin(""); setMyPinConfirm(""); setPinError(""); }}
+                        style={{ padding: "12px 20px", borderRadius: 50, background: "#F0F3FA", border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             <div style={{ marginTop: 12 }}>

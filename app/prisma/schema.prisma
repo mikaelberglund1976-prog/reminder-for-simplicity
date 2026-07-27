@@ -15,6 +15,12 @@ model User {
   id                String     @id @default(cuid())
   email             String     @unique
   password          String?
+  // Optional 4-digit PIN (hashed), separate from `password` — lets an adult
+  // keep their real email+password login AND opt into quick PIN login on a
+  // shared family device, without weakening their main credential. Child
+  // profiles don't use this field; their PIN is still stored in `password`
+  // (see child-profiles route) since it's their only credential.
+  pin               String?
   name              String?
   emailVerified     DateTime?
   phone             String?

@@ -17,12 +17,17 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const name: string | undefined = body?.name;
     const pin: string | undefined = body?.pin;
+    const emailInput: string | undefined = body?.email;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Name required" }, { status: 400 });
     }
     if (!pin || pin.length !== 4 || !/^[0-9]{4}$/.test(pin)) {
       return NextResponse.json({ error: "PIN must be 4 digits" }, { status: 400 });
+    }
+    const email = emailInput?.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "A valid email is required — every account needs one, even if the child mostly logs in with their PIN." }, { status: 400 });
     }
 
     const membership = await prisma.householdMember.findFirst({
@@ -61,22 +66,30 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create the child user (internal email, password = hashed PIN)
+    // Create the child user. Every account needs a real email now — see
+    // TODO.md 4j (2026-07-27): a parent supplies it (their own address, an
+    // alias like "parent+childname@gmail.com", or the child's own email if
+    // they have one). The child still logs in day-to-day via PIN, not this
+    // email — it exists so the account is a real, ownable identity (e.g. if
+    // the child later wants to switch to full email+password login), not so
+    // it becomes another login step for a kid.
     const pinHash = await bcrypt.hash(pin, 10);
-    const internalEmail =
-      "child_" + Math.random().toString(36).slice(2, 12) + "@reminder-for-simplicity.internal";
 
     let createdUser;
     try {
       createdUser = await prisma.user.create({
         data: {
-          email: internalEmail,
+          email,
           name: name.trim(),
           password: pinHash,
           isChildProfile: true,
         },
       });
-    } catch (err) {
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code;
+      if (code === "P2002") {
+        return NextResponse.json({ error: "That email is already used by another account." }, { status: 409 });
+      }
       console.error("Child profile: user.create failed", err);
       return NextResponse.json(
         {

@@ -6,7 +6,7 @@ import { signIn, useSession } from "next-auth/react";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
-type Child = { id: string; name: string; email: string };
+type Child = { id: string; name: string; email: string; isChildProfile: boolean };
 
 const AVATAR_COLORS = [
   "#4A5FD5", "#E8614D", "#2A9D6F", "#C06010",
@@ -75,13 +75,13 @@ function FamilySwitchContent() {
     setSigning(true);
     setError("");
     try {
-      const result = await signIn("credentials", {
+      const result = await signIn("pin", {
         email: selected.email,
-        password: p,
+        pin: p,
         redirect: false,
       });
       if (result?.ok) {
-        router.push("/dashboard/family/child");
+        router.push(selected.isChildProfile ? "/dashboard/family/child" : "/dashboard");
       } else {
         setError("Wrong PIN. Try again.");
         setPin("");
@@ -209,6 +209,9 @@ function FamilySwitchContent() {
                     {child.name.charAt(0).toUpperCase()}
                   </div>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#0F172A" }}>{child.name}</div>
+                  {!child.isChildProfile && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase", marginTop: -6 }}>Adult</span>
+                  )}
                 </button>
               );
             })}

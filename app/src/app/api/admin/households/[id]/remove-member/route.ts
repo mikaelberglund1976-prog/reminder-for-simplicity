@@ -7,9 +7,9 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
 
 // POST /api/admin/households/[id]/remove-member
 // Body: { userId: string }
-// Removes the given user from the household. Does NOT delete the user account.
-// If the removed user is a child profile (email ends in @reminder-for-simplicity.internal),
-// we also delete the user record since children only exist inside a household.
+// Removes the given user from the household. Does NOT delete the user account,
+// unless the removed user is a child profile (isChildProfile) — those have no
+// life outside a household, so we clean up the user row too.
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);

@@ -40,6 +40,7 @@ export async function GET() {
       timezone: true,
       createdAt: true,
       isChildProfile: true,
+      pin: true,
     },
   });
 
@@ -47,7 +48,8 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  return NextResponse.json(user);
+  const { pin, ...rest } = user;
+  return NextResponse.json({ ...rest, hasPin: !!pin });
 }
 
 // PUT /api/profile — update user profile

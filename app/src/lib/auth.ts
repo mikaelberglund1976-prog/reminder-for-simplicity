@@ -55,6 +55,47 @@ providers.push(
   })
 );
 
+providers.push(
+  // ─── PIN (quick login on a shared family device) ──────────────────────────
+  // Used by the /family switcher's numpad screen for both child profiles and
+  // adults who've opted in. Child accounts store their PIN hash in
+  // `password` (their only credential, set at creation — see
+  // child-profiles route); adults who opt in get a separate `pin` field so
+  // it never overwrites or weakens their real password. Kept as a distinct
+  // provider (rather than overloading the "credentials" one) so the two
+  // login surfaces can't be confused with each other.
+  CredentialsProvider({
+    id: "pin",
+    name: "PIN",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      pin: { label: "PIN", type: "password" },
+    },
+    async authorize(credentials) {
+      if (!credentials?.email || !credentials?.pin) {
+        throw new Error("PIN is required");
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { email: credentials.email.toLowerCase() },
+      });
+      if (!user) throw new Error("Account not found");
+
+      const hash = user.isChildProfile ? user.password : user.pin;
+      if (!hash) throw new Error("PIN login isn't set up for this account");
+
+      const isValid = await bcrypt.compare(credentials.pin, hash);
+      if (!isValid) throw new Error("Wrong PIN");
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      };
+    },
+  })
+);
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
