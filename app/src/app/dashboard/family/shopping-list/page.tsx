@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/shoppingCategories";
+import { CATEGORY_LABELS, CATEGORY_ORDER, CATEGORY_ICONS } from "@/lib/shoppingCategories";
 import { markSeen } from "@/lib/listBadges";
 import HamburgerMenu from "@/components/HamburgerMenu";
 
@@ -259,8 +259,16 @@ export default function ShoppingListPage() {
       </form>
 
       {/* To buy, grouped by category */}
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 10, letterSpacing: "0.02em" }}>
-        To buy {pending.length > 0 && `(${pending.length})`}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", letterSpacing: "0.01em" }}>To buy</span>
+        {pending.length > 0 && (
+          <span style={{
+            background: "#4A5FD5", color: "#fff", fontSize: 12, fontWeight: 800,
+            borderRadius: 999, padding: "1px 9px", lineHeight: "18px", minWidth: 18, textAlign: "center",
+          }}>
+            {pending.length}
+          </span>
+        )}
       </div>
 
       {pending.length === 0 ? (
@@ -270,11 +278,17 @@ export default function ShoppingListPage() {
       ) : (
         <div style={{ marginBottom: 24 }}>
           {grouped.map(group => (
-            <div key={group.category} style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 2px 6px" }}>
+            <div key={group.category} style={{ marginBottom: 16 }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 7,
+                background: "#4A5FD5", color: "#fff",
+                borderRadius: 10, padding: "7px 14px", marginBottom: 0,
+                fontSize: 12, fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase",
+              }}>
+                <span style={{ fontSize: 14 }}>{CATEGORY_ICONS[group.category]}</span>
                 {CATEGORY_LABELS[group.category]}
               </div>
-              <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div style={{ background: "#fff", borderRadius: "0 0 18px 18px", border: "1px solid #E4E3DE", borderTop: "none", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
                 {group.items.map((item, i) => (
                   <ItemRow
                     key={item.id}
@@ -296,18 +310,22 @@ export default function ShoppingListPage() {
       {purchased.length > 0 && (
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.02em" }}>
-              Already in the cart ({purchased.length})
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#2A9D6F" }}>
+              <span>✓</span> Already in the cart ({purchased.length})
             </div>
             <button
               onClick={clearBought}
               disabled={clearing}
-              style={{ background: "none", border: "none", color: "#6B7280", fontSize: 12, fontWeight: 700, cursor: clearing ? "not-allowed" : "pointer", padding: 4, fontFamily: FONT }}
+              style={{
+                background: "#fff", border: "1.5px solid #2A9D6F", color: "#2A9D6F",
+                fontSize: 12, fontWeight: 700, borderRadius: 999, padding: "5px 12px",
+                cursor: clearing ? "not-allowed" : "pointer", opacity: clearing ? 0.6 : 1, fontFamily: FONT,
+              }}
             >
               {clearing ? "Clearing…" : "Clear bought items"}
             </button>
           </div>
-          <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+          <div style={{ background: "rgba(42,157,111,0.06)", borderRadius: 18, border: "1px solid rgba(42,157,111,0.25)", padding: "4px 16px" }}>
             {purchased.map((item, i) => (
               <ItemRow key={item.id} item={item} isFirst={i === 0} busy={busyId === item.id} onToggle={() => togglePurchased(item)} onRemove={() => removeItem(item.id)} onCategoryChange={(cat) => changeCategory(item, cat)} />
             ))}
@@ -337,7 +355,7 @@ function ItemRow({ item, isFirst, busy, onToggle, onRemove, onCategoryChange }: 
         style={{
           width: 24, height: 24, borderRadius: "50%", flexShrink: 0, cursor: busy ? "not-allowed" : "pointer",
           border: item.isPurchased ? "none" : "2px solid #E4E3DE",
-          background: item.isPurchased ? "#1E7D52" : "transparent",
+          background: item.isPurchased ? "#2A9D6F" : "transparent",
           display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
         }}
       >

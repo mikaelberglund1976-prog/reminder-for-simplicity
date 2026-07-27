@@ -24,6 +24,20 @@ export const CATEGORY_LABELS: Record<ShoppingCategory, string> = {
   UNSORTED: "Unsorted",
 };
 
+// Small emoji per aisle, shown on the colored category header bar in the UI.
+// Matches the existing app-wide convention of emoji category icons (BRAND.md §4).
+export const CATEGORY_ICONS: Record<ShoppingCategory, string> = {
+  PRODUCE: "🥦",
+  DAIRY: "🥛",
+  BREAD: "🍞",
+  FROZEN: "🧊",
+  PANTRY: "🥫",
+  HOUSEHOLD: "🧻",
+  MEAT_FISH: "🍗",
+  OTHER: "📦",
+  UNSORTED: "❔",
+};
+
 // Ordered the way a typical store is laid out, so grouped lists read naturally.
 export const CATEGORY_ORDER: ShoppingCategory[] = [
   "PRODUCE",
