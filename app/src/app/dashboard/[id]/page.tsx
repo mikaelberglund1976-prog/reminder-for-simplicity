@@ -300,7 +300,7 @@ export default function ReminderDetailPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, paddingBottom: 40 }}>
-      <main style={{ maxWidth: 480, margin: "0 auto", padding: "24px 20px 0" }}>
+      <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "24px 20px 0" }}>
 
         {/* Back */}
         <Link href="/dashboard" style={{

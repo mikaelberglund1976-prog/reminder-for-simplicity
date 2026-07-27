@@ -191,7 +191,7 @@ export default function NewReminderPage() {
     <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, paddingBottom: 40 }}>
 
       {/* Back arrow */}
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "20px 20px 0" }}>
+      <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 0" }}>
         <Link href="/dashboard" style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           color: "#7C7C8A", fontSize: 14, fontWeight: 500, textDecoration: "none",
@@ -203,7 +203,7 @@ export default function NewReminderPage() {
         </Link>
       </div>
 
-      <main style={{ maxWidth: 480, margin: "0 auto", padding: "20px 20px 0" }}>
+      <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 0" }}>
 
         {/* Title */}
         <div style={{ marginBottom: 24 }}>

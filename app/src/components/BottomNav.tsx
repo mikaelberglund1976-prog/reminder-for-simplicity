@@ -63,14 +63,21 @@ export default function BottomNav() {
   }, [pathname]);
 
   return (
-    <nav
-      style={{
-        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 20,
-        background: "#fff", borderTop: "1px solid #E4E3DE",
-        boxShadow: "0 -2px 12px rgba(0,0,0,0.04)",
-      }}
-    >
-      <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    // Outer element only handles fixed positioning across the full viewport —
+    // the visible bar itself (background/border/shadow) is capped to the same
+    // 480px content width as every page, centered. Without this split, on a
+    // wide desktop window the white bar stretched edge-to-edge while the tabs
+    // stayed clustered in the middle — a visible seam against the narrower
+    // content column above it. Capping the bar's own width fixes that; on
+    // phone-width viewports this is visually identical to a full-bleed bar.
+    <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 20, display: "flex", justifyContent: "center" }}>
+      <div style={{
+        width: "100%", maxWidth: "var(--content-max-width)", display: "flex",
+        background: "#fff", border: "1px solid #E4E3DE", borderBottom: "none",
+        borderRadius: "16px 16px 0 0",
+        boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}>
         {TABS.map(tab => {
           const active = tab.match(pathname);
           const showBadge = tab.key === "shopping-list" ? badges.shoppingList : tab.key === "wishlist" ? badges.wishlist : false;

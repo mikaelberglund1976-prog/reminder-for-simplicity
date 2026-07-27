@@ -22,20 +22,40 @@ export default function Home() {
         <h1 style={{
           fontSize: "clamp(34px, 8vw, 48px)", fontWeight: 800,
           color: "#1C1C28", lineHeight: 1.15, letterSpacing: "-1px",
-          margin: "0 0 16px", maxWidth: 380,
+          margin: "0 0 16px", maxWidth: 400,
         }}>
-          Share the{" "}
-          <span style={{ color: "#4A5FD5" }}>mental load</span>
-          {" "}of your household
+          Everything your family needs to{" "}
+          <span style={{ color: "#4A5FD5" }}>remember, buy, and want</span>
         </h1>
 
         {/* Subtitle */}
         <p style={{
           fontSize: 16, color: "#7C7C8A", lineHeight: 1.6,
-          maxWidth: 340, margin: "0 0 40px",
+          maxWidth: 360, margin: "0 0 20px",
         }}>
-          Keep track of recurring costs, important dates, and shared responsibilities — so nothing gets missed, forgotten, or left to one person.
+          Bills and birthdays, a shared shopping list, and wishlists the kids control — all in one calm place, not five different apps.
         </p>
+
+        {/* Feature pills — proof this is more than a reminder app */}
+        <div style={{
+          display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center",
+          margin: "0 0 40px",
+        }}>
+          {[
+            { icon: "🔔", label: "Reminders" },
+            { icon: "🛒", label: "Shopping list" },
+            { icon: "🎁", label: "Wishlists" },
+          ].map(p => (
+            <span key={p.label} style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              background: "#fff", border: "1px solid #E4E3DE", borderRadius: 50,
+              padding: "7px 14px", fontSize: 13, fontWeight: 600, color: "#1C1C28",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            }}>
+              <span>{p.icon}</span>{p.label}
+            </span>
+          ))}
+        </div>
 
         {/* ── Phone mockup ── */}
         <div style={{ position: "relative", width: 280, height: 420, margin: "0 auto 0" }}>
@@ -107,7 +127,7 @@ export default function Home() {
                   <div style={{ fontSize: 9, color: "#4A5FD5", fontWeight: 600 }}>Tomorrow</div>
                 </div>
 
-                {/* Netflix */}
+                {/* Shopping list */}
                 <div style={{
                   background: "#fff", borderRadius: 14, padding: "10px 12px",
                   boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
@@ -115,17 +135,17 @@ export default function Home() {
                 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                    background: "#E50914", display: "flex", alignItems: "center", justifyContent: "center",
-                    fontWeight: 900, fontSize: 16, color: "#fff", fontStyle: "italic",
-                  }}>N</div>
+                    background: "#D4F4E6", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 18,
+                  }}>🛒</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1C1C28" }}>Netflix</div>
-                    <div style={{ fontSize: 10, color: "#7C7C8A" }}>Renews Tomorrow</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1C1C28" }}>Shopping list</div>
+                    <div style={{ fontSize: 10, color: "#7C7C8A" }}>Milk, eggs +3 more</div>
                   </div>
-                  <div style={{ fontSize: 9, color: "#E5873A", fontWeight: 600 }}>Tomorrow</div>
+                  <div style={{ fontSize: 9, color: "#2A9D6F", fontWeight: 600 }}>2 bought</div>
                 </div>
 
-                {/* Telia */}
+                {/* Wishlist */}
                 <div style={{
                   background: "#fff", borderRadius: 14, padding: "10px 12px",
                   boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
@@ -133,31 +153,31 @@ export default function Home() {
                 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                    background: "#6E0DDA", display: "flex", alignItems: "center", justifyContent: "center",
-                    fontWeight: 800, fontSize: 13, color: "#fff",
-                  }}>T</div>
+                    background: "#EDEBFB", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 18,
+                  }}>🎁</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1C1C28" }}>Telia</div>
-                    <div style={{ fontSize: 10, color: "#7C7C8A" }}>Renews in 3 days</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1C1C28" }}>Emma's wishlist</div>
+                    <div style={{ fontSize: 10, color: "#7C7C8A" }}>Added: LEGO set</div>
                   </div>
-                  <div style={{ fontSize: 9, color: "#7C7C8A", fontWeight: 600 }}>3 days</div>
+                  <div style={{ fontSize: 9, color: "#5B4FCF", fontWeight: 600 }}>New</div>
                 </div>
 
               </div>
             </div>
           </div>
 
-          {/* Floating decoration — envelope */}
+          {/* Floating decoration — gift/wishlist */}
           <div style={{
             position: "absolute", top: 40, left: -10, zIndex: 2,
             width: 44, height: 44, borderRadius: 14,
-            background: "linear-gradient(135deg, #E4E7FB, #E4E7FB)",
+            background: "linear-gradient(135deg, #EDEBFB, #E4E7FB)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 16px rgba(91,156,245,0.25)",
+            boxShadow: "0 4px 16px rgba(91,79,207,0.2)",
             fontSize: 20,
-          }}>✉️</div>
+          }}>🎁</div>
 
-          {/* Floating decoration — calendar */}
+          {/* Floating decoration — shopping cart */}
           <div style={{
             position: "absolute", top: 30, right: -10, zIndex: 2,
             width: 44, height: 44, borderRadius: 14,
@@ -165,9 +185,9 @@ export default function Home() {
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 4px 16px rgba(42,157,111,0.2)",
             fontSize: 20,
-          }}>📅</div>
+          }}>🛒</div>
 
-          {/* Floating decoration — bell */}
+          {/* Floating decoration — reminder bell */}
           <div style={{
             position: "absolute", bottom: 80, right: -14, zIndex: 2,
             width: 40, height: 40, borderRadius: 12,
@@ -183,7 +203,7 @@ export default function Home() {
       {/* ── Bottom buttons ── */}
       <div style={{
         padding: "32px 24px 48px",
-        display: "flex", gap: 12, maxWidth: 480, margin: "0 auto", width: "100%",
+        display: "flex", gap: 12, maxWidth: "var(--content-max-width)", margin: "0 auto", width: "100%",
         boxSizing: "border-box",
       }}>
         <Link href="/register" style={{

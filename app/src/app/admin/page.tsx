@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { StarBackground } from "@/components/StarBackground";
-
-const ADMIN_EMAIL = "mikaelberglund1976@gmail.com";
+import { ADMIN_EMAIL } from "@/lib/adminConfig";
 
 type Stats = {
   totalUsers: number;

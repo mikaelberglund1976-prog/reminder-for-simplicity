@@ -120,7 +120,7 @@ export default function NewChorePage() {
     <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
       {/* Header */}
       <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
-        <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
@@ -128,7 +128,7 @@ export default function NewChorePage() {
         </div>
       </div>
 
-      <main style={{ maxWidth: 480, margin: "0 auto", padding: "24px 20px 60px" }}>
+      <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "24px 20px 60px" }}>
         <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
           {/* Chore name */}

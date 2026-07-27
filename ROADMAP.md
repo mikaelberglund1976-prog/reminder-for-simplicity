@@ -1,5 +1,5 @@
 # Roadmap – Reminder for Simplicity
-**Senast uppdaterad:** 2026-07-27 (inköpslista utökad + önskelista + bottenmeny tillagda enligt beställning)
+**Senast uppdaterad:** 2026-07-27 kväll (hamburgermeny + mobil/webb-vy-växlare tillagda, ovanpå dagens tidigare inköpslista/önskelista/bottenmeny-arbete)
 
 ---
 
@@ -51,6 +51,8 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 - [x] **Inköpslista utökad enligt beställning (2026-07-27):** kategorisering per butiksavdelning med minnesfunktion (`ShoppingCategoryMemory`), "Clear bought items"-knapp, automatisk rensning 24h efter köp via cron, 5-sekunders polling för nästan-realtidssynk mellan hushållsmedlemmar
 - [x] **Önskelista (2026-07-27):** `WishlistItem` – barn lägger till egna önskningar, föräldrar reserverar/markerar köpt, köpstatus aldrig synlig för barnet (server-side, inte bara UI). `/dashboard/wishlist`
 - [x] **Bottenmeny (2026-07-27):** Reminders/Shopping list/Wishlist alltid synlig på `/dashboard/*`, ett tryck för att byta, notis-prick vid nya varor/önskningar sedan senaste besök
+- [x] **Hamburgermeny (2026-07-27):** Family/Settings/Admin/Sign out samlade i en meny i sidhuvudet – `/admin` gick tidigare bara att nå via direkt URL, nu länkad (villkorat på admin-email)
+- [x] **Mobil/webb-vy-växlare (2026-07-27):** en CSS-variabel styr sidbredden app-brett; växlare i Profile → Preferences ger en bredare enkolumns-vy på dator. Inte en full desktop-omdesign – se PRODUCT_SPEC 4b.12
 
 **Detta bör dokumenteras formellt i PRODUCT_SPEC.md** – se uppdaterad version (4b.8–4b.10).
 

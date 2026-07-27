@@ -14,6 +14,19 @@
   --success: #2A9D6F;
   --warning: #E5873A;
   --danger: #D94F4F;
+
+  /* Content column width. Every page centers its content at this width via
+     `maxWidth: "var(--content-max-width)"` — one variable controls the whole
+     app, so the mobile/web view toggle (see lib/viewMode.ts + profile page)
+     only has to flip one attribute instead of touching every page. */
+  --content-max-width: 480px;
+}
+
+/* "Web view" preference — wider single column, more breathing room on a
+   desktop screen. Still one centered column, not a different layout;
+   see TODO.md 4d0 for why we didn't go further than this for now. */
+html[data-view="web"] {
+  --content-max-width: 1040px;
 }
 
 @layer base {

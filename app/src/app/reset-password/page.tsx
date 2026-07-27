@@ -58,7 +58,7 @@ function ResetPasswordContent() {
       position: "relative", overflow: "hidden",
     }}>
 
-      <main style={{ flex: 1, maxWidth: 480, width: "100%", margin: "0 auto", padding: "60px 28px 0" }}>
+      <main style={{ flex: 1, maxWidth: "var(--content-max-width)", width: "100%", margin: "0 auto", padding: "60px 28px 0" }}>
 
         <div style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1C1C28", margin: 0, letterSpacing: "-0.5px" }}>

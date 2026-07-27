@@ -179,7 +179,7 @@ function FamilySwitchContent() {
   // Child profile picker
   return (
     <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "48px 24px" }}>
+      <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "48px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ fontSize: 13, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
             {householdName}

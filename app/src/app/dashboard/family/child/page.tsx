@@ -142,7 +142,7 @@ function ChildViewContent() {
     <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, paddingBottom: 40 }}>
       {/* Header */}
       <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
-        <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
@@ -150,7 +150,7 @@ function ChildViewContent() {
         </div>
       </div>
 
-      <main style={{ maxWidth: 480, margin: "0 auto", padding: "20px 20px 0" }}>
+      <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 0" }}>
         {/* Date + progress */}
         <div style={{ background: "linear-gradient(135deg, #1C1C28 0%, #2C3E6E 100%)", borderRadius: 20, padding: "20px 22px", marginBottom: 20 }}>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 600, marginBottom: 4 }}>

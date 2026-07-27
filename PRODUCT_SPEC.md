@@ -1,16 +1,16 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.2 | **Uppdaterad:** 2026-07-27 | **Ägare:** Mikael Berglund
-**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista" – se öppna-frågor-besluten i 4b.8/4b.9.
+**Version:** 2.3 | **Uppdaterad:** 2026-07-27 (kväll) | **Ägare:** Mikael Berglund
+**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda.
 
 ---
 
 ## 1. Problemet vi löser
 
-Människor glömmer viktiga datum och löpande kostnader. Abonnemang förnyas automatiskt utan att man tänker på det, försäkringar förnyas till sämre pris, presenter köps i sista minuten, viktiga avtal missas – och de flesta vet inte ens vad de spenderar per månad på abonnemang.
+Människor glömmer viktiga datum och löpande kostnader. Abonnemang förnyas automatiskt utan att man tänker på det, försäkringar förnyas till sämre pris, presenter köps i sista minuten, viktiga avtal missas – och de flesta vet inte ens vad de spenderar per månad på abonnemang. Utöver det bär oftast en person i hushållet hela den mentala bördan: att komma ihåg vad som ska handlas, hålla koll på barnens önskningar utan att spoiler dem, och hantera sysslor – utspritt över flera olika appar.
 
-**Reminder for Simplicity** är platsen där du samlar allt – en enkel, överskådlig påminnelsetjänst utan krångel. Ingen inlärningskurva, inga onödiga funktioner.
+**Reminder for Simplicity** är platsen där hela familjen samlar allt – påminnelser, en delad inköpslista, och önskelistor barnen äger själva. En enkel, överskådlig tjänst utan krångel. Ingen inlärningskurva, inga onödiga funktioner. **Inte bara en påminnelseapp** (beslut 2026-07-27, se sektion 3) – utan hemmets gemensamma bas.
 
-> "Din lugna vän som aldrig glömmer."
+> "Allt din familj behöver komma ihåg, handla och önska sig – på ett lugnt ställe."
 
 ---
 
@@ -26,7 +26,11 @@ Människor glömmer viktiga datum och löpande kostnader. Abonnemang förnyas au
 
 ## 3. Positionering
 
-Vi konkurrerar inte med Todoist eller TickTick. Vi är inte ett uppgiftshanteringsverktyg. Vi är specialister på **det som kostar pengar och har ett datum** – abonnemang, försäkringar, avtal, dokument. Det gör oss enkla att förstå och enkla att sälja.
+**Beslut 2026-07-27:** vi breddar positioneringen. Ursprungligen (v1–2.1) positionerade vi oss enbart mot "det som kostar pengar och har ett datum" – abonnemang, försäkringar, avtal. Det stämmer inte längre mot vad appen faktiskt gör (familjehushåll, delad inköpslista, barns önskelistor, sysslor). Mikael beslutade att startsidan och positioneringen ska "tänka stort" och inte begränsa sig till att vara "bara en reminder-app".
+
+**Ny positionering:** vi är fortfarande inte ett generellt uppgiftshanteringsverktyg (konkurrerar inte med Todoist/TickTick) – men vi är inte längre enbart en nischad påminnelsetjänst för fakturor och datum. Vi är **hemmets gemensamma bas**: det ställe där en familj samlar allt som annars sprids ut över flera olika appar och en persons huvud – påminnelser om pengar och datum, en delad inköpslista, och önskelistor barnen kontrollerar själva. Det som fortfarande gör oss enkla att förstå: allt vi bygger kopplar till **hushållet**, inte till generella att-göra-listor.
+
+*Praktiskt: landningssidan (`app/src/app/page.tsx`) och SEO-metadata (`layout.tsx`) uppdaterades 2026-07-27 för att spegla detta – ny rubrik "Everything your family needs to remember, buy, and want", tre feature-pills (Reminders/Shopping list/Wishlists), och telefonmockupen visar nu inköpslista + önskelista, inte bara abonnemang.*
 
 ---
 
@@ -150,6 +154,25 @@ Varje barn har sin egen önskelista, separat från den delade inköpslistan (P0.
 - Tre flikar – **Reminders, Shopping list, Wishlist** – alltid synliga längst ned på alla `/dashboard/*`-sidor (`app/dashboard/layout.tsx` + `components/BottomNav.tsx`). Att byta flik tar ett tryck, ingen laddningsfördröjning.
 - Liten röd notis-prick på en flik om något lagts till sedan senaste besöket. Löst utan ny databastabell: varje listsida sparar "senast sedd" (tidsstämpel) i `localStorage` när den laddas (`lib/listBadges.ts`), och menyn jämför det med den senaste varans `createdAt`. Enkel och tillräcklig lösning för ett hushåll – om appen skalar till fler användare per konto/enhet bör detta bli en riktig "senast läst"-kolumn per användare istället.
 - Bottenmeny valdes enligt beställningens motivering: branschstandard, minst antal tryck för 2–4 toppnivåer.
+- Menyns egen bakgrund är breddbegränsad till samma `--content-max-width` som resten av appen (se 4b.12) med rundade överkanter, istället för att gå kant-till-kant över hela skärmen – annars såg den trasig ut på breda skärmar (vit rand med flikarna klumpade i mitten).
+- **Bugghistoria:** `/dashboard` hade tidigare sin egen inbyggda bottenmeny (Reminders/History/Settings/+) som byggdes innan den delade menyn fanns. De krockade visuellt (låg på varandra) tills den gamla togs bort 2026-07-27 – se 4b.11 för var funktionerna hamnade istället.
+
+### 4b.11 Hamburgermeny för allt som inte har en egen flik (byggd 2026-07-27)
+
+Bottenmenyns tre flikar räcker inte för allt – Family-hubben, Settings, Admin-panelen och utloggning behövde också vara nåbara utan att skriva URL:er för hand.
+
+- `components/HamburgerMenu.tsx`: en ☰-knapp längst till höger i sidhuvudet, öppnar en dropdown med **Reminders, Family, Settings**, och **Admin** (endast om `session.user.email === ADMIN_EMAIL` – samma konstant som skyddar `/admin` själv, delad via `lib/adminConfig.ts` för att inte kunna divergera), plus **Sign out** längst ner.
+- Placerad som en vanlig flex-sibling bredvid sidtiteln (`<h1 style="flex:1">`) i stället för en fristående `position:fixed`-knapp – annars hade den riskerat att hamna ovanpå titeltexten på smala mobilskärmer, samma typ av bugg som bottenmenyn hade mot `/dashboard`s gamla meny.
+- Tillagd i sidhuvudet på: `/dashboard` (Reminders), `/dashboard/family`, `/dashboard/family/shopping-list`, `/dashboard/wishlist` – de sidor användaren faktiskt "bor" på. Djupare formulärsidor (skapa/redigera reminder, bjud in familjemedlem) har medvetet bara tillbaka-knapp, som är standard UX för uppgiftsflöden.
+- **Innan detta:** `/admin` gick bara att nå genom att skriva URL:en direkt i webbläsaren – ingen länk fanns i appen.
+
+### 4b.12 Mobil/webb-vy-växlare (byggd 2026-07-27)
+
+En enkel lösning på att appens smala kolumn (480px) ser gles ut på en stor datorskärm, utan att bygga om varje sidas layout:
+
+- En CSS-variabel, `--content-max-width` (`globals.css`), styr bredden på **alla** sidor. Ett `data-view="mobile"|"web"`-attribut på `<html>` växlar variabelns värde mellan `480px` (mobil, förvalt) och `1040px` (webb).
+- Väljare under **Profile → Preferences → Display**: "📱 Mobile view" / "🖥️ Web view". Sparas per enhet i `localStorage` (`lib/viewMode.ts`). Ett litet script i `<head>` (`VIEW_MODE_INIT_SCRIPT`) sätter attributet innan sidan målas upp, så det inte blinkar till fel bredd vid laddning.
+- **Viktigt att förstå gränsen för detta:** "Web view" gör den befintliga kolumnen bredare – det är fortsatt en enkolumns-layout, inte en omdesignad desktop-upplevelse med sidopanel eller grid. En riktig egen desktop-layout är ett separat, större projekt (se öppen fråga i `TODO.md` 4e/4f).
 
 ---
 

@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import HamburgerMenu from "@/components/HamburgerMenu";
 
 type HouseholdMember = { id: string; userId: string; user: { id: string; name: string | null; email: string } };
 
@@ -169,9 +170,6 @@ function IcStar()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><polygon
 function IcRight()   { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>; }
 function IcDown()    { return <svg width={13} height={13} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="6 9 12 15 18 9"/></svg>; }
 function IcPlus()    { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>; }
-function IcHistory() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR} strokeWidth={1.8}><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4H3"/><polyline points="3 3 3 7 7 7"/></svg>; }
-function IcGear()    { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR} strokeWidth={1.8}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>; }
-function IcNavCal()  { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR} strokeWidth={1.8}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -184,22 +182,6 @@ function StatCard({ icon, iconColor, iconBg, value, label }: {
       <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginTop: 4 }}>{label}</div>
     </div>
-  );
-}
-
-function NavBtn({ label, icon, active, onClick }: {
-  label: string; icon: React.ReactNode; active: boolean; onClick: () => void;
-}) {
-  return (
-    <button onClick={onClick} style={{
-      flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", gap: 3, background: "none", border: "none",
-      cursor: "pointer", color: active ? "#4A5FD5" : "#7C7C8A", padding: "8px 0",
-      fontFamily: FONT,
-    }}>
-      {icon}
-      <span style={{ fontSize: 11, fontWeight: 600 }}>{label}</span>
-    </button>
   );
 }
 
@@ -268,7 +250,6 @@ export default function DashboardPage() {
   const [activeSection, setSection]      = useState<"reminders" | "family">("reminders");
   const [filterCategory, setFilter]      = useState("ALL");
   const [sortBy, setSort]                = useState("date_asc");
-  const [activeTab, setTab]              = useState<"reminders" | "history" | "settings">("reminders");
   const [hasHousehold, setHasHousehold]  = useState(false);
   const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
   const [familySummary, setFamilySummary] = useState<{ childId: string; childName: string; total: number; done: number; pending: number }[]>([]);
@@ -415,17 +396,20 @@ export default function DashboardPage() {
   });
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", paddingBottom: 88, fontFamily: FONT }}>
-      <main style={{ maxWidth: 480, margin: "0 auto", padding: "32px 20px 0" }}>
+    <div style={{ minHeight: "100vh", background: "#F5F4F0", paddingBottom: 24, fontFamily: FONT }}>
+      <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "32px 20px 0" }}>
 
         {/* Welcome */}
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0F172A", margin: 0, letterSpacing: "-0.5px" }}>
-            Welcome back, {firstName}
-          </h1>
-          <p style={{ fontSize: 14, color: "#4B5563", margin: "6px 0 0", lineHeight: 1.5 }}>
-            Get a quick overview of what is coming up and what needs your attention.
-          </p>
+        <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0F172A", margin: 0, letterSpacing: "-0.5px" }}>
+              Welcome back, {firstName}
+            </h1>
+            <p style={{ fontSize: 14, color: "#4B5563", margin: "6px 0 0", lineHeight: 1.5 }}>
+              Get a quick overview of what is coming up and what needs your attention.
+            </p>
+          </div>
+          <HamburgerMenu />
         </div>
 
         {/* Needs your attention */}
@@ -680,22 +664,18 @@ export default function DashboardPage() {
 
       </main>
 
-      {/* Bottom nav */}
-      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: "1px solid #E4E3DE", paddingBottom: "env(safe-area-inset-bottom)", zIndex: 20 }}>
-        <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", alignItems: "center", height: 64 }}>
-          <NavBtn label="Reminders" icon={<IcNavCal />} active={activeTab === "reminders"}
-            onClick={() => { setTab("reminders"); setSection("reminders"); }} />
-          <Link href="/dashboard/new" style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", textDecoration: "none" }}>
-            <div style={{ width: 50, height: 50, borderRadius: "50%", background: "#1C1C28", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, boxShadow: "0 4px 16px rgba(26,35,64,0.28)" }}>
-              <IcPlus />
-            </div>
-          </Link>
-          <NavBtn label="History" icon={<IcHistory />} active={activeTab === "history"}
-            onClick={() => setTab("history")} />
-          <NavBtn label="Settings" icon={<IcGear />} active={activeTab === "settings"}
-            onClick={() => { setTab("settings"); router.push("/profile"); }} />
-        </div>
-      </nav>
+      {/* Floating "add reminder" button — sits just above the shared bottom tab bar
+          (see app/dashboard/layout.tsx + components/BottomNav.tsx) instead of living
+          inside its own nav row, so the two don't stack on top of each other. */}
+      <Link href="/dashboard/new" aria-label="Add reminder" style={{
+        position: "fixed", right: 20, bottom: 84, zIndex: 19,
+        width: 52, height: 52, borderRadius: "50%",
+        background: "#1C1C28", color: "#fff",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: "0 4px 16px rgba(26,35,64,0.28)", textDecoration: "none",
+      }}>
+        <IcPlus />
+      </Link>
     </div>
   );
 }

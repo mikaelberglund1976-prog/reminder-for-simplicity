@@ -78,6 +78,20 @@ Fel:           #D94F4F
 
 ---
 
+## 4b. Bottenmeny & övriga ikoner (tillagt 2026-07-27)
+
+Sedan appen breddades till att inte bara vara påminnelser (se positioneringsbeslutet i `PRODUCT_SPEC.md` §3, "vi tänker stort, inte bara reminder-app") används tre linjeikoner (SVG, inte emoji) i den nya bottenmenyn (`components/BottomNav.tsx`):
+
+| Flik | Ikon | Kommentar |
+|---|---|---|
+| Reminders | 🔔-formad linjeikon | Samma klocka-koncept som tidigare, nu SVG istället för emoji i själva navigeringen |
+| Shopping list | 🛒-formad linjeikon | |
+| Wishlist | 🎁-formad linjeikon | |
+
+I marknadsföringstexter (startsida, feature-pills) används däremot fortfarande emoji (🔔 🛒 🎁) för samma tre saker – konsekvent parvis med SVG-versionen i appen. Hamburgermenyn (`components/HamburgerMenu.tsx`, för Family/Settings/Admin/Sign out) använder samma linjeikon-stil som bottenmenyn, inte emoji.
+
+---
+
 ## 5. Email templates (tone) *(translated to English 2026-07-27, per the language decision)*
 
 ### Reminder email

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { markSeen } from "@/lib/listBadges";
+import HamburgerMenu from "@/components/HamburgerMenu";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -367,14 +368,15 @@ function Screen({ title, onBack, children }: { title: string; onBack: () => void
   return (
     <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
       <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
-        <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
           <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0, flex: 1 }}>{title}</h1>
+          <HamburgerMenu />
         </div>
       </div>
-      <main style={{ maxWidth: 480, margin: "0 auto", padding: "20px 20px 40px", paddingBottom: 96 }}>
+      <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 40px", paddingBottom: 96 }}>
         {children}
       </main>
     </div>

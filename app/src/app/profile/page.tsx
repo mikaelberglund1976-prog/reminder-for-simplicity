@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PhoneInput from "@/components/PhoneInput";
+import { getViewMode, setViewMode, ViewMode } from "@/lib/viewMode";
 
 type HouseholdMember = {
   id: string;
@@ -77,6 +78,16 @@ export default function ProfilePage() {
   const [newHouseholdName, setNewHouseholdName] = useState("");
   const [renamingHousehold, setRenamingHousehold] = useState(false);
   const [pinChildren, setPinChildren] = useState<{ id: string; name: string }[]>([]);
+  const [viewMode, setViewModeLocal] = useState<ViewMode>("mobile");
+
+  useEffect(() => {
+    setViewModeLocal(getViewMode());
+  }, []);
+
+  function changeViewMode(mode: ViewMode) {
+    setViewMode(mode);
+    setViewModeLocal(mode);
+  }
   const [showAddPinChild, setShowAddPinChild] = useState(false);
   const [pinChildName, setPinChildName] = useState("");
   const [pinChildPin, setPinChildPin] = useState("");
@@ -242,7 +253,7 @@ export default function ProfilePage() {
     <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, paddingBottom: 100 }}>
 
       {/* Back */}
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "20px 20px 0" }}>
+      <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 0" }}>
         <Link href="/dashboard" style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           color: "#7C7C8A", fontSize: 14, fontWeight: 500, textDecoration: "none",
@@ -254,7 +265,7 @@ export default function ProfilePage() {
         </Link>
       </div>
 
-      <main style={{ maxWidth: 480, margin: "0 auto", padding: "20px 20px 0" }}>
+      <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 0" }}>
 
         {/* Avatar + name */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
@@ -368,6 +379,27 @@ export default function ProfilePage() {
                 <Chevron />
               </SelectWrap>
               <Hint>Time of day when reminder emails are delivered.</Hint>
+            </Field>
+            <Field label="Display">
+              <div style={{ display: "flex", gap: 8 }}>
+                {(["mobile", "web"] as ViewMode[]).map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => changeViewMode(mode)}
+                    style={{
+                      flex: 1, padding: "10px 14px", borderRadius: 12, cursor: "pointer",
+                      fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                      border: viewMode === mode ? "1.5px solid #4A5FD5" : "1.5px solid #E4E3DE",
+                      background: viewMode === mode ? "#E4E7FB" : "#fff",
+                      color: viewMode === mode ? "#3A4FC5" : "#4B5563",
+                    }}
+                  >
+                    {mode === "mobile" ? "📱 Mobile view" : "🖥️ Web view"}
+                  </button>
+                ))}
+              </div>
+              <Hint>Web view uses a wider column on bigger screens. Saved on this device — switch back anytime.</Hint>
             </Field>
           </Card>
 

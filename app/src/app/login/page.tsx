@@ -43,7 +43,7 @@ export default function LoginPage() {
     }}>
 
       {/* Content */}
-      <main style={{ flex: 1, maxWidth: 480, width: "100%", margin: "0 auto", padding: "60px 28px 0" }}>
+      <main style={{ flex: 1, maxWidth: "var(--content-max-width)", width: "100%", margin: "0 auto", padding: "60px 28px 0" }}>
 
         {/* Title */}
         <div style={{ marginBottom: 32 }}>
