@@ -176,8 +176,8 @@ export default function FamilyPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#8B90A4", fontSize: 15 }}>Loading family…</div>
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Loading family…</div>
       </div>
     );
   }
@@ -193,7 +193,7 @@ export default function FamilyPage() {
             The database needs to be updated before this feature can be used. Run <strong>npm run db:push</strong> in your project folder, then reload.
           </p>
           <button onClick={fetchTrial}
-            style={{ background: "#1A2340", color: "#fff", border: "none", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+            style={{ background: "#1C1C28", color: "#fff", border: "none", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
             Try again
           </button>
         </div>
@@ -217,7 +217,7 @@ export default function FamilyPage() {
           <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>
             Family responsibilities require a household. Invite your family to get started.
           </p>
-          <Link href="/profile" style={btnStyle("#1A2340")}>Go to settings →</Link>
+          <Link href="/profile" style={btnStyle("#1C1C28")}>Go to settings →</Link>
         </div>
       </Screen>
     );
@@ -234,10 +234,10 @@ export default function FamilyPage() {
             Your 7-day free trial has ended. Upgrade to Pro to continue using family responsibilities.
           </p>
           <p style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 28 }}>Your chores and history are still saved.</p>
-          <button style={btnStyle("#1A2340")}>Upgrade to Pro →</button>
+          <button style={btnStyle("#1C1C28")}>Upgrade to Pro →</button>
           <div style={{ marginTop: 12 }}>
             <button onClick={() => router.push("/dashboard/family/child")}
-              style={{ background: "none", border: "none", color: "#5B9CF5", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>
+              style={{ background: "none", border: "none", color: "#4A5FD5", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>
               View history (read only)
             </button>
           </div>
@@ -253,7 +253,7 @@ export default function FamilyPage() {
       <Screen title="Family responsibilities" onBack={() => router.push("/dashboard")}>
         <div style={{ padding: "32px 0 0" }}>
           {/* Hero */}
-          <div style={{ background: "linear-gradient(135deg, #1A2340 0%, #2C3E6E 100%)", borderRadius: 20, padding: "28px 24px", marginBottom: 24, textAlign: "center" }}>
+          <div style={{ background: "linear-gradient(135deg, #1C1C28 0%, #2C3E6E 100%)", borderRadius: 20, padding: "28px 24px", marginBottom: 24, textAlign: "center" }}>
             <div style={{ fontSize: 42, marginBottom: 12 }}>👨‍👩‍👧</div>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: "0 0 10px", lineHeight: 1.2 }}>
               Less nagging.<br/>More structure.
@@ -267,7 +267,7 @@ export default function FamilyPage() {
           </div>
 
           {/* What is included */}
-          <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E8EDF4", padding: "20px", marginBottom: 20 }}>
+          <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE", padding: "20px", marginBottom: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 14 }}>What is included in the trial</div>
             {[
               ["✅", "Create recurring chores for 1 child"],
@@ -294,11 +294,11 @@ export default function FamilyPage() {
                 style={{
                   width: "100%", display: "flex", alignItems: "center", gap: 14,
                   padding: "16px 18px", borderRadius: 14, cursor: "pointer", fontFamily: FONT,
-                  background: "#EBF3FF", border: "2px solid #5B9CF5",
+                  background: "#E4E7FB", border: "2px solid #4A5FD5",
                   marginBottom: children.length > 0 ? 10 : 0,
                   textAlign: "left",
                 }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#5B9CF5", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#4A5FD5", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
                   <IcPlus />
                 </div>
                 <div>
@@ -326,15 +326,15 @@ export default function FamilyPage() {
                     <button key={c.id} onClick={() => setSelectedChild(c.id)}
                       style={{
                         display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-                        background: selectedChild === c.id ? "#EBF3FF" : "#fff",
-                        border: selectedChild === c.id ? "2px solid #5B9CF5" : "1.5px solid #E8EDF4",
+                        background: selectedChild === c.id ? "#E4E7FB" : "#fff",
+                        border: selectedChild === c.id ? "2px solid #4A5FD5" : "1.5px solid #E4E3DE",
                         borderRadius: 14, cursor: "pointer", textAlign: "left", fontFamily: FONT,
                       }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#1A2340", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#1C1C28", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
                         {c.name.charAt(0).toUpperCase()}
                       </div>
                       <span style={{ fontSize: 15, fontWeight: 600, color: "#0F172A" }}>{c.name}</span>
-                      {selectedChild === c.id && <div style={{ marginLeft: "auto", color: "#5B9CF5" }}><IcCheck /></div>}
+                      {selectedChild === c.id && <div style={{ marginLeft: "auto", color: "#4A5FD5" }}><IcCheck /></div>}
                     </button>
                   ))}
                 </div>
@@ -344,7 +344,7 @@ export default function FamilyPage() {
 
           {children.length > 0 && !showAddChild && (
             <button onClick={startTrial} disabled={!selectedChild || starting}
-              style={{ ...btnStyle("#1A2340"), width: "100%", opacity: !selectedChild || starting ? 0.6 : 1 }}>
+              style={{ ...btnStyle("#1C1C28"), width: "100%", opacity: !selectedChild || starting ? 0.6 : 1 }}>
               {starting ? "Starting…" : "Start free 7-day trial →"}
             </button>
           )}
@@ -367,7 +367,7 @@ export default function FamilyPage() {
             <div style={{ fontSize: 13, fontWeight: 700, color: "#92400E" }}>Free trial active</div>
             <div style={{ fontSize: 12, color: "#B45309", marginTop: 2 }}>{trial.daysLeft} day{trial.daysLeft !== 1 ? "s" : ""} remaining</div>
           </div>
-          <button style={{ background: "#1A2340", color: "#fff", border: "none", borderRadius: 50, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+          <button style={{ background: "#1C1C28", color: "#fff", border: "none", borderRadius: 50, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
             Upgrade
           </button>
         </div>
@@ -389,9 +389,9 @@ export default function FamilyPage() {
             <button key={c.childId} onClick={() => setSelectedChild(c.childId)}
               style={{
                 flexShrink: 0, padding: "8px 16px", borderRadius: 50, fontSize: 13, fontWeight: 700,
-                background: selectedChild === c.childId ? "#1A2340" : "#fff",
+                background: selectedChild === c.childId ? "#1C1C28" : "#fff",
                 color: selectedChild === c.childId ? "#fff" : "#4B5563",
-                border: selectedChild === c.childId ? "none" : "1.5px solid #E8EDF4",
+                border: selectedChild === c.childId ? "none" : "1.5px solid #E4E3DE",
                 cursor: "pointer", fontFamily: FONT,
               }}>
               {c.childName}
@@ -402,14 +402,14 @@ export default function FamilyPage() {
 
       {/* Week summary card */}
       {viewChild && (
-        <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E8EDF4", padding: "20px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+        <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: "20px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "#0F172A" }}>{viewChild.childName}</div>
               <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>This week</div>
             </div>
             <Link href={`/dashboard/family/child?id=${viewChild.childId}`}
-              style={{ fontSize: 12, fontWeight: 600, color: "#5B9CF5", textDecoration: "none" }}>
+              style={{ fontSize: 12, fontWeight: 600, color: "#4A5FD5", textDecoration: "none" }}>
               Child view →
             </Link>
           </div>
@@ -474,7 +474,7 @@ export default function FamilyPage() {
           {viewChild.chores.length === 0 && (
             <div style={{ textAlign: "center", padding: "20px 0", color: "#9CA3AF", fontSize: 13 }}>
               No chores assigned yet.{" "}
-              <Link href="/dashboard/family/new" style={{ color: "#5B9CF5", fontWeight: 600 }}>Add one →</Link>
+              <Link href="/dashboard/family/new" style={{ color: "#4A5FD5", fontWeight: 600 }}>Add one →</Link>
             </div>
           )}
         </div>
@@ -483,7 +483,7 @@ export default function FamilyPage() {
       {/* Over-time stats card */}
       {viewChild && viewStats && (
         <div style={{
-          background: "#fff", borderRadius: 18, border: "1px solid #E8EDF4",
+          background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE",
           padding: "20px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
         }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>
@@ -499,9 +499,9 @@ export default function FamilyPage() {
               { value: viewStats.lastMonth,  label: "Last month" },
             ].map(s => (
               <div key={s.label} style={{
-                background: "#F5F6FA", borderRadius: 12, padding: "12px 8px", textAlign: "center",
+                background: "#F5F4F0", borderRadius: 12, padding: "12px 8px", textAlign: "center",
               }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1A2340", lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1C1C28", lineHeight: 1 }}>{s.value}</div>
                 <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginTop: 4 }}>{s.label}</div>
               </div>
             ))}
@@ -511,10 +511,10 @@ export default function FamilyPage() {
 
       {/* Action buttons */}
       {isActive && (
-        <div style={{ display: "flex", gap: 10, marginBottom: showAddChild ? 0 : 16 }}>
+        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
           <Link href="/dashboard/family/new" style={{
             flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            background: "#1A2340", color: "#fff", borderRadius: 50, padding: "14px",
+            background: "#1C1C28", color: "#fff", borderRadius: 50, padding: "14px",
             fontSize: 14, fontWeight: 700, textDecoration: "none",
           }}>
             <IcPlus /> Add chore
@@ -529,6 +529,18 @@ export default function FamilyPage() {
               + Add child
             </button>
           )}
+        </div>
+      )}
+
+      {isActive && (
+        <div style={{ marginBottom: showAddChild ? 0 : 16 }}>
+          <Link href="/dashboard/family/shopping-list" style={{
+            display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
+            background: "#E4E7FB", color: "#1A3A6E", borderRadius: 50, padding: "13px",
+            fontSize: 14, fontWeight: 700, textDecoration: "none", border: "1.5px solid #BDD6FF",
+          }}>
+            🛒 Shopping list
+          </Link>
         </div>
       )}
       {isActive && showAddChild && (
@@ -546,11 +558,11 @@ export default function FamilyPage() {
       {isActive && summary.length === 0 && !showAddChild && (
         <div style={{ textAlign: "center", padding: "40px 24px" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 8 }}>No chores yet</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 8 }}>No chores yet</div>
           <div style={{ fontSize: 14, color: "#6B7280", marginBottom: 24, lineHeight: 1.5 }}>
             Create your first recurring chore for your child.
           </div>
-          <Link href="/dashboard/family/new" style={btnStyle("#1A2340")}>Create first chore</Link>
+          <Link href="/dashboard/family/new" style={btnStyle("#1C1C28")}>Create first chore</Link>
         </div>
       )}
     </Screen>
@@ -574,7 +586,7 @@ type AddChildFormProps = {
 
 function AddChildForm({ name, setName, pin, setPin, pinConfirm, setPinConfirm, error, loading, onSave, onCancel }: AddChildFormProps) {
   return (
-    <div style={{ background: "#fff", borderRadius: 18, border: "1.5px solid #E8EDF4", padding: "20px", marginTop: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+    <div style={{ background: "#fff", borderRadius: 18, border: "1.5px solid #E4E3DE", padding: "20px", marginTop: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
       <div style={{ fontSize: 16, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>Add child profile</div>
       <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 18, lineHeight: 1.4 }}>
         Your child logs in by tapping their name and entering a 4-digit PIN — no email needed.
@@ -587,7 +599,7 @@ function AddChildForm({ name, setName, pin, setPin, pinConfirm, setPinConfirm, e
           onChange={e => setName(e.target.value)}
           placeholder="e.g. Emma"
           autoComplete="off"
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E8EDF4", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
+          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
         />
       </div>
 
@@ -600,7 +612,7 @@ function AddChildForm({ name, setName, pin, setPin, pinConfirm, setPinConfirm, e
           inputMode="numeric"
           type="password"
           autoComplete="new-password"
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E8EDF4", fontSize: 22, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const, letterSpacing: "0.4em" }}
+          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E4E3DE", fontSize: 22, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const, letterSpacing: "0.4em" }}
         />
       </div>
 
@@ -613,7 +625,7 @@ function AddChildForm({ name, setName, pin, setPin, pinConfirm, setPinConfirm, e
           inputMode="numeric"
           type="password"
           autoComplete="new-password"
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E8EDF4", fontSize: 22, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const, letterSpacing: "0.4em" }}
+          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E4E3DE", fontSize: 22, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const, letterSpacing: "0.4em" }}
         />
       </div>
 
@@ -627,7 +639,7 @@ function AddChildForm({ name, setName, pin, setPin, pinConfirm, setPinConfirm, e
         <button
           onClick={onSave}
           disabled={loading}
-          style={{ flex: 1, background: "#1A2340", color: "#fff", border: "none", borderRadius: 50, padding: "13px", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", fontFamily: FONT, opacity: loading ? 0.6 : 1 }}>
+          style={{ flex: 1, background: "#1C1C28", color: "#fff", border: "none", borderRadius: 50, padding: "13px", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", fontFamily: FONT, opacity: loading ? 0.6 : 1 }}>
           {loading ? "Saving…" : "Save child"}
         </button>
         <button
@@ -648,14 +660,14 @@ type ShareLinkProps = {
 
 function ShareLink({ householdId: _hid, copied, onCopy }: ShareLinkProps) {
   return (
-    <div style={{ background: "#EBF3FF", borderRadius: 14, border: "1.5px solid #BDD6FF", padding: "14px 16px", marginBottom: 16 }}>
+    <div style={{ background: "#E4E7FB", borderRadius: 14, border: "1.5px solid #BDD6FF", padding: "14px 16px", marginBottom: 16 }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: "#1A3A6E", marginBottom: 4 }}>Children’s login link</div>
       <div style={{ fontSize: 12, color: "#4B6EA8", marginBottom: 12, lineHeight: 1.5 }}>
         Share this with your children. They tap their name and enter their PIN — no email needed.
       </div>
       <button
         onClick={onCopy}
-        style={{ display: "inline-flex", alignItems: "center", gap: 8, background: copied ? "#D4F4E6" : "#1A2340", color: copied ? "#1E7D52" : "#fff", border: "none", borderRadius: 50, padding: "10px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+        style={{ display: "inline-flex", alignItems: "center", gap: 8, background: copied ? "#D4F4E6" : "#1C1C28", color: copied ? "#1E7D52" : "#fff", border: "none", borderRadius: 50, padding: "10px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
         {copied ? "Copied!" : "Copy login link"}
       </button>
     </div>
@@ -675,8 +687,8 @@ function btnStyle(bg: string): React.CSSProperties {
 
 function Screen({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F6FA", fontFamily: FONT }}>
-      <div style={{ background: "#fff", borderBottom: "1px solid #E8EDF4", position: "sticky", top: 0, zIndex: 10 }}>
+    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
+      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
             <IcBack />

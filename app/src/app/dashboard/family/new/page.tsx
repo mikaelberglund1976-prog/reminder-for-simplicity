@@ -107,7 +107,7 @@ export default function NewChorePage() {
 
   const inp: React.CSSProperties = {
     width: "100%", boxSizing: "border-box",
-    background: "#fff", border: "1.5px solid #E8EDF4", borderRadius: 12,
+    background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 12,
     padding: "12px 14px", fontSize: 15, color: "#0F172A", fontFamily: FONT,
     outline: "none",
   };
@@ -117,9 +117,9 @@ export default function NewChorePage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F6FA", fontFamily: FONT }}>
+    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
       {/* Header */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #E8EDF4", position: "sticky", top: 0, zIndex: 10 }}>
+      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
             <IcBack />
@@ -167,12 +167,12 @@ export default function NewChorePage() {
                       onClick={() => !isTrialLocked && setAssignedTo(c.id)}
                       style={{
                         display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                        background: assignedTo === c.id ? "#EBF3FF" : isTrialLocked ? "#F8FAFD" : "#fff",
-                        border: assignedTo === c.id ? "2px solid #5B9CF5" : "1.5px solid #E8EDF4",
+                        background: assignedTo === c.id ? "#E4E7FB" : isTrialLocked ? "#FAF9F5" : "#fff",
+                        border: assignedTo === c.id ? "2px solid #4A5FD5" : "1.5px solid #E4E3DE",
                         borderRadius: 12, cursor: isTrialLocked ? "not-allowed" : "pointer",
                         opacity: isTrialLocked ? 0.5 : 1, fontFamily: FONT, textAlign: "left",
                       }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1A2340", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1C1C28", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
                         {c.name.charAt(0).toUpperCase()}
                       </div>
                       <span style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{c.name}</span>
@@ -192,9 +192,9 @@ export default function NewChorePage() {
                 <button key={val} type="button" onClick={() => setRecurrence(val)}
                   style={{
                     padding: "10px 8px", borderRadius: 12, fontSize: 12, fontWeight: 700,
-                    background: recurrence === val ? "#1A2340" : "#fff",
+                    background: recurrence === val ? "#1C1C28" : "#fff",
                     color: recurrence === val ? "#fff" : "#4B5563",
-                    border: recurrence === val ? "none" : "1.5px solid #E8EDF4",
+                    border: recurrence === val ? "none" : "1.5px solid #E4E3DE",
                     cursor: "pointer", fontFamily: FONT,
                   }}>
                   {lbl}
@@ -212,9 +212,9 @@ export default function NewChorePage() {
                     <button key={d} type="button" onClick={() => toggleDay(num)}
                       style={{
                         width: 42, height: 42, borderRadius: "50%", fontSize: 12, fontWeight: 700,
-                        background: active ? "#5B9CF5" : "#fff",
+                        background: active ? "#4A5FD5" : "#fff",
                         color: active ? "#fff" : "#4B5563",
-                        border: active ? "none" : "1.5px solid #E8EDF4",
+                        border: active ? "none" : "1.5px solid #E4E3DE",
                         cursor: "pointer", fontFamily: FONT,
                       }}>
                       {d}
@@ -233,7 +233,7 @@ export default function NewChorePage() {
           </div>
 
           {/* Requires approval toggle */}
-          <div style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #E8EDF4", padding: "16px" }}>
+          <div style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #E4E3DE", padding: "16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>Requires adult approval</div>
@@ -244,7 +244,7 @@ export default function NewChorePage() {
               <button type="button" onClick={() => setRequiresApproval(p => !p)}
                 style={{
                   width: 48, height: 28, borderRadius: 50, border: "none", cursor: "pointer",
-                  background: requiresApproval ? "#5B9CF5" : "#D1D5DB",
+                  background: requiresApproval ? "#4A5FD5" : "#D1D5DB",
                   transition: "background 0.2s", position: "relative", flexShrink: 0,
                 }}>
                 <div style={{
@@ -277,7 +277,7 @@ export default function NewChorePage() {
           {/* Save */}
           <button type="submit" disabled={saving || !name.trim() || !assignedTo}
             style={{
-              background: "#1A2340", color: "#fff", border: "none", borderRadius: 50,
+              background: "#1C1C28", color: "#fff", border: "none", borderRadius: 50,
               padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer",
               fontFamily: FONT, opacity: saving || !name.trim() || !assignedTo ? 0.6 : 1,
             }}>

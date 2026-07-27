@@ -1,5 +1,7 @@
 # Brand Guide – Reminder for Simplicity
-**Version:** 1.0 | **Skapad:** 2026-03-31
+**Version:** 1.1 | **Skapad:** 2026-03-31 | **Färgpalett uppdaterad:** 2026-07-26
+
+> ✅ **Färgpalett löst (2026-07-26):** Tidigare fanns tre olika accentfärger i `BRAND.md`, `RFS-Product-Direction.md` och `globals.css`. Mikael valde paletten från `RFS-Product-Direction.md` (accent `#4A5FD5`) som sanningskälla. Den är nu genomförd i `globals.css` och samtliga `.tsx`-filer i `app/src`. Paletten nedan är uppdaterad i enlighet med detta.
 
 ---
 
@@ -25,13 +27,13 @@
 - Skrämmande ("Du MÅSTE sätta upp reminders nu!")
 - Irriterande (aldrig för många notifications)
 
-### Tonexempel:
-| ❌ Undvik | ✅ Använd |
+### Tone examples (English – matches the shipped app):
+| ❌ Avoid | ✅ Use |
 |---|---|
-| "Välkommen till vår plattform" | "Hej! Kul att du är här." |
-| "Notifikationen har skickats framgångsrikt" | "Klart! Vi påminner dig 3 dagar innan." |
-| "Optimera din reminder-strategi" | "Lägg till det du inte vill glömma." |
-| "Din session har löpt ut" | "Du loggades ut – logga in igen när du är redo." |
+| "Welcome to our platform" | "Hey! Glad you're here." |
+| "The notification has been successfully dispatched" | "Done! We'll remind you 3 days before." |
+| "Optimize your reminder strategy" | "Add the thing you don't want to forget." |
+| "Your session has expired" | "You've been signed out – log back in whenever you're ready." |
 
 ---
 
@@ -39,13 +41,16 @@
 
 ### Färgpalett
 ```
-Primär:      #4F6EF7  (lugnt blå – trygghet, klarhet)
-Sekundär:    #F7C94F  (varm gul – vänlighet, uppmärksamhet)
-Bakgrund:    #F8F9FC  (off-white – renhet, enkelhet)
-Text:        #1A1A2E  (nästintill svart – läsbarhet)
-Accent:      #4ECDC4  (mint/teal – pigghet)
-Fel:         #FF6B6B  (varm röd – inte skrämmande)
-Framgång:    #51CF66  (grön – bekräftelse)
+Bakgrund:      #F5F4F0  (varm off-white – lugn, premium)
+Yta/kort:      #FFFFFF
+Text:          #1C1C28  (nästintill svart – läsbarhet)
+Dämpad text:   #7C7C8A  (subtext, labels)
+Accent:        #4A5FD5  (lugnt indigo – primära knappar, länkar)
+Accent hover:  #3A4FC5
+Kant/border:   #E4E3DE
+Framgång:      #2A9D6F
+Varning:       #E5873A
+Fel:           #D94F4F
 ```
 
 ### Typografi
@@ -73,45 +78,45 @@ Framgång:    #51CF66  (grön – bekräftelse)
 
 ---
 
-## 5. Email-mallar (tonalitet)
+## 5. Email templates (tone) *(translated to English 2026-07-27, per the language decision)*
 
-### Påminnelse-email
+### Reminder email
 ```
-Ämne: 🔔 Påminnelse: [NAMN] om [X] dagar
+Subject: 🔔 Reminder: [NAME] in [X] days
 
-Hej [FÖRNAMN]!
+Hi [FIRST NAME],
 
-Du ville bli påmind om [NAMN].
+You wanted to be reminded about [NAME].
 
-📅 Datum: [DATUM]
-[💰 Kostnad: X kr]  ← Visa bara om belopp finns
-[📝 Notering: ...]  ← Visa bara om notering finns
+📅 Date: [DATE]
+[💰 Cost: X kr]  ← Only show if an amount is set
+[📝 Note: ...]  ← Only show if a note is set
 
-Hoppas det hjälper!
+Hope this helps!
 Reminder for Simplicity
 
 ---
-Vill du inte ha fler påminnelser? [Avregistrera]
+Don't want more reminders? [Unsubscribe]
 ```
 
-### Välkomstmail
+### Welcome email
 ```
-Ämne: Välkommen till Reminder for Simplicity 👋
+Subject: Welcome to Reminder for Simplicity 👋
 
-Hej [FÖRNAMN]!
+Hi [FIRST NAME],
 
-Kul att du är med. Nu kan du börja samla allt du inte vill glömma på ett ställe.
+Glad you're here. Now you can start collecting everything you don't want to forget in one place.
 
-Vad kan du lägga in?
-• Abonnemang som förnyas
-• Försäkringar och avtal
-• Födelsedagar och jubileum
-• Allt annat viktigt
+What can you add?
+• Subscriptions that renew
+• Insurance and contracts
+• Birthdays and anniversaries
+• Anything else that matters
 
-[Gå till din dashboard →]
+[Go to your dashboard →]
 
-Hör av dig om du har frågor.
-Mikael på Reminder for Simplicity
+Reach out if you have questions.
+Mikael at Reminder for Simplicity
 ```
 
 ---

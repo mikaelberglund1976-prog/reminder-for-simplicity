@@ -7,7 +7,7 @@ import { SwRegister } from "./sw-register";
 const inter = Inter({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
-  themeColor: "#1A2340",
+  themeColor: "#1C1C28",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -15,7 +15,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "AssistIQ",
+  title: "Reminder for Simplicity",
   description:
     "Your personal life assistant for subscriptions, reminders, birthdays, and everything else that matters. Free to get started.",
   keywords: ["reminder", "subscription", "birthday", "renewal", "notifications", "assistant"],
@@ -23,10 +23,10 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "AssistIQ",
+    title: "Reminder for Simplicity",
   },
   openGraph: {
-    title: "AssistIQ",
+    title: "Reminder for Simplicity",
     description: "Never forget what matters.",
     type: "website",
   },

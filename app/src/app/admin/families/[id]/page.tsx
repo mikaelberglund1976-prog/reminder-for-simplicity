@@ -520,7 +520,7 @@ export default function FamilyDetailPage() {
                       height: 32,
                       borderRadius: "50%",
                       background: m.role === "OWNER" ? "#ffd080" : m.role === "CHILD" ? "#A5B4FC" : "#7BB8FF",
-                      color: "#1A2340",
+                      color: "#1C1C28",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",

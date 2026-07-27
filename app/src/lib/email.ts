@@ -84,7 +84,7 @@ export async function sendReminderEmail({
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AssistIQ Reminder</title>
+  <title>Reminder for Simplicity Reminder</title>
 </head>
 <body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
 
@@ -93,7 +93,7 @@ export async function sendReminderEmail({
     <!-- Header -->
     <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
       <div style="font-size:32px;margin-bottom:6px;">${icon}</div>
-      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">AssistIQ</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Reminder for Simplicity</div>
       <div style="color:rgba(255,255,255,0.35);font-size:11px;">Never forget what matters</div>
     </div>
 
@@ -132,7 +132,7 @@ export async function sendReminderEmail({
     <!-- Footer -->
     <div style="text-align:center;padding:24px 0 0;">
       <p style="margin:0 0 6px;font-size:12px;color:#A0AEC0;line-height:1.8;">
-        You're receiving this because you set up a reminder in AssistIQ.<br>
+        You're receiving this because you set up a reminder in Reminder for Simplicity.<br>
         <a href="${APP_URL}/dashboard" style="color:#A0AEC0;text-decoration:underline;">Manage reminders</a>
         &nbsp;·&nbsp;
         <span>by Berget &amp; Fredde</span>
@@ -159,19 +159,19 @@ export async function sendHouseholdInviteEmail({
   const { error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: `${fromName} invited you to join ${householdName} on AssistIQ`,
+    subject: `${fromName} invited you to join ${householdName} on Reminder for Simplicity`,
     html: `
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
 <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
   <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
     <div style="font-size:32px;margin-bottom:6px;">🏠</div>
-    <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">AssistIQ</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity</div>
   </div>
   <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
     <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#1A202C;">You've been invited! 🎉</h1>
     <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 8px;">
-      <strong style="color:#1A202C;">${fromName}</strong> has invited you to join <strong style="color:#1A202C;">${householdName}</strong> on AssistIQ.
+      <strong style="color:#1A202C;">${fromName}</strong> has invited you to join <strong style="color:#1A202C;">${householdName}</strong> on Reminder for Simplicity.
     </p>
     <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 28px;">
       Share reminders, assign tasks and make sure nothing falls between the cracks.
@@ -210,7 +210,7 @@ export async function sendHandoverRequestEmail({
 <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
   <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
     <div style="font-size:32px;margin-bottom:6px;">🤝</div>
-    <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">AssistIQ · Handover Request</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity · Handover Request</div>
   </div>
   <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
     <p style="margin:0 0 20px;color:#718096;font-size:15px;">Hi ${firstName},</p>
@@ -251,7 +251,7 @@ export async function sendHandoverResponseEmail({
 <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
   <div style="background:linear-gradient(135deg,${isAccepted ? "#1e7d52 0%,#2a9d6f" : "#8B0000 0%,#C44444"} 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
     <div style="font-size:32px;margin-bottom:6px;">${isAccepted ? "✅" : "❌"}</div>
-    <div style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">AssistIQ · Handover ${isAccepted ? "Accepted" : "Declined"}</div>
+    <div style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity · Handover ${isAccepted ? "Accepted" : "Declined"}</div>
   </div>
   <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
     <p style="margin:0 0 16px;color:#718096;font-size:15px;">Hi ${firstName},</p>
@@ -273,6 +273,61 @@ export async function sendHandoverResponseEmail({
   });
 }
 
+// ─── Password reset email ──────────────────────────────────────────────────────
+
+export async function sendPasswordResetEmail({
+  to, name, resetUrl,
+}: { to: string; name: string | null; resetUrl: string }) {
+  const firstName = name?.split(" ")[0] ?? "there";
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Reset your Reminder for Simplicity password",
+    html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
+
+    <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
+      <div style="font-size:32px;margin-bottom:6px;">🔑</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity</div>
+    </div>
+
+    <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
+      <p style="margin:0 0 20px;color:#718096;font-size:15px;">Hi ${firstName},</p>
+      <p style="color:#1A202C;font-size:15px;line-height:1.7;margin:0 0 8px;">
+        We received a request to reset your password.
+      </p>
+      <p style="color:#718096;font-size:14px;line-height:1.7;margin:0 0 28px;">
+        If you didn't request this, you can safely ignore this email — your password won't change.
+      </p>
+      <div style="text-align:center;margin-bottom:8px;">
+        <a href="${resetUrl}" style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
+          Reset password →
+        </a>
+      </div>
+      <p style="color:#A0AEC0;font-size:12px;text-align:center;margin:24px 0 0;">This link expires in 1 hour.</p>
+    </div>
+
+  </div>
+
+</body>
+</html>`,
+  });
+
+  if (error) {
+    console.error("Resend error (password reset):", error);
+    throw new Error(error.message);
+  }
+}
+
 // ─── Welcome email ────────────────────────────────────────────────────────────
 
 export async function sendWelcomeEmail({ to, name }: { to: string; name: string | null }) {
@@ -281,7 +336,7 @@ export async function sendWelcomeEmail({ to, name }: { to: string; name: string 
   await resend.emails.send({
     from: FROM,
     to,
-    subject: `Welcome to AssistIQ 🔔`,
+    subject: `Welcome to Reminder for Simplicity 🔔`,
     html: `
 <!DOCTYPE html>
 <html lang="en">
@@ -295,13 +350,13 @@ export async function sendWelcomeEmail({ to, name }: { to: string; name: string 
 
     <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
       <div style="font-size:36px;margin-bottom:6px;">🔔</div>
-      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">AssistIQ</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity</div>
     </div>
 
     <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
       <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#1A202C;">Welcome, ${firstName}! 👋</h1>
       <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 24px;">
-        You're all set up on AssistIQ — your personal reminder assistant for the things that are easy to miss but important to keep on top of.
+        You're all set up on Reminder for Simplicity — your personal reminder assistant for the things that are easy to miss but important to keep on top of.
       </p>
       <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 32px;">
         Add your first reminder — subscriptions, birthdays, insurance renewals — and we'll make sure you never forget what matters.
@@ -315,7 +370,7 @@ export async function sendWelcomeEmail({ to, name }: { to: string; name: string 
     </div>
 
     <div style="text-align:center;padding:24px 0 0;">
-      <p style="margin:0;font-size:12px;color:#A0AEC0;">AssistIQ · by Berget &amp; Fredde</p>
+      <p style="margin:0;font-size:12px;color:#A0AEC0;">Reminder for Simplicity · by Berget &amp; Fredde</p>
     </div>
 
   </div>

@@ -126,8 +126,8 @@ function ChildViewContent() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#8B90A4", fontSize: 15 }}>Loading chores…</div>
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Loading chores…</div>
       </div>
     );
   }
@@ -139,9 +139,9 @@ function ChildViewContent() {
   const pct = chores.length > 0 ? Math.round((done.length / chores.length) * 100) : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F6FA", fontFamily: FONT, paddingBottom: 40 }}>
+    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, paddingBottom: 40 }}>
       {/* Header */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #E8EDF4", position: "sticky", top: 0, zIndex: 10 }}>
+      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
             <IcBack />
@@ -152,7 +152,7 @@ function ChildViewContent() {
 
       <main style={{ maxWidth: 480, margin: "0 auto", padding: "20px 20px 0" }}>
         {/* Date + progress */}
-        <div style={{ background: "linear-gradient(135deg, #1A2340 0%, #2C3E6E 100%)", borderRadius: 20, padding: "20px 22px", marginBottom: 20 }}>
+        <div style={{ background: "linear-gradient(135deg, #1C1C28 0%, #2C3E6E 100%)", borderRadius: 20, padding: "20px 22px", marginBottom: 20 }}>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 600, marginBottom: 4 }}>
             {dayName}, {dateStr}
           </div>
@@ -165,7 +165,7 @@ function ChildViewContent() {
           {chores.length > 0 && (
             <div>
               <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 50, height: 8, overflow: "hidden" }}>
-                <div style={{ background: "#5B9CF5", height: "100%", width: `${pct}%`, borderRadius: 50, transition: "width 0.4s" }} />
+                <div style={{ background: "#4A5FD5", height: "100%", width: `${pct}%`, borderRadius: 50, transition: "width 0.4s" }} />
               </div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 6 }}>{pct}% complete this week</div>
             </div>
@@ -197,10 +197,10 @@ function ChildViewContent() {
               </button>
             ) : (
               <form onSubmit={handleAddChore} style={{
-                background: "#fff", borderRadius: 18, border: "1px solid #E8EDF4",
+                background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE",
                 padding: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.04)",
               }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2340", marginBottom: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1C28", marginBottom: 10 }}>
                   New chore
                 </div>
                 <input
@@ -212,8 +212,8 @@ function ChildViewContent() {
                   autoFocus
                   style={{
                     width: "100%", padding: "12px 14px", borderRadius: 12,
-                    background: "#F5F6FA", border: "1.5px solid #E8EDF4",
-                    fontSize: 14, color: "#1A2340", outline: "none",
+                    background: "#F5F4F0", border: "1.5px solid #E4E3DE",
+                    fontSize: 14, color: "#1C1C28", outline: "none",
                     fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
                   }}
                 />
@@ -225,8 +225,8 @@ function ChildViewContent() {
                   disabled={adding}
                   style={{
                     width: "100%", padding: "12px 14px", borderRadius: 12,
-                    background: "#F5F6FA", border: "1.5px solid #E8EDF4",
-                    fontSize: 14, color: "#1A2340", outline: "none",
+                    background: "#F5F4F0", border: "1.5px solid #E4E3DE",
+                    fontSize: 14, color: "#1C1C28", outline: "none",
                     fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
                   }}
                 />
@@ -240,7 +240,7 @@ function ChildViewContent() {
                     disabled={adding}
                     style={{
                       flex: 1, padding: "12px 14px", borderRadius: 12,
-                      background: "#F5F6FA", border: "1.5px solid #E8EDF4",
+                      background: "#F5F4F0", border: "1.5px solid #E4E3DE",
                       color: "#4B5563", fontSize: 14, fontWeight: 700,
                       cursor: adding ? "not-allowed" : "pointer", fontFamily: FONT,
                     }}
@@ -252,7 +252,7 @@ function ChildViewContent() {
                     disabled={adding || !newName.trim()}
                     style={{
                       flex: 1, padding: "12px 14px", borderRadius: 12,
-                      background: !newName.trim() || adding ? "#9AB0DB" : "#1A2340",
+                      background: !newName.trim() || adding ? "#9AB0DB" : "#1C1C28",
                       border: "none", color: "#fff", fontSize: 14, fontWeight: 700,
                       cursor: adding || !newName.trim() ? "not-allowed" : "pointer",
                       fontFamily: FONT,
@@ -261,7 +261,7 @@ function ChildViewContent() {
                     {adding ? "Adding…" : "Add chore"}
                   </button>
                 </div>
-                <div style={{ fontSize: 11, color: "#8B90A4", marginTop: 10, textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#7C7C8A", marginTop: 10, textAlign: "center" }}>
                   A parent will approve it when you mark it done.
                 </div>
               </form>
@@ -275,7 +275,7 @@ function ChildViewContent() {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
               To do · {todo.length}
             </div>
-            <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E8EDF4", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+            <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
               {todo.map((chore, i) => (
                 <ChoreCard key={chore.id} chore={chore} state="todo" isFirst={i === 0}
                   loading={toggling === chore.id}
@@ -320,7 +320,7 @@ function ChildViewContent() {
         {chores.length === 0 && access !== "LOCKED" && !showAdd && (
           <div style={{ textAlign: "center", padding: "40px 24px 20px" }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 8 }}>No chores yet</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 8 }}>No chores yet</div>
             <div style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.5 }}>
               Tap <strong>Add a chore</strong> above to get started.
             </div>
@@ -395,8 +395,8 @@ function ChoreCard({ chore, state, isFirst, loading, onToggle }: {
 export default function ChildPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#8B90A4" }}>Loading…</div>
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "#7C7C8A" }}>Loading…</div>
       </div>
     }>
       <ChildViewContent />

@@ -43,13 +43,13 @@ const RECURRENCE_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_BADGE: Record<string, { bg: string; color: string }> = {
-  SUBSCRIPTION: { bg: "#D6E8FF", color: "#3A78D4" },
+  SUBSCRIPTION: { bg: "#E4E7FB", color: "#3A4FC5" },
   BIRTHDAY:     { bg: "#FFE8F5", color: "#C4367A" },
   INSURANCE:    { bg: "#D4F4E6", color: "#1E7D52" },
   CONTRACT:     { bg: "#FFF0E0", color: "#C06010" },
   HEALTH:       { bg: "#FFE8E8", color: "#C44444" },
   BILL:         { bg: "#EDE8FF", color: "#6A44CC" },
-  OTHER:        { bg: "#E8EDF4", color: "#5A6080" },
+  OTHER:        { bg: "#E4E3DE", color: "#5A6080" },
 };
 
 const BRAND_COLORS: Record<string, { bg: string; text: string }> = {
@@ -105,7 +105,7 @@ function getBrandInfo(name: string) {
       return { color: BRAND_COLORS[brand], domain: BRAND_DOMAINS[brand] ?? null };
     }
   }
-  return { color: { bg: "#5B9CF5", text: "#fff" }, domain: null };
+  return { color: { bg: "#4A5FD5", text: "#fff" }, domain: null };
 }
 
 function getDaysUntil(dateStr: string) {
@@ -179,7 +179,7 @@ function StatCard({ icon, iconColor, iconBg, value, label }: {
   icon: React.ReactNode; iconColor: string; iconBg: string; value: number | string; label: string;
 }) {
   return (
-    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E8EDF4", padding: "14px 12px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE", padding: "14px 12px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
       <div style={{ background: iconBg, borderRadius: 10, padding: 8, color: iconColor, display: "inline-flex", marginBottom: 10 }}>{icon}</div>
       <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", lineHeight: 1 }}>{value}</div>
       <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginTop: 4 }}>{label}</div>
@@ -194,7 +194,7 @@ function NavBtn({ label, icon, active, onClick }: {
     <button onClick={onClick} style={{
       flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", gap: 3, background: "none", border: "none",
-      cursor: "pointer", color: active ? "#5B9CF5" : "#8B90A4", padding: "8px 0",
+      cursor: "pointer", color: active ? "#4A5FD5" : "#7C7C8A", padding: "8px 0",
       fontFamily: FONT,
     }}>
       {icon}
@@ -219,7 +219,7 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
       style={{
         display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
         borderTop: isFirst ? "none" : "1px solid #F0F3F8", cursor: "pointer",
-        background: hovered ? "#F8FAFD" : "transparent", transition: "background 0.12s",
+        background: hovered ? "#FAF9F5" : "transparent", transition: "background 0.12s",
       }}>
       <ServiceLogo name={reminder.name} />
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -229,22 +229,22 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
             {CATEGORY_LABELS[reminder.category] ?? reminder.category}
           </span>
           {isShared && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#EEF5FF", color: "#3A78D4", gap: 3 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#EEF5FF", color: "#3A4FC5", gap: 3 }}>
               👤 {sharedByName}
             </span>
           )}
           {ownerName && !isShared && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#EEF5FF", color: "#3A78D4", gap: 3 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#EEF5FF", color: "#3A4FC5", gap: 3 }}>
               👤 {ownerName}
             </span>
           )}
           {isUnassigned && !isShared && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#F5F6FA", color: "#9CA3AF" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#F5F4F0", color: "#9CA3AF" }}>
               Unassigned
             </span>
           )}
         </div>
-        <div style={{ fontSize: 12, color: "#8B90A4", marginTop: 3 }}>
+        <div style={{ fontSize: 12, color: "#7C7C8A", marginTop: 3 }}>
           {formatDate(reminder.date)}
           {showAmount && <> &middot; {reminder.amount!.toLocaleString("sv")} {reminder.currency}</>}
           {showRecurrence && <> &middot; {RECURRENCE_LABELS[reminder.recurrence] ?? reminder.recurrence}</>}
@@ -393,29 +393,29 @@ export default function DashboardPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#8B90A4", fontSize: 15 }}>AssistIQ is thinking…</div>
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Reminder for Simplicity is thinking…</div>
       </div>
     );
   }
 
   const dropdownStyle = {
     width: "100%", appearance: "none" as const, WebkitAppearance: "none" as const,
-    background: "#fff", border: "1.5px solid #E8EDF4", borderRadius: 12,
-    padding: "11px 38px 11px 14px", fontSize: 13, fontWeight: 600, color: "#1A2340",
+    background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 12,
+    padding: "11px 38px 11px 14px", fontSize: 13, fontWeight: 600, color: "#1C1C28",
     cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", fontFamily: FONT,
   };
 
   const sectionCardStyle = (active: boolean) => ({
     background: "#fff",
-    border: active ? "2px solid #5B9CF5" : "1.5px solid #E8EDF4",
+    border: active ? "2px solid #4A5FD5" : "1.5px solid #E4E3DE",
     borderRadius: 18, padding: "16px 14px", cursor: "pointer", textAlign: "left" as const,
     boxShadow: active ? "0 2px 12px rgba(91,156,245,0.18)" : "0 1px 4px rgba(0,0,0,0.04)",
     transition: "all 0.15s",
   });
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F6FA", paddingBottom: 88, fontFamily: FONT }}>
+    <div style={{ minHeight: "100vh", background: "#F5F4F0", paddingBottom: 88, fontFamily: FONT }}>
       <main style={{ maxWidth: 480, margin: "0 auto", padding: "32px 20px 0" }}>
 
         {/* Welcome */}
@@ -461,7 +461,7 @@ export default function DashboardPage() {
         {/* IQ Spotlight */}
         {spotlight ? (
           <div style={{
-            background: "linear-gradient(135deg, #1A2340 0%, #2C3E6E 100%)",
+            background: "linear-gradient(135deg, #1C1C28 0%, #2C3E6E 100%)",
             borderRadius: 20, padding: "18px 20px", marginBottom: 12,
             display: "flex", alignItems: "center", gap: 16,
             boxShadow: "0 4px 20px rgba(26,35,64,0.18)",
@@ -489,7 +489,7 @@ export default function DashboardPage() {
 
         {/* Stats row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-          <StatCard icon={<IcBell />}  iconColor="#5B9CF5" iconBg="#EBF3FF"
+          <StatCard icon={<IcBell />}  iconColor="#4A5FD5" iconBg="#E4E7FB"
             value={totalActive} label="Reminders" />
           <StatCard icon={<IcAlert />} iconColor="#D94F4F" iconBg="#FFE8E8"
             value={passedCount} label="Needs attention" />
@@ -499,7 +499,7 @@ export default function DashboardPage() {
         <div
           onClick={() => { setSort("amount_desc"); setSection("reminders"); }}
           style={{
-            background: "#fff", borderRadius: 16, border: "1px solid #E8EDF4",
+            background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE",
             padding: "16px", marginBottom: 12, cursor: "pointer",
             boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             display: "flex", alignItems: "center", gap: 14,
@@ -513,7 +513,7 @@ export default function DashboardPage() {
             <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", lineHeight: 1.1, marginTop: 2 }}>
               {yearlyTotal > 0 ? yearlyTotal.toLocaleString("sv") + " " + preferredCurrency : "—"}
             </div>
-            <div style={{ fontSize: 12, color: "#8B90A4", marginTop: 3 }}>See what&apos;s coming up and where you can cut back</div>
+            <div style={{ fontSize: 12, color: "#7C7C8A", marginTop: 3 }}>See what&apos;s coming up and where you can cut back</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 700, color: "#2A9D6F", flexShrink: 0 }}>
             Review costs <IcRight />
@@ -522,7 +522,7 @@ export default function DashboardPage() {
 
         {/* Activity strip */}
         <div style={{
-          background: "#fff", borderRadius: 16, border: "1px solid #E8EDF4",
+          background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE",
           padding: "14px 16px", marginBottom: 16,
           display: "flex", alignItems: "center", gap: 12,
           boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
@@ -539,31 +539,31 @@ export default function DashboardPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
           <button onClick={() => setSection("reminders")} style={sectionCardStyle(activeSection === "reminders")}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-              <div style={{ background: "#EBF3FF", borderRadius: 10, padding: 8, color: "#5B9CF5", display: "flex" }}><IcBell /></div>
+              <div style={{ background: "#E4E7FB", borderRadius: 10, padding: 8, color: "#4A5FD5", display: "flex" }}><IcBell /></div>
               <div style={{ color: "#C0C5D0" }}><IcRight /></div>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340", marginBottom: 4 }}>My reminders</div>
-            <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.4 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C28", marginBottom: 4 }}>My reminders</div>
+            <div style={{ fontSize: 12, color: "#7C7C8A", lineHeight: 1.4 }}>
               {myReminders.length} reminder{myReminders.length !== 1 ? "s" : ""}
             </div>
           </button>
 
           <button onClick={() => router.push("/dashboard/family")} style={sectionCardStyle(activeSection === "family")}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-              <div style={{ background: hasHousehold ? "#FFF0D4" : "#F0F2F7", borderRadius: 10, padding: 8, color: hasHousehold ? "#C06010" : "#B0B7C8", display: "flex", fontSize: 18, lineHeight: 1 }}>🏠</div>
+              <div style={{ background: hasHousehold ? "#FFF0D4" : "#F0F2F7", borderRadius: 10, padding: 8, color: hasHousehold ? "#C06010" : "#ACA9A3", display: "flex", fontSize: 18, lineHeight: 1 }}>🏠</div>
               <div style={{ color: "#C0C5D0" }}><IcRight /></div>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2340", marginBottom: 6 }}>Family</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C28", marginBottom: 6 }}>Family</div>
             {familyCardRows.length > 0 ? (
               <div>
                 {familyCardRows.map(row => (
                   <div key={row.id} style={{ marginBottom: 7 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>{row.name}</span>
-                      <span style={{ fontSize: 11, color: "#8B90A4" }}>{row.label}</span>
+                      <span style={{ fontSize: 11, color: "#7C7C8A" }}>{row.label}</span>
                     </div>
-                    <div style={{ height: 5, background: "#E8EDF4", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 3, background: row.allDone ? "#2A9D6F" : "#5B9CF5", width: row.pct + "%" }} />
+                    <div style={{ height: 5, background: "#E4E3DE", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: 3, background: row.allDone ? "#2A9D6F" : "#4A5FD5", width: row.pct + "%" }} />
                     </div>
                   </div>
                 ))}
@@ -574,7 +574,7 @@ export default function DashboardPage() {
                 )}
               </div>
             ) : (
-              <div style={{ fontSize: 12, color: "#8B90A4", lineHeight: 1.4 }}>
+              <div style={{ fontSize: 12, color: "#7C7C8A", lineHeight: 1.4 }}>
                 Chores, responsibilities &amp; routines
               </div>
             )}
@@ -603,7 +603,7 @@ export default function DashboardPage() {
                   <option value="BILL">Bills</option>
                   <option value="OTHER">Other</option>
                 </select>
-                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#8B90A4" }}><IcDown /></div>
+                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#7C7C8A" }}><IcDown /></div>
               </div>
               <div style={{ position: "relative", flex: 1 }}>
                 <select value={sortBy} onChange={e => setSort(e.target.value)} style={dropdownStyle}>
@@ -612,22 +612,22 @@ export default function DashboardPage() {
                   <option value="name_asc">Name A–Z</option>
                   <option value="amount_desc">Highest amount</option>
                 </select>
-                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#8B90A4" }}><IcDown /></div>
+                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#7C7C8A" }}><IcDown /></div>
               </div>
             </div>
 
             {/* List */}
             {filtered.length === 0 ? (
-              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>&#128237;</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 6 }}>No reminders yet</div>
-                <div style={{ fontSize: 14, color: "#8B90A4", marginBottom: 24 }}>Add the things you don&apos;t want to forget.</div>
-                <Link href="/dashboard/new" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#5B9CF5", color: "#fff", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 6 }}>No reminders yet</div>
+                <div style={{ fontSize: 14, color: "#7C7C8A", marginBottom: 24 }}>Add the things you don&apos;t want to forget.</div>
+                <Link href="/dashboard/new" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#4A5FD5", color: "#fff", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
                   + Add your first reminder
                 </Link>
               </div>
             ) : (
-              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 12 }}>
+              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 12 }}>
                 {filtered.map((r, i) => (
                   <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
                     isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} />
@@ -640,7 +640,7 @@ export default function DashboardPage() {
               display: "flex", alignItems: "center", justifyContent: "center",
               width: "100%", background: "#fff", border: "1.5px dashed #D0D7E8",
               borderRadius: 16, padding: "15px", fontSize: 14, fontWeight: 600,
-              color: "#8B90A4", textDecoration: "none", boxSizing: "border-box",
+              color: "#7C7C8A", textDecoration: "none", boxSizing: "border-box",
             }}>
               + Add reminder
             </Link>
@@ -649,29 +649,29 @@ export default function DashboardPage() {
           /* Family section */
           hasHousehold ? (
             sharedReminders.length > 0 ? (
-              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
                 {sharedReminders.map((r, i) => (
                   <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
                     isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} />
                 ))}
               </div>
             ) : (
-              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>&#127968;</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 6 }}>No shared reminders yet</div>
-                <div style={{ fontSize: 14, color: "#8B90A4", lineHeight: 1.6 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 6 }}>No shared reminders yet</div>
+                <div style={{ fontSize: 14, color: "#7C7C8A", lineHeight: 1.6 }}>
                   When a family member shares a reminder with you, it will appear here.
                 </div>
               </div>
             )
           ) : (
-            <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E8EDF4", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+            <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>&#127968;</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 6 }}>Family sharing</div>
-              <div style={{ fontSize: 14, color: "#8B90A4", lineHeight: 1.6, maxWidth: 260, margin: "0 auto 24px" }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 6 }}>Family sharing</div>
+              <div style={{ fontSize: 14, color: "#7C7C8A", lineHeight: 1.6, maxWidth: 260, margin: "0 auto 24px" }}>
                 Invite your family to share reminders and never miss what matters together.
               </div>
-              <Link href="/profile" style={{ display: "inline-block", padding: "12px 24px", background: "#1A2340", color: "#fff", borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+              <Link href="/profile" style={{ display: "inline-block", padding: "12px 24px", background: "#1C1C28", color: "#fff", borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
                 Set up family sharing \u2192
               </Link>
             </div>
@@ -681,12 +681,12 @@ export default function DashboardPage() {
       </main>
 
       {/* Bottom nav */}
-      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: "1px solid #E8EDF4", paddingBottom: "env(safe-area-inset-bottom)", zIndex: 20 }}>
+      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: "1px solid #E4E3DE", paddingBottom: "env(safe-area-inset-bottom)", zIndex: 20 }}>
         <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", alignItems: "center", height: 64 }}>
           <NavBtn label="Reminders" icon={<IcNavCal />} active={activeTab === "reminders"}
             onClick={() => { setTab("reminders"); setSection("reminders"); }} />
           <Link href="/dashboard/new" style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", textDecoration: "none" }}>
-            <div style={{ width: 50, height: 50, borderRadius: "50%", background: "#1A2340", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, boxShadow: "0 4px 16px rgba(26,35,64,0.28)" }}>
+            <div style={{ width: 50, height: 50, borderRadius: "50%", background: "#1C1C28", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, boxShadow: "0 4px 16px rgba(26,35,64,0.28)" }}>
               <IcPlus />
             </div>
           </Link>

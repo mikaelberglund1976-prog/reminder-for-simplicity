@@ -1,8 +1,59 @@
 import { NextAuthOptions } from "next-auth";
+import { Provider } from "next-auth/providers/index";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+
+// Google OAuth is optional. Only register the provider when both env vars are
+// actually set, so local/dev setups without Google credentials don't crash on
+// the non-null assertion this used to have.
+const providers: Provider[] = [];
+
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    })
+  );
+}
+
+providers.push(
+  // ─── Email + password (existing users) ────────────────────────────────────
+  CredentialsProvider({
+    name: "credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    async authorize(credentials) {
+      if (!credentials?.email || !credentials?.password) {
+        throw new Error("Email and password are required");
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { email: credentials.email.toLowerCase() },
+      });
+
+      if (!user || !user.password) {
+        throw new Error("Incorrect email or password");
+      }
+
+      const isValid = await bcrypt.compare(credentials.password, user.password);
+
+      if (!isValid) {
+        throw new Error("Incorrect email or password");
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      };
+    },
+  })
+);
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -13,70 +64,30 @@ export const authOptions: NextAuthOptions = {
     signOut: "/",
     error: "/login",
   },
-  providers: [
-    // ─── Google OAuth ─────────────────────────────────────────────────────────
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-
-    // ─── E-post + lösenord (befintliga användare) ─────────────────────────────
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Lösenord", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email och lösenord krävs");
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
-        });
-
-        if (!user || !user.password) {
-          throw new Error("Felaktig email eller lösenord");
-        }
-
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isValid) {
-          throw new Error("Felaktig email eller lösenord");
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
-      },
-    }),
-  ],
+  providers,
   callbacks: {
-    // ─── signIn: körs vid varje inloggning ───────────────────────────────────
+    // ─── signIn: runs on every login ──────────────────────────────────────────
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         if (!user.email) return false;
 
-        // Hitta eller skapa användare
+        // Find or create the user
         let dbUser = await prisma.user.findUnique({
           where: { email: user.email },
         });
 
         if (!dbUser) {
-          // Första Google-login: skapa konto + household
+          // First Google login: create account + household
           dbUser = await prisma.user.create({
             data: {
               email: user.email,
               name: user.name ?? null,
               emailVerified: new Date(),
-              // password är null för Google-användare
+              // password is null for Google users
             },
           });
 
-          // Skapa ett privat household för användaren (förbered för familjedelning)
+          // Create a private household for the user (ready for family sharing)
           const household = await prisma.household.create({
             data: { name: dbUser.name ?? "My household" },
           });
@@ -89,7 +100,7 @@ export const authOptions: NextAuthOptions = {
           });
         }
 
-        // Spara providerAccountId om det inte redan finns
+        // Save the providerAccountId if it doesn't already exist
         const existingAccount = await prisma.account.findUnique({
           where: {
             provider_providerAccountId: {
@@ -115,33 +126,33 @@ export const authOptions: NextAuthOptions = {
           });
         }
 
-        // Sätt user.id till vår DB-id (används i jwt-callback nedan)
+        // Set user.id to our DB id (used in the jwt callback below)
         user.id = dbUser.id;
 
-        // Auto-join: kolla om det finns en väntande inbjudan för den här e-postadressen
+        // Auto-join: check whether there's a pending invite for this email
         await autoJoinPendingInvite(dbUser.id, user.email!);
       }
       return true;
     },
 
-    // ─── jwt: bygg JWT-token ──────────────────────────────────────────────────
+    // ─── jwt: build the JWT token ─────────────────────────────────────────────
     async jwt({ token, user, account }) {
       if (account?.provider === "google" && token.email) {
-        // Hämta DB-id för Google-användare vid initial inloggning
+        // Fetch DB id for Google users on initial login
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
           select: { id: true },
         });
         if (dbUser) token.id = dbUser.id;
       } else if (user) {
-        // Credentials-login: kör auto-join här eftersom signIn-callbacken inte körs
+        // Credentials login: run auto-join here since the signIn callback doesn't run
         token.id = user.id;
         if (user.email) await autoJoinPendingInvite(user.id, user.email);
       }
       return token;
     },
 
-    // ─── session: exponera id i session-objektet ─────────────────────────────
+    // ─── session: expose id on the session object ─────────────────────────────
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
@@ -151,7 +162,7 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-// ─── Hjälpfunktion: auto-gå med i hushåll via väntande inbjudan ──────────────
+// ─── Helper: auto-join a household via a pending invite ─────────────────────
 async function autoJoinPendingInvite(userId: string, email: string) {
   try {
     const invite = await prisma.householdInvite.findFirst({
@@ -165,10 +176,10 @@ async function autoJoinPendingInvite(userId: string, email: string) {
 
     if (!invite) return;
 
-    // Ta bort från eventuellt befintligt hushåll
+    // Remove from any existing household
     await prisma.householdMember.deleteMany({ where: { userId } });
 
-    // Gå med i inbjudna hushållet
+    // Join the invited household
     await prisma.householdMember.create({
       data: {
         householdId: invite.householdId,
@@ -177,13 +188,13 @@ async function autoJoinPendingInvite(userId: string, email: string) {
       },
     });
 
-    // Markera inbjudan som använd
+    // Mark the invite as used
     await prisma.householdInvite.update({
       where: { id: invite.id },
       data: { usedAt: new Date() },
     });
   } catch (err) {
-    // Logga men krascha inte inloggningen
+    // Log but don't crash the login
     console.error("Auto-join invite error:", err);
   }
 }

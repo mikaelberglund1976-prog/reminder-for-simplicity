@@ -37,7 +37,7 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#F5F6FA",
+      minHeight: "100vh", background: "#F5F4F0",
       fontFamily: FONT, display: "flex", flexDirection: "column",
       position: "relative", overflow: "hidden",
     }}>
@@ -47,7 +47,7 @@ export default function LoginPage() {
 
         {/* Title */}
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1A2340", margin: 0, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1C1C28", margin: 0, letterSpacing: "-0.5px" }}>
             Welcome back
           </h1>
           <p style={{ fontSize: 15, color: "#4B5563", margin: "8px 0 0" }}>
@@ -71,8 +71,8 @@ export default function LoginPage() {
           disabled={googleLoading}
           style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 12, background: "#fff", color: "#1A2340", fontWeight: 500, fontSize: 15,
-            padding: "15px 16px", borderRadius: 14, border: "1.5px solid #E8EDF4",
+            gap: 12, background: "#fff", color: "#1C1C28", fontWeight: 500, fontSize: 15,
+            padding: "15px 16px", borderRadius: 14, border: "1.5px solid #E4E3DE",
             cursor: googleLoading ? "not-allowed" : "pointer",
             opacity: googleLoading ? 0.6 : 1, marginBottom: 24,
             boxShadow: "0 1px 4px rgba(0,0,0,0.05)", fontFamily: FONT,
@@ -89,18 +89,18 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-          <div style={{ flex: 1, height: 1, background: "#E8EDF4" }} />
+          <div style={{ flex: 1, height: 1, background: "#E4E3DE" }} />
           <span style={{ color: "#6B7280", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
             or sign in with email
           </span>
-          <div style={{ flex: 1, height: 1, background: "#E8EDF4" }} />
+          <div style={{ flex: 1, height: 1, background: "#E4E3DE" }} />
         </div>
 
         <form onSubmit={handleSubmit}>
 
           {/* Email */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2340", marginBottom: 10 }}>Email</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#1C1C28", marginBottom: 10 }}>Email</div>
             <input
               type="email"
               placeholder="Email"
@@ -113,7 +113,12 @@ export default function LoginPage() {
 
           {/* Password */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2340", marginBottom: 10 }}>Password</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1C1C28" }}>Password</div>
+              <Link href="/forgot-password" style={{ fontSize: 13, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>
+                Forgot password?
+              </Link>
+            </div>
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
@@ -129,7 +134,7 @@ export default function LoginPage() {
                 style={{
                   position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
                   background: "none", border: "none", cursor: "pointer",
-                  color: "#8B90A4", display: "flex", alignItems: "center", padding: 0,
+                  color: "#7C7C8A", display: "flex", alignItems: "center", padding: 0,
                 }}
               >
                 {showPassword ? (
@@ -154,7 +159,7 @@ export default function LoginPage() {
             disabled={loading}
             style={{
               width: "100%", padding: "17px", borderRadius: 50,
-              background: loading ? "#8B90A4" : "#1A2340", border: "none",
+              background: loading ? "#7C7C8A" : "#1C1C28", border: "none",
               fontSize: 16, fontWeight: 700,
               color: "#fff",
               cursor: loading ? "not-allowed" : "pointer",
@@ -180,8 +185,8 @@ export default function LoginPage() {
       {/* Decorative wave at bottom */}
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, pointerEvents: "none", lineHeight: 0 }}>
         <svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", display: "block" }}>
-          <ellipse cx="340" cy="200" rx="260" ry="130" fill="#D6E8FF" opacity="0.45" />
-          <ellipse cx="180" cy="220" rx="220" ry="110" fill="#EBF3FF" opacity="0.5" />
+          <ellipse cx="340" cy="200" rx="260" ry="130" fill="#E4E7FB" opacity="0.45" />
+          <ellipse cx="180" cy="220" rx="220" ry="110" fill="#E4E7FB" opacity="0.5" />
           <ellipse cx="420" cy="240" rx="180" ry="100" fill="#C5DCFC" opacity="0.3" />
         </svg>
       </div>
@@ -193,11 +198,11 @@ export default function LoginPage() {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   background: "#fff",
-  border: "1.5px solid #E8EDF4",
+  border: "1.5px solid #E4E3DE",
   borderRadius: 14,
   padding: "14px 16px",
   fontSize: 15,
-  color: "#1A2340",
+  color: "#1C1C28",
   outline: "none",
   fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
   boxSizing: "border-box" as const,

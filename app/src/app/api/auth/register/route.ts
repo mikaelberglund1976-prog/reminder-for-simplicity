@@ -4,14 +4,16 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendWelcomeEmail } from "@/lib/email";
 
+export const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+  .regex(/[0-9]/, "Must contain at least one number");
+
 const registerSchema = z.object({
-  name: z.string().min(1, "Namn krävs").max(100),
-  email: z.string().email("Ogiltig email-adress"),
-  password: z
-    .string()
-    .min(8, "Lösenordet måste vara minst 8 tecken")
-    .regex(/[A-Z]/, "Måste innehålla minst en stor bokstav")
-    .regex(/[0-9]/, "Måste innehålla minst en siffra"),
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().email("Invalid email address"),
+  password: passwordSchema,
 });
 
 export async function POST(req: Request) {
@@ -19,22 +21,22 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = registerSchema.parse(body);
 
-    // Kolla om email redan finns
+    // Check if the email is already taken
     const existing = await prisma.user.findUnique({
       where: { email: data.email.toLowerCase() },
     });
 
     if (existing) {
       return NextResponse.json(
-        { error: "Det finns redan ett konto med denna email." },
+        { error: "An account with this email already exists." },
         { status: 400 }
       );
     }
 
-    // Hasha lösenord
+    // Hash password
     const hashedPassword = await bcrypt.hash(data.password, 12);
 
-    // Skapa användare
+    // Create user
     const user = await prisma.user.create({
       data: {
         name: data.name,
@@ -43,11 +45,11 @@ export async function POST(req: Request) {
       },
     });
 
-    // Skicka välkomstmail (best-effort – misslyckas tyst)
+    // Send welcome email (best-effort — fails silently)
     sendWelcomeEmail({ to: user.email, name: user.name }).catch(console.error);
 
     return NextResponse.json(
-      { message: "Konto skapat!", userId: user.id },
+      { message: "Account created!", userId: user.id },
       { status: 201 }
     );
   } catch (error) {
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
     }
     console.error("Register error:", error);
     return NextResponse.json(
-      { error: "Något gick fel. Försök igen." },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

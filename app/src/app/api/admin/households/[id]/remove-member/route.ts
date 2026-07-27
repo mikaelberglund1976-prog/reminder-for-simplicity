@@ -8,7 +8,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
 // POST /api/admin/households/[id]/remove-member
 // Body: { userId: string }
 // Removes the given user from the household. Does NOT delete the user account.
-// If the removed user is a child profile (email ends in @assistiq.internal),
+// If the removed user is a child profile (email ends in @reminder-for-simplicity.internal),
 // we also delete the user record since children only exist inside a household.
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {

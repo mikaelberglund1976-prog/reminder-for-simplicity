@@ -253,7 +253,7 @@ export default function AdminPage() {
               🔔
             </div>
             <span style={{ color: "#fff", fontWeight: 700, fontSize: 18, letterSpacing: "-0.3px" }}>
-              AssistIQ
+              Reminder for Simplicity
             </span>
           </Link>
           <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 18 }}>|</span>

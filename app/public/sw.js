@@ -1,7 +1,7 @@
-// AssistIQ Service Worker
+// Reminder for Simplicity Service Worker
 // Caches the app shell so it loads fast and works on bad connections
 
-const CACHE = "assistiq-v1";
+const CACHE = "reminder-for-simplicity-v1";
 const PRECACHE = ["/", "/dashboard", "/login", "/register"];
 
 self.addEventListener("install", (e) => {

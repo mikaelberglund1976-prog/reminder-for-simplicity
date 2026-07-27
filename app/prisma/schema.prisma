@@ -1,5 +1,5 @@
-// Prisma Schema – AssistIQ
-// Databas: PostgreSQL via Supabase
+// Prisma Schema – Reminder for Simplicity
+// Database: PostgreSQL via Supabase
 
 generator client {
   provider = "prisma-client-js"
@@ -32,8 +32,96 @@ model User {
   assignedReminders Reminder[]  @relation("AssignedReminders")
   fallbackReminders Reminder[]  @relation("FallbackReminders")
   handoverReminders Reminder[]  @relation("HandoverReminders")
+  passwordResetTokens PasswordResetToken[]
+  shoppingListItemsAdded     ShoppingListItem[] @relation("ShoppingListAdded")
+  shoppingListItemsPurchased ShoppingListItem[] @relation("ShoppingListPurchased")
+  wishlistItemsOwned    WishlistItem[] @relation("WishlistOwner")
+  wishlistItemsAdded    WishlistItem[] @relation("WishlistAdded")
+  wishlistItemsReserved WishlistItem[] @relation("WishlistReserved")
+  wishlistItemsPurchased WishlistItem[] @relation("WishlistPurchased")
 
   @@map("users")
+}
+
+model ShoppingListItem {
+  id           String    @id @default(cuid())
+  householdId  String
+  name         String
+  quantity     String?
+  category     ShoppingCategory @default(UNSORTED)
+  isPurchased  Boolean   @default(false)
+  addedBy      String
+  purchasedBy  String?
+  purchasedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  adder        User      @relation("ShoppingListAdded", fields: [addedBy], references: [id], onDelete: Cascade)
+  purchaser    User?     @relation("ShoppingListPurchased", fields: [purchasedBy], references: [id], onDelete: SetNull)
+
+  @@map("shopping_list_items")
+}
+
+// Remembers which category a household chose the last time a given item
+// name was added, so recurring items (e.g. "milk") auto-sort correctly
+// next time without the user having to re-categorize it. See PRODUCT_SPEC 4b.8.
+model ShoppingCategoryMemory {
+  id          String           @id @default(cuid())
+  householdId String
+  itemName    String           // stored lowercase/trimmed, matched case-insensitively
+  category    ShoppingCategory
+  updatedAt   DateTime         @updatedAt
+
+  household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, itemName])
+  @@map("shopping_category_memory")
+}
+
+// A child's personal wish list. Purchase/reservation status is intentionally
+// visible only to adults — see PRODUCT_SPEC 4b.9 and P0.6/P0.7 in the order.
+// API routes must strip status/reservedBy/purchasedBy from any response
+// served to the owning child; never rely on the UI alone to hide it.
+model WishlistItem {
+  id           String         @id @default(cuid())
+  householdId  String
+  childId      String         // the child this wish belongs to
+  addedBy      String         // usually the same as childId; kept separate in case an adult adds on the child's behalf later
+  name         String
+  url          String?
+  price        Float?
+  currency     String?        @default("SEK")
+  imageUrl     String?
+  note         String?
+  status       WishlistStatus @default(WANTED)
+  reservedBy   String?
+  reservedAt   DateTime?
+  purchasedBy  String?
+  purchasedAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  household    Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  child        User           @relation("WishlistOwner", fields: [childId], references: [id], onDelete: Cascade)
+  adder        User           @relation("WishlistAdded", fields: [addedBy], references: [id], onDelete: Cascade)
+  reserver     User?          @relation("WishlistReserved", fields: [reservedBy], references: [id], onDelete: SetNull)
+  purchaser    User?          @relation("WishlistPurchased", fields: [purchasedBy], references: [id], onDelete: SetNull)
+
+  @@map("wishlist_items")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique @default(cuid())
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 model Reminder {
@@ -167,6 +255,9 @@ model Household {
   reminders   Reminder[]
   invites     HouseholdInvite[]
   familyTrial FamilyTrial?
+  shoppingListItems ShoppingListItem[]
+  shoppingCategoryMemory ShoppingCategoryMemory[]
+  wishlistItems WishlistItem[]
 
   @@map("households")
 }
@@ -249,4 +340,23 @@ enum ChoreStatus {
   DONE
   PENDING_APPROVAL
   APPROVED
+}
+
+// Store-aisle categories for the shared shopping list (P0.2 in the order).
+enum ShoppingCategory {
+  PRODUCE     // Fruit & vegetables
+  DAIRY
+  BREAD
+  FROZEN
+  PANTRY
+  HOUSEHOLD
+  MEAT_FISH
+  OTHER
+  UNSORTED
+}
+
+enum WishlistStatus {
+  WANTED
+  RESERVED
+  PURCHASED
 }

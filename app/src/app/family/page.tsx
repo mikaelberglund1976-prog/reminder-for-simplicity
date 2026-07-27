@@ -9,7 +9,7 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif
 type Child = { id: string; name: string; email: string };
 
 const AVATAR_COLORS = [
-  "#5B9CF5", "#E8614D", "#2A9D6F", "#C06010",
+  "#4A5FD5", "#E8614D", "#2A9D6F", "#C06010",
   "#8B5CF6", "#D97706", "#0891B2", "#BE185D",
 ];
 
@@ -96,15 +96,15 @@ function FamilySwitchContent() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#8B90A4" }}>Loading…</div>
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "#7C7C8A" }}>Loading…</div>
       </div>
     );
   }
 
   if (!householdId) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: 24 }}>
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: 24 }}>
         <div style={{ textAlign: "center", maxWidth: 320 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>👨‍👩‍👧</div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Family login</h1>
@@ -122,7 +122,7 @@ function FamilySwitchContent() {
     const dots = [0, 1, 2, 3];
 
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: 24 }}>
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: 24 }}>
         <div style={{ width: 72, height: 72, borderRadius: "50%", background: color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800, marginBottom: 12 }}>
           {selected.name.charAt(0).toUpperCase()}
         </div>
@@ -158,7 +158,7 @@ function FamilySwitchContent() {
                   height: 72, borderRadius: 18, fontSize: isBack ? 22 : 26, fontWeight: 700,
                   background: isBack ? "#F0F3FA" : "#fff",
                   color: isBack ? "#6B7280" : "#0F172A",
-                  border: "1.5px solid #E8EDF4",
+                  border: "1.5px solid #E4E3DE",
                   cursor: "pointer", fontFamily: FONT,
                   boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
                 }}>
@@ -169,7 +169,7 @@ function FamilySwitchContent() {
         </div>
 
         <button onClick={() => { setSelected(null); setPin(""); setError(""); }}
-          style={{ marginTop: 28, background: "none", border: "none", color: "#8B90A4", fontSize: 14, cursor: "pointer", fontFamily: FONT }}>
+          style={{ marginTop: 28, background: "none", border: "none", color: "#7C7C8A", fontSize: 14, cursor: "pointer", fontFamily: FONT }}>
           Back to profiles
         </button>
       </div>
@@ -178,7 +178,7 @@ function FamilySwitchContent() {
 
   // Child profile picker
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F6FA", fontFamily: FONT }}>
+    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "48px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ fontSize: 13, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
@@ -190,7 +190,7 @@ function FamilySwitchContent() {
         {children.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 24px" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>👤</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2340", marginBottom: 8 }}>No child profiles yet</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 8 }}>No child profiles yet</div>
             <div style={{ fontSize: 14, color: "#6B7280" }}>Ask a parent to add your profile first.</div>
           </div>
         ) : (
@@ -200,7 +200,7 @@ function FamilySwitchContent() {
               return (
                 <button key={child.id} onClick={() => { setSelected(child); setPin(""); setError(""); }}
                   style={{
-                    background: "#fff", border: "1.5px solid #E8EDF4", borderRadius: 24,
+                    background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 24,
                     padding: "32px 16px", display: "flex", flexDirection: "column",
                     alignItems: "center", gap: 12, cursor: "pointer", fontFamily: FONT,
                     boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
@@ -222,8 +222,8 @@ function FamilySwitchContent() {
 export default function FamilyPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: "100vh", background: "#F5F6FA", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#8B90A4" }}>Loading…</div>
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "#7C7C8A" }}>Loading…</div>
       </div>
     }>
       <FamilySwitchContent />

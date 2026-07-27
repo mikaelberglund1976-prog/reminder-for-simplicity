@@ -1,11 +1,11 @@
 {
-  "name": "AssistIQ",
-  "short_name": "AssistIQ",
+  "name": "Reminder for Simplicity",
+  "short_name": "Reminder",
   "description": "Never forget what matters. Track subscriptions, birthdays, renewals and shared household responsibilities.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#F5F6FA",
-  "theme_color": "#1A2340",
+  "background_color": "#F5F4F0",
+  "theme_color": "#1C1C28",
   "orientation": "portrait",
   "icons": [
     {

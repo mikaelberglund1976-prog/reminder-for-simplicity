@@ -6,7 +6,7 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif
 export default function Home() {
   return (
     <div style={{
-      minHeight: "100vh", background: "#F5F6FA",
+      minHeight: "100vh", background: "#F5F4F0",
       display: "flex", flexDirection: "column",
       fontFamily: FONT, overflowX: "hidden",
     }}>
@@ -21,17 +21,17 @@ export default function Home() {
         {/* Title */}
         <h1 style={{
           fontSize: "clamp(34px, 8vw, 48px)", fontWeight: 800,
-          color: "#1A2340", lineHeight: 1.15, letterSpacing: "-1px",
+          color: "#1C1C28", lineHeight: 1.15, letterSpacing: "-1px",
           margin: "0 0 16px", maxWidth: 380,
         }}>
           Share the{" "}
-          <span style={{ color: "#5B9CF5" }}>mental load</span>
+          <span style={{ color: "#4A5FD5" }}>mental load</span>
           {" "}of your household
         </h1>
 
         {/* Subtitle */}
         <p style={{
-          fontSize: 16, color: "#8B90A4", lineHeight: 1.6,
+          fontSize: 16, color: "#7C7C8A", lineHeight: 1.6,
           maxWidth: 340, margin: "0 0 40px",
         }}>
           Keep track of recurring costs, important dates, and shared responsibilities — so nothing gets missed, forgotten, or left to one person.
@@ -43,7 +43,7 @@ export default function Home() {
           {/* Glow background */}
           <div style={{
             position: "absolute", inset: -40,
-            background: "radial-gradient(ellipse at center, #D6E8FF 0%, transparent 70%)",
+            background: "radial-gradient(ellipse at center, #E4E7FB 0%, transparent 70%)",
             zIndex: 0,
           }} />
 
@@ -52,7 +52,7 @@ export default function Home() {
             position: "relative", zIndex: 1,
             width: 230, height: 400,
             margin: "0 auto",
-            background: "#1A2340",
+            background: "#1C1C28",
             borderRadius: 40,
             padding: 3,
             boxShadow: "0 30px 80px rgba(26,35,64,0.22), 0 8px 24px rgba(26,35,64,0.12)",
@@ -70,19 +70,19 @@ export default function Home() {
                 background: "#fff", padding: "10px 16px 6px",
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: "#1A2340" }}>14:18</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#1C1C28" }}>14:18</span>
                 <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
-                  <div style={{ width: 12, height: 8, borderRadius: 2, background: "#1A2340" }} />
-                  <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#1A2340" }} />
-                  <div style={{ width: 14, height: 8, border: "1.5px solid #1A2340", borderRadius: 2, position: "relative" }}>
-                    <div style={{ position: "absolute", left: 2, top: 1, bottom: 1, width: "60%", background: "#1A2340", borderRadius: 1 }} />
+                  <div style={{ width: 12, height: 8, borderRadius: 2, background: "#1C1C28" }} />
+                  <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#1C1C28" }} />
+                  <div style={{ width: 14, height: 8, border: "1.5px solid #1C1C28", borderRadius: 2, position: "relative" }}>
+                    <div style={{ position: "absolute", left: 2, top: 1, bottom: 1, width: "60%", background: "#1C1C28", borderRadius: 1 }} />
                   </div>
                 </div>
               </div>
 
               {/* Notch */}
               <div style={{
-                width: 80, height: 18, background: "#1A2340",
+                width: 80, height: 18, background: "#1C1C28",
                 borderRadius: "0 0 16px 16px", margin: "0 auto 12px",
               }} />
 
@@ -101,10 +101,10 @@ export default function Home() {
                     fontSize: 18,
                   }}>🎂</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1A2340" }}>Julias Birthday</div>
-                    <div style={{ fontSize: 10, color: "#8B90A4" }}>Tomorrow</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1C1C28" }}>Julias Birthday</div>
+                    <div style={{ fontSize: 10, color: "#7C7C8A" }}>Tomorrow</div>
                   </div>
-                  <div style={{ fontSize: 9, color: "#5B9CF5", fontWeight: 600 }}>Tomorrow</div>
+                  <div style={{ fontSize: 9, color: "#4A5FD5", fontWeight: 600 }}>Tomorrow</div>
                 </div>
 
                 {/* Netflix */}
@@ -119,8 +119,8 @@ export default function Home() {
                     fontWeight: 900, fontSize: 16, color: "#fff", fontStyle: "italic",
                   }}>N</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1A2340" }}>Netflix</div>
-                    <div style={{ fontSize: 10, color: "#8B90A4" }}>Renews Tomorrow</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1C1C28" }}>Netflix</div>
+                    <div style={{ fontSize: 10, color: "#7C7C8A" }}>Renews Tomorrow</div>
                   </div>
                   <div style={{ fontSize: 9, color: "#E5873A", fontWeight: 600 }}>Tomorrow</div>
                 </div>
@@ -137,10 +137,10 @@ export default function Home() {
                     fontWeight: 800, fontSize: 13, color: "#fff",
                   }}>T</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1A2340" }}>Telia</div>
-                    <div style={{ fontSize: 10, color: "#8B90A4" }}>Renews in 3 days</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1C1C28" }}>Telia</div>
+                    <div style={{ fontSize: 10, color: "#7C7C8A" }}>Renews in 3 days</div>
                   </div>
-                  <div style={{ fontSize: 9, color: "#8B90A4", fontWeight: 600 }}>3 days</div>
+                  <div style={{ fontSize: 9, color: "#7C7C8A", fontWeight: 600 }}>3 days</div>
                 </div>
 
               </div>
@@ -151,7 +151,7 @@ export default function Home() {
           <div style={{
             position: "absolute", top: 40, left: -10, zIndex: 2,
             width: 44, height: 44, borderRadius: 14,
-            background: "linear-gradient(135deg, #D6E8FF, #EBF3FF)",
+            background: "linear-gradient(135deg, #E4E7FB, #E4E7FB)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 4px 16px rgba(91,156,245,0.25)",
             fontSize: 20,
@@ -161,7 +161,7 @@ export default function Home() {
           <div style={{
             position: "absolute", top: 30, right: -10, zIndex: 2,
             width: 44, height: 44, borderRadius: 14,
-            background: "linear-gradient(135deg, #D4F4E6, #EBF3FF)",
+            background: "linear-gradient(135deg, #D4F4E6, #E4E7FB)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 4px 16px rgba(42,157,111,0.2)",
             fontSize: 20,
@@ -189,8 +189,8 @@ export default function Home() {
         <Link href="/register" style={{
           flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
           padding: "17px", borderRadius: 50,
-          background: "#E8EDF4", border: "none",
-          fontSize: 16, fontWeight: 600, color: "#1A2340",
+          background: "#E4E3DE", border: "none",
+          fontSize: 16, fontWeight: 600, color: "#1C1C28",
           textDecoration: "none",
         }}>
           Get started free
@@ -198,8 +198,8 @@ export default function Home() {
         <Link href="/login" style={{
           flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
           padding: "17px", borderRadius: 50,
-          background: "#fff", border: "1.5px solid #E8EDF4",
-          fontSize: 16, fontWeight: 600, color: "#1A2340",
+          background: "#fff", border: "1.5px solid #E4E3DE",
+          fontSize: 16, fontWeight: 600, color: "#1C1C28",
           textDecoration: "none",
           boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
         }}>

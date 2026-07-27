@@ -163,18 +163,31 @@ Miljövariabler är som "hemligheter" som appen behöver för att fungera.
 
 ```
 DATABASE_URL="postgresql://postgres:[DITT-LÖSENORD]@db.[DITT-PROJEKT].supabase.co:5432/postgres"
+DIRECT_URL="postgresql://postgres:[DITT-LÖSENORD]@db.[DITT-PROJEKT].supabase.co:5432/postgres"
 
 NEXTAUTH_SECRET="en-lång-slumpmässig-text-här"
 NEXTAUTH_URL="http://localhost:3000"
 
+GOOGLE_CLIENT_ID="din-google-client-id"
+GOOGLE_CLIENT_SECRET="din-google-client-secret"
+
 RESEND_API_KEY="re_xxxxxxxxxxxxxxxx"
 RESEND_FROM_EMAIL="onboarding@resend.dev"
+
+ADMIN_EMAIL="mikaelberglund1976@gmail.com"
+CRON_SECRET="mitt-hemliga-cron-2026"
 
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 NEXT_PUBLIC_APP_NAME="Reminder for Simplicity"
 ```
 
 > 💡 **Generera NEXTAUTH_SECRET:** Gå till https://generate-secret.vercel.app/32 och kopiera resultatet.
+>
+> 💡 **DIRECT_URL:** Samma Supabase-sida som DATABASE_URL, men välj "Direct connection" istället för "Transaction pooler". Prisma behöver denna för `db push`/migrations.
+>
+> 💡 **Google-inloggning:** Skapa OAuth-uppgifter i [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → "OAuth client ID" (typ: Web application). Lägg till `http://localhost:3000/api/auth/callback/google` (och senare din Vercel-URL) som redirect URI. Detta steg är valfritt om du bara vill ha email/lösenord-inloggning – lämna fälten tomma i så fall.
+>
+> 💡 **ADMIN_EMAIL:** Den email-adress som ska ha åtkomst till `/admin`-panelen.
 
 ### 6b. Installera beroenden och sätt upp databasen
 Kör dessa kommandon i terminalen:
@@ -231,10 +244,14 @@ Lägg till dessa (kopiera från din `.env.local`):
 | Nyckel | Värde |
 |---|---|
 | `DATABASE_URL` | Din Supabase-URL |
+| `DIRECT_URL` | Din Supabase direct connection-URL |
 | `NEXTAUTH_SECRET` | Din hemliga nyckel |
 | `NEXTAUTH_URL` | Din Vercel-URL (se nedan) |
+| `GOOGLE_CLIENT_ID` | Från Google Cloud Console (valfritt) |
+| `GOOGLE_CLIENT_SECRET` | Från Google Cloud Console (valfritt) |
 | `RESEND_API_KEY` | Din Resend-nyckel |
 | `RESEND_FROM_EMAIL` | `onboarding@resend.dev` |
+| `ADMIN_EMAIL` | Din email – ger dig åtkomst till `/admin` |
 | `NEXT_PUBLIC_APP_URL` | Din Vercel-URL (se nedan) |
 | `NEXT_PUBLIC_APP_NAME` | `Reminder for Simplicity` |
 | `CRON_SECRET` | En slumpmässig text, t.ex. `mitt-hemliga-cron-2026` |
@@ -263,7 +280,7 @@ Om du vill ha `www.reminderapp.se` istället för `reminder-for-simplicity.verce
 ## Sammanfattning – vad har du nu?
 
 ```
-✅ Landningssida (landing-page.html → flytta till app/src/app/page.tsx)
+✅ Landningssida (app/src/app/page.tsx – den fristående landing-page.html är borttagen, den var inaktuell)
 ✅ Registrering & inloggning
 ✅ Dashboard med reminder-lista
 ✅ Skapa/redigera/ta bort reminders

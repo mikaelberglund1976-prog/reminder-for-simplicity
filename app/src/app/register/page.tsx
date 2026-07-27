@@ -8,8 +8,8 @@ import { signIn } from "next-auth/react";
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", background: "#fff", border: "1.5px solid #E8EDF4",
-  borderRadius: 14, padding: "13px 16px", fontSize: 15, color: "#1A2340",
+  width: "100%", background: "#fff", border: "1.5px solid #E4E3DE",
+  borderRadius: 14, padding: "13px 16px", fontSize: 15, color: "#1C1C28",
   outline: "none", fontFamily: FONT, boxSizing: "border-box",
   boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
 };
@@ -61,19 +61,19 @@ export default function RegisterPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F6FA", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
+    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
       <div style={{ maxWidth: 400, width: "100%", margin: "0 auto" }}>
 
         {/* Logo */}
         <div style={{ marginBottom: 32 }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", marginBottom: 28 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: "#1A2340", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔔</div>
-            <span style={{ fontWeight: 700, fontSize: 16, color: "#1A2340" }}>AssistIQ</span>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: "#1C1C28", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔔</div>
+            <span style={{ fontWeight: 700, fontSize: 16, color: "#1C1C28" }}>Reminder for Simplicity</span>
           </Link>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#1A2340", margin: 0, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#1C1C28", margin: 0, letterSpacing: "-0.5px" }}>
             Create your account
           </h1>
-          <p style={{ fontSize: 14, color: "#8B90A4", margin: "6px 0 0" }}>Free. Takes 30 seconds.</p>
+          <p style={{ fontSize: 14, color: "#7C7C8A", margin: "6px 0 0" }}>Free. Takes 30 seconds.</p>
         </div>
 
         {/* Google */}
@@ -83,8 +83,8 @@ export default function RegisterPage() {
           disabled={googleLoading}
           style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
-            background: "#fff", border: "1.5px solid #E8EDF4", borderRadius: 50,
-            padding: "14px 20px", fontSize: 15, fontWeight: 600, color: "#1A2340",
+            background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 50,
+            padding: "14px 20px", fontSize: 15, fontWeight: 600, color: "#1C1C28",
             cursor: googleLoading ? "not-allowed" : "pointer",
             opacity: googleLoading ? 0.7 : 1, boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
             fontFamily: FONT, marginBottom: 20, boxSizing: "border-box",
@@ -101,9 +101,9 @@ export default function RegisterPage() {
 
         {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: "#E8EDF4" }} />
-          <span style={{ fontSize: 13, color: "#B0B7C8", fontWeight: 500 }}>or sign up with email</span>
-          <div style={{ flex: 1, height: 1, background: "#E8EDF4" }} />
+          <div style={{ flex: 1, height: 1, background: "#E4E3DE" }} />
+          <span style={{ fontSize: 13, color: "#ACA9A3", fontWeight: 500 }}>or sign up with email</span>
+          <div style={{ flex: 1, height: 1, background: "#E4E3DE" }} />
         </div>
 
         {/* Form */}
@@ -115,7 +115,7 @@ export default function RegisterPage() {
           )}
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2340", marginBottom: 8 }}>Full name</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1C28", marginBottom: 8 }}>Full name</div>
             <input
               type="text"
               placeholder="Mikael Berglund"
@@ -128,7 +128,7 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2340", marginBottom: 8 }}>Email</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1C28", marginBottom: 8 }}>Email</div>
             <input
               type="email"
               placeholder="you@example.com"
@@ -140,7 +140,7 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2340", marginBottom: 8 }}>Password</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1C28", marginBottom: 8 }}>Password</div>
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
@@ -154,7 +154,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
-                style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#8B90A4", padding: 0, display: "flex" }}
+                style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#7C7C8A", padding: 0, display: "flex" }}
               >
                 {showPassword ? (
                   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -176,7 +176,7 @@ export default function RegisterPage() {
             disabled={loading}
             style={{
               width: "100%", padding: "17px", borderRadius: 50,
-              background: "#1A2340", border: "none",
+              background: "#1C1C28", border: "none",
               fontSize: 16, fontWeight: 600, color: "#fff",
               cursor: loading ? "not-allowed" : "pointer",
               fontFamily: FONT, opacity: loading ? 0.7 : 1,
@@ -188,9 +188,9 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: "center", fontSize: 14, color: "#8B90A4", marginTop: 24 }}>
+        <p style={{ textAlign: "center", fontSize: 14, color: "#7C7C8A", marginTop: 24 }}>
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "#5B9CF5", fontWeight: 600, textDecoration: "none" }}>
+          <Link href="/login" style={{ color: "#4A5FD5", fontWeight: 600, textDecoration: "none" }}>
             Log in
           </Link>
         </p>

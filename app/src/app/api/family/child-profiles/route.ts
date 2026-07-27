@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     // Create the child user (internal email, password = hashed PIN)
     const pinHash = await bcrypt.hash(pin, 10);
     const internalEmail =
-      "child_" + Math.random().toString(36).slice(2, 12) + "@assistiq.internal";
+      "child_" + Math.random().toString(36).slice(2, 12) + "@reminder-for-simplicity.internal";
 
     let createdUser;
     try {

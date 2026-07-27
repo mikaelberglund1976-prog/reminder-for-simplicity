@@ -117,12 +117,12 @@ export default function PhoneInput({ value, onChange, onValidChange, placeholder
             style={{
               appearance: "none",
               WebkitAppearance: "none",
-              background: "#F5F6FA",
-              border: "1.5px solid #E8EDF4",
+              background: "#F5F4F0",
+              border: "1.5px solid #E4E3DE",
               borderRadius: 12,
               padding: "12px 28px 12px 12px",
               fontSize: 14,
-              color: "#1A2340",
+              color: "#1C1C28",
               outline: "none",
               fontFamily: FONT,
               cursor: disabled ? "not-allowed" : "pointer",
@@ -142,7 +142,7 @@ export default function PhoneInput({ value, onChange, onValidChange, placeholder
               top: "50%",
               transform: "translateY(-50%)",
               pointerEvents: "none",
-              color: "#8B90A4",
+              color: "#7C7C8A",
               fontSize: 10,
             }}
           >
@@ -159,12 +159,12 @@ export default function PhoneInput({ value, onChange, onValidChange, placeholder
           disabled={disabled}
           style={{
             flex: 1,
-            background: "#F5F6FA",
-            border: `1.5px solid ${error ? "#F5CCCC" : "#E8EDF4"}`,
+            background: "#F5F4F0",
+            border: `1.5px solid ${error ? "#F5CCCC" : "#E4E3DE"}`,
             borderRadius: 12,
             padding: "12px 14px",
             fontSize: 14,
-            color: "#1A2340",
+            color: "#1C1C28",
             outline: "none",
             fontFamily: FONT,
             boxSizing: "border-box",
