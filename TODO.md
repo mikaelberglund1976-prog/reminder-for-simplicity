@@ -144,3 +144,4 @@ Du funderade på hushålls-modellen (ett hushåll per person, beslut: behåll de
 - [x] Deploy klar och klicktestad (4h, 4i, 4j) – delningslänk, katalog, Recent-chips och PIN-inloggning fungerar skarpt.
 - [ ] Kvarstår innan Fas 1-beta: klicktesta barnprofil-med-email end-to-end (se 4j), och gå igenom resten av punkt 7-listan (glömt lösenord, PWA på mobil, bottenmeny/hamburgermeny) som inte är avbockad än.
 - [ ] Därefter: ta ställning till Fas 1-beta vs. fortsätta på Fas 2 (t.ex. Wishlist-delningslänk, som fortfarande inte är byggd – se `ROADMAP.md` Fas 2).
+test deploy
