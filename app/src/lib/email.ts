@@ -447,3 +447,151 @@ export async function sendBroadcastEmail({
 </html>`,
   });
 }
+
+// ─── Approval gate (2026-07-28) ────────────────────────────────────────────
+// While we're testing/building, every new top-level signup (email/password
+// register + first Google sign-in) needs a manual admin approval before they
+// can log in. Two emails: one to the new user ("we got your signup"), one to
+// the admin ("someone's waiting"). A third fires once the admin approves.
+
+export async function sendPendingApprovalEmail({ to, name }: { to: string; name: string | null }) {
+  const firstName = name?.split(" ")[0] ?? "there";
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Your account is awaiting approval`,
+    html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
+
+    <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:6px;">⏳</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity</div>
+    </div>
+
+    <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
+      <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#1A202C;">Thanks, ${firstName}!</h1>
+      <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 16px;">
+        We got your signup. We're in a testing phase right now, so every new account is manually approved before it can log in — this normally doesn't take long.
+      </p>
+      <p style="color:#718096;font-size:15px;line-height:1.7;margin:0;">
+        You'll get another email as soon as you're approved. No need to do anything else in the meantime.
+      </p>
+    </div>
+
+    <div style="text-align:center;padding:24px 0 0;">
+      <p style="margin:0;font-size:12px;color:#A0AEC0;">Reminder for Simplicity · by Berget &amp; Fredde</p>
+    </div>
+
+  </div>
+
+</body>
+</html>`,
+  });
+}
+
+export async function sendAdminApprovalRequestEmail({
+  adminEmail,
+  userEmail,
+  userName,
+  via,
+}: {
+  adminEmail: string;
+  userEmail: string;
+  userName: string | null;
+  via: "email" | "google";
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to: adminEmail,
+    subject: `New signup waiting for approval: ${userEmail}`,
+    html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
+
+    <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:6px;">🔔</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity — Admin</div>
+    </div>
+
+    <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#1A202C;">New signup waiting</h1>
+      <p style="color:#2D3748;font-size:15px;line-height:1.7;margin:0 0 6px;">
+        <strong>${userName ?? "No name given"}</strong> (${userEmail}) just signed up via ${via === "google" ? "Google" : "email/password"} and needs approval before they can log in.
+      </p>
+      <div style="text-align:center;margin-top:24px;">
+        <a href="${APP_URL}/admin"
+          style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:50px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
+          Review in Admin →
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>`,
+  });
+}
+
+export async function sendAccountApprovedEmail({ to, name }: { to: string; name: string | null }) {
+  const firstName = name?.split(" ")[0] ?? "there";
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `You're approved — welcome to Reminder for Simplicity 🎉`,
+    html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
+
+    <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:6px;">✅</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity</div>
+    </div>
+
+    <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
+      <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#1A202C;">You're in, ${firstName}! 🎉</h1>
+      <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 32px;">
+        Your account has been approved. Log in whenever you're ready.
+      </p>
+      <div style="text-align:center;">
+        <a href="${APP_URL}/login"
+          style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
+          Log in →
+        </a>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0 0;">
+      <p style="margin:0;font-size:12px;color:#A0AEC0;">Reminder for Simplicity · by Berget &amp; Fredde</p>
+    </div>
+
+  </div>
+
+</body>
+</html>`,
+  });
+}

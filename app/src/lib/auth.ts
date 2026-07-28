@@ -4,6 +4,15 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { sendAdminApprovalRequestEmail } from "@/lib/email";
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
+
+// Thrown by the credentials/pin providers below when an account exists but
+// hasn't been approved yet. Kept as an exact string constant so login/page.tsx
+// and family/page.tsx can match on it and show this specific message instead
+// of their generic "wrong password" fallback.
+export const PENDING_APPROVAL_MESSAGE = "Your account is pending admin approval.";
 
 // Google OAuth is optional. Only register the provider when both env vars are
 // actually set, so local/dev setups without Google credentials don't crash on
@@ -44,6 +53,10 @@ providers.push(
 
       if (!isValid) {
         throw new Error("Incorrect email or password");
+      }
+
+      if (!user.approved) {
+        throw new Error(PENDING_APPROVAL_MESSAGE);
       }
 
       return {
@@ -87,6 +100,10 @@ providers.push(
       const isValid = await bcrypt.compare(credentials.pin, hash);
       if (!isValid) throw new Error("Wrong PIN");
 
+      if (!user.approved) {
+        throw new Error(PENDING_APPROVAL_MESSAGE);
+      }
+
       return {
         id: user.id,
         email: user.email,
@@ -117,13 +134,21 @@ export const authOptions: NextAuthOptions = {
           where: { email: user.email },
         });
 
+        const isNewUser = !dbUser;
+
         if (!dbUser) {
-          // First Google login: create account + household
+          // First Google login: create account + household. New accounts are
+          // pending admin approval by default (testing phase — see
+          // PENDING_APPROVAL_MESSAGE above and /admin), except the admin's
+          // own email, which bootstraps itself in approved.
+          const isAdmin = user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
           dbUser = await prisma.user.create({
             data: {
               email: user.email,
               name: user.name ?? null,
               emailVerified: new Date(),
+              approved: isAdmin,
+              approvedAt: isAdmin ? new Date() : null,
               // password is null for Google users
             },
           });
@@ -139,6 +164,24 @@ export const authOptions: NextAuthOptions = {
               role: "OWNER",
             },
           });
+        }
+
+        // Block sign-in for accounts that haven't been approved yet. This
+        // covers both the brand-new account just created above and any
+        // existing-but-still-pending account trying to sign in again.
+        if (!dbUser.approved) {
+          if (isNewUser) {
+            sendAdminApprovalRequestEmail({
+              adminEmail: ADMIN_EMAIL,
+              userEmail: dbUser.email,
+              userName: dbUser.name,
+              via: "google",
+            }).catch(console.error);
+          }
+          // Returning a string redirects the browser there instead of
+          // creating a session — login/page.tsx reads ?error=PendingApproval
+          // and shows PENDING_APPROVAL_MESSAGE.
+          return "/login?error=PendingApproval";
         }
 
         // Save the providerAccountId if it doesn't already exist

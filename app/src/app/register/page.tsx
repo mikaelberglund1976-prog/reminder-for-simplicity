@@ -21,6 +21,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [pending, setPending] = useState(false);
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
@@ -47,6 +48,15 @@ export default function RegisterPage() {
       return;
     }
 
+    // New signups need admin approval before they can log in — see
+    // /api/auth/register. Skip the auto-login attempt entirely (it would
+    // just fail) and show a confirmation screen instead.
+    if (data.pendingApproval) {
+      setPending(true);
+      setLoading(false);
+      return;
+    }
+
     const result = await signIn("credentials", {
       email: form.email,
       password: form.password,
@@ -58,6 +68,30 @@ export default function RegisterPage() {
     } else {
       router.push("/dashboard");
     }
+  }
+
+  if (pending) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
+        <div style={{ maxWidth: 400, width: "100%", margin: "0 auto", textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1C1C28", margin: "0 0 12px", letterSpacing: "-0.5px" }}>
+            Account created — pending approval
+          </h1>
+          <p style={{ fontSize: 15, color: "#7C7C8A", margin: "0 0 28px", lineHeight: 1.6 }}>
+            We're in a testing phase, so every new account needs a quick admin approval before it can log in. You'll get an email at <strong>{form.email}</strong> as soon as you're approved.
+          </p>
+          <Link href="/" style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            padding: "14px 28px", borderRadius: 50,
+            background: "#1C1C28", color: "#fff",
+            fontSize: 15, fontWeight: 600, textDecoration: "none",
+          }}>
+            Back to home
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

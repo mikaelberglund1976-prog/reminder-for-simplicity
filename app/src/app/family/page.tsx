@@ -6,6 +6,11 @@ import { signIn, useSession } from "next-auth/react";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
+// Kept in sync with PENDING_APPROVAL_MESSAGE in src/lib/auth.ts by hand
+// (duplicated rather than imported — auth.ts pulls in prisma/bcrypt, which
+// can't be bundled into a client component).
+const PENDING_APPROVAL_MESSAGE = "Your account is pending admin approval.";
+
 type Child = { id: string; name: string; email: string; isChildProfile: boolean };
 
 const AVATAR_COLORS = [
@@ -82,6 +87,9 @@ function FamilySwitchContent() {
       });
       if (result?.ok) {
         router.push(selected.isChildProfile ? "/dashboard/family/child" : "/dashboard");
+      } else if (result?.error === PENDING_APPROVAL_MESSAGE) {
+        setError(PENDING_APPROVAL_MESSAGE);
+        setPin("");
       } else {
         setError("Wrong PIN. Try again.");
         setPin("");

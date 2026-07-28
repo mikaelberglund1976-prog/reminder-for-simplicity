@@ -31,6 +31,18 @@ model User {
 
   isChildProfile    Boolean    @default(false)
 
+  // 2026-07-28: admin approval gate for new signups. Defaults to true so
+  // this column backfills as "approved" for every account that already
+  // exists (nobody currently in the DB gets locked out retroactively).
+  // New top-level signups (email/password register + first-time Google
+  // sign-in) explicitly pass `approved: false` at creation — see
+  // /api/auth/register and the Google branch of the signIn callback in
+  // auth.ts. Child profiles and household-invite joins are NOT gated
+  // (they inherit trust from the already-approved parent/inviter who
+  // created them), so they're left on the true default deliberately.
+  approved          Boolean    @default(true)
+  approvedAt        DateTime?
+
   // 2026-07-28: secret token for the user's personal outbound calendar feed
   // (see /api/calendar/feed/[token]) — lets them subscribe to "everything
   // assigned to or visible to me" from their own Google/Outlook/Apple

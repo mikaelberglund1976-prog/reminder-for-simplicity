@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
+
+// Kept in sync with PENDING_APPROVAL_MESSAGE in src/lib/auth.ts by hand
+// (duplicated rather than imported — auth.ts pulls in prisma/bcrypt, which
+// can't be bundled into a client component).
+const PENDING_APPROVAL_MESSAGE = "Your account is pending admin approval.";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +20,15 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Google's signIn callback redirects here with ?error=PendingApproval when
+  // a not-yet-approved account tries to sign in (see auth.ts).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "PendingApproval") {
+      setError(PENDING_APPROVAL_MESSAGE);
+    }
+  }, []);
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
@@ -28,7 +42,7 @@ export default function LoginPage() {
     setError("");
     const result = await signIn("credentials", { email, password, redirect: false });
     if (result?.error) {
-      setError("Incorrect email or password.");
+      setError(result.error === PENDING_APPROVAL_MESSAGE ? PENDING_APPROVAL_MESSAGE : "Incorrect email or password.");
       setLoading(false);
     } else {
       router.push("/dashboard");

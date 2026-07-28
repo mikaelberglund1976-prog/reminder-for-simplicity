@@ -12,6 +12,7 @@ type Stats = {
   totalReminders: number;
   emailsSent30Days: number;
   lastEmailSent: string | null;
+  pendingApprovals: number;
 };
 
 type HouseholdInvite = {
@@ -40,6 +41,8 @@ type UserLite = {
   name: string | null;
   email: string;
   createdAt: string;
+  approved: boolean;
+  approvedAt: string | null;
   _count: { reminders: number };
   householdMembers: { household: { id: string } }[];
 };
@@ -60,7 +63,8 @@ export default function AdminPage() {
   const [cronLog, setCronLog] = useState<string[] | null>(null);
   const [testingEmail, setTestingEmail] = useState(false);
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<"families" | "users">("families");
+  const [tab, setTab] = useState<"families" | "users" | "pending">("families");
+  const [approving, setApproving] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -135,6 +139,25 @@ export default function AdminPage() {
       notify("err", "Failed to send test email.");
     } finally {
       setTestingEmail(false);
+    }
+  }
+
+  async function handleApproveUser(userId: string, email: string) {
+    setApproving(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve" }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setUsers((u) => u.map((x) => (x.id === userId ? { ...x, approved: true, approvedAt: new Date().toISOString() } : x)));
+      setStats((s) => (s ? { ...s, pendingApprovals: Math.max(0, s.pendingApprovals - 1) } : s));
+      notify("ok", `${email} approved — they've been emailed.`);
+    } catch {
+      notify("err", "Failed to approve user.");
+    } finally {
+      setApproving(null);
     }
   }
 
@@ -302,25 +325,26 @@ export default function AdminPage() {
 
         {/* Stats */}
         {stats && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14, marginBottom: 24 }}>
             {[
               { value: households.length, label: "Families" },
               { value: stats.totalUsers, label: "Total users" },
               { value: stats.totalReminders, label: "Active reminders" },
               { value: stats.emailsSent30Days, label: "Emails sent (30d)" },
+              { value: stats.pendingApprovals, label: "Pending approval", highlight: stats.pendingApprovals > 0 },
             ].map((s, i) => (
               <div
                 key={i}
                 style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: s.highlight ? "rgba(217,158,42,0.15)" : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${s.highlight ? "rgba(217,158,42,0.4)" : "rgba(255,255,255,0.1)"}`,
                   borderRadius: 14,
                   padding: "18px 20px",
                   backdropFilter: "blur(8px)",
                 }}
               >
-                <div style={{ color: "#fff", fontWeight: 800, fontSize: 28, lineHeight: 1.1 }}>{s.value}</div>
-                <div style={{ color: "rgba(140,170,230,0.55)", fontSize: 12, fontWeight: 500, marginTop: 6 }}>
+                <div style={{ color: s.highlight ? "#F5C563" : "#fff", fontWeight: 800, fontSize: 28, lineHeight: 1.1 }}>{s.value}</div>
+                <div style={{ color: s.highlight ? "rgba(245,197,99,0.75)" : "rgba(140,170,230,0.55)", fontSize: 12, fontWeight: 500, marginTop: 6 }}>
                   {s.label}
                 </div>
               </div>
@@ -472,6 +496,9 @@ export default function AdminPage() {
               <TabButton active={tab === "users"} onClick={() => setTab("users")}>
                 Users without family ({users.filter((u) => u.householdMembers.length === 0).length})
               </TabButton>
+              <TabButton active={tab === "pending"} onClick={() => setTab("pending")} warn={users.filter((u) => !u.approved).length > 0}>
+                Pending approval ({users.filter((u) => !u.approved).length})
+              </TabButton>
             </div>
             <input
               type="search"
@@ -495,6 +522,15 @@ export default function AdminPage() {
 
           {tab === "families" ? (
             <FamilyTable families={familiesFiltered} formatDate={formatDate} timeAgo={timeAgo} />
+          ) : tab === "pending" ? (
+            <PendingApprovalTable
+              users={usersFiltered.filter((u) => !u.approved)}
+              formatDate={formatDate}
+              timeAgo={timeAgo}
+              approving={approving}
+              onApprove={handleApproveUser}
+              onReject={handleDeleteUser}
+            />
           ) : (
             <UserTable users={usersWithoutHousehold} formatDate={formatDate} onDelete={handleDeleteUser} />
           )}
@@ -507,19 +543,22 @@ export default function AdminPage() {
 function TabButton({
   active,
   onClick,
+  warn,
   children,
 }: {
   active: boolean;
   onClick: () => void;
+  warn?: boolean;
   children: React.ReactNode;
 }) {
+  const warnColors = { bg: "rgba(217,158,42,0.22)", border: "rgba(217,158,42,0.5)", text: "#F5C563" };
   return (
     <button
       onClick={onClick}
       style={{
-        background: active ? "rgba(74,127,220,0.25)" : "transparent",
-        border: `1px solid ${active ? "rgba(74,127,220,0.5)" : "rgba(255,255,255,0.12)"}`,
-        color: active ? "#7BB8FF" : "rgba(200,220,255,0.7)",
+        background: active ? (warn ? warnColors.bg : "rgba(74,127,220,0.25)") : "transparent",
+        border: `1px solid ${active ? (warn ? warnColors.border : "rgba(74,127,220,0.5)") : warn ? "rgba(217,158,42,0.35)" : "rgba(255,255,255,0.12)"}`,
+        color: active ? (warn ? warnColors.text : "#7BB8FF") : warn ? "rgba(245,197,99,0.85)" : "rgba(200,220,255,0.7)",
         fontSize: 13,
         fontWeight: 700,
         padding: "7px 14px",
@@ -530,6 +569,140 @@ function TabButton({
     >
       {children}
     </button>
+  );
+}
+
+// ── Pending approval table ────────────────────────────────────────
+
+function PendingApprovalTable({
+  users,
+  formatDate,
+  timeAgo,
+  approving,
+  onApprove,
+  onReject,
+}: {
+  users: UserLite[];
+  formatDate: (d: string) => string;
+  timeAgo: (d: string) => string;
+  approving: string | null;
+  onApprove: (id: string, email: string) => void;
+  onReject: (id: string, email: string) => void;
+}) {
+  if (users.length === 0) {
+    return (
+      <div style={{ padding: "48px 24px", textAlign: "center", color: "rgba(160,185,255,0.5)", fontSize: 14 }}>
+        No signups waiting — you're all caught up.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.4fr 1.6fr 120px 200px",
+          gap: 12,
+          padding: "11px 22px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(255,255,255,0.03)",
+        }}
+      >
+        {["Name", "Email", "Signed up", ""].map((h, i) => (
+          <div
+            key={i}
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: "rgba(130,165,230,0.55)",
+              textTransform: "uppercase",
+              letterSpacing: "0.07em",
+            }}
+          >
+            {h}
+          </div>
+        ))}
+      </div>
+
+      {users.map((user, i) => (
+        <div
+          key={user.id}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.4fr 1.6fr 120px 200px",
+            gap: 12,
+            alignItems: "center",
+            padding: "14px 22px",
+            borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          <span
+            style={{
+              fontWeight: 600,
+              color: user.name ? "#fff" : "rgba(160,185,255,0.4)",
+              fontSize: 14,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontStyle: user.name ? "normal" : "italic",
+            }}
+          >
+            {user.name ?? "No name"}
+          </span>
+          <span
+            style={{
+              color: "rgba(175,200,255,0.65)",
+              fontSize: 13,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {user.email}
+          </span>
+          <span style={{ color: "rgba(175,200,255,0.65)", fontSize: 12 }}>
+            {formatDate(user.createdAt)}
+            <div style={{ fontSize: 10, color: "rgba(140,170,220,0.45)", marginTop: 2 }}>
+              {timeAgo(user.createdAt)}
+            </div>
+          </span>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button
+              onClick={() => onApprove(user.id, user.email)}
+              disabled={approving === user.id}
+              style={{
+                background: "rgba(42,157,111,0.2)",
+                border: "1px solid rgba(42,157,111,0.4)",
+                color: "#5ee8a8",
+                fontSize: 12,
+                fontWeight: 700,
+                padding: "6px 14px",
+                borderRadius: 50,
+                cursor: approving === user.id ? "not-allowed" : "pointer",
+              }}
+            >
+              {approving === user.id ? "Approving…" : "✓ Approve"}
+            </button>
+            <button
+              onClick={() => onReject(user.id, user.email)}
+              style={{
+                background: "none",
+                border: "1px solid rgba(255,107,107,0.35)",
+                color: "rgba(255,107,107,0.85)",
+                fontSize: 12,
+                fontWeight: 700,
+                padding: "6px 14px",
+                borderRadius: 50,
+                cursor: "pointer",
+              }}
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

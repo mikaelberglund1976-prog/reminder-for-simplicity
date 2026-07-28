@@ -215,7 +215,7 @@ export default function Home() {
         }}>
           Get started free
         </Link>
-        <Link href="/login" style={{
+        <Link href="/features" style={{
           flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
           padding: "17px", borderRadius: 50,
           background: "#fff", border: "1.5px solid #E4E3DE",
