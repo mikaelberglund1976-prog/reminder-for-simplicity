@@ -1,6 +1,7 @@
 # Roadmap – Reminder for Simplicity
 **Senast uppdaterad:** 2026-07-27 kväll (hamburgermeny + mobil/webb-vy-växlare tillagda, ovanpå dagens tidigare inköpslista/önskelista/bottenmeny-arbete)
 **Uppdaterad igen:** 2026-07-27 sen kväll – riktig email för barnprofiler + frivillig PIN-inloggning för vuxna tillagd under Fas 1.5; delningslänk för inköpslistan klicktestad skarpt.
+**Uppdaterad igen:** 2026-07-28 – kategorihantering/tight layout/optimistisk UI, och flera listor per hushåll med åtkomststyrning, tillagda under Fas 1.5. "Flera separata listor per hushåll", som tidigare stod som medvetet inte byggd (se `TODO.md` 4i), är nu klar.
 
 ---
 
@@ -55,6 +56,8 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 - [x] **Hamburgermeny (2026-07-27):** Family/Settings/Admin/Sign out samlade i en meny i sidhuvudet – `/admin` gick tidigare bara att nå via direkt URL, nu länkad (villkorat på admin-email)
 - [x] **Mobil/webb-vy-växlare (2026-07-27):** en CSS-variabel styr sidbredden app-brett; växlare i Profile → Preferences ger en bredare enkolumns-vy på dator. Inte en full desktop-omdesign – se PRODUCT_SPEC 4b.12
 - [x] **Riktig email + frivillig PIN-inloggning (2026-07-27, kväll):** barnprofiler kräver nu en riktig email vid skapande (ingen påhittad intern adress längre). Vuxna kan valfritt lägga till en 4-siffrig PIN (Profile → Security) som ett extra sätt att växla profil på en delad familjeenhet, utan att det ersätter det riktiga lösenordet. Familje-switchern visar nu både barn och PIN-aktiverade vuxna. Klicktestat skarpt 2026-07-27 sen kväll – se `TODO.md` 4j.
+- [x] **Kategorihantering, tight layout, optimistisk UI (2026-07-28):** `ShoppingCategoryDef` ersätter den fasta kategori-enumen (lägg till/döp om/omordna per hushåll), ett-kort-layout istället för färgade kategorirutor, bokstavsordning inom grupp, optimistisk UI (ingen väntan på nätverksanrop innan listan uppdateras), automatisk 24h-rensning av köpta varor borttagen. Se `PRODUCT_SPEC.md` 4b.14, `TODO.md` 4k.
+- [x] **Flera listor per hushåll + åtkomststyrning (2026-07-28):** ny `List`/`ListMember`-modell delad mellan inköpslistan och önskelistan – valfritt antal namngivna listor, var och en synlig för alla eller bara utvalda familjemedlemmar (OWNER/PARENT styr det). Dela-länken flyttad till per-lista. Varor kan nu ha notis, länk och bild-URL. Se `PRODUCT_SPEC.md` 4b.15, `TODO.md` 4l.
 
 **Detta bör dokumenteras formellt i PRODUCT_SPEC.md** – se uppdaterad version (4b.8–4b.10).
 

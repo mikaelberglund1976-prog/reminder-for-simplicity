@@ -1,6 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.4 | **Uppdaterad:** 2026-07-27 (sen kväll) | **Ägare:** Mikael Berglund
-**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda. 2026-07-27 (sen kväll): 4b.2 uppdaterad med kravet på riktig email, 4b.13 (frivillig PIN-inloggning för vuxna) tillagd, båda klicktestade skarpt.
+**Version:** 2.6 | **Uppdaterad:** 2026-07-28 | **Ägare:** Mikael Berglund
+**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda. 2026-07-27 (sen kväll): 4b.2 uppdaterad med kravet på riktig email, 4b.13 (frivillig PIN-inloggning för vuxna) tillagd, båda klicktestade skarpt. **2026-07-28: 4b.14 (kategorihantering, tight layout, optimistisk UI, varor ligger kvar tills manuell rensning) och 4b.15 (flera listor per hushåll med åtkomststyrning, notis/länk/bild på varor) tillagda efter feedback på hur trögt/klumpigt inköpslistan kändes.**
 
 ---
 
@@ -127,14 +127,14 @@ Ett hushåll har en delad inköpslista – vem som helst i hushållet (även bar
 
 - **Realtidssynk (P0.1):** löst med *polling* – klienten hämtar listan var 5:e sekund medan fliken är synlig, pausar när den inte är det. Ingen websocket/push-infrastruktur finns i appen idag; se beslut nedan.
 - **Kategorisering per butiksavdelning (P0.2):** `PRODUCE, DAIRY, BREAD, FROZEN, PANTRY, HOUSEHOLD, MEAT_FISH, OTHER, UNSORTED`. Nya varor kategoriseras automatiskt via en nyckelordslista (`lib/shoppingCategories.ts`, engelska + svenska ord). Om användaren byter kategori manuellt sparas valet per hushåll+varunamn (`ShoppingCategoryMemory`) och återanvänds nästa gång samma vara läggs till.
-- **Avbockning (P0.3):** avbockad vara stryks, tonas ner och flyttas längst ner ("Already in the cart"). Den rensas **inte** direkt – se beslut om rensningsregel nedan.
+- **Avbockning (P0.3):** avbockad vara stryks, tonas ner och flyttas längst ner ("Already in the cart"). Den rensas **inte** direkt – se beslut om rensningsregel nedan. **Ändrad 2026-07-28: den automatiska 24h-rensningen är borttagen** (se 4b.14) – avbockade varor ligger nu kvar tills man själv trycker "Clear bought items", eftersom man ofta köper samma saker igen och vill kunna se/återanvända listan som referens.
 - Samma åtkomstregel som Sysslor: kräver `is_pro` eller aktiv `FamilyTrial` på hushållet.
 - Nås via "🛒 Shopping list"-knappen på `/dashboard/family` **och** via den nya bottenmenyn (se 4b.10), egen sida på `/dashboard/family/shopping-list`.
 - API: `GET/POST/DELETE /api/family/shopping-list` (DELETE = rensa alla köpta varor), `PATCH/DELETE /api/family/shopping-list/[id]`.
 
 **Beslut på öppna frågor (2026-07-27), tagna för att hålla v1 användarvänlig utan att bygga ny infrastruktur i onödan:**
 1. *Realtidssynk-mekanism* – Ingen websocket/push finns idag. Beslut: 5-sekunders polling i v1 (enkelt, ingen ny infra, "känns" realtid för en hushållslista). Om användningen växer och polling känns trögt, är websocket ett Fas 2-item.
-2. *Regel för rensning av avbockade varor* – Beslut: avbockade varor ligger kvar synligt struket längst ner tills (a) någon trycker "Clear bought items", eller (b) 24 timmar har gått sedan köpet, då den dagliga cronen (`lib/cron.ts`) rensar dem automatiskt. Detta undviker att varor försvinner för snabbt (man vill kunna se vad som redan är köpt när man står i affären) samtidigt som listan inte växer i evighet.
+2. *Regel för rensning av avbockade varor* – Ursprungsbeslut 2026-07-27: 24h auto-rensning via cron + manuell "Clear bought items"-knapp. **Ändrat 2026-07-28** efter feedback: auto-rensningen togs bort helt (se 4b.14) – varor ligger kvar tills man själv rensar, eftersom de fungerar som en användbar "brukar köpa"-referens.
 
 ---
 
@@ -186,6 +186,31 @@ Utöver barnens PIN-inloggning kan en vuxen valfritt lägga till en egen 4-siffr
 - Familje-switchern (`/family?h=...`, numpad-skärmen) visar nu både barn och PIN-aktiverade vuxna i profilväljaren, vuxna märkta "Adult". Redirect efter inloggning kollar om profilen faktiskt är ett barn innan den skickar användaren till barnens sysslo-vy eller den vanliga dashboarden.
 - `/api/profile` returnerar `hasPin` så profilsidan vet vad den ska visa.
 - **Klicktestat skarpt 2026-07-27 (sen kväll):** satte en PIN, loggade in via familje-länken, bekräftade korrekt omdirigering till den vanliga dashboarden. Känt kosmetiskt fel: Security-sektionen kan visa "Change password" istället för "Signed in with Google" efter en PIN-inloggning – se `TODO.md` punkt 6.
+
+---
+
+### 4b.14 Kategorihantering, tight layout, optimistisk UI (byggd 2026-07-28)
+
+Feedback: kategorierna på inköpslistan tog för mycket plats (egna färgade rutor per kategori), och listan kändes trög/fördröjd när man kryssade av eller lade till varor.
+
+- **Layout ("Alt A"):** varorna ligger nu i **ett** enda kort; kategorin är bara en liten grå textrubrik ovanför sin grupp, inte en egen färgad box. Provade tre alternativ som bilder innan bygget (nuvarande rutor / detta / en helt flödande lista utan gruppering) – Mikael valde det här.
+- **Kategorier är nu hushållets egna, inte en fast lista:** `ShoppingCategoryDef` (household-scoped, ersätter den fasta `ShoppingCategory`-enumen). Ett hushåll kan **lägga till** en kategori som saknas och **döpa om** befintliga via en "Manage categories"-panel, med upp/ner-pilar för ordning. De 8 ursprungliga kategorierna seedas automatiskt per hushåll (`slug` håller reda på vilken är vilken så nyckelords-gissningen fortsätter fungera efter en omdöpning).
+- **Sortering:** varor sorteras alltid bokstavsordning (`localeCompare` med svensk locale, så å/ä/ö hamnar rätt) inom varje kategorigrupp.
+- **Optimistisk UI:** lägga till/kryssa av/ta bort en vara uppdaterar listan **direkt** i gränssnittet – nätverksanropet sker i bakgrunden och rullas bara tillbaka om det faktiskt misslyckas. Tidigare väntade varje åtgärd på ett anrop och sedan en fullständig omhämtning av hela listan innan något syntes, vilket kändes trögt.
+- **Avbockade varor rensas inte längre automatiskt** – se ändringen i 4b.8 ovan.
+- **Databasändring:** `category`-enumfältet på `ShoppingListItem`/`ShoppingCategoryMemory` är kvar men markerat `Deprecated` i schemat (kod använder det inte längre) – en backfill-script (`scripts/backfill-shopping-categories.js`) migrerar befintlig data till de nya `ShoppingCategoryDef`-raderna. Se `OPERATIONS.md` §5 för körordning.
+
+### 4b.15 Flera listor per hushåll, åtkomststyrning, notis/länk/bild på varor (byggd 2026-07-28)
+
+Uppföljande beställning: både inköpslistan och önskelistan ska kunna vara **flera separata listor** (t.ex. "Veckohandling", "IKEA", "Julklappar till Ebba"), var och en synlig för antingen alla i familjen eller bara utvalda medlemmar. Samma mekanik återanvänds för båda funktionerna eftersom det som skiljer dem åt egentligen bara är vilka fält en vara har.
+
+- **Ny modell `List`** (household-scoped): `kind` (SHOPPING/WISHLIST), `name`, `ownerId` (barnet en WISHLIST-lista tillhör; null för SHOPPING), `visibleToAll`, `shareToken` (den inloggningsfria dela-länken flyttade hit från `Household`, en per lista istället för en per hushåll), `createdBy`.
+- **Åtkomstregler** (`lib/lists.ts`): en lista syns för (a) sin ägare (ett barn ser alltid sina egna önskelistor), (b) sin skapare, (c) OWNER/PARENT-roller (fullt föräldra-överinseende, oavsett listans egna inställningar), (d) alla om `visibleToAll = true`, eller (e) uttryckligen tillagda `ListMember`-rader. **Undantag för barnens integritet:** `visibleToAll` för en WISHLIST-lista betyder "synlig för alla vuxna", inte bokstavligen alla hushållsmedlemmar – ett barn ser fortfarande aldrig ett syskons önskelista av misstag.
+- **Vem får ändra vem som ser en lista:** beslutat att bara **OWNER/PARENT** ska kunna ändra `visibleToAll`/medlemslistan (`canEditListAccess` i `lib/lists.ts`) – inte automatiskt den som skapade eller äger listan. Namnbyte är däremot öppet för skaparen också.
+- **Ny standard-UI:** listväljare (chips) högst upp på både inköpslistan och önskelistan, "+ New list", och en expanderbar "Vem kan se den här listan"-panel (`components/ListAccessPanel.tsx`, delad komponent mellan de två sidorna).
+- **Delning per lista:** dela-länken (`/shop/[token]`) pekar nu på en specifik `List` istället för hela hushållets inköpslista – olika listor kan delas separat, med separata token.
+- **Varor kan nu ha notis, länk och bild:** `note`, `url`, `imageUrl` tillagda på `ShoppingListItem` (fanns redan på `WishlistItem` sedan 4b.9). Visas som liten grå text, en länk-ikon respektive en 32px miniatyrbild i varje rad. **Beslut:** bara bild-URL i v1, ingen riktig filuppladdning (skulle krävt att sätta upp Vercel Blob eller liknande lagring).
+- **Databasändring:** additiv (nya tabeller `lists`/`list_members`, nya nullable kolumner `listId`/`note`/`url`/`imageUrl`). `Household.shoppingListShareToken` och `WishlistItem.childId` finns kvar oanvända/legacy av samma skäl som `category`-fältet i 4b.14 – enklare och säkrare än att göra en andra destruktiv migrering. Backfill-script: `scripts/backfill-lists.js`, seedar en standardlista per hushåll/barn och flyttar över befintliga varor. Se `OPERATIONS.md` §5.
 
 ---
 
@@ -263,7 +288,7 @@ Utöver barnens PIN-inloggning kan en vuxen valfritt lägga till en egen 4-siffr
 `id, userId, householdId?, name, category, date, recurrence, amount?, currency, note?, reminderDaysBefore, isActive, lastSentAt?` + Pro-fält: `assignedTo, fallbackTo, visibility, handoverState, handoverTo, handoverInitiatedAt, urgencyLevel` + Chore-fält: `requiresApproval, choreRecurrenceDays`
 
 **Household / HouseholdMember / HouseholdInvite**
-Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar med token + utgångsdatum. `Household.shoppingListShareToken?` *(tillagd 2026-07-27)* – valfri token för den inloggningsfria delningslänken till inköpslistan, se 4b.8.
+Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar med token + utgångsdatum. `Household.shoppingListShareToken?` *(tillagd 2026-07-27, deprecated 2026-07-28)* – ersatt av `List.shareToken` (en token per lista istället för en per hushåll), se 4b.15. Fältet finns kvar oanvänt i schemat.
 
 **ChoreCompletion**
 `id, reminderId, childId, weekStart, status (DONE/PENDING_APPROVAL/APPROVED), approvedBy?, approvedAt?`
@@ -277,14 +302,23 @@ Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar me
 **PasswordResetToken** *(tillagd 2026-07-27)*
 `id, userId, token, expiresAt, usedAt?, createdAt` – engångstoken för glömt lösenord-flödet, 1 timmes giltighet
 
-**ShoppingListItem** *(tillagd 2026-07-27, `category`-fält tillagt 2026-07-27)*
-`id, householdId, name, quantity?, category (ShoppingCategory), isPurchased, addedBy, purchasedBy?, purchasedAt?` – delad inköpslista per hushåll, se 4b.8
+**ShoppingListItem** *(tillagd 2026-07-27, `category`-fält tillagt 2026-07-27, uppdaterad 2026-07-28)*
+`id, householdId, listId, name, quantity?, note?, url?, imageUrl?, categoryId?, isPurchased, addedBy, purchasedBy?, purchasedAt?` – vara på en namngiven inköpslista (`List`, kind SHOPPING), se 4b.8/4b.14/4b.15. `category` (gamla `ShoppingCategory`-enumen) finns kvar i schemat men är **deprecated/oanvänd** – ersatt av `categoryId` → `ShoppingCategoryDef`.
 
-**ShoppingCategoryMemory** *(tillagd 2026-07-27)*
-`id, householdId, itemName, category` – unikt per hushåll+varunamn, kommer ihåg senaste manuella kategorival så samma vara auto-sorteras rätt nästa gång, se 4b.8
+**ShoppingCategoryDef** *(tillagd 2026-07-28, ersätter den fasta `ShoppingCategory`-enumen)*
+`id, householdId, slug?, label, icon, sortOrder` – hushållets egna, namnbara/omdöpbara kategorier. `slug` identifierar de 8 standardkategorierna för nyckelords-gissning; egna tillagda kategorier har `slug = null`. Se 4b.14.
 
-**WishlistItem** *(tillagd 2026-07-27)*
-`id, householdId, childId, addedBy, name, url?, price?, currency?, imageUrl?, note?, status (WANTED/RESERVED/PURCHASED), reservedBy?, reservedAt?, purchasedBy?, purchasedAt?` – barns egna önskelista, se 4b.9. **Viktigt:** `status`-fältet och relaterade fält exponeras aldrig till det ägande barnet via API:et – se 4b.9.
+**ShoppingCategoryMemory** *(tillagd 2026-07-27, uppdaterad 2026-07-28)*
+`id, householdId, itemName, categoryId?` – unikt per hushåll+varunamn, kommer ihåg senaste manuella kategorival så samma vara auto-sorteras rätt nästa gång, se 4b.8/4b.14. (`category`-enumfältet finns kvar men är deprecated, som ovan.)
+
+**List** *(tillagd 2026-07-28)*
+`id, householdId, kind (SHOPPING/WISHLIST), name, ownerId? (barnet en WISHLIST-lista tillhör), visibleToAll, shareToken? (unik, SHOPPING-listor), createdBy` – en namngiven, delbar lista; ett hushåll/barn kan ha flera. Se 4b.15 för åtkomstreglerna.
+
+**ListMember** *(tillagd 2026-07-28)*
+`id, listId, userId` – uttryckliga medlemmar för en lista där `visibleToAll = false`. Unikt per listId+userId.
+
+**WishlistItem** *(tillagd 2026-07-27, uppdaterad 2026-07-28)*
+`id, householdId, childId, listId, addedBy, name, url?, price?, currency?, imageUrl?, note?, status (WANTED/RESERVED/PURCHASED), reservedBy?, reservedAt?, purchasedBy?, purchasedAt?` – vara på ett barns namngivna önskelista (`List`, kind WISHLIST, kan vara flera per barn sedan 4b.15), se 4b.9. **Viktigt:** `status`-fältet och relaterade fält exponeras aldrig till det ägande barnet via API:et – se 4b.9.
 
 *Obs: "ServicePreset" (snabbval med logotyp, sektion 4.2) finns implementerat i `dashboard/new/page.tsx` och `dashboard/[id]/edit/page.tsx` som en hårdkodad lista i frontend (t.ex. Netflix), inte som en egen databastabell/Prisma-modell.*
 

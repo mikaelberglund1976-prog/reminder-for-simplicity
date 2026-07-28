@@ -3,6 +3,7 @@
 **Uppdaterad:** 2026-07-27 (kväll) – hamburgermeny + admin-åtkomst byggd, alla md-filer (PRODUCT_SPEC, ROADMAP, BRAND, OPERATIONS, TODO) synkade mot nuläget. Sektionerna nedan är nu i kronologisk ordning (döpte om 4d0→4e osv, som tidigare låg fel i ordning).
 **Uppdaterad igen:** 2026-07-27 (sen kväll) – punkt 16 klar: delningslänk, kategori-katalog/Recent-chips och PIN-inloggning klicktestade på skarpa `www.assistiq.se` (commit `1ad791d`). Se 4i/4j nedan för detaljer och en liten kosmetisk bugg som hittades under testet.
 **Uppdaterad igen:** 2026-07-27 (natt) – git-auto-deploy till Vercel löst (se punkt 5): Disconnect/Connect av Git-integrationen i Vercel-dashboarden löste webhook-problemet. `git push` till `master` räcker nu för att deploya, ingen manuell `vercel --prod` behövs längre.
+**Uppdaterad igen:** 2026-07-28 – två omgångar byggda på inköpslistan/önskelistan efter feedback: kategorihantering + tight layout + optimistisk UI (se 4k), sedan flera listor per hushåll med åtkomststyrning + notis/länk/bild på varor (se 4l). Båda kräver ett nytt `npm run db:push` + backfill-script innan de fungerar i produktion, se punkt 6.
 
 ---
 
@@ -91,6 +92,7 @@ Byggde igenom hela P0-listan. Tog självständiga beslut på alla fyra öppna fr
 - [ ] **Säkerhet:** `npm audit` visar att Next.js 14.2 har flera kända CVE:er (DoS, cache-poisoning, SSRF). Full fix kräver major-uppgradering till Next 16 – för stort/riskabelt utan regressionstestning. Prioritera som egen sprint innan skarp lansering med riktiga användare.
 - [ ] Prisma flaggar 5.22.0 → 7.9.0 (major). Samma resonemang som ovan – låg prioritet så länge 5.22 fungerar.
 - [x] ~~Kör `npx prisma generate && npx prisma db push`~~ **Klart 2026-07-27** – kört av Mikael lokalt, gick igenom rent.
+- [ ] **Kör igen efter 2026-07-28-ändringarna:** `npm run db:push` (lägger till `ShoppingCategoryDef`, `List`, `ListMember`, nya kolumner – additivt, tar inte bort något), sedan **i den här ordningen**: `node scripts/backfill-shopping-categories.js` följt av `node scripts/backfill-lists.js`. Kan inte köras från sandboxen (se 4k) – måste köras lokalt.
 - [ ] Kör `npm install` lokalt för att synka `node_modules` om det inte redan är gjort. **Försökt i sandboxen 2026-07-27 kväll och avbröts** – `node_modules` innehåller redan native-binärer byggda för darwin-arm64 (din Mac), medan sandboxen är linux-arm64, så en install här hade ändå inte hjälpt dig. Genuint ett "kör på din egen dator"-jobb.
 - [ ] **Kosmetisk bugg (hittad 2026-07-27 sen kväll):** efter inloggning via PIN visar Profile → Security "Change password" istället för "Signed in with Google" för ett Google-konto. Se 4j för detaljer. Låg prioritet.
 - **Städtips (inte akut):** sandboxen jag jobbar i kunde inte ta bort `.bak`-filer som skapades under en bulk-sök-och-ersätt (samma gamla filsystemsbegränsning, bekräftat igen 2026-07-27 kväll). De ligger kvar i `app/src/**/*.bak` men är nu i `.gitignore` så de committas inte – kör `find . -name "*.bak" -delete` lokalt om du vill ha bort dem helt.
@@ -137,6 +139,32 @@ Du funderade på hushålls-modellen (ett hushåll per person, beslut: behåll de
 - [x] **Klicktestat 2026-07-27 (sen kväll):** satte en egen PIN på Mikaels konto (Profile → Security → "Set a PIN") → sparades korrekt ("PIN login is on"). Loggade ut, gick till familje-länken (`/family?h=...`) – Mikael visas nu i profilväljaren märkt "Adult", precis som tänkt. Loggade in med PIN → hamnade rätt på `/dashboard` (inte barn-vyn) – **bekräftar att redirect-buggen som hittades under bygget verkligen är fixad.** Test-PIN:et togs bort igen efteråt ("No PIN set") eftersom Mikael inte kände till det – han kan sätta sin egen när han vill ha funktionen aktiv.
 - [ ] Kvarstår: skapa en riktig barnprofil med email via Profile → "+ Add child" och logga in som barnet via PIN, end-to-end. (Email-valideringen i sig är kodgranskad men inte klickat igenom.)
 - **Litet fynd (inte akut):** efter inloggning via PIN visade Security-sektionen "Change password" istället för "Signed in with Google" – kosmetiskt, påverkar inte Google-kopplingen eller kontots säkerhet. Trolig orsak: sidan avgör vilken text som visas utifrån NextAuth-providern i den *aktuella sessionen* (`"pin"`) snarare än hur kontot ursprungligen skapades. Inte fixat än.
+
+## 4k. Kategorihantering, tight layout, optimistisk UI (2026-07-28)
+
+Feedback: kategorierna tog för mycket plats (egna rutor per kategori) och listan kändes trög vid avbockning/tillägg. Visade tre mockup-alternativ i chatten innan bygget (nuvarande rutor / ett kort med textrubriker / helt flödande lista) – du valde mittenalternativet.
+
+- [x] **Layout:** ett kort istället för en färgad ruta per kategori, kategorin är nu bara en liten grå textrubrik. Se `PRODUCT_SPEC.md` 4b.14.
+- [x] **Kategorier hushålls-egna:** ny `ShoppingCategoryDef`-modell ersätter den fasta `ShoppingCategory`-enumen. "Manage categories"-panel: lägg till saknade, döp om befintliga, flytta upp/ner.
+- [x] **Bokstavsordning** inom varje kategorigrupp (`localeCompare` med svensk locale).
+- [x] **Optimistisk UI:** lägg till/kryssa av/ta bort uppdaterar listan direkt, nätverksanropet sker i bakgrunden. Fixar den upplevda fördröjningen — grundorsaken var att varje åtgärd väntade på en POST/PATCH/DELETE **och sedan** en fullständig omhämtning innan något syntes på skärmen.
+- [x] **Automatisk 24h-rensning borttagen** – avbockade varor ligger nu kvar tills "Clear bought items" trycks, eftersom man ofta köper samma saker igen.
+- [x] **Backfill-script:** `scripts/backfill-shopping-categories.js` – seedar 8 standardkategorier per hushåll, flyttar befintliga varor från gamla `category`-enumfältet till nya `categoryId`. Idempotent, säker att köra flera gånger.
+- **Miljöbegränsning som dök upp igen:** sandboxen jag jobbar i kan varken nå Supabase-databasen direkt (DNS/nätverksblockering) eller ladda ner Prisma-motorn (binaries.prisma.sh blockerad) – så jag kan skriva migreringskoden men inte köra `db push`/backfill-scriptet själv. Samma typ av begränsning som redan är dokumenterad i punkt 1, nu bekräftad specifikt för databas-migreringar också.
+- **`.git/index.lock` dök upp igen** när du skulle committa – samma fil-lås-problem som tidigare (se punkt 6). Löstes med `rm .git/index.lock` följt av `git add`/`commit`/`push` en och en (inte inklistrat som block, annars fastnar terminalen i `dquote>` om ett citattecken klipps av).
+
+## 4l. Flera listor per hushåll, åtkomststyrning, notis/länk/bild (2026-07-28)
+
+Uppföljande beställning direkt efter 4k: både inköpslistan och önskelistan ska kunna vara flera separata listor, var och en synlig för antingen alla eller bara utvalda familjemedlemmar. Ställde tre avstämningsfrågor innan bygget (hur långt "flera listor" skulle gå, bilder som länk vs. riktig uppladdning, vem som styr åtkomst) — dina svar: båda funktionerna får flera listor, bara bild-länk (ingen filuppladdning), och bara OWNER/PARENT-roller styr åtkomst.
+
+- [x] **Ny `List`-modell** (household-scoped): `kind` (SHOPPING/WISHLIST), `name`, `ownerId` (barnet en önskelista tillhör), `visibleToAll`, `shareToken`, `createdBy`. `ListMember` för uttryckliga medlemmar när `visibleToAll = false`.
+- [x] **Åtkomstlogik** (`lib/lists.ts`) – ägare/skapare/OWNER-PARENT ser alltid, annars `visibleToAll` eller uttrycklig medlemskap. **Hittade och fixade en integritetslucka i min egen första version:** en bokstavlig tolkning av `visibleToAll` hade låtit ett barn se ett syskons önskelista av misstag — låst så att `visibleToAll` för en önskelista bara betyder "synlig för vuxna", aldrig andra barn.
+- [x] **Delning flyttad till per-lista:** `List.shareToken` ersätter `Household.shoppingListShareToken`. Gammal endpoint `/api/family/shopping-list/share` lämnad som en 410-stub (kunde inte radera filen — se miljöbegränsning i 1/4k — ny logik ligger i `/api/family/lists/[id]/share`).
+- [x] **UI:** listväljare (chips) + "+ New list" på båda sidorna, expanderbar "Vem kan se den här listan"-panel (`components/ListAccessPanel.tsx`, delad komponent).
+- [x] **Notis/länk/bild på varor:** `note`/`url`/`imageUrl` tillagda på `ShoppingListItem` (fanns redan på `WishlistItem`). Visas som liten text, länk-ikon, 32px miniatyrbild.
+- [x] **Backfill-script:** `scripts/backfill-lists.js` – skapar en standard-inköpslista per hushåll (flyttar över den gamla delningstoken) och en standard-önskelista per barn, flyttar befintliga varor dit. Idempotent.
+- [ ] **Klicktesta efter deploy:** skapa en andra inköpslista, dela den separat, testa åtkomstpanelen (slå av "alla", lägg till en specifik medlem), lägg till en vara med bild-URL och länk på både inköps- och önskelistan.
+- Se `PRODUCT_SPEC.md` 4b.15 och `ROADMAP.md` Fas 1.5 för fullständig beskrivning.
 
 ## 8. Nästa steg
 - [x] **Beslut 2026-07-27 kväll:** Fas 1 (beta-inbjudningar) väntar. Prioritet är att få de tre kärnflödena – **Reminders, Wishlist, Grocery (inköpslista)** – helt på plats och pålitliga först. Konkret: klar deploy (se 4h) + full klicktest av dessa tre (se punkt 7) innan beta-inbjudningar blir aktuellt.
