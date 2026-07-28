@@ -379,3 +379,71 @@ export async function sendWelcomeEmail({ to, name }: { to: string; name: string 
 </html>`,
   });
 }
+
+// ─── Broadcast (household update from an OWNER/PARENT) ────────────────────────
+
+export async function sendBroadcastEmail({
+  to,
+  name,
+  senderName,
+  message,
+}: {
+  to: string;
+  name: string | null;
+  senderName: string;
+  message: string;
+}) {
+  const firstName = name?.split(" ")[0] ?? "there";
+  // Message is plain text from a form (see /api/family/broadcast) — escape it
+  // before dropping into HTML, then turn newlines into <br> so paragraphs
+  // survive.
+  const safeMessage = message
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>");
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `📣 Family update from ${senderName}`,
+    html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
+
+    <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:6px;">📣</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity</div>
+    </div>
+
+    <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
+      <h1 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#1A202C;">Hi ${firstName},</h1>
+      <p style="color:#A0AEC0;font-size:13px;margin:0 0 20px;">${senderName} sent an update to your household:</p>
+      <div style="background:#F7FAFF;border:1px solid #E1E9FF;border-radius:12px;padding:20px;color:#2D3748;font-size:15px;line-height:1.7;margin:0 0 28px;">
+        ${safeMessage}
+      </div>
+      <div style="text-align:center;">
+        <a href="${APP_URL}/dashboard"
+          style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:50px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
+          Open Reminder for Simplicity →
+        </a>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0 0;">
+      <p style="margin:0;font-size:12px;color:#A0AEC0;">Reminder for Simplicity · by Berget &amp; Fredde</p>
+    </div>
+
+  </div>
+
+</body>
+</html>`,
+  });
+}

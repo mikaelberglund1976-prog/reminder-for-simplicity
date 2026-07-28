@@ -4,6 +4,9 @@
 **Uppdaterad igen:** 2026-07-27 (sen kväll) – punkt 16 klar: delningslänk, kategori-katalog/Recent-chips och PIN-inloggning klicktestade på skarpa `www.assistiq.se` (commit `1ad791d`). Se 4i/4j nedan för detaljer och en liten kosmetisk bugg som hittades under testet.
 **Uppdaterad igen:** 2026-07-27 (natt) – git-auto-deploy till Vercel löst (se punkt 5): Disconnect/Connect av Git-integrationen i Vercel-dashboarden löste webhook-problemet. `git push` till `master` räcker nu för att deploya, ingen manuell `vercel --prod` behövs längre.
 **Uppdaterad igen:** 2026-07-28 – två omgångar byggda på inköpslistan/önskelistan efter feedback: kategorihantering + tight layout + optimistisk UI (se 4k), sedan flera listor per hushåll med åtkomststyrning + notis/länk/bild på varor (se 4l). Båda kräver ett nytt `npm run db:push` + backfill-script innan de fungerar i produktion, se punkt 6.
+**Uppdaterad igen:** 2026-07-28 – konkurrentanalys av Best4Family (best4family.com) genomförd på begäran: design/UX, funktionsgap och en djupdykning i deras privacy-sektion. Inga kodändringar gjorda. Fullständig analys i `COMPETITOR_ANALYSIS_BEST4FAMILY.md`, kondenserad handlingslista i ny punkt 9 nedan och nya rader i `ROADMAP.md`.
+**Uppdaterad igen:** 2026-07-28 – Mikael körde `npm run db:push` + `backfill-shopping-categories.js` + `backfill-lists.js` lokalt (se punkt 6). Allt gick igenom rent ("categories ready", "lists ready", inga fel). Kategorihantering, flera listor per hushåll och delningslänk på den nya listmodellen (4k/4l) är nu redo att fungera i produktion – klicktest återstår, se punkt 4l och punkt 7.
+**Uppdaterad igen:** 2026-07-28 – fem "quick wins" från Best4Family-genomgången byggda i en omgång: PIN/Google-buggen fixad, sekretess-chip på reminders, dataexport (JSON), broadcast-notis till familjen, och en genomgång som visade att "vad händer närmast"-önskemålet redan är löst (IQ Spotlight + Needs your attention). Se ny punkt 10 nedan. `tsc --noEmit` kört rent. **Kräver ingen ny `db:push`** – ingen schemaändring, bara ny kod.
 
 ---
 
@@ -92,9 +95,9 @@ Byggde igenom hela P0-listan. Tog självständiga beslut på alla fyra öppna fr
 - [ ] **Säkerhet:** `npm audit` visar att Next.js 14.2 har flera kända CVE:er (DoS, cache-poisoning, SSRF). Full fix kräver major-uppgradering till Next 16 – för stort/riskabelt utan regressionstestning. Prioritera som egen sprint innan skarp lansering med riktiga användare.
 - [ ] Prisma flaggar 5.22.0 → 7.9.0 (major). Samma resonemang som ovan – låg prioritet så länge 5.22 fungerar.
 - [x] ~~Kör `npx prisma generate && npx prisma db push`~~ **Klart 2026-07-27** – kört av Mikael lokalt, gick igenom rent.
-- [ ] **Kör igen efter 2026-07-28-ändringarna:** `npm run db:push` (lägger till `ShoppingCategoryDef`, `List`, `ListMember`, nya kolumner – additivt, tar inte bort något), sedan **i den här ordningen**: `node scripts/backfill-shopping-categories.js` följt av `node scripts/backfill-lists.js`. Kan inte köras från sandboxen (se 4k) – måste köras lokalt.
+- [x] **Kör igen efter 2026-07-28-ändringarna:** `npm run db:push` (lägger till `ShoppingCategoryDef`, `List`, `ListMember`, nya kolumner – additivt, tar inte bort något), sedan **i den här ordningen**: `node scripts/backfill-shopping-categories.js` följt av `node scripts/backfill-lists.js`. **Klart 2026-07-28** – kört av Mikael lokalt (från `app/`-mappen, inte projektroten – `package.json` ligger i `app/`). Alla tre kommandon gick igenom rent.
 - [ ] Kör `npm install` lokalt för att synka `node_modules` om det inte redan är gjort. **Försökt i sandboxen 2026-07-27 kväll och avbröts** – `node_modules` innehåller redan native-binärer byggda för darwin-arm64 (din Mac), medan sandboxen är linux-arm64, så en install här hade ändå inte hjälpt dig. Genuint ett "kör på din egen dator"-jobb.
-- [ ] **Kosmetisk bugg (hittad 2026-07-27 sen kväll):** efter inloggning via PIN visar Profile → Security "Change password" istället för "Signed in with Google" för ett Google-konto. Se 4j för detaljer. Låg prioritet.
+- [x] **Kosmetisk bugg (hittad 2026-07-27 sen kväll):** efter inloggning via PIN visar Profile → Security "Change password" istället för "Signed in with Google" för ett Google-konto. Se 4j för detaljer. **Fixat 2026-07-28** – se punkt 10.
 - **Städtips (inte akut):** sandboxen jag jobbar i kunde inte ta bort `.bak`-filer som skapades under en bulk-sök-och-ersätt (samma gamla filsystemsbegränsning, bekräftat igen 2026-07-27 kväll). De ligger kvar i `app/src/**/*.bak` men är nu i `.gitignore` så de committas inte – kör `find . -name "*.bak" -delete` lokalt om du vill ha bort dem helt.
 
 ## 7. Konsoliderad klicktest-lista (allt som kräver en riktig webbläsare/telefon, inte min sandbox)
@@ -171,3 +174,44 @@ Uppföljande beställning direkt efter 4k: både inköpslistan och önskelistan 
 - [x] Deploy klar och klicktestad (4h, 4i, 4j) – delningslänk, katalog, Recent-chips och PIN-inloggning fungerar skarpt.
 - [ ] Kvarstår innan Fas 1-beta: klicktesta barnprofil-med-email end-to-end (se 4j), och gå igenom resten av punkt 7-listan (glömt lösenord, PWA på mobil, bottenmeny/hamburgermeny) som inte är avbockad än.
 - [ ] Därefter: ta ställning till Fas 1-beta vs. fortsätta på Fas 2 (t.ex. Wishlist-delningslänk, som fortfarande inte är byggd – se `ROADMAP.md` Fas 2).
+
+## 9. Konkurrentanalys Best4Family (2026-07-28) – handlingslista
+
+Fullständig analys (design/UX, funktionsgap, djupdykning i deras privacy-policy) i `COMPETITOR_ANALYSIS_BEST4FAMILY.md`. Inget av detta är byggt – detta är en prioriterad att-diskutera/att-bygga-lista, inte färdiga beslut. Design-slutsats: vår smalare positionering ("hemmets bas", inte 18 moduler) och våra progressiva formulär är redan ett UX-försprång – behåll disciplinen, kopiera inte bredden.
+
+**P0 – bör in före bred lansering/betalande användare (störst gap, inget av detta finns idag):**
+- [ ] Riktig Privacy Policy-sida (vi har ingen idag). Minst: personuppgiftsansvarig, vilka data vi behandlar, rättslig grund, namngivna underleverantörer (Supabase/Resend/Vercel/Google OAuth), lagringstid, användarrättigheter, kontaktväg.
+- [ ] Besluta + dokumentera minimiålder för barnprofiler och vem som samtycker (förslag: 13 år, den skapande föräldern samtycker – matchar redan befintligt email-krav i 4b.2).
+- [ ] Självbetjänings-"radera mitt konto permanent"-flöde i Profile → Security (finns bara som databaskoncept idag, ingen UI).
+
+**P1 – stark fit / låg-medel komplexitet:**
+- [ ] Gästprofiler utan inloggning (mor-/farföräldrar "syns i planeringen" utan eget konto).
+- [ ] Belöningar kopplat till godkända Sysslor (naturlig utökning av befintlig `ChoreStatus`-flow).
+- [x] ~~Kompakt "vad händer närmast"-sammanfattning överst på dashboarden~~ – **redan löst**, upptäckt 2026-07-28: dashboarden har redan "IQ Spotlight · Up next" (närmaste kommande reminder) + "Needs your attention" (allt inom 7 dagar). Ingen ny kod behövdes, se punkt 10.
+- [x] **Dataexport** (JSON-nedladdning av egen data) för portabilitetsrätten. **Byggt 2026-07-28** – se punkt 10.
+- [x] **Synlig sekretess-"chip"** (Privat/Hushåll/Föräldrar) på reminders i UI – `visibility`-fältet fanns redan i schemat (4b.5). **Byggt 2026-07-28** – se punkt 10.
+
+**P1, kräver egen spec-diskussion innan bygge (inte "bara bygg det"):**
+- [ ] "Föräldrautrymme"-liknande modul för separerade föräldrar/medföräldrar (samordna scheman, spåra avtal). Intressant differentiator som matchar vårt "hemmets bas"-tema, men ett nytt konceptuellt område.
+
+**P2 – naturlig utökning, lägre tidspress:**
+- [ ] Måltidsplanerare kopplad till inköpslistan (redan parkerad idé i `ROADMAP.md`).
+- [x] **Broadcast-notis från admin till hela familjen.** **Byggt 2026-07-28** – se punkt 10.
+- [ ] Admin-switch per funktionstyp ("Tillåt medlemmar att skapa X") utöver befintlig roll-modell.
+- [ ] Kostnadssummering per kategori (redan i `ROADMAP.md` Fas 2).
+
+**P3 – parkerat, lågt strategiskt värde för vår målgrupp just nu:** Reseplanerare, Recept, Restauranger, Städplan, Omröstningar, Beslutshjul, Bill Split, Spelverktyg, fria Anteckningar, generella Uppgifter för vuxna. Se full motivering i analysdokumentet.
+
+## 10. Fem quick wins byggda (2026-07-28)
+
+Byggde fem av quick win-kandidaterna från punkt 9 i en omgång. `tsc --noEmit` kört rent efter alla ändringar. Ingen schemaändring – ingen ny `db:push` krävs. Inte klicktestat än, bara kodgranskat.
+
+- [x] **PIN/Google-buggen fixad.** Orsaken var att Profile → Security avgjorde "Signed in with Google" utifrån `session.user.image`, som bara är satt på en session som kom direkt från Google-inloggningen – efter PIN-inloggning var den tom även för Google-länkade konton. Fix: `/api/profile` returnerar nu `hasPassword`, och sidan avgör istället utifrån om kontot saknar lösenord (sant för alla Google-skapade konton, se `auth.ts`).
+- [x] **Sekretess-chip på reminders.** `dashboard/page.tsx` visar nu en liten 🔒 Private / 👪 Parents-tagg på reminder-raden, bredvid kategori- och ägar-taggarna som redan fanns. Bara synlig när man är i ett hushåll (annars är allt trivialt privat och taggen vore bara brus) och bara för PRIVATE/PARENTS – HOUSEHOLD (standard-delningsläget) får ingen tagg.
+- [x] **Dataexport.** Ny `GET /api/profile/export` – laddar ner en JSON-fil med kontot (profil, reminders, tillagda inköpslist-/önskelistevaror, hushållsmedlemskap – inte andra medlemmars data). Knapp "Export my data" i Profile → Security, ovanför "Delete account".
+- [x] **Broadcast-notis.** Ny `POST /api/family/broadcast`, bara OWNER/PARENT. Skickar ett mail (återanvänder Resend-infran, ingen ny kanal) till alla vuxna hushållsmedlemmar utom avsändaren själv – barnprofiler exkluderade (de har ofta en påhittad/alias-email ingen läser dagligen, se 4j). UI: "📣 Send a family update" i Profile → Household, bara synlig för OWNER/PARENT och bara om hushållet har fler än en medlem.
+- [x] **"Vad händer närmast" – redan löst, inget byggt.** Kollade dashboarden innan jag började bygga: "IQ Spotlight · Up next" (närmaste kommande reminder, mörk banner högst upp) + "Needs your attention" (allt inom 7 dagar, upp till 3 rader) täcker redan Best4Family-idén. Ingen kod skriven – skulle bara ha blivit en duplicerad tredje sektion.
+
+**Kvar innan detta är klart:**
+- [ ] Klicktesta alla fem skarpt: byt lösenord-vy på ett Google-PIN-konto, sekretess-chip i ett hushåll med flera medlemmar, ladda ner exporten och kika på innehållet, skicka en broadcast och verifiera att den kommer fram (och att avsändaren själv inte får den, och att barn inte får den).
+- [ ] Committa och pusha (görs direkt efter denna sammanfattning).

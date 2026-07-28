@@ -49,6 +49,7 @@ type Profile = {
   createdAt: string;
   isChildProfile?: boolean;
   hasPin?: boolean;
+  hasPassword?: boolean;
 };
 
 export default function ProfilePage() {
@@ -101,6 +102,10 @@ export default function ProfilePage() {
   const [myPin, setMyPin] = useState("");
   const [myPinConfirm, setMyPinConfirm] = useState("");
   const [hasPin, setHasPin] = useState(false);
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [broadcastMsg, setBroadcastMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [showSetPin, setShowSetPin] = useState(false);
   const [pinSaving, setPinSaving] = useState(false);
   const [pinError, setPinError] = useState("");
@@ -227,6 +232,25 @@ export default function ProfilePage() {
     } finally { setInviting(false); }
   }
 
+  async function handleBroadcast() {
+    if (!broadcastMessage.trim()) return;
+    setBroadcasting(true); setBroadcastMsg(null);
+    try {
+      const res = await fetch("/api/family/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: broadcastMessage }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setBroadcastMsg({ type: "ok", text: `Sent to ${data.sent} of ${data.total} member${data.total !== 1 ? "s" : ""} ✓` });
+      setBroadcastMessage("");
+      setShowBroadcast(false);
+    } catch (err: unknown) {
+      setBroadcastMsg({ type: "err", text: err instanceof Error ? err.message : "Something went wrong." });
+    } finally { setBroadcasting(false); }
+  }
+
   async function handleRenameHousehold() {
     if (!newHouseholdName.trim()) return;
     setRenamingHousehold(true);
@@ -283,7 +307,12 @@ export default function ProfilePage() {
 
   const set = (field: string, value: string) => setForm((p) => ({ ...p, [field]: value }));
 
-  const isGoogleUser = session?.user?.image?.includes("googleusercontent");
+  // Derived from the DB (hasPassword), not session.user.image — the image
+  // is only present on a session that came directly from the Google OAuth
+  // flow, so it was wrongly showing "Change password" after logging in via
+  // PIN on an account that's actually Google-linked. A missing password
+  // means the account was created via Google (see auth.ts signIn callback).
+  const isGoogleUser = profile ? !profile.hasPassword : session?.user?.image?.includes("googleusercontent");
 
   if (status === "loading" || loading) return (
     <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
@@ -527,6 +556,49 @@ export default function ProfilePage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Broadcast a family update (OWNER/PARENT only) — reuses the
+                    existing Resend email infra, no new notification channel.
+                    See COMPETITOR_ANALYSIS_BEST4FAMILY.md §3/§6. */}
+                {(householdRole === "OWNER" || householdRole === "PARENT") && household.members.length > 1 && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #F0F2F7" }}>
+                    {broadcastMsg && (
+                      <div style={{ background: broadcastMsg.type === "ok" ? "#F0FFF6" : "#FFF0F0", border: `1px solid ${broadcastMsg.type === "ok" ? "#B8F0D0" : "#F5CCCC"}`, color: broadcastMsg.type === "ok" ? "#2E9A5F" : "#D94F4F", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 12 }}>
+                        {broadcastMsg.text}
+                      </div>
+                    )}
+                    {!showBroadcast ? (
+                      <button type="button" onClick={() => { setShowBroadcast(true); setBroadcastMsg(null); }}
+                        style={{ width: "100%", padding: "11px 16px", background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 14, fontSize: 13, fontWeight: 600, color: "#1C1C28", cursor: "pointer", textAlign: "left", fontFamily: FONT, display: "flex", alignItems: "center", gap: 10 }}>
+                        📣 Send a family update
+                      </button>
+                    ) : (
+                      <div style={{ background: "#F9FAFB", borderRadius: 14, border: "1.5px solid #E4E3DE", padding: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1C28", marginBottom: 4 }}>Send a family update</div>
+                        <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 10, lineHeight: 1.5 }}>
+                          Emails every adult household member (not you) with a short message from you.
+                        </div>
+                        <textarea
+                          value={broadcastMessage}
+                          onChange={e => setBroadcastMessage(e.target.value.slice(0, 2000))}
+                          placeholder="e.g. Grandma's coming for dinner Friday — can everyone be home by 6?"
+                          rows={4}
+                          style={{ ...inputStyle, resize: "vertical", fontFamily: FONT, marginBottom: 10 }}
+                        />
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button type="button" onClick={() => { setShowBroadcast(false); setBroadcastMessage(""); }}
+                            style={{ padding: "10px 16px", background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 12, fontSize: 13, fontWeight: 600, color: "#7C7C8A", cursor: "pointer", fontFamily: FONT }}>
+                            Cancel
+                          </button>
+                          <button type="button" onClick={handleBroadcast} disabled={broadcasting || !broadcastMessage.trim()}
+                            style={{ flex: 1, padding: "10px 16px", background: "#1C1C28", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: broadcasting ? "not-allowed" : "pointer", fontFamily: FONT, opacity: broadcasting || !broadcastMessage.trim() ? 0.6 : 1 }}>
+                            {broadcasting ? "Sending…" : "Send"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Pending invites */}
                 {household.invites.length > 0 && (
@@ -822,6 +894,26 @@ export default function ProfilePage() {
                 )}
               </div>
             )}
+
+            {/* Data export — GDPR portability right. Downloads a JSON file with
+                everything tied to this account (reminders, shopping/wishlist
+                items you added, household membership). See
+                COMPETITOR_ANALYSIS_BEST4FAMILY.md §5, "Konkreta åtgärder" #4. */}
+            <a
+              href="/api/profile/export"
+              download
+              style={{
+                display: "flex", alignItems: "center", gap: 10, width: "100%",
+                padding: "13px 16px", background: "#fff", border: "1.5px solid #E4E3DE",
+                borderRadius: 14, fontSize: 14, fontWeight: 600, color: "#1C1C28",
+                textDecoration: "none", fontFamily: FONT, marginTop: 12, boxSizing: "border-box",
+              }}
+            >
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#7C7C8A" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Export my data
+            </a>
 
             <div style={{ marginTop: 12 }}>
               {showDeleteConfirm ? (

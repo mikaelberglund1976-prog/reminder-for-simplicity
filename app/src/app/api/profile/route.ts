@@ -41,6 +41,7 @@ export async function GET() {
       createdAt: true,
       isChildProfile: true,
       pin: true,
+      password: true,
     },
   });
 
@@ -48,8 +49,14 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const { pin, ...rest } = user;
-  return NextResponse.json({ ...rest, hasPin: !!pin });
+  // hasPassword tells the UI whether this account has a real password set.
+  // Google-only accounts are created with password: null (see auth.ts signIn
+  // callback) — used instead of checking session.user.image, which is only
+  // populated on the session that actually came from the Google OAuth flow
+  // and is missing (falsely showing "Change password") after logging in via
+  // the "pin" or "credentials" provider on a Google-linked account.
+  const { pin, password, ...rest } = user;
+  return NextResponse.json({ ...rest, hasPin: !!pin, hasPassword: !!password });
 }
 
 // PUT /api/profile — update user profile

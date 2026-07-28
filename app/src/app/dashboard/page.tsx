@@ -185,8 +185,16 @@ function StatCard({ icon, iconColor, iconBg, value, label }: {
   );
 }
 
-function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, householdMembers = [] }: {
-  reminder: Reminder; badge: { bg: string; color: string }; isFirst: boolean; onClick: () => void; currentUserId?: string; householdMembers?: HouseholdMember[];
+const VISIBILITY_CHIP: Record<string, { icon: string; label: string; bg: string; color: string }> = {
+  PRIVATE: { icon: "🔒", label: "Private", bg: "#F5F4F0", color: "#7C7C8A" },
+  PARENTS: { icon: "👪", label: "Parents", bg: "#FFF0D4", color: "#C06010" },
+  // HOUSEHOLD isn't shown as a chip — it's the "everyone sees this" default
+  // once you're in a household, so flagging it would just be noise next to
+  // the other badges.
+};
+
+function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, householdMembers = [], hasHousehold = false }: {
+  reminder: Reminder; badge: { bg: string; color: string }; isFirst: boolean; onClick: () => void; currentUserId?: string; householdMembers?: HouseholdMember[]; hasHousehold?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const showAmount = reminder.amount != null && reminder.amount > 0;
@@ -223,6 +231,17 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
           {isUnassigned && !isShared && (
             <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#F5F4F0", color: "#9CA3AF" }}>
               Unassigned
+            </span>
+          )}
+          {/* Visibility chip — visibility (PRIVATE/HOUSEHOLD/PARENTS) already
+              existed in the schema but was never surfaced to the user. Only
+              shown once there's a household to be private *from* — for a
+              solo user every reminder is trivially private, so the chip
+              would just be noise. HOUSEHOLD itself has no chip (the "seen by
+              everyone" default), see VISIBILITY_CHIP above. */}
+          {hasHousehold && VISIBILITY_CHIP[reminder.visibility] && (
+            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: VISIBILITY_CHIP[reminder.visibility].bg, color: VISIBILITY_CHIP[reminder.visibility].color, gap: 3 }}>
+              {VISIBILITY_CHIP[reminder.visibility].icon} {VISIBILITY_CHIP[reminder.visibility].label}
             </span>
           )}
         </div>
@@ -426,7 +445,7 @@ export default function DashboardPage() {
             <div style={{ background: "#fff", borderRadius: 20, border: "1.5px solid #FFD9D4", overflow: "hidden", boxShadow: "0 1px 6px rgba(220,38,38,0.07)" }}>
               {attentionItems.slice(0, 3).map((r, i) => (
                 <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
-                  isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} />
+                  isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
               ))}
               {attentionItems.length > 3 && (
                 <div style={{ padding: "12px 16px", borderTop: "1px solid #F0F3F8", textAlign: "center" }}>
@@ -614,7 +633,7 @@ export default function DashboardPage() {
               <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 12 }}>
                 {filtered.map((r, i) => (
                   <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
-                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} />
+                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
                 ))}
                   </div>
             )}
@@ -636,7 +655,7 @@ export default function DashboardPage() {
               <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
                 {sharedReminders.map((r, i) => (
                   <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
-                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} />
+                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
                 ))}
               </div>
             ) : (

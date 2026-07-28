@@ -2,6 +2,8 @@
 **Senast uppdaterad:** 2026-07-27 kväll (hamburgermeny + mobil/webb-vy-växlare tillagda, ovanpå dagens tidigare inköpslista/önskelista/bottenmeny-arbete)
 **Uppdaterad igen:** 2026-07-27 sen kväll – riktig email för barnprofiler + frivillig PIN-inloggning för vuxna tillagd under Fas 1.5; delningslänk för inköpslistan klicktestad skarpt.
 **Uppdaterad igen:** 2026-07-28 – kategorihantering/tight layout/optimistisk UI, och flera listor per hushåll med åtkomststyrning, tillagda under Fas 1.5. "Flera separata listor per hushåll", som tidigare stod som medvetet inte byggd (se `TODO.md` 4i), är nu klar.
+**Uppdaterad igen:** 2026-07-28 – kandidatfunktioner tillagda under Fas 1.5/2/3/Parkerat efter en konkurrentanalys av Best4Family (se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` och `TODO.md` punkt 9). Inget av detta är byggt eller bestämt än – markerat `(Best4Family-analys 2026-07-28)` nedan.
+**Uppdaterad igen:** 2026-07-28 – tre av kandidaterna avbockade: sekretess-chip, dataexport och broadcast-notis byggda, "vad händer närmast" visade sig redan finnas (IQ Spotlight). Se `TODO.md` punkt 10.
 
 ---
 
@@ -61,6 +63,14 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 
 **Detta bör dokumenteras formellt i PRODUCT_SPEC.md** – se uppdaterad version (4b.8–4b.10).
 
+### Kandidater – innan bred lansering/betalande användare (Best4Family-analys 2026-07-28)
+Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` §5. Inget byggt än.
+- [ ] Riktig Privacy Policy-sida (finns inte idag)
+- [ ] Deklarerad minimiålder + föräldrasamtycke för barnprofiler
+- [ ] Självbetjänings-"radera mitt konto permanent" i UI (Profile → Security)
+- [ ] Gästprofiler utan inloggning (mor-/farföräldrar synliga i planeringen utan konto)
+- [x] **Synlig sekretess-"chip"** (Privat/Hushåll/Föräldrar) på reminders – `visibility`-fältet fanns redan i schemat (4b.5). **Byggt 2026-07-28**, se `TODO.md` punkt 10.
+
 ---
 
 ## Fas 2 – Tillväxt
@@ -77,6 +87,12 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 - [ ] **Enkel receptimport → inköpslista** *(P1.2 – lägg till ingredienser med ett klick)*
 - [x] **Delningslänk för inköpslistan (2026-07-27, klicktestad skarpt 2026-07-27 sen kväll)** *(P1.3-varianten för Grocery, byggd efter jämförelse med OurGroceries/Listonic)* — `Household.shoppingListShareToken`, `/api/family/shopping-list/share` (av/på + länk), publika `/api/public/shopping-list/[token]` + `/shop/[token]`-sidan. Ingen inloggning krävs, full läs/skriv-åtkomst (samma förtroendemodell som `HouseholdInvite`-token). Wishlist-varianten (P1.3 för barnens önskelista, delning till släktingar) är fortfarande inte byggd.
 - [ ] **Butiksläge** *(P1.4 – fullskärmsvy för användning i affären: stor text, en-handsvänlig)*
+- [ ] **Belöningar kopplat till Sysslor** *(Best4Family-analys 2026-07-28 – utökning av befintlig `ChoreStatus`-godkännandeflow, se `TODO.md` punkt 9)*
+- [x] ~~Kompakt "vad händer närmast"-sammanfattning på dashboarden~~ – **redan löst**, upptäckt 2026-07-28: "IQ Spotlight · Up next" + "Needs your attention" täcker redan detta, ingen ny kod behövdes.
+- [x] **Dataexport (portabilitetsrätt)** – JSON-nedladdning av egen data. **Byggt 2026-07-28**, se `TODO.md` punkt 10.
+- [x] **Broadcast-notis från admin till hela familjen.** **Byggt 2026-07-28**, se `TODO.md` punkt 10.
+- [ ] **Admin-switch per funktionstyp** ("Tillåt medlemmar att skapa X") *(Best4Family-analys 2026-07-28 – utökning av roll-modellen)*
+- [ ] **Måltidsplanerare kopplad till inköpslistan** *(Best4Family-analys 2026-07-28 – se även Parkerade idéer nedan, "Måltidsplanering")*
 
 ---
 
@@ -100,6 +116,8 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 - **Platsbaserade notiser** vid butiken *(P2.2 – kräver platsbehörighet)*
 - **Skafferihantering** *(P2.3 – separat funktionsområde, egen spec vid behov)*
 - **Måltidsplanering** som genererar inköpslista *(P2.4)*
+- **"Föräldrautrymme"-liknande modul** för separerade föräldrar/medföräldrar – samordna scheman, spåra avtal, hålla info om barn/husdjur strukturerat *(Best4Family-analys 2026-07-28. Intressant differentiator som matchar vår "hemmets bas"-positionering, men ett nytt konceptuellt område – kräver en egen spec-diskussion innan bygge, inte bara "bygg det", se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` §6)*
+- **Lågprioriterade moduler identifierade hos Best4Family, medvetet parkerade** *(Best4Family-analys 2026-07-28 – lågt strategiskt värde för vår målgrupp just nu)*: Reseplanerare, Recept, Restauranger, Städplan, Omröstningar, Beslutshjul, Bill Split, Spelverktyg, fria Anteckningar, generella Uppgifter för vuxna (utöver Sysslor)
 
 ---
 
