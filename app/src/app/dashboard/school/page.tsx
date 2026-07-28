@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
@@ -36,7 +36,20 @@ type TrialInfo = {
 // which already restricts a logged-in child to only their own items — as an
 // adult/parent this same endpoint returns every child's items in the
 // household, each with `assignedUser` populated so we can group by child.
+// 2026-07-28: next build's static prerender step requires any component that
+// calls useSearchParams() to sit inside a <Suspense> boundary — tsc doesn't
+// catch this (it's a build/prerender-time check, not a type error), which is
+// how this shipped broken once already. Keep the searchParams-reading logic
+// in an inner component so the outer default export can wrap it in Suspense.
 export default function SchoolPage() {
+  return (
+    <Suspense fallback={null}>
+      <SchoolPageInner />
+    </Suspense>
+  );
+}
+
+function SchoolPageInner() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();

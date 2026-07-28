@@ -231,9 +231,10 @@ Efter konkurrentanalysen av Best4Family (`COMPETITOR_ANALYSIS_BEST4FAMILY.md`, s
 
 ### 4b.17 Kända, ej byggda gap efter Best4Family-genomgången
 
-Dokumenterat här så det inte glöms bort – dessa är medvetet **inte** byggda ännu (se `TODO.md` punkt 9/`ROADMAP.md` för prioritering):
+Dokumenterat här så det inte glöms bort – dessa är medvetet **inte** byggda ännu (se `TODO.md` punkt 9/12/20 och `ROADMAP.md` för prioritering):
 - **Delete account-knappen i Profile → Security är bara en UI-shell** – "Yes, delete"-knappen har inget fungerande anrop bakom sig idag. Självbetjänings-radering är ett kvarstående P1-gap inför bred lansering.
-- Riktig Privacy Policy-sida, deklarerad minimiålder/föräldrasamtycke, gästprofiler utan inloggning, Belöningar kopplat till Sysslor – se `TODO.md` punkt 9 för full lista.
+- **Riktig Privacy Policy-sida** – uppdaterat 2026-07-28: **strukturen finns nu** (`/privacy`, se 4b.28), men innehållet är fortfarande inte klart (7 punkter kvar på sidans egen checklista, bl.a. deklarerad minimiålder/föräldrasamtycke).
+- Gästprofiler utan inloggning, Belöningar kopplat till Sysslor (öppen fråga: poäng/stjärnor eller riktiga belöningar, se `TODO.md` 19d/20), inkommande ICS-prenumeration för Training (se `TODO.md` 19h/20) – se `TODO.md` punkt 9/12 för full lista.
 
 ### 4b.19 Training-bokningar, School-kategori, utgående kalendersynk (byggd 2026-07-28, natt – produktriktning)
 
@@ -282,6 +283,43 @@ Efter en EU-marknadsundersökning (`MARKET_RESEARCH_EU.md`) som visade att flera
 - **UI:** ny sida `/dashboard/suggestions`, länkad från hamburgermenyn ("💡 Ideas & voting", mellan Family och Settings). Kategori-filter (All/Improvements/New features), "+ Suggest an idea"-formulär, kort per förslag med röstknapp (▲ + antal, fylld när man själv röstat), statusbricka, och en hopfällbar "Show shipped & declined"-sektion så att aktiva förslag inte drunknar i historik.
 - **Databasändring:** nya modeller `Suggestion` (id, userId, title, description?, category, status, timestamps) och `SuggestionVote` (unik per suggestionId+userId), plus två nya enums (`SuggestionCategory`, `SuggestionStatus`). Additiv migrering, ingen påverkan på befintliga tabeller. **Kräver `npx prisma generate && npx prisma db push` lokalt** innan det fungerar i produktion – samma kända sandbox-begränsning (`binaries.prisma.sh` blockerad) som tidigare ändringar denna sommar, se `TODO.md`.
 - **Inte klicktestat än** – kodgranskat, `tsc --noEmit` kört (rent förutom de förväntade Prisma-client-felen som försvinner efter `prisma generate` lokalt).
+
+### 4b.25 Kalender: typfilter, månadsöversikt, "+"-guide (byggd 2026-07-28)
+
+Del av en större UX-genomgång (se `TODO.md` punkt 19/20). Tre separata önskemål mot samma sida:
+
+- **Typfilter + färglegend** högst upp: klickbara chips per typ (🔔 Reminders/🧹 Chores/⚽ Training/📚 School), av/på styr både månadsgriden och listorna under. Reminders-chippen använder en neutral färg (`#5A6080`) eftersom reminders i sig har flera kategorifärger – legenden representerar "reminders som typ", inte en specifik kategori.
+- **"Everything this month"-lista** under den befintliga "vald dag"-panelen: alla synliga (filtrerade) poster för hela den innevarande månaden, grupperade per dag, kronologiskt. Löser att griden ensam kändes för statisk för att faktiskt bläddra i.
+- **Flytande "+"-knapp** (samma runda stil som Reminders): öppnar en 2-stegs guide (bottom sheet) – välj typ, sedan datum – som sedan skickar dig vidare till respektive befintliga skapa-sida med datumet förifyllt via en ny `?date=`-query-parameter. `/dashboard/new`, `/dashboard/family/new` och `/dashboard/school` läser alla nu den parametern (School öppnar dessutom sitt formulär automatiskt om parametern finns).
+- Ingen ny datamodell – ren vy-/UI-förändring ovanpå redan existerande data, samma princip som resten av kalendern (se 4b.19).
+
+### 4b.26 Chores städad + Training egen sektion (byggd 2026-07-28)
+
+- **Chores-sidan** (`dashboard/family/page.tsx`) städad: barnens inloggningslänk (delningslänk, `<ShareLink>`-komponenten) borttagen – barnhantering sker nu enbart under Settings (se 4b.29). "Add chore" är nu samma flytande runda "+"-knapp som resten av appen istället för en pill-knapp med text. "Done over time"-kortet har fått ett fjärde fönster, **This year** (`/api/family/stats` räknar nu även från 1 januari, UTC), och kortet är en 2×2-grid istället för 3 kolumner.
+- **Training fick en egen sida, `/dashboard/training`** – mirror av School-mönstret (4b.19): listar alla barns träningar grupperade per barn, med schemat formaterat läsbart från `choreRecurrenceDays`/`recurrence` (t.ex. "Mon, Wed, Fri"). "Add training"-knappen på Chores-sidan togs bort; skapandet går fortfarande genom det befintliga `/dashboard/family/new?type=training`-formuläret (ingen ny formulärlogik behövdes, bara en ny listvy och nya länkmål). Kalenderns klick-igenom och skapa-formulärets redirect efter spara pekar nu på `/dashboard/training` i stället för `/dashboard/family`/`/dashboard/calendar`.
+- **Verifierat, inget att bygga:** `/api/family/chores` POST krävde redan `assignedTo` för vuxna (`"assignedTo required"` om det saknas) och self-assignar alltid barn till sig själva oavsett vad klienten skickar – "alla aktiviteter tillhör någon" var redan garanterat på serversidan för både Chores/Training/School.
+
+### 4b.27 Inköpslista: add-sheet, streckkodsskanning, butiksläge (byggd 2026-07-28)
+
+- **"Add an item"-formuläret** (alltid synligt, med namn/kvantitet/anteckning/länk/bild) ersatt av en flytande "+"-knapp som öppnar ett bottom-sheet med fyra flikar: **Recent** (samma one-tap-chips som fanns i 4b.16-ish/4i), **Categories** (samma katalog-browse), **New** (det gamla formuläret, nu inuti sheeten), **Scan** (ny).
+- **Streckkodsskanning:** webbläsarens inbyggda `BarcodeDetector`-API (Chrome/Edge, inget nytt npm-beroende, ingen kostnad) läser EAN-13/EAN-8/UPC-A/UPC-E, slår sedan upp produktnamnet mot **Open Food Facts** (gratis, publikt API, ingen nyckel) och lägger till direkt via samma `quickAdd`-funktion som Recent/Categories redan använde. Tydligt fallback-meddelande i webbläsare utan stöd (Safari/Firefox idag).
+- **Butiksläge:** en fullskärms, storstilad, en-handsvänlig vy (`storeMode`-state) – bockar av direkt i listan, "Done" för att gå ur.
+- **Delningslänken dold** (omsvängning från 4i): dela-ikonen och "Shared with a link"-bannern borttagna ur UI:t. Token-infrastrukturen (`shareList`/`turnOffShare`, `/api/family/lists/[id]/share`) rörd inte alls, bara gömd.
+- **Medvetet inte byggd:** receptimport via foto (OCR). Kräver ett nytt npm-beroende (Tesseract.js, till skillnad från streckkodsskanningen som bara använder webbläsarens inbyggda API) och kan inte testas meningsfullt utan en riktig telefon och riktiga receptfoton. Nästa steg om det ska byggas: lägg till paketet i `package.json`, `npm install` lokalt, egen kodrunda.
+
+### 4b.28 Privacy Policy-sida – strukturell scaffold (byggd 2026-07-28)
+
+- Ny sida `/privacy` (`app/src/app/privacy/page.tsx`), länkad från Register och `/features`. Tolv sektioner enligt GDPR-relevant standardstruktur (vilka vi är, vad vi samlar in, varför, barn/samtycke, var data lagras, underleverantörer, lagringstid, dina rättigheter, cookies, säkerhet, ändringar, kontakt).
+- **Bara struktur, inte innehåll:** allt som redan går att skriva är ifyllt (t.ex. Supabase-region `eu-central-1`/Frankfurt, den redan byggda dataexporten). Allt som kräver ett beslut eller en riktig uppgift är markerat med en gul "Needs a decision"-ruta direkt i UI:t, plus en samlad checklista längst ner på sidan: juridisk enhet (namn/org.nr/adress), minimiålder för barnprofiler + samtycke (öppet beslut, se `TODO.md` Körordning steg 3), Vercels/Resends DPA-status, datalagringstid efter kontoradering, självbetjänings-radering (inte byggd), riktig kontaktadress.
+- **Inte en publicerad policy** – ska inte behandlas som juridiskt gällande text förrän checklistan är tom och en människa (helst med juridisk input) läst igenom slutresultatet.
+
+### 4b.29 Familjemedlemmar & kontosammanslagning under Settings (2026-07-28)
+
+- **Fynd som ändrade scopet på en tidigare planerad, större funktion:** kontosammanslagning (Google + lösenord, samma email) är **redan till stor del byggd**, bara aldrig synlig som en egen funktion. `auth.ts`s Google-`signIn`-callback slår upp befintlig `User` på email innan den skapar något nytt – om ett lösenordskonto redan har den emailen återanvänds samma rad, Google blir bara ett extra sätt att logga in på (ingen dubblett skapas). Och `autoJoinPendingInvite` (körs vid både Google- och lösenordsinloggning) implementerar redan "flytta allt"-varianten av sammanslagning: `// Remove from any existing household` följt av att gå med i den nya, byggd ursprungligen för hushållsinbjudningar men fungerar identiskt för det här syftet.
+- **Det som fortfarande saknas:** en bekräftelseskärm innan bytet sker – idag händer det tyst vid inloggning/inbjudan-accept. Medvetet **inte** byggt den här omgången: att pausa mitt i NextAuths `signIn`-callback och vänta på ett användarsvar kräver en omdirigerings-baserad tvåstegsdans, och `auth.ts` har en dokumenterad historik av subtila buggar (PIN-redirect, Google-detection, admin-godkännande) – bör byggas i en egen, fokuserad omgång med riktig klicktestning, inte pressas in blint.
+- **Litet, säkert genomfört:** `/api/household/invite` returnerar nu `existingUser: true/false`, och Profile-sidans inbjudningsflöde visar en tydlig varning om mottagaren redan har ett konto ("they already have an account. Accepting will move them out of their current household into yours") – ingen överraskning senare.
+- **Self-service Google-koppling behövde ingen ny knapp** – att logga in med Google på ett konto vars email redan finns som ett lösenordskonto kopplar redan ihop dem automatiskt (se fyndet ovan). En tydlig "Link your Google account"-knapp i Profile är en ren UI-sockerbit ovanpå något som redan fungerar, inte byggd än.
+- **Multi-family (en person i två hushåll samtidigt) – beslut: bara förbereda datamodellen, inte bygga UI nu.** Schemat tillåter det redan tekniskt (`HouseholdMember`-jointabellen har ingen spärr mot flera hushåll per user), men all applikationslogik antar idag ett hushåll per user. Krav antecknade för en framtida byggomgång (separerade föräldrar-scenariot): tvingat val av vilket hushåll varje ny post hör till vid skapande om en person tillhör två, ingen bulk-migrering av gamla poster (bara manuell per-post-ändring).
 
 ---
 

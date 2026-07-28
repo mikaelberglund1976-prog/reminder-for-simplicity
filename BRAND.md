@@ -1,5 +1,5 @@
 # Brand Guide – Reminder for Simplicity
-**Version:** 1.1 | **Skapad:** 2026-03-31 | **Färgpalett uppdaterad:** 2026-07-26
+**Version:** 1.2 | **Skapad:** 2026-03-31 | **Färgpalett uppdaterad:** 2026-07-26 | **Nav/ikon-sektion omskriven:** 2026-07-28 (anpassningsbar bottenmeny + fullständig hamburgermeny + kalenderns typfärger, se `TODO.md` 19/20)
 
 > ✅ **Färgpalett löst (2026-07-26):** Tidigare fanns tre olika accentfärger i `BRAND.md`, `RFS-Product-Direction.md` och `globals.css`. Mikael valde paletten från `RFS-Product-Direction.md` (accent `#4A5FD5`) som sanningskälla. Den är nu genomförd i `globals.css` och samtliga `.tsx`-filer i `app/src`. Paletten nedan är uppdaterad i enlighet med detta.
 
@@ -51,6 +51,12 @@ Kant/border:   #E4E3DE
 Framgång:      #2A9D6F
 Varning:       #E5873A
 Fel:           #D94F4F
+
+Kalender-/typfärger (tillagda 2026-07-28, se BRAND.md 4b nedan):
+Chores:        #0E9F8E  (teal)
+Training:      #D85A30  (koral)
+School:        #3730A3  (indigo)
+Reminders:     #5A6080  (neutral blågrå, för att inte konkurrera med accentfärgen)
 ```
 
 ### Typografi
@@ -78,17 +84,29 @@ Fel:           #D94F4F
 
 ---
 
-## 4b. Bottenmeny & övriga ikoner (tillagt 2026-07-27)
+## 4b. Bottenmeny & övriga ikoner (tillagt 2026-07-27, omskrivet 2026-07-28)
 
-Sedan appen breddades till att inte bara vara påminnelser (se positioneringsbeslutet i `PRODUCT_SPEC.md` §3, "vi tänker stort, inte bara reminder-app") används tre linjeikoner (SVG, inte emoji) i den nya bottenmenyn (`components/BottomNav.tsx`):
+Sedan appen breddades till att inte bara vara påminnelser (se positioneringsbeslutet i `PRODUCT_SPEC.md` §3, "vi tänker stort, inte bara reminder-app") används linjeikoner (SVG, inte emoji) i bottenmenyn (`components/BottomNav.tsx`) och hamburgermenyn (`components/HamburgerMenu.tsx`).
 
-| Flik | Ikon | Kommentar |
+**Bottenmenyn är sedan 2026-07-28 anpassningsbar per person** (se `TODO.md` 19a, `PRODUCT_SPEC.md` 4b.10) istället för tre fasta flikar. Calendar är den enda obligatoriska, alltid-första fliken. Utöver den väljer varje person 2–3 till i Profile → Preferences, bland:
+
+| App | Ikon | Kommentar |
 |---|---|---|
+| Calendar | 📅-formad linjeikon | Alltid först, går inte att stänga av |
 | Reminders | 🔔-formad linjeikon | Samma klocka-koncept som tidigare, nu SVG istället för emoji i själva navigeringen |
 | Shopping list | 🛒-formad linjeikon | |
 | Wishlist | 🎁-formad linjeikon | |
+| Chores | 🧹-formad linjeikon | |
+| Training | ⚽-formad linjeikon | |
+| School | 📚-formad linjeikon | |
 
-I marknadsföringstexter (startsida, feature-pills) används däremot fortfarande emoji (🔔 🛒 🎁) för samma tre saker – konsekvent parvis med SVG-versionen i appen. Hamburgermenyn (`components/HamburgerMenu.tsx`, för Family/Settings/Admin/Sign out) använder samma linjeikon-stil som bottenmenyn, inte emoji.
+Default om inget valts: Reminders, Shopping list, School (+ Calendar = 4 totalt).
+
+I marknadsföringstexter (startsida, feature-pills) används däremot fortfarande emoji (🔔 🛒 🎁 osv) för samma appar – konsekvent parvis med SVG-versionen i appen.
+
+**Hamburgermenyn innehåller sedan 2026-07-28 alla sidor, inte bara Family/Settings/Admin/Sign out** – den är tänkt som den fullständiga åtkomstpunkten oavsett vad som är valt i bottenmenyn: Reminders, Calendar, Shopping list, Wishlist, Chores, Training, School, Ideas & voting, Settings, (Admin, villkorat), Sign out. Samma linjeikon-stil som bottenmenyn, inte emoji.
+
+**Kalenderns typfärger** (filterchips och prickar i månadsvyn, se `PRODUCT_SPEC.md` 4b.25) är den enda platsen i appen som använder en egen liten färgpalett per innehållstyp snarare än accentfärgen – se paletten i §3 ovan (Chores teal, Training koral, School indigo, Reminders neutral blågrå). Vald medvetet för att vara urskiljbara som prickar i en liten kalenderruta utan att konkurrera med huvudaccentfärgen `#4A5FD5`.
 
 ---
 

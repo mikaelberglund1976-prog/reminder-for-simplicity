@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -96,7 +96,20 @@ function in30Days() { return addDays(30); }
 
 type HouseholdMember = { id: string; userId: string; user: { id: string; name: string | null; email: string } };
 
+// 2026-07-28: next build's static prerender step requires any component that
+// calls useSearchParams() to sit inside a <Suspense> boundary — tsc doesn't
+// catch this (it's a build/prerender-time check, not a type error), which is
+// how this shipped broken once already. Keep the searchParams-reading logic
+// in an inner component so the outer default export can wrap it in Suspense.
 export default function NewReminderPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewReminderForm />
+    </Suspense>
+  );
+}
+
+function NewReminderForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // 2026-07-28: the Calendar's "+" button passes a chosen date through here

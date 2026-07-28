@@ -53,7 +53,7 @@ Skyddad av `ADMIN_EMAIL` (miljövariabel, satt till Mikaels email). Adminpanelen
 
 Det finns ingen roll-nivå inom admin – man antingen är `ADMIN_EMAIL` eller inte.
 
-**Åtkomst (uppdaterat 2026-07-27):** tidigare nåddes `/admin` bara genom att skriva URL:en direkt – det fanns ingen länk i appen. Sedan bottenmenyn (Reminders/Shopping list/Wishlist) infördes och tog över `/dashboard`s tidigare inbyggda navigering, lades en hamburgermeny (`components/HamburgerMenu.tsx`) till i sidhuvudet på Reminders/Family/Shopping list/Wishlist-sidorna. Den visar en "Admin"-länk endast om `session.user.email === ADMIN_EMAIL` (samma konstant som skyddar sidan själv, delad via `lib/adminConfig.ts`).
+**Åtkomst (uppdaterat 2026-07-28):** tidigare nåddes `/admin` bara genom att skriva URL:en direkt – det fanns ingen länk i appen. Sedan bottenmenyn infördes och tog över `/dashboard`s tidigare inbyggda navigering, lades en hamburgermeny (`components/HamburgerMenu.tsx`) till i sidhuvudet. Den visar nu länkar till alla sidor i appen (Reminders, Calendar, Shopping list, Wishlist, Chores, Training, School, Ideas & voting, Settings), oavsett vilka appar som är valda i den anpassningsbara bottenmenyn (se `PRODUCT_SPEC.md` 4b.10/4b.11) – en "Admin"-länk visas längst ner endast om `session.user.email === ADMIN_EMAIL` (samma konstant som skyddar sidan själv, delad via `lib/adminConfig.ts`).
 
 ---
 
@@ -78,6 +78,7 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 - **Trigger (manuell nödlösning, om webhooken skulle tappas igen):** `npx vercel --prod` från `app/`-mappen (kräver `npx vercel login` + `npx vercel link` en gång per dator, kopplat till projektet `reminder-for-simplicity` i teamet `mikaelberglund1976-progs-projects`).
 - **Om auto-deploy tystnar igen:** gör om samma Disconnect/Connect-steg i Vercel-dashboarden först – det är den kända fixen för detta specifika Vercel-fel.
 - **Build:** `prisma generate && next build` (se `package.json`), oavsett trigger-metod.
+- **Känd fälla: `tsc --noEmit` räcker inte för att lita på en grön deploy.** Två gånger nu (2026-07-28, se `TODO.md` punkt 13 och punkt 21) har kod som passerade `tsc --noEmit` rent ändå failat i Vercels `next build` – typkontroll fångar inte allt `next build`s prerender-steg kräver. Konkret exempel: en klient-komponent som anropar `useSearchParams()` utan att sitta i en `<Suspense>`-gräns är typkorrekt men kraschar prerenderingen av just den sidan. Efter varje push: kolla faktiskt Vercel-dashboarden för grönt, lita inte på att `tsc` var tyst.
 - **Databasändringar:** körs INTE automatiskt vid deploy. Efter en schema-ändring: kör `npx prisma db push` manuellt (eller sätt upp en riktig migration-strategi längre fram – idag används `db push`, inte `prisma migrate`, vilket är enklare men ger ingen migrationshistorik)
 - **Backfill-scripts (tillagt 2026-07-28):** vissa schemaändringar lämnar gamla fält på plats (deprecated, oanvända av koden) istället för att ta bort dem direkt, just för att kunna köra en enkel additiv `db push` utan risk för dataförlust. Ett separat script flyttar sedan över data till de nya fälten. Körordning efter en `db push`: `node scripts/backfill-shopping-categories.js` (kategorier → `ShoppingCategoryDef`), sedan `node scripts/backfill-lists.js` (inköps-/önskelistor → `List`). Båda är idempotenta (säkra att köra flera gånger) och måste köras lokalt – Cowork-sandboxen som skrev migreringskoden kan varken nå Supabase-databasen (DNS/nätverksblockering) eller ladda ner Prisma-motorn (`binaries.prisma.sh` blockerad), så den kan inte köra dem själv.
 - **Rollback:** Vercel → Deployments → "Promote to Production" på en tidigare deploy. Databasändringar rullas INTE tillbaka automatiskt av detta – om en deploy innehöll en destruktiv schemaändring krävs manuell databas-rollback.
@@ -108,4 +109,4 @@ Dessa är kända luckor, inte akuta – men bör tas i tur och ordning i takt me
 
 ---
 
-*Detta dokument beskriver nuläget (2026-07-28). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, eller sätter upp en verifierad email-domän.*
+*Detta dokument beskriver nuläget (2026-07-28, uppdaterat efter den stora UX-genomgången i `TODO.md` punkt 19–21). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, eller sätter upp en verifierad email-domän.*

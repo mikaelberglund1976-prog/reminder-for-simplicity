@@ -15,6 +15,7 @@
 **Uppdaterad igen:** 2026-07-28 – bekräftat att senaste committen (`86a9c4a`, admin-godkännande + `/features`) är pushad och **grön i produktion** (Vercel-MCP:n kollad). Sedan en stor UX-genomgång från Mikael (skärmdumpar/liveanvändning) genomgången mot kodbasen och sammanställd – bottenmeny/hamburgermeny, kalender, inköpslista, sysslor/skola/träning, inställningar/familjemedlemskap. Inget byggt än, bara dokumenterat och stämt av mot vad som redan finns. Se ny punkt 19 nedan – flaggar bland annat en omsvängning (inköpslistans delningslänk, byggd i 4i, ska nu döljas) och två stora beslutspunkter (kontosammanslagning Google/lösenord, en person i två familjer samtidigt).
 **Uppdaterad igen:** 2026-07-28 – de två stora beslutspunkterna avgjorda (se 19g): multi-family blir bara datamodell-förberedelse nu (ingen växlare/UI), kontosammanslagning blir "flytta allt" med bekräftelseskärm, automatisk trigger vid Google-inloggning. Streckkodsskanning/receptimport/butiksläge (redan i ROADMAP) infogade i 19c, belöningar-för-sysslor infogat i 19d – samma sidor byggs ändå om, så ingen anledning att vänta. Dessutom byggd: `/privacy`-sidan som en strukturell scaffold (`app/src/app/privacy/page.tsx`), länkad från Register och `/features`. Varje sektion som saknar riktigt innehåll eller ett beslut är markerad med en tydlig gul "Needs a decision"-ruta i UI:t, med en samlad checklista längst ner på sidan (7 punkter: juridisk enhet, minimiålder för barnprofiler, Vercel/Resend DPA-status, datalagringstid, självbetjänings-radering, riktig kontaktadress). `tsc --noEmit` kört rent.
 **Uppdaterad igen:** 2026-07-28 – hela punkt 19 (utom rewards och inkommande ICS-import) byggd i en lång omgång efter "kör". Se ny punkt 20 nedan för en fullständig genomgång av vad som är klart, vad som medvetet skjutits upp och varför, och vad som krävs innan det fungerar i produktion.
+**Uppdaterad igen:** 2026-07-28 – du körde `prisma generate`/`db push` lokalt (klart), men nästa deploy failade i Vercel. Grundorsak hittad och fixad: `useSearchParams()` utan `<Suspense>`-gräns i `/dashboard/new` och `/dashboard/school` (Next 14:s prerender-krav, fångas inte av `tsc`). Se ny punkt 21 nedan. Redo för commit + push.
 
 ---
 
@@ -458,6 +459,26 @@ Byggde igenom nästan hela punkt 19 i en lång sammanhängande omgång. `tsc --n
 **17 (Belöningar) — fortfarande blockerad.** Väntar fortfarande på ditt svar: poäng/stjärnor, eller kopplat till riktiga belöningar (fickpengar/aktivitet)? Inget byggt förrän det är avgjort.
 
 **Kräver innan produktion:**
-- [ ] `npx prisma generate && npx prisma db push` lokalt (nytt `User.bottomNavTabs`-fält, additivt, ingen påverkan på befintlig data). `tsc --noEmit` visar just nu 2 väntade fel i `api/profile/route.ts` tills detta körs.
+- [x] `npx prisma generate && npx prisma db push` lokalt — kört av dig, gick igenom.
 - [ ] `git add -A && git commit -m "..." && git push`, sedan bekräfta grön deploy i Vercel-dashboarden (samma rutin som punkt 13 lärde ut).
 - [ ] Klicktesta skarpt — särskilt bottenmeny-anpassningen (Profile → Preferences → Bottom nav), streckkodsskanningen (kräver en riktig telefon/webbkamera, kan inte verifieras i sandboxen), kalenderns nya "+"-guide, och butiksläget.
+
+## 21. Vercel-byggfel efter punkt 20 — `useSearchParams` utan Suspense (2026-07-28, hittad direkt efter "kör")
+
+**Symptom:** deploy `dpl_BJPoQPFDv2iY46KDSWVNZCgjD7f3` (commit `c401efa`, "UX overhaul...") gick till **ERROR** i Vercel. `tsc --noEmit` hade gått igenom rent innan push — samma fälla som punkt 13, fast en ny variant.
+
+**Orsak:** kalenderns nya "+"-guide (19b) skickar med `?date=` till `/dashboard/new` och `/dashboard/school`, så jag lade till `useSearchParams()` direkt i huvudkomponenten på båda sidorna. Next.js 14:s statiska prerender-steg (`next build`, inte `tsc`) kräver att varje komponent som läser `useSearchParams()` sitter inuti en `<Suspense>`-gräns, annars kraschar den sidans prerendering. Byggloggen pekade exakt ut de två sidorna:
+```
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/new"
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/school"
+Error: Command "npm run build" exited with 1
+```
+`/dashboard/family/new/page.tsx` har samma mönster (även den läser `?date=`/`?type=`) men flaggades **inte** i loggen — den hade redan (sedan tidigare) sin `useSearchParams()`-läsning i en egen inre komponent wrappad i `<Suspense>` i default-exporten, vilket är precis rätt mönster.
+
+**Fix:** samma mönster kopierat till de två trasiga sidorna — brutit ut till en inre komponent (`NewReminderForm` respektive `SchoolPageInner`) och wrappat den i `<Suspense fallback={null}>` i default-exporten. Ingen annan logik ändrad.
+
+**Verifiering:** `tsc --noEmit` rent (inga fel alls nu — dina lokala `prisma generate`/`db push` har redan synkat bort de tidigare väntade `bottomNavTabs`-felen också). Kunde **inte** köra ett fullständigt `next build` i sandboxen för att bekräfta prerenderingen rakt av — `prisma generate` (som `npm run build` kör först) blockeras av samma kända nätverksbegränsning (403 mot `binaries.prisma.sh`), och bakgrundsprocesser dör mellan sandbox-anrop innan `next build` hinner klart (56 sidor). Förlitar mig istället på att mönstret är identiskt kopierat från den variant som redan är bevisat fungerande i produktion (`family/new`). Verifiera gärna själv med ett lokalt `npm run build` innan/efter push om du vill vara helt säker.
+
+**Lärdom (läggs till punkt 13:s lista):** `tsc --noEmit` fångar typfel, inte Next.js byggtidsregler som Suspense-kravet kring `useSearchParams()`. Nya sidor/komponenter som läser query-parametrar bör alltid wrappas i `<Suspense>` direkt, även om `tsc` är tyst.
+
+**Nästa steg:** `git add -A && git commit -m "fix: wrap useSearchParams in Suspense on /dashboard/new and /dashboard/school" && git push`, sedan kolla Vercel-dashboarden för grönt.
