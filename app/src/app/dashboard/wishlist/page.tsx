@@ -331,6 +331,10 @@ function AdultWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; 
   const [items, setItems] = useState<AdultItem[]>([]);
   const [showAccessPanel, setShowAccessPanel] = useState(false);
   const [members, setMembers] = useState<ListMemberOption[]>([]);
+  const [showNewList, setShowNewList] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [creatingList, setCreatingList] = useState(false);
+  const [newListError, setNewListError] = useState("");
 
   const children = Array.from(new Map(lists.filter((l) => l.ownerId).map((l) => [l.ownerId as string, l.ownerName ?? "Child"])).entries());
   const [activeChild, setActiveChild] = useState<string>(children[0]?.[0] ?? "");
@@ -364,6 +368,36 @@ function AdultWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; 
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeListId]);
+
+  // OWNER/PARENT creating a new wishlist for the active child — backend
+  // already supported this via `ownerId` on POST /api/family/lists (an
+  // adult setting up a list on a child's behalf), but AdultWishlist never
+  // exposed it: only ChildWishlist had a "+ New list" button. Fixed
+  // 2026-07-28 — this was the actual reason an adult testing the page
+  // couldn't create anything at all.
+  async function createList(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = newListName.trim();
+    if (!trimmed || !activeChild) return;
+    setCreatingList(true); setNewListError("");
+    try {
+      const res = await fetch("/api/family/lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "WISHLIST", name: trimmed, ownerId: activeChild }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setNewListError(data.error ?? `Error ${res.status}`); return; }
+      setNewListName("");
+      setShowNewList(false);
+      await onChange();
+      setActiveListId(data.id);
+    } catch (err) {
+      setNewListError("Could not reach server: " + String(err));
+    } finally {
+      setCreatingList(false);
+    }
+  }
 
   async function setStatus(id: string, statusVal: AdultItem["status"]) {
     const prevItems = items;
@@ -422,7 +456,7 @@ function AdultWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; 
         </div>
       )}
 
-      {childLists.length > 1 && (
+      {(childLists.length > 1 || canEditAccess) && (
         <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto" }}>
           {childLists.map((l) => (
             <button key={l.id} onClick={() => setActiveListId(l.id)} style={{
@@ -434,7 +468,24 @@ function AdultWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; 
               {l.name}
             </button>
           ))}
+          {canEditAccess && (
+            <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed #C7CDF5", borderRadius: 999, padding: "6px 12px", fontSize: 12.5, fontWeight: 700, color: "#4A5FD5", cursor: "pointer", fontFamily: FONT }}>
+              + New list
+            </button>
+          )}
         </div>
+      )}
+
+      {showNewList && (
+        <form onSubmit={createList} style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="e.g. Birthday, Christmas…" style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid #E4E3DE", borderRadius: 10, padding: "9px 12px", outline: "none" }} />
+          <button type="submit" disabled={!newListName.trim() || creatingList} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "#1C1C28", border: "none", borderRadius: 10, padding: "0 16px", cursor: !newListName.trim() ? "not-allowed" : "pointer", opacity: !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
+            {creatingList ? "…" : "Create"}
+          </button>
+        </form>
+      )}
+      {newListError && (
+        <div style={{ fontSize: 13, color: "#C44444", marginBottom: 14 }}>{newListError}</div>
       )}
 
       <button onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetch("/api/family/members").then((r) => r.json()).then((d) => setMembers(d.members ?? [])); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#4A5FD5", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}>

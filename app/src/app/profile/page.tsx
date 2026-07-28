@@ -80,7 +80,14 @@ export default function ProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [newHouseholdName, setNewHouseholdName] = useState("");
   const [renamingHousehold, setRenamingHousehold] = useState(false);
-  const [pinChildren, setPinChildren] = useState<{ id: string; name: string }[]>([]);
+  const [pinChildren, setPinChildren] = useState<{ id: string; name: string; email?: string }[]>([]);
+  const [editingChildId, setEditingChildId] = useState<string | null>(null);
+  const [editChildName, setEditChildName] = useState("");
+  const [editChildEmail, setEditChildEmail] = useState("");
+  const [editChildPin, setEditChildPin] = useState("");
+  const [editChildPinConfirm, setEditChildPinConfirm] = useState("");
+  const [editChildError, setEditChildError] = useState("");
+  const [savingChildEdit, setSavingChildEdit] = useState(false);
   const [viewMode, setViewModeLocal] = useState<ViewMode>("mobile");
 
   useEffect(() => {
@@ -181,6 +188,39 @@ export default function ProfilePage() {
       }
     } catch (e) { setPinChildError("Could not reach server: " + String(e)); }
     finally { setAddingPinChild(false); }
+  }
+
+  function startEditChild(c: { id: string; name: string; email?: string }) {
+    setEditingChildId(c.id);
+    setEditChildName(c.name);
+    setEditChildEmail(c.email ?? "");
+    setEditChildPin(""); setEditChildPinConfirm(""); setEditChildError("");
+  }
+
+  async function saveChildEdit() {
+    if (!editingChildId) return;
+    if (!editChildName.trim()) { setEditChildError("Enter a name"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editChildEmail.trim())) { setEditChildError("Enter a valid email"); return; }
+    if (editChildPin || editChildPinConfirm) {
+      if (!/^[0-9]{4}$/.test(editChildPin)) { setEditChildError("PIN must be exactly 4 digits"); return; }
+      if (editChildPin !== editChildPinConfirm) { setEditChildError("PINs do not match"); return; }
+    }
+    setSavingChildEdit(true); setEditChildError("");
+    try {
+      const res = await fetch(`/api/family/child-profiles/${editingChildId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editChildName.trim(), email: editChildEmail.trim(), pin: editChildPin || undefined }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setEditChildError(data.error ?? `Error ${res.status}`); return; }
+      setEditingChildId(null);
+      if (household?.id) fetchPinChildren(household.id);
+    } catch (e) {
+      setEditChildError("Could not reach server: " + String(e));
+    } finally {
+      setSavingChildEdit(false);
+    }
   }
 
   async function saveMyPin() {
@@ -689,12 +729,58 @@ export default function ProfilePage() {
                     {pinChildren.length > 0 && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                         {pinChildren.map(c => (
-                          <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "#F9FAFB", borderRadius: 12, border: "1.5px solid #E4E3DE" }}>
-                            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1C1C28", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13 }}>
-                              {c.name.charAt(0).toUpperCase()}
+                          <div key={c.id}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "#F9FAFB", borderRadius: 12, border: "1.5px solid #E4E3DE" }}>
+                              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1C1C28", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                                {c.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: "#1C1C28" }}>{c.name}</div>
+                                {c.email && <div style={{ fontSize: 11, color: "#9CA3AF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.email}</div>}
+                              </div>
+                              <button type="button" onClick={() => editingChildId === c.id ? setEditingChildId(null) : startEditChild(c)}
+                                style={{ background: "none", border: "none", color: "#4A5FD5", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT, flexShrink: 0 }}>
+                                {editingChildId === c.id ? "Cancel" : "Edit"}
+                              </button>
                             </div>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: "#1C1C28" }}>{c.name}</span>
-                            <span style={{ marginLeft: "auto", fontSize: 11, color: "#9CA3AF", fontWeight: 600 }}>PIN login</span>
+
+                            {editingChildId === c.id && (
+                              <div style={{ background: "#F9FAFB", borderRadius: 14, border: "1.5px solid #E4E3DE", padding: 16, marginTop: 6 }}>
+                                <div style={{ marginBottom: 12 }}>
+                                  <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>Name</label>
+                                  <input value={editChildName} onChange={e => setEditChildName(e.target.value)} autoComplete="off" style={inputStyle} />
+                                </div>
+                                <div style={{ marginBottom: 12 }}>
+                                  <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>Email</label>
+                                  <input value={editChildEmail} onChange={e => setEditChildEmail(e.target.value)} type="email" autoComplete="off" style={inputStyle} />
+                                </div>
+                                <div style={{ marginBottom: 12 }}>
+                                  <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>New PIN <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(leave blank to keep current)</span></label>
+                                  <input value={editChildPin} onChange={e => setEditChildPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
+                                    style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
+                                </div>
+                                {editChildPin && (
+                                  <div style={{ marginBottom: 12 }}>
+                                    <label style={{ fontSize: 12, fontWeight: 700, color: "#374151", display: "block", marginBottom: 6 }}>Confirm new PIN</label>
+                                    <input value={editChildPinConfirm} onChange={e => setEditChildPinConfirm(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
+                                      style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
+                                  </div>
+                                )}
+                                {editChildError && (
+                                  <div style={{ fontSize: 13, color: "#C44444", background: "#FFF0F0", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>{editChildError}</div>
+                                )}
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  <button type="button" onClick={saveChildEdit} disabled={savingChildEdit}
+                                    style={{ flex: 1, background: "#1C1C28", color: "#fff", border: "none", borderRadius: 50, padding: "12px", fontSize: 14, fontWeight: 700, cursor: savingChildEdit ? "not-allowed" : "pointer", fontFamily: FONT, opacity: savingChildEdit ? 0.6 : 1 }}>
+                                    {savingChildEdit ? "Saving…" : "Save changes"}
+                                  </button>
+                                  <button type="button" onClick={() => setEditingChildId(null)}
+                                    style={{ padding: "12px 20px", borderRadius: 50, background: "#F0F3FA", border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}>
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

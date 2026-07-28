@@ -34,6 +34,20 @@ export async function GET(req: Request) {
       await ensureDefaultList({ householdId: membership.householdId, kind: "SHOPPING", createdBy: session.user.id, name: "Shopping list" });
     } else if (role === "CHILD") {
       await ensureDefaultList({ householdId: membership.householdId, kind: "WISHLIST", ownerId: session.user.id, createdBy: session.user.id, name: "Wishlist" });
+    } else {
+      // Fixed 2026-07-28: previously only a CHILD's own visit lazily created
+      // their default wishlist, so an OWNER/PARENT/ADULT who opened the
+      // Wishlist page *before* any child had ever logged in saw "No child
+      // profiles yet" even though a real child profile existed — there was
+      // just no List row for it yet. Ensure every child in the household has
+      // a default wishlist whenever an adult loads this page too.
+      const children = await prisma.householdMember.findMany({
+        where: { householdId: membership.householdId, role: "CHILD" },
+        select: { userId: true },
+      });
+      for (const child of children) {
+        await ensureDefaultList({ householdId: membership.householdId, kind: "WISHLIST", ownerId: child.userId, createdBy: child.userId, name: "Wishlist" });
+      }
     }
 
     const lists = await listsVisibleTo(membership.householdId, kind, session.user.id, role);
