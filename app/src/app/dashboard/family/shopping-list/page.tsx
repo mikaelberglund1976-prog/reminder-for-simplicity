@@ -8,6 +8,7 @@ import { CATALOG_ITEMS, CATALOG_SLUG_ORDER } from "@/lib/shoppingCatalog";
 import { DEFAULT_CATEGORIES } from "@/lib/shoppingCategories";
 import { markSeen } from "@/lib/listBadges";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import ListAccessPanel, { type ListMemberOption } from "@/components/ListAccessPanel";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -29,13 +30,19 @@ function IcChevron({ open }: { open: boolean }) { return <svg width={14} height=
 function IcSettings() { return <svg width={14} height={14} viewBox="0 0 24 24" {...STR}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>; }
 function IcUp()    { return <svg width={13} height={13} viewBox="0 0 24 24" {...STR}><polyline points="18 15 12 9 6 15"/></svg>; }
 function IcDown()  { return <svg width={13} height={13} viewBox="0 0 24 24" {...STR}><polyline points="6 9 12 15 18 9"/></svg>; }
+function IcLink()  { return <svg width={13} height={13} viewBox="0 0 24 24" {...STR}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>; }
 
 type Category = { id: string; slug: string | null; label: string; icon: string; sortOrder: number };
+
+type ListInfo = { id: string; name: string; visibleToAll: boolean; memberIds: string[]; isMine: boolean };
 
 type Item = {
   id: string;
   name: string;
   quantity: string | null;
+  note: string | null;
+  url: string | null;
+  imageUrl: string | null;
   categoryId: string | null;
   categoryDef: { id: string; label: string; icon: string; slug: string | null } | null;
   isPurchased: boolean;
@@ -55,12 +62,25 @@ export default function ShoppingListPage() {
   const { status } = useSession();
   const router = useRouter();
 
+  const [access, setAccess] = useState<"LOADING" | "NO_HOUSEHOLD" | "LOCKED" | "PRO" | "TRIAL">("LOADING");
+
+  const [lists, setLists] = useState<ListInfo[]>([]);
+  const [canEditAccess, setCanEditAccess] = useState(false);
+  const [activeListId, setActiveListId] = useState<string | null>(null);
+  const [showNewList, setShowNewList] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [addingList, setAddingList] = useState(false);
+  const [showAccessPanel, setShowAccessPanel] = useState(false);
+  const [members, setMembers] = useState<ListMemberOption[]>([]);
+
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [access, setAccess] = useState<"LOADING" | "NO_HOUSEHOLD" | "LOCKED" | "PRO" | "TRIAL">("LOADING");
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [note, setNote] = useState("");
+  const [url, setUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
@@ -82,36 +102,41 @@ export default function ShoppingListPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      fetchItems();
+      fetchLists();
       fetchCategories();
       fetch("/api/family/shopping-list/suggestions")
         .then((r) => r.json())
         .then((d) => setRecent(d.recent ?? []))
         .catch(() => {});
-      fetch("/api/family/shopping-list/share")
-        .then((r) => r.json())
-        .then((d) => { if (d.url) setShareUrl(d.url); })
-        .catch(() => {});
     }
   }, [status]);
+
+  useEffect(() => {
+    if (!activeListId) return;
+    fetchItems(activeListId);
+    fetch(`/api/family/lists/${activeListId}/share`)
+      .then((r) => r.json())
+      .then((d) => setShareUrl(d.url ?? null))
+      .catch(() => {});
+  }, [activeListId]);
 
   // Lightweight polling so household members see each other's changes without
   // reopening the app. Paused when the tab isn't visible to avoid wasted requests.
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status !== "authenticated" || !activeListId) return;
 
     function startPolling() {
       if (pollRef.current) return;
       pollRef.current = setInterval(() => {
-        if (document.visibilityState === "visible") fetchItems();
+        if (document.visibilityState === "visible" && activeListId) fetchItems(activeListId);
       }, POLL_MS);
     }
     function stopPolling() {
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     }
     function onVisibility() {
-      if (document.visibilityState === "visible") { fetchItems(); startPolling(); }
+      if (document.visibilityState === "visible" && activeListId) { fetchItems(activeListId); startPolling(); }
     }
 
     startPolling();
@@ -121,14 +146,27 @@ export default function ShoppingListPage() {
       stopPolling();
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [status]);
+  }, [status, activeListId]);
 
-  async function fetchItems() {
+  async function fetchLists() {
     try {
-      const res = await fetch("/api/family/shopping-list");
+      const res = await fetch("/api/family/lists?kind=SHOPPING");
+      const data = await res.json();
+      setAccess(data.access ?? "NO_HOUSEHOLD");
+      const fetched: ListInfo[] = data.lists ?? [];
+      setLists(fetched);
+      setCanEditAccess(!!data.canEditAccess);
+      setActiveListId((prev) => (prev && fetched.some((l) => l.id === prev)) ? prev : (fetched[0]?.id ?? null));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function fetchItems(listId: string) {
+    try {
+      const res = await fetch(`/api/family/shopping-list?listId=${listId}`);
       const data = await res.json();
       setItems(data.items ?? []);
-      setAccess(data.access ?? "NO_HOUSEHOLD");
       markSeen("shopping-list");
     } catch (e) {
       console.error(e);
@@ -145,22 +183,91 @@ export default function ShoppingListPage() {
     }
   }
 
+  async function fetchMembers() {
+    try {
+      const res = await fetch("/api/family/members");
+      const data = await res.json();
+      setMembers(data.members ?? []);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function createList(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = newListName.trim();
+    if (!trimmed) return;
+    setAddingList(true);
+    try {
+      const res = await fetch("/api/family/lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "SHOPPING", name: trimmed }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setNewListName("");
+        setShowNewList(false);
+        await fetchLists();
+        setActiveListId(created.id);
+      }
+    } finally {
+      setAddingList(false);
+    }
+  }
+
+  async function renameList(newName: string) {
+    if (!activeListId) return;
+    setLists((prev) => prev.map((l) => (l.id === activeListId ? { ...l, name: newName } : l)));
+    await fetch(`/api/family/lists/${activeListId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName }),
+    });
+  }
+
+  async function toggleVisibleToAll(value: boolean) {
+    if (!activeListId) return;
+    setLists((prev) => prev.map((l) => (l.id === activeListId ? { ...l, visibleToAll: value } : l)));
+    await fetch(`/api/family/lists/${activeListId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visibleToAll: value }),
+    });
+  }
+
+  async function toggleMember(userId: string) {
+    if (!activeListId) return;
+    const current = lists.find((l) => l.id === activeListId);
+    if (!current) return;
+    const nextIds = current.memberIds.includes(userId)
+      ? current.memberIds.filter((id) => id !== userId)
+      : [...current.memberIds, userId];
+    setLists((prev) => prev.map((l) => (l.id === activeListId ? { ...l, memberIds: nextIds } : l)));
+    await fetch(`/api/family/lists/${activeListId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberIds: nextIds }),
+    });
+  }
+
   // ---- Add / toggle / remove / recategorize: all optimistic. The list
   // updates instantly; the network call happens in the background and only
-  // rolls back on failure. Fixes the "feels laggy" complaint from before,
-  // where every action waited for a POST/PATCH/DELETE *and then* a full
-  // re-fetch before anything moved on screen.
+  // rolls back on failure.
 
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
     const trimmedName = name.trim();
-    if (!trimmedName) return;
+    if (!trimmedName || !activeListId) return;
 
     const tempId = `temp-${Date.now()}`;
     const optimisticItem: Item = {
       id: tempId,
       name: trimmedName,
       quantity: quantity.trim() || null,
+      note: note.trim() || null,
+      url: url.trim() || null,
+      imageUrl: imageUrl.trim() || null,
       categoryId: null,
       categoryDef: null,
       isPurchased: false,
@@ -169,15 +276,19 @@ export default function ShoppingListPage() {
       purchaser: null,
     };
     setItems((prev) => [optimisticItem, ...prev]);
-    setName("");
-    setQuantity("");
+    setName(""); setQuantity(""); setNote(""); setUrl(""); setImageUrl(""); setShowDetails(false);
     setError("");
-    setAdding(true);
     try {
       const res = await fetch("/api/family/shopping-list", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmedName, quantity: optimisticItem.quantity ?? undefined }),
+        body: JSON.stringify({
+          listId: activeListId, name: trimmedName,
+          quantity: optimisticItem.quantity ?? undefined,
+          note: optimisticItem.note ?? undefined,
+          url: optimisticItem.url ?? undefined,
+          imageUrl: optimisticItem.imageUrl ?? undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -190,8 +301,6 @@ export default function ShoppingListPage() {
     } catch {
       setItems((prev) => prev.filter((i) => i.id !== tempId));
       setError("Network error");
-    } finally {
-      setAdding(false);
     }
   }
 
@@ -255,11 +364,12 @@ export default function ShoppingListPage() {
   }
 
   async function clearBought() {
+    if (!activeListId) return;
     const previous = items;
     setItems((prev) => prev.filter((i) => !i.isPurchased));
     setClearing(true);
     try {
-      const res = await fetch("/api/family/shopping-list", { method: "DELETE" });
+      const res = await fetch(`/api/family/shopping-list?listId=${activeListId}`, { method: "DELETE" });
       if (!res.ok) setItems(previous);
     } catch (e) {
       console.error(e);
@@ -269,19 +379,16 @@ export default function ShoppingListPage() {
     }
   }
 
-  // Used by the "Recent" chips and the category browse panel — same POST as
-  // the manual add form, just skipping the quantity field.
   async function quickAdd(itemName: string) {
-    if (!itemName.trim() || adding) return;
+    if (!itemName.trim() || !activeListId) return;
     const tempId = `temp-${Date.now()}`;
-    setItems((prev) => [{ id: tempId, name: itemName, quantity: null, categoryId: null, categoryDef: null, isPurchased: false, addedBy: "", adder: null, purchaser: null }, ...prev]);
-    setAdding(true);
+    setItems((prev) => [{ id: tempId, name: itemName, quantity: null, note: null, url: null, imageUrl: null, categoryId: null, categoryDef: null, isPurchased: false, addedBy: "", adder: null, purchaser: null }, ...prev]);
     setError("");
     try {
       const res = await fetch("/api/family/shopping-list", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: itemName }),
+        body: JSON.stringify({ listId: activeListId, name: itemName }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -294,8 +401,6 @@ export default function ShoppingListPage() {
     } catch {
       setItems((prev) => prev.filter((i) => i.id !== tempId));
       setError("Network error");
-    } finally {
-      setAdding(false);
     }
   }
 
@@ -331,7 +436,7 @@ export default function ShoppingListPage() {
       body: JSON.stringify({ label }),
     });
     if (!res.ok) setCategories(previous);
-    else fetchItems();
+    else if (activeListId) fetchItems(activeListId);
   }
 
   async function moveCategory(id: string, direction: "up" | "down") {
@@ -351,27 +456,28 @@ export default function ShoppingListPage() {
   }
 
   async function shareList() {
+    if (!activeListId) return;
     setShareLoading(true);
     try {
-      let url = shareUrl;
-      if (!url) {
-        const res = await fetch("/api/family/shopping-list/share", { method: "POST" });
+      let urlOut = shareUrl;
+      if (!urlOut) {
+        const res = await fetch(`/api/family/lists/${activeListId}/share`, { method: "POST" });
         const data = await res.json();
         if (!res.ok) return;
-        url = data.url;
-        setShareUrl(url);
+        urlOut = data.url;
+        setShareUrl(urlOut);
       }
-      if (!url) return;
+      if (!urlOut) return;
       if (typeof navigator !== "undefined" && "share" in navigator) {
         try {
-          await navigator.share({ title: "Our shopping list", url });
+          await navigator.share({ title: "Our shopping list", url: urlOut });
           return;
         } catch {
           // User cancelled the native share sheet, or it's not fully supported — fall back to copy.
         }
       }
       if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(urlOut);
         setShareFlash("Link copied!");
         setTimeout(() => setShareFlash(null), 2000);
       }
@@ -381,9 +487,10 @@ export default function ShoppingListPage() {
   }
 
   async function turnOffShare() {
+    if (!activeListId) return;
     setShareLoading(true);
     try {
-      await fetch("/api/family/shopping-list/share", { method: "DELETE" });
+      await fetch(`/api/family/lists/${activeListId}/share`, { method: "DELETE" });
       setShareUrl(null);
     } finally {
       setShareLoading(false);
@@ -428,6 +535,7 @@ export default function ShoppingListPage() {
     );
   }
 
+  const activeList = lists.find((l) => l.id === activeListId);
   const pending = items.filter(i => !i.isPurchased);
   const purchased = items.filter(i => i.isPurchased);
 
@@ -444,7 +552,7 @@ export default function ShoppingListPage() {
       headerExtra={
         <button
           onClick={shareList}
-          disabled={shareLoading}
+          disabled={shareLoading || !activeListId}
           aria-label="Share list"
           style={{ background: "none", border: "none", cursor: shareLoading ? "not-allowed" : "pointer", color: "#4B5563", display: "flex", padding: 4, position: "relative" }}
         >
@@ -457,6 +565,60 @@ export default function ShoppingListPage() {
         </button>
       }
     >
+      {/* List switcher */}
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2, marginBottom: 10 }}>
+        {lists.map((l) => (
+          <button
+            key={l.id}
+            onClick={() => setActiveListId(l.id)}
+            style={{
+              flexShrink: 0, whiteSpace: "nowrap", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
+              border: l.id === activeListId ? "none" : "1px solid #E4E3DE",
+              background: l.id === activeListId ? "#1C1C28" : "#fff",
+              color: l.id === activeListId ? "#fff" : "#4B5563",
+            }}
+          >
+            {l.name}
+          </button>
+        ))}
+        <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed #C7CDF5", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "#4A5FD5", cursor: "pointer", fontFamily: FONT }}>
+          + New list
+        </button>
+      </div>
+
+      {showNewList && (
+        <form onSubmit={createList} style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          <input
+            value={newListName}
+            onChange={(e) => setNewListName(e.target.value)}
+            placeholder="e.g. IKEA, weekly groceries…"
+            style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid #E4E3DE", borderRadius: 10, padding: "9px 12px", outline: "none" }}
+          />
+          <button type="submit" disabled={addingList || !newListName.trim()} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "#1C1C28", border: "none", borderRadius: 10, padding: "0 16px", cursor: addingList || !newListName.trim() ? "not-allowed" : "pointer", opacity: addingList || !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
+            Create
+          </button>
+        </form>
+      )}
+
+      <button
+        onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetchMembers(); }}
+        style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#4A5FD5", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}
+      >
+        <IcSettings /> {activeList?.visibleToAll ? "Everyone can see this list" : "Only some people can see this list"}
+      </button>
+
+      {showAccessPanel && activeList && (
+        <ListAccessPanel
+          listName={activeList.name}
+          visibleToAll={activeList.visibleToAll}
+          memberIds={activeList.memberIds}
+          members={members}
+          canEditAccess={canEditAccess}
+          onRename={renameList}
+          onToggleVisibleToAll={toggleVisibleToAll}
+          onToggleMember={toggleMember}
+        />
+      )}
 
       {shareUrl && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, background: "#EEF0FC", border: "1px solid #C7CDF5", borderRadius: 14, padding: "10px 14px", marginBottom: 16, fontSize: 12.5, color: "#3A4FC5" }}>
@@ -469,7 +631,7 @@ export default function ShoppingListPage() {
 
       {/* Add item form */}
       <form onSubmit={addItem} style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-        <div style={{ display: "flex", gap: 8, marginBottom: error ? 10 : 0 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           <input
             value={name}
             onChange={e => setName(e.target.value)}
@@ -484,7 +646,7 @@ export default function ShoppingListPage() {
           />
           <button
             type="submit"
-            disabled={!name.trim()}
+            disabled={!name.trim() || !activeListId}
             style={{
               width: 48, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
               background: "#1C1C28", color: "#fff", border: "none", borderRadius: 12,
@@ -494,6 +656,19 @@ export default function ShoppingListPage() {
             <IcPlus />
           </button>
         </div>
+
+        <button type="button" onClick={() => setShowDetails((v) => !v)} style={{ background: "none", border: "none", color: "#4A5FD5", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4 }}>
+          <IcChevron open={showDetails} /> Note, link or picture
+        </button>
+
+        {showDetails && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (e.g. brand, size…)" style={detailInputStyle} />
+            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Link (optional)" style={detailInputStyle} />
+            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL (optional)" style={detailInputStyle} />
+          </div>
+        )}
+
         {error && <div style={{ fontSize: 13, color: "#C44444", marginTop: 10 }}>{error}</div>}
         <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 8 }}>
           Items sort into aisles automatically — change one's category below and we'll remember it next time.
@@ -504,12 +679,7 @@ export default function ShoppingListPage() {
       {recent.length > 0 && (
         <div style={{ marginBottom: 14, overflowX: "auto", display: "flex", gap: 8, paddingBottom: 2 }}>
           {recent.slice(0, 10).map((r) => (
-            <button
-              key={r.name}
-              onClick={() => quickAdd(r.name)}
-              disabled={adding}
-              style={chipStyle}
-            >
+            <button key={r.name} onClick={() => quickAdd(r.name)} style={chipStyle}>
               {r.icon} {r.name}
             </button>
           ))}
@@ -590,7 +760,7 @@ export default function ShoppingListPage() {
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {CATALOG_ITEMS[slug].map((itemName) => (
-                    <button key={itemName} onClick={() => quickAdd(itemName)} disabled={adding} style={chipStyle}>
+                    <button key={itemName} onClick={() => quickAdd(itemName)} style={chipStyle}>
                       + {itemName}
                     </button>
                   ))}
@@ -684,7 +854,7 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
 }) {
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 12,
+      display: "flex", alignItems: "flex-start", gap: 12,
       borderTop: isFirst ? "none" : "1px solid #F0F3F8",
       padding: "12px 0",
     }}>
@@ -692,7 +862,7 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
         onClick={onToggle}
         aria-label={item.isPurchased ? "Mark as not bought" : "Mark as bought"}
         style={{
-          width: 24, height: 24, borderRadius: "50%", flexShrink: 0, cursor: "pointer",
+          width: 24, height: 24, borderRadius: "50%", flexShrink: 0, marginTop: 1, cursor: "pointer",
           border: item.isPurchased ? "none" : "2px solid #E4E3DE",
           background: item.isPurchased ? "#2A9D6F" : "transparent",
           display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
@@ -703,6 +873,11 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
         )}
       </button>
 
+      {item.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "#F0F3F8" }} />
+      )}
+
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 14, fontWeight: 600,
@@ -711,6 +886,7 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
         }}>
           {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
         </div>
+        {item.note && <div style={{ fontSize: 11.5, color: "#9CA3AF", marginTop: 2 }}>{item.note}</div>}
         {!item.isPurchased && (
           <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
             <select
@@ -728,6 +904,12 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
         )}
       </div>
 
+      {item.url && (
+        <a href={item.url} target="_blank" rel="noreferrer" aria-label="Open link" style={{ color: "#4A5FD5", padding: 6, flexShrink: 0, display: "flex" }}>
+          <IcLink />
+        </a>
+      )}
+
       <button
         onClick={onRemove}
         aria-label="Remove item"
@@ -743,6 +925,10 @@ const chipStyle: React.CSSProperties = {
   flexShrink: 0, whiteSpace: "nowrap", background: "#fff", border: "1.5px solid #E4E3DE",
   borderRadius: 999, padding: "7px 13px", fontSize: 13, fontWeight: 600, color: "#0F172A",
   cursor: "pointer", fontFamily: FONT,
+};
+
+const detailInputStyle: React.CSSProperties = {
+  padding: "9px 12px", borderRadius: 10, border: "1.5px solid #E4E3DE", fontSize: 13, fontFamily: FONT, outline: "none", boxSizing: "border-box",
 };
 
 function reorderBtnStyle(disabled: boolean): React.CSSProperties {

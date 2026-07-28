@@ -13,6 +13,9 @@ type Item = {
   id: string;
   name: string;
   quantity: string | null;
+  note: string | null;
+  url: string | null;
+  imageUrl: string | null;
   categoryId: string | null;
   categoryDef: { id: string; label: string; icon: string; sortOrder: number } | null;
   isPurchased: boolean;
@@ -20,13 +23,14 @@ type Item = {
 
 function IcPlus() { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>; }
 function IcTrash() { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>; }
+function IcLink() { return <svg width={13} height={13} viewBox="0 0 24 24" {...STR}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>; }
 
 function sortByName(items: Item[]): Item[] {
   return [...items].sort((a, b) => a.name.localeCompare(b.name, "sv", { sensitivity: "base" }));
 }
 
 // Public, no-login shopping list view for the "share this list" link — see
-// /api/family/shopping-list/share and /api/public/shopping-list/[token].
+// /api/family/lists/[id]/share and /api/public/shopping-list/[token].
 // Intentionally has no app chrome (no hamburger/bottom nav/session) since
 // the visitor may not have — or want — an account at all.
 export default function PublicShoppingListPage({ params }: { params: { token: string } }) {
@@ -69,7 +73,7 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
     if (!trimmedName) return;
 
     const tempId = `temp-${Date.now()}`;
-    setItems((prev) => [{ id: tempId, name: trimmedName, quantity: quantity.trim() || null, categoryId: null, categoryDef: null, isPurchased: false }, ...prev]);
+    setItems((prev) => [{ id: tempId, name: trimmedName, quantity: quantity.trim() || null, note: null, url: null, imageUrl: null, categoryId: null, categoryDef: null, isPurchased: false }, ...prev]);
     setName("");
     setQuantity("");
     try {
@@ -226,17 +230,29 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
 
 function Row({ item, isFirst, onToggle, onRemove }: { item: Item; isFirst: boolean; onToggle: () => void; onRemove: () => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: isFirst ? "none" : "1px solid #F0F3F8", padding: "12px 0" }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, borderTop: isFirst ? "none" : "1px solid #F0F3F8", padding: "12px 0" }}>
       <button
         onClick={onToggle}
         aria-label={item.isPurchased ? "Mark as not bought" : "Mark as bought"}
-        style={{ width: 24, height: 24, borderRadius: "50%", flexShrink: 0, cursor: "pointer", border: item.isPurchased ? "none" : "2px solid #E4E3DE", background: item.isPurchased ? "#2A9D6F" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}
+        style={{ width: 24, height: 24, borderRadius: "50%", flexShrink: 0, marginTop: 1, cursor: "pointer", border: item.isPurchased ? "none" : "2px solid #E4E3DE", background: item.isPurchased ? "#2A9D6F" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}
       >
         {item.isPurchased && <svg width={14} height={14} viewBox="0 0 24 24" {...STR} stroke="#fff"><polyline points="20 6 9 17 4 12" /></svg>}
       </button>
-      <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: item.isPurchased ? "#9CA3AF" : "#0F172A", textDecoration: item.isPurchased ? "line-through" : "none" }}>
-        {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
+      {item.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "#F0F3F8" }} />
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: item.isPurchased ? "#9CA3AF" : "#0F172A", textDecoration: item.isPurchased ? "line-through" : "none" }}>
+          {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
+        </div>
+        {item.note && <div style={{ fontSize: 11.5, color: "#9CA3AF", marginTop: 2 }}>{item.note}</div>}
       </div>
+      {item.url && (
+        <a href={item.url} target="_blank" rel="noreferrer" aria-label="Open link" style={{ color: "#4A5FD5", padding: 6, flexShrink: 0, display: "flex" }}>
+          <IcLink />
+        </a>
+      )}
       <button onClick={onRemove} aria-label="Remove item" style={{ background: "none", border: "none", cursor: "pointer", color: "#C0C5D0", padding: 6, flexShrink: 0 }}>
         <IcTrash />
       </button>

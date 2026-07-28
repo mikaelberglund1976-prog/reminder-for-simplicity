@@ -3,26 +3,36 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rememberCategory } from "@/lib/shoppingCategories";
+import { userCanAccessList, getListMemberIds, type HouseholdRoleStr } from "@/lib/lists";
+
+async function accessibleItem(userId: string, itemId: string) {
+  const membership = await prisma.householdMember.findFirst({ where: { userId } });
+  if (!membership) return { membership: null, item: null } as const;
+
+  const item = await prisma.shoppingListItem.findUnique({ where: { id: itemId } });
+  if (!item || item.householdId !== membership.householdId || !item.listId) return { membership, item: null } as const;
+
+  const list = await prisma.list.findUnique({ where: { id: item.listId } });
+  if (!list) return { membership, item: null } as const;
+  const memberIds = await getListMemberIds(list.id);
+  if (!userCanAccessList(list, userId, membership.role as HouseholdRoleStr, memberIds)) return { membership, item: null } as const;
+
+  return { membership, item } as const;
+}
 
 // PATCH /api/family/shopping-list/[id]
-// Body: { isPurchased?: boolean, name?: string, quantity?: string | null, categoryId?: string | null }
+// Body: { isPurchased?, name?, quantity?, note?, url?, imageUrl?, categoryId? }
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const membership = await prisma.householdMember.findFirst({
-      where: { userId: session.user.id },
-    });
+    const { membership, item } = await accessibleItem(session.user.id, params.id);
     if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
-
-    const item = await prisma.shoppingListItem.findUnique({ where: { id: params.id } });
-    if (!item || item.householdId !== membership.householdId) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+    if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const body = await req.json().catch(() => ({}));
-    const { isPurchased, name, quantity, categoryId } = body ?? {};
+    const { isPurchased, name, quantity, note, url, imageUrl, categoryId } = body ?? {};
 
     const data: Record<string, unknown> = {};
     if (typeof isPurchased === "boolean") {
@@ -32,9 +42,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
     if (typeof name === "string" && name.trim()) data.name = name.trim();
     if (quantity !== undefined) data.quantity = quantity?.toString().trim() || null;
+    if (note !== undefined) data.note = note?.toString().trim() || null;
+    if (url !== undefined) data.url = url?.toString().trim() || null;
+    if (imageUrl !== undefined) data.imageUrl = imageUrl?.toString().trim() || null;
     if (categoryId !== undefined) {
-      // null is a valid choice (explicitly uncategorized); a non-empty
-      // string must belong to this household.
       if (categoryId !== null) {
         const owned = await prisma.shoppingCategoryDef.findUnique({ where: { id: categoryId } });
         if (!owned || owned.householdId !== membership.householdId) {
@@ -42,7 +53,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         }
       }
       data.categoryId = categoryId;
-      // Remember the household's manual choice against the (possibly updated) name.
       await rememberCategory(membership.householdId, (typeof name === "string" && name.trim()) ? name : item.name, categoryId);
     }
 
@@ -69,15 +79,9 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const membership = await prisma.householdMember.findFirst({
-      where: { userId: session.user.id },
-    });
+    const { membership, item } = await accessibleItem(session.user.id, params.id);
     if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
-
-    const item = await prisma.shoppingListItem.findUnique({ where: { id: params.id } });
-    if (!item || item.householdId !== membership.householdId) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+    if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     await prisma.shoppingListItem.delete({ where: { id: params.id } });
 

@@ -45,6 +45,9 @@ model User {
   wishlistItemsAdded    WishlistItem[] @relation("WishlistAdded")
   wishlistItemsReserved WishlistItem[] @relation("WishlistReserved")
   wishlistItemsPurchased WishlistItem[] @relation("WishlistPurchased")
+  listsOwned    List[] @relation("ListOwner")
+  listsCreated  List[] @relation("ListCreated")
+  listMemberships ListMember[]
 
   @@map("users")
 }
@@ -52,8 +55,16 @@ model User {
 model ShoppingListItem {
   id           String    @id @default(cuid())
   householdId  String
+  // 2026-07-27: which List (kind SHOPPING) this item belongs to, now that a
+  // household can have more than one shopping list. Nullable only so the
+  // additive migration doesn't fail on existing rows — backfill-lists.js
+  // fills it in, and app code always sets it on create.
+  listId       String?
   name         String
   quantity     String?
+  note         String?
+  url          String?
+  imageUrl     String?
   // Deprecated 2026-07-27: replaced by categoryId/categoryDef below, which
   // supports per-household custom categories. Left in place (unused by app
   // code) so the household-scoped backfill script has a source column to
@@ -69,6 +80,7 @@ model ShoppingListItem {
   updatedAt    DateTime  @updatedAt
 
   household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  list         List?     @relation(fields: [listId], references: [id], onDelete: Cascade)
   adder        User      @relation("ShoppingListAdded", fields: [addedBy], references: [id], onDelete: Cascade)
   purchaser    User?     @relation("ShoppingListPurchased", fields: [purchasedBy], references: [id], onDelete: SetNull)
   categoryDef  ShoppingCategoryDef? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -127,6 +139,10 @@ model WishlistItem {
   id           String         @id @default(cuid())
   householdId  String
   childId      String         // the child this wish belongs to
+  // 2026-07-27: which List (kind WISHLIST) this item belongs to, now that a
+  // child can have more than one wishlist (e.g. "Birthday", "Christmas").
+  // Nullable for the same additive-migration reason as ShoppingListItem.listId.
+  listId       String?
   addedBy      String         // usually the same as childId; kept separate in case an adult adds on the child's behalf later
   name         String
   url          String?
@@ -143,12 +159,62 @@ model WishlistItem {
   updatedAt    DateTime       @updatedAt
 
   household    Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  list         List?          @relation(fields: [listId], references: [id], onDelete: Cascade)
   child        User           @relation("WishlistOwner", fields: [childId], references: [id], onDelete: Cascade)
   adder        User           @relation("WishlistAdded", fields: [addedBy], references: [id], onDelete: Cascade)
   reserver     User?          @relation("WishlistReserved", fields: [reservedBy], references: [id], onDelete: SetNull)
   purchaser    User?          @relation("WishlistPurchased", fields: [purchasedBy], references: [id], onDelete: SetNull)
 
   @@map("wishlist_items")
+}
+
+// 2026-07-27: generalized "a named list a household can share with everyone
+// or just some members" — powers both multiple shopping lists (kind
+// SHOPPING, ownerId null) and multiple per-child wishlists (kind WISHLIST,
+// ownerId = the child). Who can see a list:
+//   - the list's owner (a child always sees their own wishlists), or
+//   - the list's creator, or
+//   - an OWNER/PARENT household member (parental oversight), or
+//   - visibleToAll = true, or
+//   - an explicit ListMember row.
+// Only OWNER/PARENT can change visibleToAll/members — see lib/lists.ts.
+model List {
+  id           String   @id @default(cuid())
+  householdId  String
+  kind         ListKind
+  name         String
+  ownerId      String?  // WISHLIST only: the child this list belongs to
+  visibleToAll Boolean  @default(true)
+  shareToken   String?  @unique // public no-login link, SHOPPING lists only
+  createdBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  household     Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  owner         User?     @relation("ListOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  creator       User      @relation("ListCreated", fields: [createdBy], references: [id], onDelete: Cascade)
+  members       ListMember[]
+  shoppingItems ShoppingListItem[]
+  wishlistItems WishlistItem[]
+
+  @@map("lists")
+}
+
+model ListMember {
+  id     String @id @default(cuid())
+  listId String
+  userId String
+
+  list   List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, userId])
+  @@map("list_members")
+}
+
+enum ListKind {
+  SHOPPING
+  WISHLIST
 }
 
 model PasswordResetToken {
@@ -305,6 +371,7 @@ model Household {
   shoppingCategoryMemory ShoppingCategoryMemory[]
   shoppingCategoryDefs ShoppingCategoryDef[]
   wishlistItems WishlistItem[]
+  lists List[]
 
   @@map("households")
 }

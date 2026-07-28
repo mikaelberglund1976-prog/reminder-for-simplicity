@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { WishlistStatus } from "@prisma/client";
+import { userCanAccessList, getListMemberIds, type HouseholdRoleStr } from "@/lib/lists";
 
 const ADULT_ROLES = ["OWNER", "PARENT", "ADULT"];
 const VALID_STATUSES: WishlistStatus[] = ["WANTED", "RESERVED", "PURCHASED"];
@@ -25,6 +26,21 @@ function toChildSafeItem(item: {
   };
 }
 
+async function accessibleItem(userId: string, itemId: string) {
+  const membership = await prisma.householdMember.findFirst({ where: { userId } });
+  if (!membership) return { membership: null, item: null } as const;
+
+  const item = await prisma.wishlistItem.findUnique({ where: { id: itemId } });
+  if (!item || item.householdId !== membership.householdId || !item.listId) return { membership, item: null } as const;
+
+  const list = await prisma.list.findUnique({ where: { id: item.listId } });
+  if (!list) return { membership, item: null } as const;
+  const memberIds = await getListMemberIds(list.id);
+  if (!userCanAccessList(list, userId, membership.role as HouseholdRoleStr, memberIds)) return { membership, item: null } as const;
+
+  return { membership, item } as const;
+}
+
 // PATCH /api/family/wishlist/[id]
 // Body from the owning child: { name?, url?, price?, imageUrl?, note? } — never status.
 // Body from an adult: all of the above, plus { status?: "WANTED" | "RESERVED" | "PURCHASED" }.
@@ -34,13 +50,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const membership = await prisma.householdMember.findFirst({ where: { userId: session.user.id } });
+    const { membership, item } = await accessibleItem(session.user.id, params.id);
     if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
-
-    const item = await prisma.wishlistItem.findUnique({ where: { id: params.id } });
-    if (!item || item.householdId !== membership.householdId) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+    if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const isOwner = item.childId === session.user.id;
     const isAdult = ADULT_ROLES.includes(membership.role);
@@ -110,19 +122,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-// DELETE /api/family/wishlist/[id] — owning child or any adult in the household can remove a wish.
+// DELETE /api/family/wishlist/[id] — owning child or any adult with access to the list can remove a wish.
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const membership = await prisma.householdMember.findFirst({ where: { userId: session.user.id } });
+    const { membership, item } = await accessibleItem(session.user.id, params.id);
     if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
-
-    const item = await prisma.wishlistItem.findUnique({ where: { id: params.id } });
-    if (!item || item.householdId !== membership.householdId) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+    if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const isOwner = item.childId === session.user.id;
     const isAdult = ADULT_ROLES.includes(membership.role);
