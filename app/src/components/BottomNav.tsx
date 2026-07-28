@@ -15,16 +15,22 @@ const BADGE_POLL_MS = 20000;
 function IcBell()  { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><path d="M9 17H5a2 2 0 0 0 1.66-.9L8 14V9a4 4 0 0 1 8 0v5l1.34 2.1A2 2 0 0 0 19 17h-4"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>; }
 function IcCart()  { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 6H5.6"/></svg>; }
 function IcGift()  { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><rect x="3" y="8" width="18" height="4"/><rect x="4" y="12" width="16" height="9"/><path d="M12 8v13M12 8c-1.5-3-5-3-5-1s2 1 5 1zM12 8c1.5-3 5-3 5-1s-2 1-5 1z"/></svg>; }
+function IcCalendar() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
 
+// 4 tabs (added Calendar 2026-07-28, on top of the earlier 3-tab discipline
+// noted in COMPETITOR_ANALYSIS_BEST4FAMILY.md — a deliberate exception, not a
+// reversal of it). Each tab still gets an equal flex share below, so this
+// list is the only place tab count/order needs to change.
 const TABS = [
   {
     key: "reminders", href: "/dashboard", label: "Reminders", icon: IcBell,
-    // Anything under /dashboard that isn't the shopping list or wishlist counts as
-    // "Reminders" — covers the root list plus create/edit reminder screens.
-    match: (p: string) => p.startsWith("/dashboard") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/wishlist"),
+    // Anything under /dashboard that isn't shopping list / wishlist / calendar counts
+    // as "Reminders" — covers the root list plus create/edit reminder screens.
+    match: (p: string) => p.startsWith("/dashboard") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/wishlist") && !p.startsWith("/dashboard/calendar"),
   },
   { key: "shopping-list", href: "/dashboard/family/shopping-list", label: "Shopping list", icon: IcCart, match: (p: string) => p.startsWith("/dashboard/family/shopping-list") },
   { key: "wishlist", href: "/dashboard/wishlist", label: "Wishlist", icon: IcGift, match: (p: string) => p.startsWith("/dashboard/wishlist") },
+  { key: "calendar", href: "/dashboard/calendar", label: "Calendar", icon: IcCalendar, match: (p: string) => p.startsWith("/dashboard/calendar") },
 ];
 
 export default function BottomNav() {

@@ -4,6 +4,7 @@
 **Uppdaterad igen:** 2026-07-28 – kategorihantering/tight layout/optimistisk UI, och flera listor per hushåll med åtkomststyrning, tillagda under Fas 1.5. "Flera separata listor per hushåll", som tidigare stod som medvetet inte byggd (se `TODO.md` 4i), är nu klar.
 **Uppdaterad igen:** 2026-07-28 – kandidatfunktioner tillagda under Fas 1.5/2/3/Parkerat efter en konkurrentanalys av Best4Family (se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` och `TODO.md` punkt 9). Inget av detta är byggt eller bestämt än – markerat `(Best4Family-analys 2026-07-28)` nedan.
 **Uppdaterad igen:** 2026-07-28 – tre av kandidaterna avbockade: sekretess-chip, dataexport och broadcast-notis byggda, "vad händer närmast" visade sig redan finnas (IQ Spotlight). Se `TODO.md` punkt 10.
+**Uppdaterad igen:** 2026-07-28 – **Kalendervy** tillagd under Fas 2: en läsvy byggd på data som redan finns (`Reminder.date`/`recurrence`, sysslornas datum). Extern synk (Google/Apple) tas som ett separat, senare steg – se Fas 3.
 
 ---
 
@@ -93,6 +94,7 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] **Broadcast-notis från admin till hela familjen.** **Byggt 2026-07-28**, se `TODO.md` punkt 10.
 - [ ] **Admin-switch per funktionstyp** ("Tillåt medlemmar att skapa X") *(Best4Family-analys 2026-07-28 – utökning av roll-modellen)*
 - [ ] **Måltidsplanerare kopplad till inköpslistan** *(Best4Family-analys 2026-07-28 – se även Parkerade idéer nedan, "Måltidsplanering")*
+- [ ] **Kalendervy (2026-07-28, beslutat)** – månadsvy i appen som visar reminders och sysslor på rätt datum, byggd direkt på befintlig data (`Reminder.date` + `recurrence`: ONCE/DAILY/WEEKLY/MONTHLY/YEARLY, sysslornas `choreRecurrenceDays`). Ingen schemaändring, ingen extern synk – bara en ny läs/klick-vy ovanpå det som redan finns. Extern kalendersynk (Google/Apple) är ett medvetet separat, senare steg, se Fas 3.
 
 ---
 
@@ -103,7 +105,7 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [ ] API för tredjeparts-integrationer
 - [x] Familje/team-konton *(byggt tidigare än planerat – se Fas 1.5)*
 - [ ] Mobilapp (React Native)
-- [ ] Google/Apple Calendar sync
+- [ ] Google/Apple Calendar sync *(nästa steg efter Fas 2:s in-app kalendervy – kräver OAuth mot Google/Apple + tvåvägs-synk, se `ROADMAP.md` Fas 2)*
 - [ ] Affiliate-program
 
 ---
