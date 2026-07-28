@@ -260,7 +260,7 @@ Uppföljning direkt efter 4b.18: Mikael gick igenom marknadsundersökningen och 
 - Profile → ny "Calendar sync"-sektion: "Get my calendar link"-knapp, kopiera-länk, "Generate a new link" för att återkalla en tidigare delad länk.
 - **Gratis, ingen Google/Microsoft-inloggning krävs** – matchar Mikaels "måste vara gratis"-linje för hela den här beställningen. En riktig **två-vägs** synk (skapa/redigera direkt i Google Calendar och få det tillbaka hit) skulle kräva OAuth – se `ROADMAP.md`-avsnittet om kostnad.
 
-**Databasändring:** `TRAINING`/`SCHOOL` tillagda i `ReminderCategory`-enumen, `User.calendarFeedToken` (nullable, unik) tillagd. Additivt, ingen backfill behövs. **Kräver `npx prisma generate && npx prisma db push` lokalt** innan något av detta fungerar i produktion — samma kända sandbox-begränsning som tidigare denna sommar.
+**Databasändring:** `TRAINING`/`SCHOOL` tillagda i `ReminderCategory`-enumen, `User.calendarFeedToken` (nullable, unik) tillagd. Additivt, ingen backfill behövs. `npx prisma generate && npx prisma db push` körda lokalt, kod deployad till Vercel och verifierad av Mikael (2026-07-28).
 
 **Sidofynd (inte relaterat till denna beställning):** `tsc --noEmit` flaggar ett förbefintligt typfel i `api/reminders/[id]/route.ts` (PATCH-handlern, `householdId`-hanteringen) som **inte** orsakades av dagens ändringar (verifierat med `git diff` – den enda ändringen i den filen är kategori-enumen). Inte akut, inte fixat i denna omgång, men värt att känna till.
 
