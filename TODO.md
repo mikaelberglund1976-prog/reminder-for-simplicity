@@ -7,6 +7,8 @@
 **Uppdaterad igen:** 2026-07-28 – konkurrentanalys av Best4Family (best4family.com) genomförd på begäran: design/UX, funktionsgap och en djupdykning i deras privacy-sektion. Inga kodändringar gjorda. Fullständig analys i `COMPETITOR_ANALYSIS_BEST4FAMILY.md`, kondenserad handlingslista i ny punkt 9 nedan och nya rader i `ROADMAP.md`.
 **Uppdaterad igen:** 2026-07-28 – Mikael körde `npm run db:push` + `backfill-shopping-categories.js` + `backfill-lists.js` lokalt (se punkt 6). Allt gick igenom rent ("categories ready", "lists ready", inga fel). Kategorihantering, flera listor per hushåll och delningslänk på den nya listmodellen (4k/4l) är nu redo att fungera i produktion – klicktest återstår, se punkt 4l och punkt 7.
 **Uppdaterad igen:** 2026-07-28 – fem "quick wins" från Best4Family-genomgången byggda i en omgång: PIN/Google-buggen fixad, sekretess-chip på reminders, dataexport (JSON), broadcast-notis till familjen, och en genomgång som visade att "vad händer närmast"-önskemålet redan är löst (IQ Spotlight + Needs your attention). Se ny punkt 10 nedan. `tsc --noEmit` kört rent. **Kräver ingen ny `db:push`** – ingen schemaändring, bara ny kod.
+**Uppdaterad igen:** 2026-07-28 – wishlist-bugg felsökt och fixad (tre orsaker, se punkt 11), plus en formell körordning satt upp (punkt 12) som täcker allt kvarstående arbete i prioritetsordning med beroenden markerade.
+**Uppdaterad igen:** 2026-07-28 – de tre senaste deployen (`ae01843`, `a2f37f3`, `2d3ef0e`) failade tyst på Vercel (byggfel, inte synligt förrän Mikael kollade Vercel-loggen). Orsak + fix i punkt 13 nedan. Körordningens steg 1 (`git push`) gäller fortfarande, men pushar nu även denna fix.
 
 ---
 
@@ -214,4 +216,60 @@ Byggde fem av quick win-kandidaterna från punkt 9 i en omgång. `tsc --noEmit` 
 
 **Kvar innan detta är klart:**
 - [ ] Klicktesta alla fem skarpt: byt lösenord-vy på ett Google-PIN-konto, sekretess-chip i ett hushåll med flera medlemmar, ladda ner exporten och kika på innehållet, skicka en broadcast och verifiera att den kommer fram (och att avsändaren själv inte får den, och att barn inte får den).
-- [ ] Committa och pusha (görs direkt efter denna sammanfattning).
+- [x] Committat. **Pusha kvarstår**, se punkt 12.
+
+## 11. Wishlist-bugg: "kan inte skapa kategorier och önskemål" (2026-07-28)
+
+Rapporterad bugg. Grävde fram tre separata orsaker, alla fixade:
+
+- [x] **Huvudorsak:** en önskelista skapades bara automatiskt när barnet *självt* besökte sidan första gången. Om en förälder öppnade Wishlist innan barnet någonsin loggat in där fanns ingen lista att visa – "No child profiles yet" visades trots att barnprofilen fanns. Fix: `/api/family/lists` (GET) skapar nu en standard-önskelista åt varje barn i hushållet, oavsett vem som besöker sidan först.
+- [x] **Riktigt UI-gap:** `AdultWishlist` (dashboard/wishlist/page.tsx) saknade helt en "+ New list"-knapp – bara barnvyn hade den, trots att backend redan stödde att en förälder skapar en lista åt ett barn (`ownerId`-param på `POST /api/family/lists`). Tillagd.
+- [x] **Sidoupptäckt under felsökningen:** ingen möjlighet fanns att redigera en befintlig barnprofil (namn/email/PIN) – varken backend eller UI, bekräftat att `/api/family/child-profiles` bara hade GET/POST, ingen PATCH. Byggt: `PATCH /api/family/child-profiles/[id]` + "Edit"-knapp per barn i Profile → Household → Child profiles.
+
+`tsc --noEmit` kört rent. Committat (`2d3ef0e`). **Inte klicktestat än.**
+
+## 12. Körordning
+
+Konkret exekveringsordning, satt 2026-07-28 utifrån läget efter wishlist-bugg-fixen. Beroenden är markerade – gör dem i ordning, hoppa inte över ett steg som ett senare steg bygger på.
+
+**Steg 1 – måste göras nu (beroenden, blockerar allt klicktestande):**
+1. [ ] `git push` – tre commits väntar lokalt (`ae01843`…`2d3ef0e` quick wins + wishlist-fix, plus en fjärde för Vercel-byggfelet, se punkt 13). Sandboxen kan committa men inte pusha (ingen GitHub-auth). **Kolla Vercel-dashboarden efter push** att deployen faktiskt blir grön ("Ready") – de tre senaste blev det inte, se punkt 13.
+
+**Steg 2 – klicktesta allt som byggts men aldrig körts skarpt (kräver steg 1 klart):**
+2. [ ] Wishlist-fixen (punkt 11): förälder ser barnets lista utan att barnet loggat in först, "+ New list" som förälder, "Edit" på en barnprofil.
+3. [ ] De fem quick wins (punkt 10): Google/PIN-vy, sekretess-chip, dataexport, broadcast-notis.
+4. [ ] Resten av punkt 7-listan: glömt lösenord end-to-end, PWA på mobil, hamburgermeny, ny startsida, mobil/webb-vy.
+5. [ ] Multi-lista/åtkomststyrning (4l): andra inköpslista, delning, åtkomstpanel, vara med bild-URL.
+
+**Steg 3 – två beslut som låser upp nästa fas (inget kodas förrän du svarat):**
+6. [ ] Fas 1-beta (bjud in 10 testanvändare) vs. fortsätt bygga Fas 2 – se punkt 8.
+7. [ ] Minimiålder för barnprofiler + vem som samtycker – låser upp Privacy Policy-texten (P0 nedan).
+
+**Steg 4 – P0 inför bred lansering/betalande användare:**
+8. [ ] Riktig Privacy Policy-sida (beror på steg 3.7).
+9. [ ] Självbetjänings-"radera mitt konto permanent" – knappen finns i UI men gör fortfarande ingenting (se PRODUCT_SPEC 4b.17).
+
+**Steg 5 – P1, låg-medel komplexitet, ingen extern blockering:**
+10. [ ] Gästprofiler utan inloggning (mor-/farföräldrar).
+11. [ ] Belöningar kopplat till godkända Sysslor.
+
+**Steg 6 – P2/Fas 2, större jobb, ingen tidspress:**
+12. [ ] Måltidsplanerare kopplad till inköpslistan.
+13. [ ] Admin-switch per funktionstyp.
+14. [ ] Streckkodsskanning, receptimport, butiksläge (kräver telefontest, ej sandbox-görbart).
+15. [ ] Riktigt betalflöde (Stripe) – kräver ditt Stripe-konto + prissättningsbeslut.
+
+**Steg 7 – teknisk skuld, ingen brådska men växande:**
+16. [ ] Next.js 14.2 → 16 (kända CVE:er).
+17. [ ] Prisma 5 → 7 (major).
+
+## 13. Vercel-byggfel: `passwordSchema` inte en giltig Route-export (2026-07-28)
+
+Upptäckt via Vercel-dashboarden (skärmdump från Mikael) – de tre senaste deployen visade "Error" istället för "Ready", trots att `tsc --noEmit` gått igenom rent varje gång. Skillnaden: Next.js App Router kör en egen route-export-validering i `next build` som `tsc --noEmit` inte gör.
+
+- **Felmeddelande (från `get_deployment_build_logs`):** `Type error: Route "src/app/api/auth/register/route.ts" does not match the required types of a Next.js Route. "passwordSchema" is not a valid Route export field.`
+- **Orsak:** en route.ts-fil i App Router får bara exportera HTTP-metod-handlers (`GET`/`POST`/...) plus ett fåtal config-fält (`dynamic`, `revalidate`, `runtime`, m.fl.) – inget annat. `register/route.ts` exporterade sedan tidigare `passwordSchema` (ett Zod-schema) rakt av, och `reset-password/route.ts` importerade det därifrån. Detta bröts troligen av en Next.js 14.2.x-patchversion som skärpte kontrollen (`package.json` pinnar inte en exakt version) – inget i den här sessionens ändringar orsakade det, det bara råkade brytas mellan `2b2eb15` (senast gröna deploy) och `ae01843` (första av de tre röda).
+- [x] **Fix:** `passwordSchema` flyttad till ny `src/lib/passwordSchema.ts`. Både `register/route.ts` och `reset-password/route.ts` importerar därifrån istället. `tsc --noEmit` kört rent. Kunde inte köra en fullständig `next build` i sandboxen för att verifiera (samma kända begränsning som `db push` – `prisma generate` behöver ladda ner en linux-arm64-motor från `binaries.prisma.sh`, blockerat nätverk). Grep-verifierat att ingen annan `route.ts`-fil i projektet exporterar något utöver giltiga HTTP-metoder/config-fält.
+- [ ] **Kvarstår:** `git push`, och **bekräfta i Vercel-dashboarden att deployen blir grön** – detta är den enda verifieringen som faktiskt räknas, se lärdom nedan.
+
+**Lärdom:** `tsc --noEmit` fångar inte allt `next build` fångar. Efter det här bör Vercel-dashboarden (eller `list_deployments`/`get_deployment_build_logs` via Vercel-MCP:n) kollas efter varje push som en del av verifieringssteget, inte bara `tsc`.
