@@ -1,6 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.6 | **Uppdaterad:** 2026-07-28 | **Ägare:** Mikael Berglund
-**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda. 2026-07-27 (sen kväll): 4b.2 uppdaterad med kravet på riktig email, 4b.13 (frivillig PIN-inloggning för vuxna) tillagd, båda klicktestade skarpt. **2026-07-28: 4b.14 (kategorihantering, tight layout, optimistisk UI, varor ligger kvar tills manuell rensning) och 4b.15 (flera listor per hushåll med åtkomststyrning, notis/länk/bild på varor) tillagda efter feedback på hur trögt/klumpigt inköpslistan kändes.**
+**Version:** 2.7 | **Uppdaterad:** 2026-07-28 | **Ägare:** Mikael Berglund
+**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda. 2026-07-27 (sen kväll): 4b.2 uppdaterad med kravet på riktig email, 4b.13 (frivillig PIN-inloggning för vuxna) tillagd, båda klicktestade skarpt. 2026-07-28: 4b.14 (kategorihantering, tight layout, optimistisk UI, varor ligger kvar tills manuell rensning) och 4b.15 (flera listor per hushåll med åtkomststyrning, notis/länk/bild på varor) tillagda efter feedback på hur trögt/klumpigt inköpslistan kändes. **2026-07-28 (kväll): 4b.16 (fem quick wins efter Best4Family-analysen: sekretess-chip, dataexport, broadcast-notis, PIN/Google-bugg fixad) och 4b.17 (kända ej byggda gap, bl.a. att Delete account-knappen bara är en UI-shell) tillagda.**
 
 ---
 
@@ -211,6 +211,24 @@ Uppföljande beställning: både inköpslistan och önskelistan ska kunna vara *
 - **Delning per lista:** dela-länken (`/shop/[token]`) pekar nu på en specifik `List` istället för hela hushållets inköpslista – olika listor kan delas separat, med separata token.
 - **Varor kan nu ha notis, länk och bild:** `note`, `url`, `imageUrl` tillagda på `ShoppingListItem` (fanns redan på `WishlistItem` sedan 4b.9). Visas som liten grå text, en länk-ikon respektive en 32px miniatyrbild i varje rad. **Beslut:** bara bild-URL i v1, ingen riktig filuppladdning (skulle krävt att sätta upp Vercel Blob eller liknande lagring).
 - **Databasändring:** additiv (nya tabeller `lists`/`list_members`, nya nullable kolumner `listId`/`note`/`url`/`imageUrl`). `Household.shoppingListShareToken` och `WishlistItem.childId` finns kvar oanvända/legacy av samma skäl som `category`-fältet i 4b.14 – enklare och säkrare än att göra en andra destruktiv migrering. Backfill-script: `scripts/backfill-lists.js`, seedar en standardlista per hushåll/barn och flyttar över befintliga varor. Se `OPERATIONS.md` §5.
+
+### 4b.16 Fem "quick wins" från Best4Family-genomgången (byggda 2026-07-28)
+
+Efter konkurrentanalysen av Best4Family (`COMPETITOR_ANALYSIS_BEST4FAMILY.md`, se `TODO.md` punkt 9) byggdes fem lågkomplexa kandidater i en omgång. Ingen databasändring i någon av dem.
+
+- **Sekretess-chip på reminders:** `visibility`-fältet (PRIVATE/HOUSEHOLD/PARENTS, se 4b.5) fanns redan i schemat men syntes aldrig för användaren. `dashboard/page.tsx` visar nu en liten 🔒 Private / 👪 Parents-tagg på reminder-raden, bredvid de befintliga kategori-/ägar-taggarna. Bara synlig när hushållet har fler än en medlem (annars är allt trivialt privat och taggen vore bara brus); HOUSEHOLD (standardläget i ett delat hushåll) får medvetet ingen tagg.
+- **Dataexport (portabilitetsrätt):** `GET /api/profile/export` – laddar ner en JSON-fil med kontots egna data (profil, reminders, tillagda inköps-/önskelistevaror, hushållsmedlemskap). Exkluderar medvetet andra medlemmars personuppgifter. Knapp "Export my data" i Profile → Security, ovanför "Delete account" (som fortfarande bara är en UI-shell utan fungerande radering, se 4b.17 nedan/`TODO.md`).
+- **Broadcast-notis till familjen:** `POST /api/family/broadcast`, bara OWNER/PARENT. Mailar alla vuxna hushållsmedlemmar utom avsändaren själv via befintlig Resend-infra (ny mall `sendBroadcastEmail` i `email.ts`) – ingen ny notiskanal byggd. Barnprofiler exkluderas medvetet (har ofta en alias-email ingen läser dagligen, se 4b.2). UI: "📣 Send a family update" i Profile → Household, bara synlig för OWNER/PARENT och bara om hushållet har fler än en medlem.
+- **PIN/Google-bugg fixad:** Profile → Security visade tidigare "Change password" istället för "Signed in with Google" efter en PIN-inloggning på ett Google-länkat konto (kosmetiskt fel, känt sedan 4b.13). Orsak: sidan avgjorde detta utifrån `session.user.image`, som bara är satt på en session som kom direkt från Google OAuth-flödet. Fix: `/api/profile` returnerar nu `hasPassword`, och sidan avgör istället utifrån om kontot saknar lösenord (sant för alla Google-skapade konton, se `auth.ts`s `signIn`-callback).
+- **"Vad händer närmast"-sammanfattning – redan löst, inget byggt:** Best4Family-analysen föreslog en kompakt sammanfattning av kommande händelser överst på dashboarden. Vid genomgång visade det sig att dashboarden redan har detta: "IQ Spotlight · Up next" (närmaste kommande reminder) + "Needs your attention" (allt inom 7 dagar, upp till 3 rader). Ingen kod skriven, för att undvika en duplicerad tredje sektion.
+
+**Kvarstår (se `TODO.md` punkt 10):** klicktesta alla fem skarpt.
+
+### 4b.17 Kända, ej byggda gap efter Best4Family-genomgången
+
+Dokumenterat här så det inte glöms bort – dessa är medvetet **inte** byggda ännu (se `TODO.md` punkt 9/`ROADMAP.md` för prioritering):
+- **Delete account-knappen i Profile → Security är bara en UI-shell** – "Yes, delete"-knappen har inget fungerande anrop bakom sig idag. Självbetjänings-radering är ett kvarstående P1-gap inför bred lansering.
+- Riktig Privacy Policy-sida, deklarerad minimiålder/föräldrasamtycke, gästprofiler utan inloggning, Belöningar kopplat till Sysslor – se `TODO.md` punkt 9 för full lista.
 
 ---
 
