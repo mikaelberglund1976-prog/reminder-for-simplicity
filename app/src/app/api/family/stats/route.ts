@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 //  - last7d: trailing 7 days from now
 //  - thisMonth: from the 1st of the current month (UTC)
 //  - lastMonth: previous calendar month (UTC)
+//  - thisYear: from Jan 1st of the current year (UTC) — added 2026-07-28 per
+//    direct feedback ("Done over time måste ha med i år")
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -53,13 +55,15 @@ export async function GET() {
     // Last month (UTC) — start of the previous month
     const lastMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1, 0, 0, 0));
     const lastMonthEnd = thisMonthStart; // exclusive
+    // This year (UTC) — Jan 1st, current year
+    const thisYearStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1, 0, 0, 0));
 
     const children = membership.household.members;
     const childIds = children.map((c) => c.userId);
 
     // Fetch all qualifying completions for the household's children in one query,
     // then bucket per child + window in memory.
-    const since = lastMonthStart < last7Start ? lastMonthStart : last7Start;
+    const since = [lastMonthStart, last7Start, thisYearStart].reduce((a, b) => (a < b ? a : b));
     const completions = await prisma.choreCompletion.findMany({
       where: {
         childId: { in: childIds },
@@ -80,6 +84,7 @@ export async function GET() {
       const lastMonth = mine.filter(
         (cp) => cp.createdAt >= lastMonthStart && cp.createdAt < lastMonthEnd
       ).length;
+      const thisYear = mine.filter((cp) => cp.createdAt >= thisYearStart).length;
 
       return {
         childId: child.userId,
@@ -87,6 +92,7 @@ export async function GET() {
         last7Days: last7,
         thisMonth,
         lastMonth,
+        thisYear,
       };
     });
 
@@ -97,6 +103,7 @@ export async function GET() {
         thisMonthStart: thisMonthStart.toISOString(),
         lastMonthStart: lastMonthStart.toISOString(),
         lastMonthEnd: lastMonthEnd.toISOString(),
+        thisYearStart: thisYearStart.toISOString(),
       },
       access: isPro ? "PRO" : "TRIAL",
     });

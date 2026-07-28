@@ -43,7 +43,9 @@ function NewBookingContent() {
   const [assignedTo, setAssignedTo] = useState("");
   const [recurrence, setRecurrence] = useState<"DAILY" | "WEEKLY" | "DAYS">("WEEKLY");
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // Mon–Fri
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  // 2026-07-28: prefilled when arriving from the Calendar's "+" button
+  // (type first, then date, then details).
+  const [startDate, setStartDate] = useState(searchParams.get("date") ?? new Date().toISOString().split("T")[0]);
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [note, setNote] = useState("");
   const [children, setChildren] = useState<Member[]>([]);
@@ -110,9 +112,9 @@ function NewBookingContent() {
       });
 
       if (res.ok) {
-        // Trainings show up on the calendar, not the chores summary — land
-        // there instead of Family so the new booking is immediately visible.
-        router.push(isTraining ? "/dashboard/calendar" : "/dashboard/family");
+        // Training now has its own section (2026-07-28) — land there instead
+        // of the Chores/Family page so the new booking is immediately visible.
+        router.push(isTraining ? "/dashboard/training" : "/dashboard/family");
       } else {
         const d = await res.json();
         setError(d.error ?? "Something went wrong");

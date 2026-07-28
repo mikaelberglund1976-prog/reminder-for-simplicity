@@ -229,6 +229,14 @@ export default function RegisterPage() {
           </Link>
         </p>
 
+        <p style={{ textAlign: "center", fontSize: 12, color: "#ACA9A3", marginTop: 12 }}>
+          By creating an account you agree to our{" "}
+          <Link href="/privacy" style={{ color: "#ACA9A3", textDecoration: "underline" }}>
+            Privacy Policy
+          </Link>
+          .
+        </p>
+
         {/* Decorative ellipses */}
         <div style={{ position: "fixed", bottom: -60, left: -60, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(91,156,245,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "fixed", bottom: -40, right: -80, width: 260, height: 260, borderRadius: "50%", background: "radial-gradient(circle, rgba(91,156,245,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />

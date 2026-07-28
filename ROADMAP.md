@@ -70,7 +70,7 @@ Detta är inte i ursprungsspecen men är den funktionalitet flest commits gått 
 
 ### Kandidater – innan bred lansering/betalande användare (Best4Family-analys 2026-07-28)
 Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` §5. Inget byggt än.
-- [ ] Riktig Privacy Policy-sida (finns inte idag)
+- [~] Riktig Privacy Policy-sida — **strukturell scaffold byggd 2026-07-28** (`/privacy`, länkad från Register och `/features`), men innehållet är inte klart. Se `TODO.md` 19g/checklistan på sidan själv för de 7 kvarstående punkterna (juridisk enhet, minimiålder för barnprofiler, DPA-status för Vercel/Resend, datalagringstid, självbetjänings-radering, kontaktadress).
 - [ ] Deklarerad minimiålder + föräldrasamtycke för barnprofiler
 - [ ] Självbetjänings-"radera mitt konto permanent" i UI (Profile → Security)
 - [ ] Gästprofiler utan inloggning (mor-/farföräldrar synliga i planeringen utan konto)
@@ -135,11 +135,11 @@ Mikael bekräftade ICS-riktningen och lade till två saker: (1) vill också synk
 - [x] Dela reminder med annan användare *(löst via Household/visibility, inte separat delningsfunktion)*
 - [ ] Import via CSV
 - [ ] Riktig betalvägg (Stripe) – ersätter dagens admin-manuella Pro-toggle
-- [ ] **Streckkodsskanning/foto-tillägg av varor** *(P1.1 i beställningen 2026-07-27 – snabb inköpslista-tillägg via kamera)*
-- [ ] **Enkel receptimport → inköpslista** *(P1.2 – lägg till ingredienser med ett klick)*
-- [x] **Delningslänk för inköpslistan (2026-07-27, klicktestad skarpt 2026-07-27 sen kväll)** *(P1.3-varianten för Grocery, byggd efter jämförelse med OurGroceries/Listonic)* — `Household.shoppingListShareToken`, `/api/family/shopping-list/share` (av/på + länk), publika `/api/public/shopping-list/[token]` + `/shop/[token]`-sidan. Ingen inloggning krävs, full läs/skriv-åtkomst (samma förtroendemodell som `HouseholdInvite`-token). Wishlist-varianten (P1.3 för barnens önskelista, delning till släktingar) är fortfarande inte byggd.
-- [ ] **Butiksläge** *(P1.4 – fullskärmsvy för användning i affären: stor text, en-handsvänlig)*
-- [ ] **Belöningar kopplat till Sysslor** *(Best4Family-analys 2026-07-28 – utökning av befintlig `ChoreStatus`-godkännandeflow, se `TODO.md` punkt 9)*
+- [x] **Streckkodsskanning för inköpslistan** *(P1.1 i beställningen 2026-07-27)* — **byggt 2026-07-28** som en del av 19c: webbläsarens inbyggda `BarcodeDetector`-API (ingen ny npm-paket), uppslag mot Open Food Facts. Se `TODO.md` 20.
+- [ ] **Enkel receptimport (foto/OCR) → inköpslista** *(P1.2)* — medvetet **inte** byggd 2026-07-28: kräver ett nytt npm-paket (Tesseract.js) och en riktig telefon för att testa. Se `TODO.md` 20.
+- [~] **Delningslänk för inköpslistan** *(P1.3-varianten för Grocery)* — byggd 2026-07-27, men **UI:t dolts igen 2026-07-28** efter en omsvängning ("vi vill inte kunna dela listan så") — se `TODO.md` 19c/20. Token-infrastrukturen ligger orörd i botten. Wishlist-varianten är fortfarande inte byggd.
+- [x] **Butiksläge** *(P1.4 – fullskärmsvy för användning i affären: stor text, en-handsvänlig)* — **byggt 2026-07-28** som en del av 19c. Se `TODO.md` 20.
+- [ ] **Belöningar kopplat till Sysslor** *(Best4Family-analys 2026-07-28 – utökning av befintlig `ChoreStatus`-godkännandeflow, se `TODO.md` punkt 9)* — **infogat i Chores-ombyggnaden 2026-07-28, se `TODO.md` 19d. Öppen fråga: poäng/stjärnor eller riktiga belöningar (fickpengar/aktivitet)?**
 - [x] ~~Kompakt "vad händer närmast"-sammanfattning på dashboarden~~ – **redan löst**, upptäckt 2026-07-28: "IQ Spotlight · Up next" + "Needs your attention" täcker redan detta, ingen ny kod behövdes.
 - [x] **Dataexport (portabilitetsrätt)** – JSON-nedladdning av egen data. **Byggt 2026-07-28**, se `TODO.md` punkt 10.
 - [x] **Broadcast-notis från admin till hela familjen.** **Byggt 2026-07-28**, se `TODO.md` punkt 10.

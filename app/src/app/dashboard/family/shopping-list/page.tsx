@@ -85,7 +85,6 @@ export default function ShoppingListPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [recent, setRecent] = useState<{ name: string; icon: string }[]>([]);
-  const [showBrowse, setShowBrowse] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareFlash, setShareFlash] = useState<string | null>(null);
@@ -95,6 +94,26 @@ export default function ShoppingListPage() {
   const [addingCat, setAddingCat] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+
+  // 2026-07-28: "add an item" moved from an always-visible form to a "+"
+  // button that opens this sheet with four ways in — Recent / Categories /
+  // Create new / Scan barcode — per direct feedback that the old form took
+  // too much space.
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [addTab, setAddTab] = useState<"recent" | "categories" | "create" | "scan">("recent");
+  const [storeMode, setStoreMode] = useState(false);
+
+  // Barcode scanning — uses the browser's native BarcodeDetector API only
+  // (Chrome/Edge on Android and desktop; no support in Safari/Firefox yet).
+  // No new npm dependency, so it's fully testable once `npm install` isn't
+  // even needed. A zxing-based fallback for unsupported browsers is a
+  // documented next step, not built this round (see TODO.md 19c) — couldn't
+  // be verified without a real device anyway.
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [scanStatus, setScanStatus] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -297,6 +316,7 @@ export default function ShoppingListPage() {
       } else {
         setItems((prev) => prev.map((i) => (i.id === tempId ? data : i)));
         fetch("/api/family/shopping-list/suggestions").then((r) => r.json()).then((d) => setRecent(d.recent ?? [])).catch(() => {});
+        closeAddSheet();
       }
     } catch {
       setItems((prev) => prev.filter((i) => i.id !== tempId));
@@ -401,6 +421,89 @@ export default function ShoppingListPage() {
     } catch {
       setItems((prev) => prev.filter((i) => i.id !== tempId));
       setError("Network error");
+    }
+  }
+
+  function closeAddSheet() {
+    stopScan();
+    setScanError(null);
+    setScanStatus(null);
+    setAddSheetOpen(false);
+  }
+
+  function quickAddAndClose(itemName: string) {
+    quickAdd(itemName);
+    closeAddSheet();
+  }
+
+  // ---- Barcode scanning (BarcodeDetector, native browser API only) ----
+
+  function stopScan() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setScanning(false);
+  }
+
+  async function startScan() {
+    setScanError(null);
+    setScanStatus(null);
+    if (!("BarcodeDetector" in window)) {
+      setScanError("Barcode scanning isn't supported in this browser yet — try Chrome on Android, or add the item manually.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setScanning(true);
+      detectLoop();
+    } catch {
+      setScanError("Couldn't access the camera — check your browser's camera permission for this site.");
+    }
+  }
+
+  function detectLoop() {
+    // BarcodeDetector isn't in TypeScript's DOM lib yet (Chrome/Edge-only
+    // API) — feature-detected above, so this cast is safe at runtime.
+    const BarcodeDetectorCtor = (window as unknown as { BarcodeDetector: new (opts: { formats: string[] }) => { detect: (v: HTMLVideoElement) => Promise<{ rawValue: string }[]> } }).BarcodeDetector;
+    const detector = new BarcodeDetectorCtor({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
+    const tick = async () => {
+      if (!streamRef.current || !videoRef.current) return;
+      try {
+        const codes = await detector.detect(videoRef.current);
+        if (codes.length > 0) {
+          stopScan();
+          await lookupBarcode(codes[0].rawValue);
+          return;
+        }
+      } catch {
+        // Detection hiccup on one frame — keep trying rather than aborting.
+      }
+      if (streamRef.current) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  async function lookupBarcode(code: string) {
+    setScanStatus("Looking up product…");
+    try {
+      // Open Food Facts — free, public, no API key. Coverage is strongest
+      // for EU grocery products; a miss just falls back to manual entry.
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
+      const data = await res.json().catch(() => null);
+      const productName: string | undefined = data?.product?.product_name || data?.product?.product_name_en;
+      if (productName) {
+        quickAddAndClose(productName);
+      } else {
+        setScanError(`No product found for barcode ${code} — add it manually instead.`);
+      }
+    } catch {
+      setScanError("Couldn't look up that barcode — check your connection and try again.");
+    } finally {
+      setScanStatus(null);
     }
   }
 
@@ -549,21 +652,10 @@ export default function ShoppingListPage() {
     <Screen
       title="Shopping list"
       onBack={() => router.push("/dashboard/family")}
-      headerExtra={
-        <button
-          onClick={shareList}
-          disabled={shareLoading || !activeListId}
-          aria-label="Share list"
-          style={{ background: "none", border: "none", cursor: shareLoading ? "not-allowed" : "pointer", color: "#4B5563", display: "flex", padding: 4, position: "relative" }}
-        >
-          <IcShare />
-          {shareFlash && (
-            <span style={{ position: "absolute", top: 28, right: 0, background: "#1C1C28", color: "#fff", fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 8, whiteSpace: "nowrap" }}>
-              {shareFlash}
-            </span>
-          )}
-        </button>
-      }
+      // 2026-07-28: share-link UI intentionally removed per direct instruction
+      // ("vi vill inte kunna dela listan så, dölj det"). shareList/turnOffShare
+      // and the underlying Household/List share-token infra are left untouched
+      // below in case this comes back later — only the UI is hidden.
     >
       {/* List switcher */}
       <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2, marginBottom: 10 }}>
@@ -620,79 +712,16 @@ export default function ShoppingListPage() {
         />
       )}
 
-      {shareUrl && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, background: "#EEF0FC", border: "1px solid #C7CDF5", borderRadius: 14, padding: "10px 14px", marginBottom: 16, fontSize: 12.5, color: "#3A4FC5" }}>
-          <span>🔗 Shared with a link — anyone with it can view and edit.</span>
-          <button onClick={turnOffShare} disabled={shareLoading} style={{ background: "none", border: "none", color: "#3A4FC5", fontWeight: 700, fontSize: 12, cursor: shareLoading ? "not-allowed" : "pointer", flexShrink: 0, fontFamily: FONT, textDecoration: "underline" }}>
-            Turn off
-          </button>
-        </div>
-      )}
-
-      {/* Add item form */}
-      <form onSubmit={addItem} style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <input
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Add an item…"
-            style={{ flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
-          />
-          <input
-            value={quantity}
-            onChange={e => setQuantity(e.target.value)}
-            placeholder="Qty"
-            style={{ width: 72, padding: "12px 10px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
-          />
-          <button
-            type="submit"
-            disabled={!name.trim() || !activeListId}
-            style={{
-              width: 48, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-              background: "#1C1C28", color: "#fff", border: "none", borderRadius: 12,
-              cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1,
-            }}
-          >
-            <IcPlus />
-          </button>
-        </div>
-
-        <button type="button" onClick={() => setShowDetails((v) => !v)} style={{ background: "none", border: "none", color: "#4A5FD5", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4 }}>
-          <IcChevron open={showDetails} /> Note, link or picture
-        </button>
-
-        {showDetails && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
-            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (e.g. brand, size…)" style={detailInputStyle} />
-            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Link (optional)" style={detailInputStyle} />
-            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL (optional)" style={detailInputStyle} />
-          </div>
-        )}
-
-        {error && <div style={{ fontSize: 13, color: "#C44444", marginTop: 10 }}>{error}</div>}
-        <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 8 }}>
-          Items sort into aisles automatically — change one's category below and we'll remember it next time.
-        </div>
-      </form>
-
-      {/* Recent items — one-tap re-add, sourced from the household's category memory. */}
-      {recent.length > 0 && (
-        <div style={{ marginBottom: 14, overflowX: "auto", display: "flex", gap: 8, paddingBottom: 2 }}>
-          {recent.slice(0, 10).map((r) => (
-            <button key={r.name} onClick={() => quickAdd(r.name)} style={chipStyle}>
-              {r.icon} {r.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Browse common items by aisle — quick-add without typing. */}
+      {/* Add item entry points — 2026-07-28: replaced the always-visible form
+          (name/qty/note/link/image, all the time) with a "+" button that
+          opens a sheet — Recent / Categories / Create new / Scan barcode —
+          per direct feedback that the old form took too much space. */}
       <div style={{ display: "flex", gap: 16, marginBottom: 14 }}>
         <button
-          onClick={() => setShowBrowse((v) => !v)}
+          onClick={() => setStoreMode(true)}
           style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#4A5FD5", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT }}
         >
-          Browse common items <IcChevron open={showBrowse} />
+          🏪 Store mode
         </button>
         <button
           onClick={() => setShowManage((v) => !v)}
@@ -745,29 +774,6 @@ export default function ShoppingListPage() {
               Add
             </button>
           </form>
-        </div>
-      )}
-
-      {showBrowse && (
-        <div style={{ marginBottom: 18 }}>
-          {CATALOG_SLUG_ORDER.map((slug) => {
-            const def = categories.find((c) => c.slug === slug) ?? DEFAULT_CATEGORIES.find((d) => d.slug === slug);
-            if (!def) return null;
-            return (
-              <div key={slug} style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 2px 6px", display: "flex", alignItems: "center", gap: 5 }}>
-                  <span>{def.icon}</span>{def.label}
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {CATALOG_ITEMS[slug].map((itemName) => (
-                    <button key={itemName} onClick={() => quickAdd(itemName)} style={chipStyle}>
-                      + {itemName}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
 
@@ -844,6 +850,227 @@ export default function ShoppingListPage() {
             Bought items stay here until you clear them — handy since you often buy the same things again.
           </div>
         </>
+      )}
+
+      {/* Floating "+" — same style as Reminders/Chores/Calendar. Opens the
+          add sheet below (2026-07-28). */}
+      <button
+        onClick={() => { setAddTab("recent"); setAddSheetOpen(true); }}
+        aria-label="Add item"
+        style={{
+          position: "fixed", right: 20, bottom: 84, zIndex: 19,
+          width: 52, height: 52, borderRadius: "50%",
+          background: "#1C1C28", color: "#fff", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 4px 14px rgba(28,28,40,0.35)",
+        }}
+      >
+        <IcPlus />
+      </button>
+
+      {addSheetOpen && (
+        <div
+          onClick={closeAddSheet}
+          style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", zIndex: 29, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: "var(--content-max-width)", background: "#fff",
+              borderRadius: "20px 20px 0 0", padding: "16px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
+              fontFamily: FONT, maxHeight: "80vh", display: "flex", flexDirection: "column",
+            }}
+          >
+            {/* Tabs */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 14, flexShrink: 0 }}>
+              {([
+                ["recent", "Recent"],
+                ["categories", "Categories"],
+                ["create", "New"],
+                ["scan", "Scan"],
+              ] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => { if (key !== "scan") stopScan(); setAddTab(key); }}
+                  style={{
+                    flex: 1, padding: "9px 0", borderRadius: 999, cursor: "pointer", fontFamily: FONT,
+                    fontSize: 12.5, fontWeight: 700,
+                    border: addTab === key ? "none" : "1.5px solid #E4E3DE",
+                    background: addTab === key ? "#1C1C28" : "#fff",
+                    color: addTab === key ? "#fff" : "#4B5563",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ overflowY: "auto" }}>
+              {addTab === "recent" && (
+                recent.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "24px 0", color: "#9CA3AF", fontSize: 13 }}>
+                    Nothing recent yet — items you add will show up here next time.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingBottom: 8 }}>
+                    {recent.map((r) => (
+                      <button key={r.name} onClick={() => quickAddAndClose(r.name)} style={chipStyle}>
+                        {r.icon} {r.name}
+                      </button>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {addTab === "categories" && (
+                <div style={{ paddingBottom: 8 }}>
+                  {CATALOG_SLUG_ORDER.map((slug) => {
+                    const def = categories.find((c) => c.slug === slug) ?? DEFAULT_CATEGORIES.find((d) => d.slug === slug);
+                    if (!def) return null;
+                    return (
+                      <div key={slug} style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 2px 6px", display: "flex", alignItems: "center", gap: 5 }}>
+                          <span>{def.icon}</span>{def.label}
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {CATALOG_ITEMS[slug].map((itemName) => (
+                            <button key={itemName} onClick={() => quickAddAndClose(itemName)} style={chipStyle}>
+                              + {itemName}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {addTab === "create" && (
+                <form onSubmit={addItem} style={{ paddingBottom: 8 }}>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                    <input
+                      autoFocus
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder="Item name…"
+                      style={{ flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
+                    />
+                    <input
+                      value={quantity}
+                      onChange={e => setQuantity(e.target.value)}
+                      placeholder="Qty"
+                      style={{ width: 72, padding: "12px 10px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
+                    />
+                  </div>
+                  <button type="button" onClick={() => setShowDetails((v) => !v)} style={{ background: "none", border: "none", color: "#4A5FD5", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+                    <IcChevron open={showDetails} /> Note, link or picture
+                  </button>
+                  {showDetails && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+                      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (e.g. brand, size…)" style={detailInputStyle} />
+                      <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Link (optional)" style={detailInputStyle} />
+                      <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL (optional)" style={detailInputStyle} />
+                    </div>
+                  )}
+                  {error && <div style={{ fontSize: 13, color: "#C44444", marginBottom: 8 }}>{error}</div>}
+                  <button
+                    type="submit"
+                    disabled={!name.trim() || !activeListId}
+                    style={{
+                      width: "100%", padding: "13px", borderRadius: 50,
+                      background: "#1C1C28", color: "#fff", border: "none",
+                      fontSize: 14, fontWeight: 700, fontFamily: FONT,
+                      cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1,
+                    }}
+                  >
+                    Add to list
+                  </button>
+                </form>
+              )}
+
+              {addTab === "scan" && (
+                <div style={{ paddingBottom: 8, textAlign: "center" }}>
+                  {!scanning ? (
+                    <>
+                      <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 14, lineHeight: 1.5 }}>
+                        Point your camera at a barcode — we'll look it up and add it for you.
+                      </div>
+                      <button
+                        onClick={startScan}
+                        style={{ padding: "13px 24px", borderRadius: 50, background: "#1C1C28", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
+                      >
+                        📷 Start scanning
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <video ref={videoRef} playsInline muted style={{ width: "100%", borderRadius: 14, background: "#000", marginBottom: 10 }} />
+                      <button
+                        onClick={stopScan}
+                        style={{ padding: "10px 20px", borderRadius: 50, background: "#F0F3FA", border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+                  {scanStatus && <div style={{ fontSize: 13, color: "#4A5FD5", marginTop: 12 }}>{scanStatus}</div>}
+                  {scanError && <div style={{ fontSize: 13, color: "#C44444", marginTop: 12 }}>{scanError}</div>}
+                  <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 14 }}>
+                    Works in Chrome/Edge on Android and most desktops. Recipe-photo import is planned but not built yet — see the roadmap.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Store mode — 2026-07-28: fullscreen, large-text, one-handed view for
+          use while actually shopping. */}
+      {storeMode && (
+        <div style={{ position: "fixed", inset: 0, background: "#F5F4F0", zIndex: 39, fontFamily: FONT, overflowY: "auto" }}>
+          <div style={{ position: "sticky", top: 0, background: "#fff", borderBottom: "1px solid #E4E3DE", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 17, fontWeight: 800, color: "#0F172A" }}>🏪 Store mode</span>
+            <button
+              onClick={() => setStoreMode(false)}
+              style={{ padding: "10px 18px", borderRadius: 50, background: "#1C1C28", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
+            >
+              Done
+            </button>
+          </div>
+          <div style={{ padding: "16px 20px 60px" }}>
+            {pending.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 0", color: "#9CA3AF", fontSize: 16 }}>Nothing left to buy 🎉</div>
+            ) : (
+              groups.map((g) => (
+                <div key={g.key} style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#6B7280", marginBottom: 8 }}>{g.icon} {g.label}</div>
+                  <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE", overflow: "hidden" }}>
+                    {g.items.map((item, i) => (
+                      <button
+                        key={item.id}
+                        onClick={() => togglePurchased(item)}
+                        style={{
+                          width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "18px 18px",
+                          borderTop: i === 0 ? "none" : "1px solid #F0F3F8", background: "none", border: "none",
+                          borderTopWidth: i === 0 ? 0 : 1, cursor: "pointer", textAlign: "left", fontFamily: FONT,
+                        }}
+                      >
+                        <span style={{
+                          width: 28, height: 28, borderRadius: "50%", border: "2px solid #C7CDF5",
+                          flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                        }} />
+                        <span style={{ fontSize: 18, fontWeight: 700, color: "#0F172A" }}>
+                          {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       )}
     </Screen>
   );

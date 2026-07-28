@@ -65,7 +65,13 @@ export async function POST(req: Request) {
       joinUrl,
     });
 
-    return NextResponse.json({ success: true });
+    // 2026-07-28: let the inviting adult know up front if this email already
+    // belongs to someone with their own account/household — accepting the
+    // invite moves them out of it (see autoJoinPendingInvite in auth.ts,
+    // "remove from any existing household" — the existing "move everything"
+    // behavior agreed in TODO.md 19g), not something silent to surprise them
+    // with later.
+    return NextResponse.json({ success: true, existingUser: !!existingUser });
   } catch (err) {
     console.error("Invite error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

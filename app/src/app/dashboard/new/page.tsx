@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const CATEGORIES = [
@@ -98,6 +98,11 @@ type HouseholdMember = { id: string; userId: string; user: { id: string; name: s
 
 export default function NewReminderPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // 2026-07-28: the Calendar's "+" button passes a chosen date through here
+  // (type first, then date, then details — see dashboard/calendar/page.tsx)
+  // so the date step isn't repeated on this screen.
+  const dateFromQuery = searchParams.get("date");
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState("");
   const [showMoreRec, setShowMoreRec]   = useState(false);
@@ -111,7 +116,7 @@ export default function NewReminderPage() {
   const [form, setFormState] = useState({
     name: "",
     category: "SUBSCRIPTION",
-    date: defaultDate(),
+    date: dateFromQuery ?? defaultDate(),
     recurrence: "MONTHLY",
     amount: "",
     currency: "SEK",

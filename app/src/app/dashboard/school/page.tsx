@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 
@@ -39,14 +39,19 @@ type TrialInfo = {
 export default function SchoolPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // 2026-07-28: the Calendar's "+" button can land here with a date already
+  // chosen (type first, then date, then details) — prefill and open the form
+  // right away instead of making the user find "+ Add" again.
+  const dateFromQuery = searchParams.get("date");
 
   const [trial, setTrial] = useState<TrialInfo | null>(null);
   const [items, setItems] = useState<SchoolItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(!!dateFromQuery);
   const [newName, setNewName] = useState("");
   const [newNote, setNewNote] = useState("");
-  const [newDate, setNewDate] = useState("");
+  const [newDate, setNewDate] = useState(dateFromQuery ?? "");
   const [newChild, setNewChild] = useState("");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);

@@ -52,6 +52,16 @@ model User {
   // until the user first requests their feed URL (lazy-generated).
   calendarFeedToken String?    @unique
 
+  // 2026-07-28: per-person choice of which apps show up in the bottom nav
+  // (see components/BottomNav.tsx), direct feedback: "under sin person kunna
+  // säga vilka av apparna som ska ligga i bannern". Comma-separated app keys
+  // from a fixed set (reminders/shopping-list/wishlist/chores/training/
+  // school), 3 or 4 of them — Calendar is NOT stored here, it's always
+  // prepended as the fixed, un-removable leftmost tab (4 or 5 total). Null
+  // means "use the default" (reminders, shopping-list, school), so existing
+  // users don't need a backfill.
+  bottomNavTabs     String?
+
   reminders         Reminder[]
   accounts          Account[]
   sessions          Session[]

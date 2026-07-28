@@ -12,6 +12,9 @@
 **Uppdaterad igen:** 2026-07-28 (natt) – EU-marknadsundersökning gjord på begäran (`MARKET_RESEARCH_EU.md`), USP-/prioriteringssammanställning tillagd i `ROADMAP.md`, och en ny delad "Ideas & voting"-sektion (förbättringsförslag + nya funktioner, med röstning) byggd. Se punkt 17 nedan.
 **Uppdaterad igen:** 2026-07-28 (natt, uppföljning) – Training-bokningar (ny kategori, återanvänder Chore-infran) och ett utgående ICS-kalenderflöde (Profile → "Calendar sync") byggda efter direkt beställning. School byggdes först som en kategori i vanliga Reminders, men rättades samma kväll efter direkt feedback från Mikael till en egen sektion (egen barn-självbetjäningsyta + egen föräldravy på `/dashboard/school`). Se punkt 18 nedan.
 **Uppdaterad igen:** 2026-07-28 (natt, uppföljning 2) – Admin-godkännande av nya konton byggt på begäran ("vi testar och bygger nytt, vill hålla det kontrollerat") – se punkt 16 nedan. **Kräver `npx prisma db push`** (nytt `approved`/`approvedAt`-fält på `User`) innan det fungerar i produktion, se punkt 6. Kunde inte köra `npx prisma generate` i sandboxen (403 mot `binaries.prisma.sh`, känd nätverksbegränsning), så `tsc --noEmit` gick inte att köra rent den här gången – kodgranskad manuellt istället (brace-balans verifierad), verifiera med ett riktigt `tsc --noEmit` lokalt efter `prisma generate`.
+**Uppdaterad igen:** 2026-07-28 – bekräftat att senaste committen (`86a9c4a`, admin-godkännande + `/features`) är pushad och **grön i produktion** (Vercel-MCP:n kollad). Sedan en stor UX-genomgång från Mikael (skärmdumpar/liveanvändning) genomgången mot kodbasen och sammanställd – bottenmeny/hamburgermeny, kalender, inköpslista, sysslor/skola/träning, inställningar/familjemedlemskap. Inget byggt än, bara dokumenterat och stämt av mot vad som redan finns. Se ny punkt 19 nedan – flaggar bland annat en omsvängning (inköpslistans delningslänk, byggd i 4i, ska nu döljas) och två stora beslutspunkter (kontosammanslagning Google/lösenord, en person i två familjer samtidigt).
+**Uppdaterad igen:** 2026-07-28 – de två stora beslutspunkterna avgjorda (se 19g): multi-family blir bara datamodell-förberedelse nu (ingen växlare/UI), kontosammanslagning blir "flytta allt" med bekräftelseskärm, automatisk trigger vid Google-inloggning. Streckkodsskanning/receptimport/butiksläge (redan i ROADMAP) infogade i 19c, belöningar-för-sysslor infogat i 19d – samma sidor byggs ändå om, så ingen anledning att vänta. Dessutom byggd: `/privacy`-sidan som en strukturell scaffold (`app/src/app/privacy/page.tsx`), länkad från Register och `/features`. Varje sektion som saknar riktigt innehåll eller ett beslut är markerad med en tydlig gul "Needs a decision"-ruta i UI:t, med en samlad checklista längst ner på sidan (7 punkter: juridisk enhet, minimiålder för barnprofiler, Vercel/Resend DPA-status, datalagringstid, självbetjänings-radering, riktig kontaktadress). `tsc --noEmit` kört rent.
+**Uppdaterad igen:** 2026-07-28 – hela punkt 19 (utom rewards och inkommande ICS-import) byggd i en lång omgång efter "kör". Se ny punkt 20 nedan för en fullständig genomgång av vad som är klart, vad som medvetet skjutits upp och varför, och vad som krävs innan det fungerar i produktion.
 
 ---
 
@@ -359,3 +362,102 @@ Direkt beställning: "vi testar och bygger nytt så vi vill hålla det kontrolle
 - [x] **Ny sida `/features` byggd.** Tre delar: (1) "What's included for everyone" – de sex free-funktionerna (reminders, email-påminnelser, kategorier, hushållsdelning, kalender, PWA), grundat på vad som faktiskt *inte* är `is_pro`/trial-spärrat i koden idag (se `PRODUCT_SPEC.md` 4b.6/4b.8/4b.9 – bara Sysslor/Shopping/Wishlist och det som återanvänder samma endpoint (Training/School) är spärrat). (2) "Family plan" – de sju Pro-funktionerna (shopping list, wishlist, chores, training, school, broadcasts, utgående kalendersynk), märkt "7-day free trial, then Pro" – matchar den befintliga trial-mekaniken i `dashboard/family`. (3) En Free vs. Pro-jämförelsetabell + en rad som är ärlig om att **priset inte är satt än** (ingen Stripe-integration finns, se `PRODUCT_SPEC.md` 4b.6) – hittade inte på ett pris.
 - [x] `app/page.tsx`: "See how it works"-knappen pekar nu på `/features` istället för `/login`.
 - [ ] Klicktesta: öppna `/features`, kolla att layouten ser bra ut på mobil och i Web view, testa båda knapparna längst ner.
+
+## 19. Stor UX-genomgång: bottenmeny, kalender, inköpslista, sysslor/skola/träning, inställningar (2026-07-28, beställt – inget byggt än)
+
+Mikael gick igenom hela appen och skrev en lång rad kommentarer i ett svep. Nedan är varje punkt genomgången mot faktisk kod (inte antagen) och sorterad in under rätt del av appen, med nuläge, konflikter mot tidigare beslut och öppna frågor markerade. **Inget kodat än** – det här är research + sammanställning, redo att prioriteras in i körordningen (punkt 12) eller byggas direkt, ditt val.
+
+### 19a. Anpassningsbar bottenmeny + hamburgermeny som fullständig åtkomst
+- **Nuläge:** `BottomNav.tsx` har 4 hårdkodade flikar (Reminders, Shopping list, Wishlist, Calendar), ingen anpassning möjlig. Calendar ligger sist, inte först.
+- **Ny beställning:** Calendar längst till vänster, **enda fliken som inte går att ta bort**. Övriga flikar väljs **per person** under profilen (inte en hushålls-admin-inställning). Default: Calendar, Reminders, Shopping list, School. 4 eller 5 flikar totalt.
+- Hamburgermenyn ska **alltid** innehålla alla funktioner oavsett vad som ligger i bottenmenyn. Nuläge (`HamburgerMenu.tsx`): saknar länkar till Shopping list, Wishlist, Calendar, Training – bara Reminders/Chores/School/Family/Ideas & voting/Settings/Admin finns idag.
+- **Konflikt med punkt 15** (loggad 2026-07-28, inget byggt): den föreslog Calendar i **mitten** + en sista "All functions"-flik som ersättning för hamburgermenyn, plus en admin-styrd (hushålls-nivå) inställning. Den här beställningen **ersätter** de öppna frågorna i punkt 15: Calendar till vänster (inte mitten), ingen separat "All functions"-flik behövs (hamburgermenyn täcker redan det), val sker per person (inte admin/hushåll). Säg till om du vill ha kvar något av det gamla ändå.
+- **Kräver:** nytt fält för "vilka flikar denna person valt" (t.ex. en sträng-array på `User`), ny UI i Profile för att välja 4–5 av de tillgängliga apparna, `BottomNav.tsx` görs datadriven istället för den fasta `TABS`-arrayen.
+
+### 19b. Kalender
+- **Månadsöversiktslista under dagsvyn:** samma önskemål som redan loggades i punkt 15 ("Agenda-vy under griden") – bekräftat igen här. Idag visar `dashboard/calendar/page.tsx` bara den valda dagens poster under griden, ingen löpande månadslista.
+- **Filtrera på typ + synlig färgkodning högst upp:** färgerna finns redan per typ (`CATEGORY_COLOR`/`CHORE_COLOR`/`TRAINING_COLOR`/`SCHOOL_COLOR`), men ingen legend och ingen filtrering. Ny UI: klickbara typ-chips högst upp, av/på per typ.
+- **Flytande "+"-knapp som på Reminders-sidan:** löser punkt 15:s öppna fråga ("Reminder eller Chore?") – **svar: välj typ först, sedan datum, sedan detaljer** (en liten guidad flöde, inte ett stort formulär direkt).
+
+### 19c. Inköpslista
+- **Dölj delningslänken** (dela-ikonen + "🔗 Shared with a link"-bannern i `dashboard/family/shopping-list/page.tsx`): **detta är en omsvängning** – funktionen byggdes medvetet i punkt 4i och klicktestades skarpt 2026-07-27. Ny instruktion: vi vill inte kunna dela listan så, göm den (token-infrastrukturen kan ligga kvar orörd i botten).
+- **Listan tillgänglig för hela familjen ELLER per-lista väljer vem som ser den:** **redan byggt** – `ListAccessPanel`/`ListMember` finns (punkt 4l). Inget nytt att koda, bara klicktesta att det matchar vad du vill ha.
+- **"Add an item"-rutan tar för mycket plats:** byt till en "+"-knapp som öppnar val mellan **Recent / Categories / Create new**, istället för det ständigt synliga formuläret (namn, kvantitet, anteckning, länk, bild). Recent-chips och kategori-katalogen finns redan (4i) – det här är en ombyggnad av entry-pointen, inte ny data.
+- **Infogat 2026-07-28 (beslutat: bygg in i samma omgång, inte separat):** tre punkter som redan låg i `ROADMAP.md` (Fas 2 / "Produktriktning – nästa runda") men aldrig byggts, naturliga att lägga till samtidigt som entry-pointen ändå byggs om:
+  - **Streckkodsskanning:** femte valet i "+"-menyn (utöver Recent/Categories/Create new) – webbläsarens `BarcodeDetector`-API (gratis) med `@zxing/browser` som fallback, uppslag mot Open Food Facts (gratis, ingen nyckel) för namn/kategori. Kräver test på en riktig telefon (kameraåtkomst går inte att verifiera i sandboxen).
+  - **Receptimport via foto:** Tesseract.js (gratis, körs i webbläsaren) läser av text i en bild, enkel regelbaserad tolkning ("2 dl mjölk", "3 ägg") lägger till rader på listan. Kvaliteten är märkbart sämre än betalda molntjänster – kommunicera det, inte en dold begränsning.
+  - **Butiksläge:** fullskärmsvy för användning i affären (stor text, en-handsvänlig) – egen knapp/vy på samma sida.
+
+### 19d. Sysslor/Chores + barnhantering
+- **Chores känns inte som en egen sektion:** `dashboard/family/page.tsx` är i praktiken sysslo-sidan men har titeln/rollen "Family". Föreslår: gör om till en riktig egen Chores-sida, separat från Family-konceptet.
+- **Ta bort barnens inloggningslänk** (`<ShareLink>` högst upp på sidan) – ska hanteras från Family-admin istället, där man lägger till/flyttar in medlemmar.
+- **"Done over time" saknar "this year":** idag bara Last 7 days / This month / Last month (`ChildStats`, `/api/family/stats`). Lägg till `thisYear`.
+- **"Add chore"-knappen ser annorlunda ut:** idag en pill-knapp med text, ska bli samma flytande runda "+"-knapp som Reminders/Calendar.
+- **Training, Shopping list och Add child ligger på samma sida idag** (rad ~516–555 i `dashboard/family/page.tsx`): Training ska vara en helt egen sektion (som School), Add child ska hanteras under admin, Shopping list-genvägen härifrån tas bort helt (finns redan i bottenmeny/hamburgermeny).
+- **Infogat 2026-07-28 (beslutat: bygg in i samma omgång):** **Belöningar kopplat till godkända Sysslor** – redan flaggad i `ROADMAP.md` (Fas 2, Best4Family-analysen) men aldrig byggd. Utökning av befintlig `ChoreStatus`-godkännandeflow (APPROVED-status finns redan) – naturligt att lägga till samtidigt som Chores-sidan ändå byggs om till egen sektion. **Öppen fråga att lösa innan kodning:** poäng/stjärnor per godkänd syssla, eller kopplat till riktiga belöningar (fickpengar, en aktivitet)? Behöver ett snabbt beslut från dig innan bygget, inte bara "bygg det".
+
+### 19e. School & Training – "alla aktiviteter tillhör någon"
+- **Redan till stor del byggt:** både School (`dashboard/school`) och Training kräver redan val av barn/`assignedUser` vid skapande, och kalendern grupperar redan på `who`. Kvarstår: verifiera att det verkligen är **obligatoriskt** (inte bara ett förval) i båda formulären – kolla vid klicktest.
+
+### 19f. Hamburgermeny – ta bort Family
+- Eftersom Chores (19d) och Training blir egna sektioner ska "Family"-länken tas bort ur hamburgermenyn – den pekar idag på **exakt samma sida** som "Chores"-länken (`HamburgerMenu.tsx` rad 65 & 67, båda `/dashboard/family`).
+
+### 19g. Inställningar – familjemedlemmar, Google-koppling, kontosammanslagning
+
+**Beslut tagna med Mikael 2026-07-28 (genomgång via frågor, inget byggt än):**
+
+- **Multi-family-scope:** *"Bara förbered datamodellen."* Ingen växlare/UI byggs nu. Men modellen måste vara redo för att en person kan tillhöra 2 familjer samtidigt (separerade föräldrar-scenariot) – det ska **inte** bli stort jobb att slå på senare, men får inte byggas bort av misstag nu. Konkreta krav för den *senare* omgången, antecknade här så de inte glöms:
+  - När en person tillhör 2 familjer ska hen **tvingas välja vilken familj** varje ny post (reminder/syssla/skola/etc.) hör till, vid varje skapande – inget "delat som standard".
+  - **Ingen bulk-migrering** av gamla poster om någon kopplas till familj nummer två – vill man flytta en gammal post får man gå in och ändra den för hand, en och en.
+  - Schema-konsekvens att hålla koll på **redan nu**: inga nya hårda `@@unique`-constraints eller endpoints som antar exakt en household per user får läggas till framöver (håll dörren öppen), men själva växlar-UI:t/logiken byggs inte förrän det blir en egen beställning.
+- **Kontosammanslagning (Google + lösenord, samma mail) – scope för nu:** *"Bara flytta allt"* – inte delning-per-typ (den kräver den fulla multi-family-växlaren ovan, som medvetet väntar). Så: sammanslagningsflödet i den här omgången erbjuder ett enda utfall – flytta allt till en vald familj. "Dela aktiviteter per typ mellan familj A och B" är en **uppföljningsfunktion**, byggs när/om den fulla multi-family-växlaren byggs.
+- **Trigger + bekräftelse:** automatisk upptäckt vid Google-inloggning (mailet matchar redan ett lösenordskonto) **+ en bekräftelseskärm innan något faktiskt slås ihop** – ingen tyst/direkt sammanslagning.
+- **Lägga till familjemedlemmar under Settings:** delvis redan byggt – `profile/page.tsx` har "Invite a member" (`/api/household/invite`). Om personen redan finns i systemet ska den kunna bjudas in direkt – ny logik.
+- **Lägga upp e-post, sedan själv koppla till Google i efterhand:** ny funktion, finns inte idag (idag väljer man Google ELLER lösenord vid registrering, ingen efterhandskoppling).
+
+### 19h. Training – inkommande ICS-import + synlighetsval
+- **Importera ICS-kalender per person för Training:** motsatsen till vad som redan finns – idag finns bara **utgående** ICS (punkt 18, `User.calendarFeedToken`, appen exporterar TILL Google/Outlook/Apple). Detta är **inkommande** import (prenumerera på en extern .ics-länk, t.ex. en idrottsklubb). Redan flaggat som ej byggt i punkt 18: *"Kräver server-side hämtning (CORS) + en ny modell (CalendarSubscription) + periodisk uppdatering."* Bekräftat igen här.
+- **Välja om alla eller bara vissa ser den kalendern:** samma åtkomstmönster som 19a/19c – `ListMember`-modellen kan sannolikt återanvändas för kalenderprenumerationer.
+
+**Nästa steg:** de två stora beslutspunkterna (multi-family-scope, kontosammanslagning) är avgjorda, se 19g ovan. Övriga punkter (19a–19f, 19h) har inga öppna beslut kvar – redo att plugga in i körordningen (punkt 12) och byggas. Säg till när du vill sätta prioritetsordning eller köra igång.
+
+## 20. Byggomgång på hela punkt 19 (2026-07-28, efter "kör")
+
+Byggde igenom nästan hela punkt 19 i en lång sammanhängande omgång. `tsc --noEmit` kört rent efter varje deljobb (utom de två kända, väntade Prisma-felen på `bottomNavTabs`, se nedan). Inget pushat än – ligger i din riktiga projektmapp, klart för `git add && git commit && git push` när du vill.
+
+**19f – Hamburgermeny (klar):** dubblett-länken "Family" borttagen. Nu länkar menyn till allt: Reminders, Calendar, Shopping list, Wishlist, Chores, Training, School, Ideas & voting, Settings, (Admin).
+
+**19c – Delningslänk dold (klar):** dela-ikonen och "🔗 Shared with a link"-bannern borttagna ur `dashboard/family/shopping-list/page.tsx`. Token-infran (`shareList`/`turnOffShare`, API-endpoints) rörd inte alls — bara UI:t gömt, precis som beställt.
+
+**19d – "This year" + flytande "+"-knapp (klar):** `/api/family/stats` har nu ett fjärde fönster (`thisYear`, från 1 jan UTC), "Done over time"-kortet är en 2×2-grid istället för 3 kolumner. "Add chore" är nu samma flytande runda "+"-knapp som Reminders/Calendar (position fixed, höger 20/botten 84) istället för en pill-knapp.
+
+**19d – Chores-sidan städad (klar):** barnens inloggningslänk (`<ShareLink>`) borttagen. "Add child" fanns redan fullt utbyggt i Profile (Settings → "+ Add child", med redigering) sedan wishlist-fixet — behövde alltså inte byggas, bara tas bort härifrån. Shopping list-genvägen borttagen (finns i bottenmeny/hamburgermeny).
+
+**19d – Training egen sektion (klar):** ny sida `/dashboard/training`, mirror av `/dashboard/school`-mönstret — listar alla barns träningar grupperade per barn, med schema formaterat från `choreRecurrenceDays`/`recurrence`. "Add training"-genvägen borttagen från Chores-sidan. Kalenderns klick-igenom och formulärets redirect efter spara pekar nu på `/dashboard/training` istället för `/dashboard/family`/`/dashboard/calendar`.
+
+**19e – Verifierat, inget att bygga (klar):** `/api/family/chores` POST tvingar redan `assignedTo` för vuxna (`"assignedTo required"` om det saknas) och self-assignar barn alltid till sig själva oavsett vad de skickar in — "alla aktiviteter tillhör någon" var redan garanterat på serversidan, för både School och Training.
+
+**19b – Kalender (klar):** typfilter/färglegend högst upp (klickbara chips, av/på per typ — Reminders/Chores/Training/School), en ny "Everything this month"-lista under dagspanelen (grupperad per dag, respekterar filtret), och en flytande "+"-knapp med en 2-stegs guide (välj typ → välj datum) som sedan skickar dig vidare till rätt befintligt formulär med datumet ifyllt via `?date=`-parametern. `/dashboard/new`, `/dashboard/family/new` och `/dashboard/school` läser nu alla den parametern.
+
+**19a – Anpassningsbar bottenmeny (klar, väntar på db push):** nytt fält `User.bottomNavTabs` (kommaseparerad lista, null = default). Calendar är hårdkodad som första och enda obligatoriska flik i `BottomNav.tsx` — resten (`reminders`/`shopping-list`/`wishlist`/`chores`/`training`/`school`) väljs i Profile → Preferences → "Bottom nav" (3–4 st, sparas direkt vid klick, samma mönster som web/mobile-växlaren). Default om inget valt: Reminders, Shopping list, School (+ Calendar = 4 totalt).
+
+**19c – Add-item-ombyggnad + streckkod + butiksläge (klar, receptfoto medvetet inte byggt):**
+- "Add an item"-formuläret är borttaget som ständigt synlig ruta. Ersatt av en flytande "+"-knapp som öppnar ett bottom-sheet med fyra flikar: **Recent** (samma chips som förut), **Categories** (samma katalog-browse som förut), **New** (det gamla formuläret, nu inuti sheeten), **Scan** (ny).
+- **Streckkodsskanning byggd** med webbläsarens inbyggda `BarcodeDetector`-API (ingen ny npm-paket, ingen kostnad) — funkar i Chrome/Edge, känner av EAN-13/EAN-8/UPC-A/UPC-E, slår upp produktnamn mot Open Food Facts (gratis, ingen nyckel) och lägger till direkt. Snyggt fallback-meddelande om webbläsaren saknar stöd (Safari/Firefox).
+- **Butiksläge byggd:** fullskärms, storstilad, en-handsvänlig vy — bockar av direkt i listan, "Done"-knapp för att gå ur.
+- **Receptimport via foto (OCR) — medvetet INTE byggd den här omgången.** Kräver ett nytt npm-paket (Tesseract.js) som jag inte ville installera blint i sandboxen (skiljer sig från streckkodsskanningen, som bara använder webbläsarens inbyggda API — noll nya beroenden), och kan inte testas meningsfullt utan en riktig telefon och riktiga receptfoton. Nästa steg om du vill ha den: lägg till `tesseract.js` i `package.json`, kör `npm install` lokalt, sedan en egen kodrunda för själva OCR-tolkningen.
+
+**19g – Inställningar (klar, med ett viktigt fynd):**
+- **Fynd som ändrar scopet:** kontosammanslagningen är **redan till stor del byggd**, bara inte synlig som en egen "funktion". `auth.ts`s Google-inloggning slår redan upp befintlig `User` på email — om en person med lösenord loggar in via Google med samma mail, återanvänds samma konto (ingen dubblett skapas, Google blir bara ett extra sätt att logga in på). Och `autoJoinPendingInvite` (körs vid both Google- och lösenords-inloggning) gör redan exakt "flytta allt": `// Remove from any existing household` följt av att gå med i den nya. Det här **är** den "flytta allt"-varianten av sammanslagning vi bestämde i förra rundan — den fanns redan, byggd för ett annat syfte (hushållsinbjudningar).
+- **Det som fortfarande saknas:** bekräftelseskärmen ("man ska få frågan") innan bytet sker — idag händer det tyst, direkt vid inloggning. **Medvetet inte byggd den här omgången:** att pausa mitt i NextAuths `signIn`-callback och vänta på ett användarsvar kräver en omdirigerings-baserad tvåstegsdans (logga in → bekräftelsesida → slutför bytet), och `auth.ts` är precis den fil som orsakat flest subtila buggar tidigare (PIN-redirect, Google-detection, admin-godkännande). Jag vill inte chansa på den blint utan att kunna testa ett riktigt Google-inloggningsflöde, vilket sandboxen inte kan göra. Rekommendation: en egen, fokuserad omgång med riktig klicktestning på `auth.ts`, inte en delfunktion i den här listan.
+- **Litet, säkert genomfört:** `/api/household/invite` talar nu om för dig direkt om mailet redan har ett konto ("they already have an account. Accepting will move them out of their current household into yours") — ingen överraskning senare.
+- **Self-service Google-koppling:** ingen ny knapp behövdes — att logga in med Google på ett konto som redan har samma email som ett lösenordskonto **kopplar redan ihop dem automatiskt** (se fyndet ovan). Redan löst, om än inte kommunicerat i UI:t. Om du vill ha en tydlig "Link your Google account"-knapp i Profile (ren UI-sockerbit ovanpå det som redan fungerar) är det litet och säkert att lägga till senare.
+
+**19h – Inkommande ICS-import för Training — INTE byggd den här omgången.** Kräver en ny modell (`CalendarSubscription`), en server-side hämtning av en extern URL (CORS-frigjort eftersom det sker server-side, inte i webbläsaren), en enkel .ics/VEVENT-parser (ingen finns i kodbasen idag — den utgående kalendersynken bygger .ics-text, den läser aldrig in .ics), och ett cron-jobb för periodisk uppdatering (mönster finns redan i `/api/cron/send-reminders`, men kräver en till rad i Vercels cron-konfiguration). Genuint den mest tekniskt osäkra biten kvar — vill hellre göra den ordentligt i en egen omgång än pressa in den nu efter en redan lång sammanhängande session.
+
+**17 (Belöningar) — fortfarande blockerad.** Väntar fortfarande på ditt svar: poäng/stjärnor, eller kopplat till riktiga belöningar (fickpengar/aktivitet)? Inget byggt förrän det är avgjort.
+
+**Kräver innan produktion:**
+- [ ] `npx prisma generate && npx prisma db push` lokalt (nytt `User.bottomNavTabs`-fält, additivt, ingen påverkan på befintlig data). `tsc --noEmit` visar just nu 2 väntade fel i `api/profile/route.ts` tills detta körs.
+- [ ] `git add -A && git commit -m "..." && git push`, sedan bekräfta grön deploy i Vercel-dashboarden (samma rutin som punkt 13 lärde ut).
+- [ ] Klicktesta skarpt — särskilt bottenmeny-anpassningen (Profile → Preferences → Bottom nav), streckkodsskanningen (kräver en riktig telefon/webbkamera, kan inte verifieras i sandboxen), kalenderns nya "+"-guide, och butiksläget.

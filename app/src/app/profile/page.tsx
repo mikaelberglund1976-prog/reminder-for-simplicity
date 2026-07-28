@@ -39,6 +39,20 @@ const REMINDER_TIMES = [
   "07:00", "08:00", "09:00", "10:00", "12:00", "15:00", "18:00", "20:00",
 ];
 
+// Bottom nav apps a person can choose from — 2026-07-28, "under sin person
+// kunna säga vilka av apparna som ska ligga i bannern". Calendar isn't in
+// this list: it's always shown and can't be turned off (see BottomNav.tsx).
+// Keep this in sync with BOTTOM_NAV_APPS in /api/profile/route.ts.
+const BOTTOM_NAV_APP_OPTIONS = [
+  { key: "reminders", label: "Reminders", emoji: "🔔" },
+  { key: "shopping-list", label: "Shopping list", emoji: "🛒" },
+  { key: "wishlist", label: "Wishlist", emoji: "🎁" },
+  { key: "chores", label: "Chores", emoji: "🧹" },
+  { key: "training", label: "Training", emoji: "⚽" },
+  { key: "school", label: "School", emoji: "📚" },
+];
+const DEFAULT_BOTTOM_NAV_APPS = ["reminders", "shopping-list", "school"];
+
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
 type Profile = {
@@ -89,6 +103,8 @@ export default function ProfilePage() {
   const [editChildError, setEditChildError] = useState("");
   const [savingChildEdit, setSavingChildEdit] = useState(false);
   const [viewMode, setViewModeLocal] = useState<ViewMode>("mobile");
+  const [bottomNavApps, setBottomNavApps] = useState<string[]>(DEFAULT_BOTTOM_NAV_APPS);
+  const [savingBottomNav, setSavingBottomNav] = useState(false);
 
   useEffect(() => {
     setViewModeLocal(getViewMode());
@@ -97,6 +113,30 @@ export default function ProfilePage() {
   function changeViewMode(mode: ViewMode) {
     setViewMode(mode);
     setViewModeLocal(mode);
+  }
+
+  // 2026-07-28 — toggle one app in/out of the bottom nav (3–4 non-Calendar
+  // apps; Calendar itself is fixed, see BottomNav.tsx). Saves immediately,
+  // same pattern as the view-mode switcher above.
+  async function toggleBottomNavApp(key: string) {
+    let next: string[];
+    if (bottomNavApps.includes(key)) {
+      if (bottomNavApps.length <= 3) return; // keep at least 3
+      next = bottomNavApps.filter(k => k !== key);
+    } else {
+      if (bottomNavApps.length >= 4) return; // at most 4
+      next = [...bottomNavApps, key];
+    }
+    setBottomNavApps(next);
+    setSavingBottomNav(true);
+    try {
+      await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bottomNavTabs: next }),
+      });
+    } catch (e) { console.error(e); }
+    finally { setSavingBottomNav(false); }
   }
   const [showAddPinChild, setShowAddPinChild] = useState(false);
   const [pinChildName, setPinChildName] = useState("");
@@ -134,6 +174,10 @@ export default function ProfilePage() {
         const data = await res.json();
         setProfile(data);
         setHasPin(!!data.hasPin);
+        if (data.bottomNavTabs) {
+          const keys: string[] = data.bottomNavTabs.split(",").filter((k: string) => BOTTOM_NAV_APP_OPTIONS.some(o => o.key === k));
+          if (keys.length >= 3) setBottomNavApps(keys);
+        }
         setForm({
           firstName: (data.name || "").split(" ")[0],
           lastName: (data.name || "").split(" ").slice(1).join(" "),
@@ -268,7 +312,16 @@ export default function ProfilePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       setInviteEmail("");
-      setInviteMsg({ type: "ok", text: `Invite sent to ${inviteEmail} ✓` });
+      // 2026-07-28: if this email already belongs to someone with their own
+      // account, say so up front — accepting the invite moves them out of
+      // their current household (existing behavior, see auth.ts
+      // autoJoinPendingInvite), not something that should surprise anyone.
+      setInviteMsg({
+        type: "ok",
+        text: data.existingUser
+          ? `Invite sent to ${inviteEmail} ✓ — they already have an account. Accepting will move them out of their current household into yours.`
+          : `Invite sent to ${inviteEmail} ✓`,
+      });
       fetchHousehold();
     } catch (err: unknown) {
       setInviteMsg({ type: "err", text: err instanceof Error ? err.message : "Something went wrong." });
@@ -536,6 +589,41 @@ export default function ProfilePage() {
                 ))}
               </div>
               <Hint>Web view uses a wider column on bigger screens. Saved on this device — switch back anytime.</Hint>
+            </Field>
+            <Field label="Bottom nav">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <span style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "8px 12px",
+                  borderRadius: 50, fontSize: 12.5, fontWeight: 700,
+                  background: "#F0F3FA", color: "#9CA3AF", border: "1.5px solid #E4E3DE",
+                }}>
+                  📅 Calendar
+                </span>
+                {BOTTOM_NAV_APP_OPTIONS.map(opt => {
+                  const active = bottomNavApps.includes(opt.key);
+                  const disabled = savingBottomNav || (active && bottomNavApps.length <= 3) || (!active && bottomNavApps.length >= 4);
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => toggleBottomNavApp(opt.key)}
+                      disabled={disabled}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 6, padding: "8px 12px",
+                        borderRadius: 50, fontSize: 12.5, fontWeight: 700, fontFamily: "inherit",
+                        cursor: disabled ? "not-allowed" : "pointer",
+                        border: active ? "1.5px solid #4A5FD5" : "1.5px solid #E4E3DE",
+                        background: active ? "#E4E7FB" : "#fff",
+                        color: active ? "#3A4FC5" : "#4B5563",
+                        opacity: disabled && !active ? 0.5 : 1,
+                      }}
+                    >
+                      {opt.emoji} {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <Hint>Calendar always shows first and can’t be removed. Pick {bottomNavApps.length < 4 ? "one more (" : ""}3 or 4 others{bottomNavApps.length < 4 ? ")" : ""} — everything else is always reachable from the ☰ menu.</Hint>
             </Field>
           </Card>
 

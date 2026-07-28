@@ -15,11 +15,19 @@ const phoneSchema = z
   )
   .optional();
 
+// Fixed set of apps a user can put in their bottom nav — Calendar is
+// deliberately excluded here, it's always shown and can't be removed (see
+// components/BottomNav.tsx).
+const BOTTOM_NAV_APPS = ["reminders", "shopping-list", "wishlist", "chores", "training", "school"] as const;
+
 const profileSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   phone: phoneSchema,
   preferredCurrency: z.enum(["SEK", "EUR", "USD", "GBP", "NOK", "DKK"]).optional(),
   timezone: z.string().max(100).optional(),
+  // 3 or 4 non-Calendar apps — combined with the fixed Calendar tab that's
+  // 4 or 5 total, matching the "4 eller 5 flikar" decision.
+  bottomNavTabs: z.array(z.enum(BOTTOM_NAV_APPS)).min(3).max(4).optional(),
 });
 
 // GET /api/profile — fetch current user profile
@@ -42,6 +50,7 @@ export async function GET() {
       isChildProfile: true,
       pin: true,
       password: true,
+      bottomNavTabs: true,
     },
   });
 
@@ -76,6 +85,7 @@ export async function PUT(req: Request) {
       phone?: string | null;
       preferredCurrency?: "SEK" | "EUR" | "USD" | "GBP" | "NOK" | "DKK";
       timezone?: string;
+      bottomNavTabs?: string;
     } = {
       name: parsed.name,
       preferredCurrency: parsed.preferredCurrency,
@@ -83,6 +93,9 @@ export async function PUT(req: Request) {
     };
     if (parsed.phone !== undefined) {
       data.phone = parsed.phone === "" ? null : parsed.phone;
+    }
+    if (parsed.bottomNavTabs !== undefined) {
+      data.bottomNavTabs = parsed.bottomNavTabs.join(",");
     }
 
     const updated = await prisma.user.update({
@@ -96,6 +109,7 @@ export async function PUT(req: Request) {
         preferredCurrency: true,
         timezone: true,
         createdAt: true,
+        bottomNavTabs: true,
       },
     });
 

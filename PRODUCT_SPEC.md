@@ -150,22 +150,27 @@ Varje barn har sin egen önskelista, separat från den delade inköpslistan (P0.
 - Nås via bottenmenyn (se 4b.10), egen sida på `/dashboard/wishlist`.
 - API: `GET/POST /api/family/wishlist`, `PATCH/DELETE /api/family/wishlist/[id]`.
 
-### 4b.10 Bottenmeny / navigering (byggd 2026-07-27)
+### 4b.10 Bottenmeny / navigering (byggd 2026-07-27, gjord anpassningsbar 2026-07-28)
 
-- Tre flikar – **Reminders, Shopping list, Wishlist** – alltid synliga längst ned på alla `/dashboard/*`-sidor (`app/dashboard/layout.tsx` + `components/BottomNav.tsx`). Att byta flik tar ett tryck, ingen laddningsfördröjning.
-- Liten röd notis-prick på en flik om något lagts till sedan senaste besöket. Löst utan ny databastabell: varje listsida sparar "senast sedd" (tidsstämpel) i `localStorage` när den laddas (`lib/listBadges.ts`), och menyn jämför det med den senaste varans `createdAt`. Enkel och tillräcklig lösning för ett hushåll – om appen skalar till fler användare per konto/enhet bör detta bli en riktig "senast läst"-kolumn per användare istället.
-- Bottenmeny valdes enligt beställningens motivering: branschstandard, minst antal tryck för 2–4 toppnivåer.
-- Menyns egen bakgrund är breddbegränsad till samma `--content-max-width` som resten av appen (se 4b.12) med rundade överkanter, istället för att gå kant-till-kant över hela skärmen – annars såg den trasig ut på breda skärmar (vit rand med flikarna klumpade i mitten).
-- **Bugghistoria:** `/dashboard` hade tidigare sin egen inbyggda bottenmeny (Reminders/History/Settings/+) som byggdes innan den delade menyn fanns. De krockade visuellt (låg på varandra) tills den gamla togs bort 2026-07-27 – se 4b.11 för var funktionerna hamnade istället.
+- **Ursprungligen** tre hårdkodade flikar (Reminders/Shopping list/Wishlist), sedan fyra efter att Calendar lades till 2026-07-28 (se 4b.19). **Från 2026-07-28 (kväll) är menyn per-person-anpassningsbar**, efter direkt beställning ("under sin person kunna säga vilka av apparna som ska ligga i bannern"):
+  - **Calendar är alltid längst till vänster och går inte att ta bort** – den enda låsta fliken.
+  - Resten (3 eller 4 av: `reminders`/`shopping-list`/`wishlist`/`chores`/`training`/`school`) väljs av varje person själv under **Profile → Preferences → "Bottom nav"** – klickbara chips, sparas direkt (samma optimistiska mönster som web/mobile-vyväxlaren i 4b.12).
+  - Nytt fält `User.bottomNavTabs` (kommaseparerad sträng av app-nycklar, `null` = använd default). Default: **Reminders, Shopping list, School** (+ Calendar = 4 totalt).
+  - `components/BottomNav.tsx` är nu datadriven (en `APP_TABS`-lookup + `CALENDAR_TAB` konstant) istället för en hårdkodad array – hämtar personens val via `GET /api/profile` vid sidladdning.
+  - Allt som *inte* ligger i bottenmenyn är fortfarande fullt nåbart via hamburgermenyn (se 4b.11), som medvetet alltid visar allt oavsett vad som är valt här.
+- Liten röd notis-prick på en flik om något lagts till sedan senaste besöket (oförändrat sedan 2026-07-27). Löst utan ny databastabell: varje listsida sparar "senast sedd" (tidsstämpel) i `localStorage` när den laddas (`lib/listBadges.ts`), och menyn jämför det med den senaste varans `createdAt`.
+- Menyns egen bakgrund är breddbegränsad till samma `--content-max-width` som resten av appen (se 4b.12) med rundade överkanter, istället för att gå kant-till-kant över hela skärmen.
+- **Bugghistoria:** `/dashboard` hade tidigare sin egen inbyggda bottenmeny (Reminders/History/Settings/+) som byggdes innan den delade menyn fanns. De krockade visuellt tills den gamla togs bort 2026-07-27 – se 4b.11 för var funktionerna hamnade istället.
 
-### 4b.11 Hamburgermeny för allt som inte har en egen flik (byggd 2026-07-27)
+### 4b.11 Hamburgermeny för allt som inte har en egen flik (byggd 2026-07-27, breddad till full åtkomst 2026-07-28)
 
-Bottenmenyns tre flikar räcker inte för allt – Family-hubben, Settings, Admin-panelen och utloggning behövde också vara nåbara utan att skriva URL:er för hand.
+Eftersom bottenmenyn nu bara visar 4–5 av alla appar (se 4b.10), måste hamburgermenyn täcka **allt** – inte bara det som saknar en egen flik.
 
-- `components/HamburgerMenu.tsx`: en ☰-knapp längst till höger i sidhuvudet, öppnar en dropdown med **Reminders, Family, Settings**, och **Admin** (endast om `session.user.email === ADMIN_EMAIL` – samma konstant som skyddar `/admin` själv, delad via `lib/adminConfig.ts` för att inte kunna divergera), plus **Sign out** längst ner.
-- Placerad som en vanlig flex-sibling bredvid sidtiteln (`<h1 style="flex:1">`) i stället för en fristående `position:fixed`-knapp – annars hade den riskerat att hamna ovanpå titeltexten på smala mobilskärmer, samma typ av bugg som bottenmenyn hade mot `/dashboard`s gamla meny.
-- Tillagd i sidhuvudet på: `/dashboard` (Reminders), `/dashboard/family`, `/dashboard/family/shopping-list`, `/dashboard/wishlist` – de sidor användaren faktiskt "bor" på. Djupare formulärsidor (skapa/redigera reminder, bjud in familjemedlem) har medvetet bara tillbaka-knapp, som är standard UX för uppgiftsflöden.
-- **Innan detta:** `/admin` gick bara att nå genom att skriva URL:en direkt i webbläsaren – ingen länk fanns i appen.
+- `components/HamburgerMenu.tsx`: en ☰-knapp längst till höger i sidhuvudet, öppnar en dropdown med **Reminders, Calendar, Shopping list, Wishlist, Chores, Training, School, Ideas & voting, Settings**, och **Admin** (endast om `session.user.email === ADMIN_EMAIL` – samma konstant som skyddar `/admin` själv, delad via `lib/adminConfig.ts`), plus **Sign out** längst ner.
+- **"Family"-länken togs bort 2026-07-28** – den pekade på exakt samma sida som "Chores" (dubblett), och med Training/School som egna sektioner (se 4b.21) fanns inget kvar som motiverade ett separat "Family"-begrepp i menyn. Familjemedlemshantering (bjud in, lägg till barn) sker under Settings, se 4b.24.
+- Placerad som en vanlig flex-sibling bredvid sidtiteln (`<h1 style="flex:1">`) i stället för en fristående `position:fixed`-knapp.
+- Tillagd i sidhuvudet på: `/dashboard`, `/dashboard/family` (Chores), `/dashboard/training`, `/dashboard/school`, `/dashboard/family/shopping-list`, `/dashboard/wishlist`, `/dashboard/calendar`, `/dashboard/suggestions` – i praktiken alla huvudsidor. Djupare formulärsidor (skapa/redigera reminder, bjud in familjemedlem) har medvetet bara tillbaka-knapp.
+- **Innan 2026-07-27:** `/admin` gick bara att nå genom att skriva URL:en direkt i webbläsaren – ingen länk fanns i appen.
 
 ### 4b.12 Mobil/webb-vy-växlare (byggd 2026-07-27)
 

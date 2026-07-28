@@ -30,6 +30,7 @@ type ChildStats = {
   last7Days: number;
   thisMonth: number;
   lastMonth: number;
+  thisYear: number;
 };
 
 type TrialInfo = {
@@ -62,7 +63,6 @@ export default function FamilyPage() {
   const [newChildPinConfirm, setNewChildPinConfirm] = useState("");
   const [addChildError, setAddChildError] = useState("");
   const [addingChild, setAddingChild] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -374,15 +374,6 @@ export default function FamilyPage() {
         </div>
       )}
 
-      {/* Share link for children */}
-      {householdId && (
-        <ShareLink householdId={householdId} copied={copied} onCopy={() => {
-          navigator.clipboard.writeText(window.location.origin + "/family?h=" + householdId);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        }} />
-      )}
-
       {/* Child tabs */}
       {summary.length > 1 && (
         <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", paddingBottom: 4 }}>
@@ -493,11 +484,12 @@ export default function FamilyPage() {
           <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 14 }}>
             Tasks {viewStats.childName} has completed.
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {[
               { value: viewStats.last7Days,  label: "Last 7 days" },
               { value: viewStats.thisMonth,  label: "This month" },
               { value: viewStats.lastMonth,  label: "Last month" },
+              { value: viewStats.thisYear,   label: "This year" },
             ].map(s => (
               <div key={s.label} style={{
                 background: "#F5F4F0", borderRadius: 12, padding: "12px 8px", textAlign: "center",
@@ -510,63 +502,8 @@ export default function FamilyPage() {
         </div>
       )}
 
-      {/* Action buttons */}
-      {isActive && (
-        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-          <Link href="/dashboard/family/new" style={{
-            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            background: "#1C1C28", color: "#fff", borderRadius: 50, padding: "14px",
-            fontSize: 14, fontWeight: 700, textDecoration: "none",
-          }}>
-            <IcPlus /> Add chore
-          </Link>
-          <Link href="/dashboard/family/new?type=training" style={{
-            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            background: "#fff", color: "#1C1C28", borderRadius: 50, padding: "14px",
-            fontSize: 14, fontWeight: 700, textDecoration: "none", border: "1.5px solid #E4E3DE",
-          }}>
-            ⚽ Add training
-          </Link>
-        </div>
-      )}
-
-      {isActive && !showAddChild && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
-          <button onClick={() => setShowAddChild(true)}
-            style={{
-              padding: "10px 16px", borderRadius: 50, background: "#F0F3FA",
-              border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563",
-              cursor: "pointer", fontFamily: FONT, whiteSpace: "nowrap",
-            }}>
-            + Add child
-          </button>
-        </div>
-      )}
-
-      {isActive && (
-        <div style={{ marginBottom: showAddChild ? 0 : 16 }}>
-          <Link href="/dashboard/family/shopping-list" style={{
-            display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
-            background: "#E4E7FB", color: "#1A3A6E", borderRadius: 50, padding: "13px",
-            fontSize: 14, fontWeight: 700, textDecoration: "none", border: "1.5px solid #BDD6FF",
-          }}>
-            🛒 Shopping list
-          </Link>
-        </div>
-      )}
-      {isActive && showAddChild && (
-        <AddChildForm
-          name={newChildName} setName={setNewChildName}
-          pin={newChildPin} setPin={setNewChildPin}
-          pinConfirm={newChildPinConfirm} setPinConfirm={setNewChildPinConfirm}
-          error={addChildError} loading={addingChild}
-          onSave={createChildProfile}
-          onCancel={resetAddChildForm}
-        />
-      )}
-
       {/* Empty state */}
-      {isActive && summary.length === 0 && !showAddChild && (
+      {isActive && summary.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 24px" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
           <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 8 }}>No chores yet</div>
@@ -575,6 +512,24 @@ export default function FamilyPage() {
           </div>
           <Link href="/dashboard/family/new" style={btnStyle("#1C1C28")}>Create first chore</Link>
         </div>
+      )}
+
+      {/* Add chore — same floating round "+" button used on Reminders/Calendar
+          (2026-07-28, replaces the old pill-shaped "Add chore"/"Add training"
+          row for visual consistency). Training now lives on its own page
+          (/dashboard/training), Shopping list and Add child are reachable
+          from the bottom nav/hamburger menu and Profile respectively — this
+          page only adds chores now. */}
+      {isActive && (
+        <Link href="/dashboard/family/new" aria-label="Add chore" style={{
+          position: "fixed", right: 20, bottom: 84, zIndex: 19,
+          width: 52, height: 52, borderRadius: "50%",
+          background: "#1C1C28", color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 4px 14px rgba(28,28,40,0.35)", textDecoration: "none",
+        }}>
+          <IcPlus />
+        </Link>
       )}
     </Screen>
   );
@@ -659,28 +614,6 @@ function AddChildForm({ name, setName, pin, setPin, pinConfirm, setPinConfirm, e
           Cancel
         </button>
       </div>
-    </div>
-  );
-}
-
-type ShareLinkProps = {
-  householdId: string;
-  copied: boolean;
-  onCopy: () => void;
-};
-
-function ShareLink({ householdId: _hid, copied, onCopy }: ShareLinkProps) {
-  return (
-    <div style={{ background: "#E4E7FB", borderRadius: 14, border: "1.5px solid #BDD6FF", padding: "14px 16px", marginBottom: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#1A3A6E", marginBottom: 4 }}>Children’s login link</div>
-      <div style={{ fontSize: 12, color: "#4B6EA8", marginBottom: 12, lineHeight: 1.5 }}>
-        Share this with your children. They tap their name and enter their PIN — no email needed.
-      </div>
-      <button
-        onClick={onCopy}
-        style={{ display: "inline-flex", alignItems: "center", gap: 8, background: copied ? "#D4F4E6" : "#1C1C28", color: copied ? "#1E7D52" : "#fff", border: "none", borderRadius: 50, padding: "10px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-        {copied ? "Copied!" : "Copy login link"}
-      </button>
     </div>
   );
 }

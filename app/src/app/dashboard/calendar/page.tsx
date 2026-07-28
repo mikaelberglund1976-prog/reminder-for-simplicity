@@ -30,6 +30,7 @@ function IcBack()  { return <svg width={20} height={20} viewBox="0 0 24 24" {...
 function IcLeft()  { return <svg width={18} height={18} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="15 18 9 12 15 6"/></svg>; }
 function IcRight() { return <svg width={18} height={18} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>; }
 function IcChevRight() { return <svg width={15} height={15} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>; }
+function IcPlusBig() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>; }
 
 // Note: SCHOOL is deliberately absent here — School is its own category
 // section (see /dashboard/school), never created through the general
@@ -52,6 +53,18 @@ const TRAINING_COLOR = "#D85A30";
 // /dashboard/school and /dashboard/family/child), but still shows up here
 // since everything syncs to the calendar. Indigo, matching the mockup.
 const SCHOOL_COLOR = "#3730A3";
+
+// Reminders span multiple category colors (see CATEGORY_COLOR above), so the
+// filter/legend chip for that kind uses a neutral swatch rather than any one
+// category's color — it represents "reminders as a kind", not a category.
+const REMINDER_KIND_COLOR = "#5A6080";
+
+const KIND_META: Record<CalendarEntry["kind"], { label: string; color: string; emoji: string }> = {
+  reminder: { label: "Reminders", color: REMINDER_KIND_COLOR, emoji: "🔔" },
+  chore: { label: "Chores", color: CHORE_COLOR, emoji: "🧹" },
+  training: { label: "Training", color: TRAINING_COLOR, emoji: "⚽" },
+  school: { label: "School", color: SCHOOL_COLOR, emoji: "📚" },
+};
 
 const RECURRENCE_LABELS: Record<string, string> = {
   ONCE: "Once", DAILY: "Daily", WEEKLY: "Weekly", MONTHLY: "Monthly", YEARLY: "Yearly",
@@ -98,6 +111,45 @@ export default function CalendarPage() {
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
   const [currentMonth, setCurrentMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState<Date>(today);
+
+  // Type filter — 2026-07-28, "filtrera på de olika typerna samt ha
+  // färkodning synlig". Empty set = nothing hidden = everything shown.
+  const [hiddenKinds, setHiddenKinds] = useState<Set<CalendarEntry["kind"]>>(new Set());
+  function toggleKind(kind: CalendarEntry["kind"]) {
+    setHiddenKinds((prev) => {
+      const next = new Set(prev);
+      if (next.has(kind)) next.delete(kind); else next.add(kind);
+      return next;
+    });
+  }
+
+  // Floating "+" wizard — 2026-07-28: "välj typ först, sen datum, sen vad det
+  // är". Step 3 (the actual details) is the existing per-type creation
+  // screen, reached via a `date` query param so it doesn't have to be picked
+  // twice.
+  const [addStep, setAddStep] = useState<0 | 1 | 2>(0); // 0 = closed, 1 = pick type, 2 = pick date
+  const [addKind, setAddKind] = useState<"reminder" | "chore" | "training" | "school">("reminder");
+  const [addDate, setAddDate] = useState("");
+
+  function openAddWizard() {
+    setAddKind("reminder");
+    setAddDate(dateKey(selectedDate));
+    setAddStep(1);
+  }
+  function chooseAddKind(kind: "reminder" | "chore" | "training" | "school") {
+    setAddKind(kind);
+    setAddStep(2);
+  }
+  function confirmAddDate() {
+    const d = addDate || dateKey(selectedDate);
+    const dest =
+      addKind === "reminder" ? `/dashboard/new?date=${d}` :
+      addKind === "chore" ? `/dashboard/family/new?date=${d}` :
+      addKind === "training" ? `/dashboard/family/new?type=training&date=${d}` :
+      `/dashboard/school?date=${d}`;
+    setAddStep(0);
+    router.push(dest);
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -216,7 +268,34 @@ export default function CalendarPage() {
     return map;
   }, [reminders, chores, trainings, schoolItems, gridStart, gridDays]);
 
-  const selectedEntries = entriesByDay.get(dateKey(selectedDate)) ?? [];
+  // Filtered view of entriesByDay, respecting the type-filter chips. Kept
+  // separate from entriesByDay itself so toggling a filter never has to
+  // re-run the (more expensive) occurrence expansion above.
+  const visibleEntriesByDay = useMemo(() => {
+    if (hiddenKinds.size === 0) return entriesByDay;
+    const map = new Map<string, CalendarEntry[]>();
+    for (const [key, list] of Array.from(entriesByDay.entries())) {
+      const filtered = list.filter((e) => !hiddenKinds.has(e.kind));
+      if (filtered.length > 0) map.set(key, filtered);
+    }
+    return map;
+  }, [entriesByDay, hiddenKinds]);
+
+  const selectedEntries = visibleEntriesByDay.get(dateKey(selectedDate)) ?? [];
+
+  // Month-overview list — 2026-07-28, "månadsöversiktslistan som ska ligga
+  // under vad som finns på dagen man valt". Every visible entry for the
+  // *current calendar month* (not the padding days from adjacent months
+  // shown in the grid), grouped by day, chronological.
+  const monthEntries = useMemo(() => {
+    const out: { key: string; date: Date; entries: CalendarEntry[] }[] = [];
+    for (const day of gridDays) {
+      if (day.getMonth() !== currentMonth.getMonth() || day.getFullYear() !== currentMonth.getFullYear()) continue;
+      const list = visibleEntriesByDay.get(dateKey(day));
+      if (list && list.length > 0) out.push({ key: dateKey(day), date: day, entries: list });
+    }
+    return out;
+  }, [gridDays, currentMonth, visibleEntriesByDay]);
 
   function goToMonth(delta: number) {
     setCurrentMonth((m) => new Date(m.getFullYear(), m.getMonth() + delta, 1));
@@ -228,10 +307,11 @@ export default function CalendarPage() {
   }
 
   function openEntry(entry: CalendarEntry) {
-    // Chores/trainings are managed from the Family hub; School has its own
-    // dedicated section (see /dashboard/school).
+    // Each kind now has its own dedicated section (2026-07-28: Training split
+    // out from the Chores/Family page, matching School's existing pattern).
     if (entry.kind === "reminder") router.push(`/dashboard/${entry.id}`);
     else if (entry.kind === "school") router.push("/dashboard/school");
+    else if (entry.kind === "training") router.push("/dashboard/training");
     else router.push("/dashboard/family");
   }
 
@@ -274,6 +354,30 @@ export default function CalendarPage() {
               <button onClick={() => goToMonth(1)} aria-label="Next month" style={navBtnStyle}><IcRight /></button>
             </div>
 
+            {/* Type filter / color legend — 2026-07-28 */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+              {(Object.keys(KIND_META) as CalendarEntry["kind"][]).map((kind) => {
+                const meta = KIND_META[kind];
+                const active = !hiddenKinds.has(kind);
+                return (
+                  <button
+                    key={kind}
+                    onClick={() => toggleKind(kind)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "6px 12px", borderRadius: 50, cursor: "pointer", fontFamily: FONT,
+                      border: active ? "1.5px solid transparent" : "1.5px solid #E4E3DE",
+                      background: active ? `${meta.color}1A` : "#fff",
+                      opacity: active ? 1 : 0.55,
+                    }}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: active ? meta.color : "#9CA3AF" }}>{meta.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Weekday header */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
               {WEEKDAY_HEADERS.map((w) => (
@@ -291,7 +395,7 @@ export default function CalendarPage() {
                 const inMonth = day.getMonth() === currentMonth.getMonth();
                 const isToday = isSameDay(day, today);
                 const isSelected = isSameDay(day, selectedDate);
-                const entries = entriesByDay.get(dateKey(day)) ?? [];
+                const entries = visibleEntriesByDay.get(dateKey(day)) ?? [];
                 const shown = entries.slice(0, 3);
                 const overflow = entries.length - shown.length;
                 return (
@@ -359,9 +463,143 @@ export default function CalendarPage() {
                 </div>
               )}
             </div>
+
+            {/* Month-overview list — 2026-07-28, sits below the selected-day
+                panel above. Everything visible (respecting the filter chips)
+                for the whole month, grouped by day, so browsing doesn't
+                require clicking through every day one at a time. */}
+            <div style={{ marginTop: 28 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#7C7C8A", marginBottom: 8 }}>
+                Everything this month
+              </div>
+              {monthEntries.length === 0 ? (
+                <div style={{ background: "#fff", border: "1px solid #E4E3DE", borderRadius: 16, padding: "24px 16px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>
+                  Nothing to show for {monthLabel}.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  {monthEntries.map(({ key, date, entries }) => (
+                    <div key={key}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: isSameDay(date, today) ? "#4A5FD5" : "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+                        {date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}{isSameDay(date, today) ? " · Today" : ""}
+                      </div>
+                      <div style={{ background: "#fff", border: "1px solid #E4E3DE", borderRadius: 16, overflow: "hidden" }}>
+                        {entries.map((e, i) => (
+                          <div
+                            key={`${e.kind}-${e.id}-${i}`}
+                            onClick={() => { setSelectedDate(date); openEntry(e); }}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+                              borderTop: i === 0 ? "none" : "1px solid #F0F3F8", cursor: "pointer",
+                            }}
+                          >
+                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: e.color, flexShrink: 0 }} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>{e.name}</div>
+                              <div style={{ fontSize: 11.5, color: "#7C7C8A", marginTop: 1 }}>{e.subtitle}</div>
+                            </div>
+                            <span style={{ color: "#C0C5D0", flexShrink: 0, display: "flex" }}><IcChevRight /></span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </>
         )}
       </main>
+
+      {/* Floating "+" — same style as Reminders. Type first, then date, then
+          the existing per-type details screen (2026-07-28). */}
+      <button
+        onClick={openAddWizard}
+        aria-label="Add"
+        style={{
+          position: "fixed", right: 20, bottom: 84, zIndex: 19,
+          width: 52, height: 52, borderRadius: "50%",
+          background: "#1C1C28", color: "#fff", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 4px 14px rgba(28,28,40,0.35)",
+        }}
+      >
+        <IcPlusBig />
+      </button>
+
+      {addStep > 0 && (
+        <div
+          onClick={() => setAddStep(0)}
+          style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", zIndex: 29, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: "var(--content-max-width)", background: "#fff",
+              borderRadius: "20px 20px 0 0", padding: "20px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
+              fontFamily: FONT,
+            }}
+          >
+            {addStep === 1 && (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>What are you adding?</div>
+                <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 16 }}>Step 1 of 2 — type</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {(Object.keys(KIND_META) as (keyof typeof KIND_META)[]).map((kind) => {
+                    const meta = KIND_META[kind];
+                    return (
+                      <button
+                        key={kind}
+                        onClick={() => chooseAddKind(kind)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
+                          borderRadius: 14, border: "1.5px solid #E4E3DE", background: "#fff",
+                          cursor: "pointer", fontFamily: FONT, textAlign: "left",
+                        }}
+                      >
+                        <span style={{ width: 34, height: 34, borderRadius: 10, background: `${meta.color}1A`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                          {meta.emoji}
+                        </span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>{meta.label.replace(/s$/, "")}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            {addStep === 2 && (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>When?</div>
+                <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 16 }}>Step 2 of 2 — date · {KIND_META[addKind].label}</div>
+                <input
+                  type="date"
+                  value={addDate}
+                  onChange={(e) => setAddDate(e.target.value)}
+                  style={{
+                    width: "100%", padding: "13px 14px", borderRadius: 12,
+                    border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT,
+                    outline: "none", boxSizing: "border-box", marginBottom: 16,
+                  }}
+                />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => setAddStep(1)}
+                    style={{ padding: "13px 18px", borderRadius: 50, background: "#F0F3FA", border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={confirmAddDate}
+                    style={{ flex: 1, padding: "13px 18px", borderRadius: 50, background: "#1C1C28", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

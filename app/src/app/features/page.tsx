@@ -110,6 +110,10 @@ export default function FeaturesPage() {
         </Link>
       </div>
 
+      <p style={{ textAlign: "center", fontSize: 12, color: "#ACA9A3", padding: "0 24px 32px" }}>
+        <Link href="/privacy" style={{ color: "#ACA9A3", textDecoration: "underline" }}>Privacy Policy</Link>
+      </p>
+
     </div>
   );
 }
