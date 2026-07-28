@@ -13,6 +13,9 @@ function IcHome()  { return <svg width={17} height={17} viewBox="0 0 24 24" {...
 function IcUsers() { return <svg width={17} height={17} viewBox="0 0 24 24" {...STR}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>; }
 function IcGear()  { return <svg width={17} height={17} viewBox="0 0 24 24" {...STR}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>; }
 function IcShield() { return <svg width={17} height={17} viewBox="0 0 24 24" {...STR}><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/></svg>; }
+function IcBulb() { return <svg width={17} height={17} viewBox="0 0 24 24" {...STR}><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.5.4.8 1 .8 1.6V17h6.4v-.7c0-.6.3-1.2.8-1.6A7 7 0 0 0 12 2z"/></svg>; }
+function IcChecklist() { return <svg width={17} height={17} viewBox="0 0 24 24" {...STR}><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="m4 6 1 1 2-2"/><path d="m4 12 1 1 2-2"/><path d="m4 18 1 1 2-2"/></svg>; }
+function IcSchool() { return <svg width={17} height={17} viewBox="0 0 24 24" {...STR}><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12.5V17c0 1.5 2.5 3 6 3s6-1.5 6-3v-4.5"/></svg>; }
 function IcLogout() { return <svg width={17} height={17} viewBox="0 0 24 24" {...STR}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>; }
 
 // Overflow menu for anything that doesn't have its own bottom tab — Family
@@ -59,7 +62,10 @@ export default function HamburgerMenu() {
           padding: 6, fontFamily: FONT,
         }}>
           <MenuLink href="/dashboard" icon={<IcHome />} label="Reminders" onClick={() => setOpen(false)} />
+          <MenuLink href="/dashboard/family" icon={<IcChecklist />} label="Chores" onClick={() => setOpen(false)} />
+          <MenuLink href="/dashboard/school" icon={<IcSchool />} label="School" onClick={() => setOpen(false)} />
           <MenuLink href="/dashboard/family" icon={<IcUsers />} label="Family" onClick={() => setOpen(false)} />
+          <MenuLink href="/dashboard/suggestions" icon={<IcBulb />} label="Ideas & voting" onClick={() => setOpen(false)} />
           <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={() => setOpen(false)} />
           {isAdmin && (
             <MenuLink href="/admin" icon={<IcShield />} label="Admin" onClick={() => setOpen(false)} />

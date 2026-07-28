@@ -520,16 +520,26 @@ export default function FamilyPage() {
           }}>
             <IcPlus /> Add chore
           </Link>
-          {!showAddChild && (
-            <button onClick={() => setShowAddChild(true)}
-              style={{
-                padding: "14px 18px", borderRadius: 50, background: "#F0F3FA",
-                border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563",
-                cursor: "pointer", fontFamily: FONT, whiteSpace: "nowrap",
-              }}>
-              + Add child
-            </button>
-          )}
+          <Link href="/dashboard/family/new?type=training" style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            background: "#fff", color: "#1C1C28", borderRadius: 50, padding: "14px",
+            fontSize: 14, fontWeight: 700, textDecoration: "none", border: "1.5px solid #E4E3DE",
+          }}>
+            ⚽ Add training
+          </Link>
+        </div>
+      )}
+
+      {isActive && !showAddChild && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+          <button onClick={() => setShowAddChild(true)}
+            style={{
+              padding: "10px 16px", borderRadius: 50, background: "#F0F3FA",
+              border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563",
+              cursor: "pointer", fontFamily: FONT, whiteSpace: "nowrap",
+            }}>
+            + Add child
+          </button>
         </div>
       )}
 

@@ -2,14 +2,15 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 function IcBack() { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><polyline points="15 18 9 12 15 6"/></svg>; }
 
 type Member = { id: string; name: string; role: string };
+type BookingCategory = "CHORE" | "TRAINING";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_NUMS = [1, 2, 3, 4, 5, 6, 0]; // JS getDay: 0=Sun, mapped to index
@@ -20,9 +21,23 @@ const CHORE_TEMPLATES = [
   "Feed the pet", "Make your bed", "Tidy your desk",
 ];
 
-export default function NewChorePage() {
+// 2026-07-28: trainings/practices as a recurring booking assigned to a
+// child — Mikael's request was "like a normal booking, Karate, then set it
+// on a day, recurring". Reuses this exact form (assign to child + how
+// often + start date) since that's already 90% of what a training booking
+// needs; only difference is no completion/approval step. See PRODUCT_SPEC 4b.19.
+const TRAINING_TEMPLATES = [
+  "Karate", "Football practice", "Swimming", "Dance class",
+  "Piano lesson", "Gymnastics", "Ice hockey", "Riding lesson",
+];
+
+function NewBookingContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [category, setCategory] = useState<BookingCategory>(
+    searchParams.get("type") === "training" ? "TRAINING" : "CHORE"
+  );
 
   const [name, setName] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
@@ -65,9 +80,11 @@ export default function NewChorePage() {
     );
   }
 
+  const isTraining = category === "TRAINING";
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setError("Chore name is required"); return; }
+    if (!name.trim()) { setError(isTraining ? "Name is required" : "Chore name is required"); return; }
     if (!assignedTo) { setError("Assign to a child"); return; }
     if (recurrence === "DAYS" && selectedDays.length === 0) { setError("Select at least one day"); return; }
 
@@ -76,11 +93,12 @@ export default function NewChorePage() {
 
     const body: Record<string, unknown> = {
       name: name.trim(),
+      category,
       assignedTo,
       recurrence: recurrence === "DAYS" ? "WEEKLY" : recurrence,
       recurrenceDays: recurrence === "DAYS" ? selectedDays.sort().join(",") : null,
       startDate: new Date(startDate).toISOString(),
-      requiresApproval,
+      requiresApproval: isTraining ? false : requiresApproval,
       note: note.trim() || null,
     };
 
@@ -92,7 +110,9 @@ export default function NewChorePage() {
       });
 
       if (res.ok) {
-        router.push("/dashboard/family");
+        // Trainings show up on the calendar, not the chores summary — land
+        // there instead of Family so the new booking is immediately visible.
+        router.push(isTraining ? "/dashboard/calendar" : "/dashboard/family");
       } else {
         const d = await res.json();
         setError(d.error ?? "Something went wrong");
@@ -124,23 +144,39 @@ export default function NewChorePage() {
           <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0 }}>New chore</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0 }}>{isTraining ? "New training" : "New chore"}</h1>
         </div>
       </div>
 
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "24px 20px 60px" }}>
         <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-          {/* Chore name */}
+          {/* Chore vs. training toggle */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {([["CHORE", "🧹 Chore"], ["TRAINING", "⚽ Training"]] as const).map(([val, lbl]) => (
+              <button key={val} type="button" onClick={() => setCategory(val)}
+                style={{
+                  padding: "10px 8px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+                  background: category === val ? "#1C1C28" : "#fff",
+                  color: category === val ? "#fff" : "#4B5563",
+                  border: category === val ? "none" : "1.5px solid #E4E3DE",
+                  cursor: "pointer", fontFamily: FONT,
+                }}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+
+          {/* Name */}
           <div>
-            <label style={label}>Chore name</label>
+            <label style={label}>{isTraining ? "What is it?" : "Chore name"}</label>
             <input value={name} onChange={e => setName(e.target.value)}
-              placeholder="e.g. Clean your room"
+              placeholder={isTraining ? "e.g. Karate" : "e.g. Clean your room"}
               style={inp} autoFocus />
             {/* Suggestions */}
             {!name && (
               <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 7 }}>
-                {CHORE_TEMPLATES.slice(0, 6).map(t => (
+                {(isTraining ? TRAINING_TEMPLATES : CHORE_TEMPLATES).slice(0, 6).map(t => (
                   <button key={t} type="button" onClick={() => setName(t)}
                     style={{ background: "#F0F3FA", border: "none", borderRadius: 50, padding: "7px 14px", fontSize: 12, fontWeight: 600, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}>
                     {t}
@@ -232,37 +268,39 @@ export default function NewChorePage() {
               style={inp} />
           </div>
 
-          {/* Requires approval toggle */}
-          <div style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #E4E3DE", padding: "16px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>Requires adult approval</div>
-                <div style={{ fontSize: 12, color: "#6B7280", marginTop: 3 }}>
-                  Child marks done → you approve it
+          {/* Requires approval toggle — a CHORE-only concept, no one "approves" a training booking */}
+          {!isTraining && (
+            <div style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #E4E3DE", padding: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>Requires adult approval</div>
+                  <div style={{ fontSize: 12, color: "#6B7280", marginTop: 3 }}>
+                    Child marks done → you approve it
+                  </div>
                 </div>
+                <button type="button" onClick={() => setRequiresApproval(p => !p)}
+                  style={{
+                    width: 48, height: 28, borderRadius: 50, border: "none", cursor: "pointer",
+                    background: requiresApproval ? "#4A5FD5" : "#D1D5DB",
+                    transition: "background 0.2s", position: "relative", flexShrink: 0,
+                  }}>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: "50%", background: "#fff",
+                    position: "absolute", top: 3,
+                    left: requiresApproval ? 23 : 3,
+                    transition: "left 0.2s",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+                  }} />
+                </button>
               </div>
-              <button type="button" onClick={() => setRequiresApproval(p => !p)}
-                style={{
-                  width: 48, height: 28, borderRadius: 50, border: "none", cursor: "pointer",
-                  background: requiresApproval ? "#4A5FD5" : "#D1D5DB",
-                  transition: "background 0.2s", position: "relative", flexShrink: 0,
-                }}>
-                <div style={{
-                  width: 22, height: 22, borderRadius: "50%", background: "#fff",
-                  position: "absolute", top: 3,
-                  left: requiresApproval ? 23 : 3,
-                  transition: "left 0.2s",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-                }} />
-              </button>
             </div>
-          </div>
+          )}
 
           {/* Notes (optional) */}
           <div>
             <label style={label}>Notes <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(optional)</span></label>
             <textarea value={note} onChange={e => setNote(e.target.value)}
-              placeholder="Any extra instructions for the child…"
+              placeholder={isTraining ? "e.g. location, coach, what to bring…" : "Any extra instructions for the child…"}
               rows={3}
               style={{ ...inp, resize: "none" as const }} />
           </div>
@@ -281,10 +319,22 @@ export default function NewChorePage() {
               padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer",
               fontFamily: FONT, opacity: saving || !name.trim() || !assignedTo ? 0.6 : 1,
             }}>
-            {saving ? "Saving…" : "Save chore"}
+            {saving ? "Saving…" : isTraining ? "Save training" : "Save chore"}
           </button>
         </form>
       </main>
     </div>
+  );
+}
+
+export default function NewBookingPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "#7C7C8A" }}>Loading…</div>
+      </div>
+    }>
+      <NewBookingContent />
+    </Suspense>
   );
 }

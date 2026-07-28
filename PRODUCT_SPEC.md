@@ -1,6 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.7 | **Uppdaterad:** 2026-07-28 | **Ägare:** Mikael Berglund
-**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda. 2026-07-27 (sen kväll): 4b.2 uppdaterad med kravet på riktig email, 4b.13 (frivillig PIN-inloggning för vuxna) tillagd, båda klicktestade skarpt. 2026-07-28: 4b.14 (kategorihantering, tight layout, optimistisk UI, varor ligger kvar tills manuell rensning) och 4b.15 (flera listor per hushåll med åtkomststyrning, notis/länk/bild på varor) tillagda efter feedback på hur trögt/klumpigt inköpslistan kändes. **2026-07-28 (kväll): 4b.16 (fem quick wins efter Best4Family-analysen: sekretess-chip, dataexport, broadcast-notis, PIN/Google-bugg fixad) och 4b.17 (kända ej byggda gap, bl.a. att Delete account-knappen bara är en UI-shell) tillagda.**
+**Version:** 2.10 | **Uppdaterad:** 2026-07-28 (natt) | **Ägare:** Mikael Berglund
+**Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda. 2026-07-27 (sen kväll): 4b.2 uppdaterad med kravet på riktig email, 4b.13 (frivillig PIN-inloggning för vuxna) tillagd, båda klicktestade skarpt. 2026-07-28: 4b.14 (kategorihantering, tight layout, optimistisk UI, varor ligger kvar tills manuell rensning) och 4b.15 (flera listor per hushåll med åtkomststyrning, notis/länk/bild på varor) tillagda efter feedback på hur trögt/klumpigt inköpslistan kändes. 2026-07-28 (kväll): 4b.16 (fem quick wins efter Best4Family-analysen: sekretess-chip, dataexport, broadcast-notis, PIN/Google-bugg fixad) och 4b.17 (kända ej byggda gap, bl.a. att Delete account-knappen bara är en UI-shell) tillagda. 2026-07-28 (natt): 4b.18 tillagd – "Ideas & voting", en delad förbättringsförslag-/röstningssektion, byggd efter en EU-marknadsundersökning (se `MARKET_RESEARCH_EU.md`) som visade att flera konkurrenter redan har publika röstningssidor. 4b.19 tillagd – Training-bokningar och utgående ICS-kalendersynk. **2026-07-28 (natt, sent): School korrigerad till en egen sektion (inte del av vanliga Reminders) efter direkt feedback från Mikael – se 4b.19's School-del och `dashboard/school/page.tsx`.**
 
 ---
 
@@ -230,6 +230,54 @@ Dokumenterat här så det inte glöms bort – dessa är medvetet **inte** byggd
 - **Delete account-knappen i Profile → Security är bara en UI-shell** – "Yes, delete"-knappen har inget fungerande anrop bakom sig idag. Självbetjänings-radering är ett kvarstående P1-gap inför bred lansering.
 - Riktig Privacy Policy-sida, deklarerad minimiålder/föräldrasamtycke, gästprofiler utan inloggning, Belöningar kopplat till Sysslor – se `TODO.md` punkt 9 för full lista.
 
+### 4b.19 Training-bokningar, School-kategori, utgående kalendersynk (byggd 2026-07-28, natt – produktriktning)
+
+Uppföljning direkt efter 4b.18: Mikael gick igenom marknadsundersökningen och gav riktning för tre nya bitar i samma runda.
+
+**Training (bokningar per barn):**
+- Ny `ReminderCategory`-värde `TRAINING` – återanvänder exakt samma `Reminder`-fält som Chores (`assignedTo`, `choreRecurrenceDays`, `recurrence`), men **utan** godkännande-/completion-flödet (ingen "klar → godkänn"-status, det är bara ett schemalagt bokningstillfälle).
+- `GET/POST /api/family/chores` generaliserad till `?category=CHORE|TRAINING` (default CHORE) – samma endpoint, samma behörighetsmodell, `requiresApproval` tvingas alltid `false` för TRAINING oavsett vem som skapar den.
+- `dashboard/family/new/page.tsx` – lagt till en Chore/Training-toggle högst upp; namnfält, förslags-chips ("Karate", "Football practice", …) och sparaknapp byter text beroende på val. Godkännande-togglen döljs helt för Training (inte ett relevant koncept). Sparas till `/dashboard/calendar` istället för `/dashboard/family` efter en Training (dit reminders/chores-sammanfattningen inte visar dem).
+- `dashboard/family/page.tsx` – ny "⚽ Add training"-knapp bredvid "Add chore".
+- **Extern kalenderprenumeration per barn (klubbens/skolans .ics-länk)** – rekommenderad riktning (se `ROADMAP.md`), **inte byggd än**. Kräver en ny modell (`CalendarSubscription` el. liknande) + server-side hämtning/parsning av en extern .ics-URL (CORS gör att detta måste ske server-side) + en periodisk uppdatering. Nästa steg, egen omgång.
+
+**School (kommande prov/läxor) — 4b.20, rättad efter Mikaels korrigering samma kväll:**
+- Första versionen lät School gå genom det vanliga Reminders-flödet (kategori-väljare i `/dashboard/new`). Mikael korrigerade direkt: *"NEj school borde vara ett eget avsnitt. Missuppfattning."* — School ska vara en **egen sektion**, precis som Training/Chores, inte en kategori bland vanliga reminders. Reverterat i sin helhet: `dashboard/new/page.tsx`, `dashboard/page.tsx`, `dashboard/[id]/page.tsx`, `dashboard/[id]/edit/page.tsx`, `api/reminders/route.ts`, `api/reminders/[id]/route.ts` och `lib/email.ts` har alla fått SCHOOL borttaget igen (men `api/reminders` GET behåller ändå `notIn: ["CHORE","TRAINING","SCHOOL"]` som skyddsnät, oavsett hur ett School-item skapades).
+- `GET/POST /api/family/chores` generaliserad ytterligare till `?category=CHORE|TRAINING|SCHOOL` (samma endpoint, samma behörighetsmodell som Training – `requiresApproval` tvingas `false`).
+- **Barnens självbetjäning** (`dashboard/family/child/page.tsx`): egen "📚 School"-sektion, separat kort från Chores, med eget "+ Add a test or homework"-formulär (namn, valfritt datum, valfri anteckning) och en radera-knapp (×) per item. Datan hämtas via samma `/api/family/chores?category=SCHOOL` – servern filtrerar redan automatiskt på `assignedTo = inloggat barn` (samma `isChild`-check som redan fanns för Chores/Training), så **ett barn ser bara sina egna skoluppgifter** utan någon extra kod.
+- **Föräldravy** – ny sida `/dashboard/school`, länkad från hamburgermenyn ("📚 School", mellan Chores och Family). Listar alla barns skoluppgifter grupperade per barn (samma endpoint, men utan `isChild`-filtret returnerar den hela hushållets items med `assignedUser` ifyllt), med ett formulär där föräldern väljer barn + namn + datum + anteckning.
+- Synkar automatiskt till kalendern och till det utgående ICS-flödet (se nedan) precis som Training, eftersom School-items alltid skapas med `visibility: HOUSEHOLD`.
+
+**Kalendervyn (`dashboard/calendar/page.tsx`):**
+- Hämtar nu trainings (`/api/family/chores?category=TRAINING`) och school-items (`/api/family/chores?category=SCHOOL`) separat, utöver reminders och chores.
+- Nya färger: Training = koral `#D85A30`, School = indigo `#3730A3` (samma som visades i mockupen till Mikael 2026-07-28). Klick på ett School-item länkar till `/dashboard/school`, klick på Chore/Training till `/dashboard/family`.
+
+**Utgående ICS-kalendersynk ("synka med min privata kalender"):**
+- Mikael ville kunna se allt i sin egen Google/Outlook-kalender. Löst utan OAuth: ett personligt, hemligt **utgående** ICS-flöde (`User.calendarFeedToken`, samma förtroendemodell som `List.shareToken`) som han lägger till i valfri kalenderapp via "Prenumerera på kalender > Från URL".
+- `GET /api/calendar/feed/[token].ics` – publik (ingen inloggning, token är auktoriseringen), återanvänder **exakt samma synlighetsregel** som `GET /api/reminders` (HOUSEHOLD/PARENTS-delade + egna PRIVATE) men **utan** att exkludera CHORE/TRAINING/SCHOOL – eftersom de redan alltid skapas med `visibility: HOUSEHOLD` täcks de automatiskt av samma regel, ingen separat fråga behövdes.
+- `lib/ics.ts` – egen, minimal RFC5545-writer (inga externa beroenden/kostnader). Bara heldags-VEVENT (appen är redan dag-granulär överallt, se `lib/recurrence.ts`), fönster ‑90/+400 dagar.
+- `GET/POST /api/profile/calendar-feed` – hämtar/genererar (GET) respektive roterar (POST) token.
+- Profile → ny "Calendar sync"-sektion: "Get my calendar link"-knapp, kopiera-länk, "Generate a new link" för att återkalla en tidigare delad länk.
+- **Gratis, ingen Google/Microsoft-inloggning krävs** – matchar Mikaels "måste vara gratis"-linje för hela den här beställningen. En riktig **två-vägs** synk (skapa/redigera direkt i Google Calendar och få det tillbaka hit) skulle kräva OAuth – se `ROADMAP.md`-avsnittet om kostnad.
+
+**Databasändring:** `TRAINING`/`SCHOOL` tillagda i `ReminderCategory`-enumen, `User.calendarFeedToken` (nullable, unik) tillagd. Additivt, ingen backfill behövs. **Kräver `npx prisma generate && npx prisma db push` lokalt** innan något av detta fungerar i produktion — samma kända sandbox-begränsning som tidigare denna sommar.
+
+**Sidofynd (inte relaterat till denna beställning):** `tsc --noEmit` flaggar ett förbefintligt typfel i `api/reminders/[id]/route.ts` (PATCH-handlern, `householdId`-hanteringen) som **inte** orsakades av dagens ändringar (verifierat med `git diff` – den enda ändringen i den filen är kategori-enumen). Inte akut, inte fixat i denna omgång, men värt att känna till.
+
+### 4b.18 "Ideas & voting" – delad förbättringsförslag-/funktionssektion (byggd 2026-07-28, natt)
+
+Efter en EU-marknadsundersökning (`MARKET_RESEARCH_EU.md`) som visade att flera konkurrenter (Tribe Family, Family Folder) redan har publika röstningsbaserade förslagssidor, och en avstämning med Mikael om omfattning, byggdes en egen sektion för att samla förbättringsförslag och nya funktionsidéer, med röstning.
+
+- **Global över alla kunder, inte hushålls-scopad** – till skillnad från varje annan familjefunktion i appen ser **alla inloggade användare, oavsett hushåll,** samma delade lista och röstar på samma förslag. Medvetet beslut (Mikael, 2026-07-28): detta ger en samlad bild av vad *alla* kunder vill ha, inte bara en enskild familj.
+- **Kräver inloggning** (beslut 2026-07-28) – ingen publik/utloggad åtkomst i v1, till skillnad från t.ex. Tribe Familys publika `/roadmap`-sida. Kan omprövas senare om vi vill använda det i marknadsföringssyfte.
+- **Två kategorier:** Improvement (🔧, en tweak på något som redan finns) / New feature (💡, något som inte finns än).
+- **Statusflöde:** Open → Planned → In progress → Done/Declined. Bara admin (`ADMIN_EMAIL`) kan ändra status – det är triage-/roadmap-steget. Författaren kan redigera titel/beskrivning själv, men bara medan status fortfarande är Open (annars kan ordalydelsen ändras under någon som redan röstat).
+- **Röstning:** en röst per (förslag, användare), togglingsbar (samma mönster som Canny/GitHub-reaktioner). Den som postar ett förslag röstar automatiskt på sitt eget (gör räknaren icke-noll direkt och matchar hur andra röstningssidor fungerar).
+- **Inte Pro/trial-spärrat** – till skillnad från Sysslor/Shopping/Wishlist är detta produktfeedback-infrastruktur för hela kundbasen, inte en familje-premium-funktion.
+- **UI:** ny sida `/dashboard/suggestions`, länkad från hamburgermenyn ("💡 Ideas & voting", mellan Family och Settings). Kategori-filter (All/Improvements/New features), "+ Suggest an idea"-formulär, kort per förslag med röstknapp (▲ + antal, fylld när man själv röstat), statusbricka, och en hopfällbar "Show shipped & declined"-sektion så att aktiva förslag inte drunknar i historik.
+- **Databasändring:** nya modeller `Suggestion` (id, userId, title, description?, category, status, timestamps) och `SuggestionVote` (unik per suggestionId+userId), plus två nya enums (`SuggestionCategory`, `SuggestionStatus`). Additiv migrering, ingen påverkan på befintliga tabeller. **Kräver `npx prisma generate && npx prisma db push` lokalt** innan det fungerar i produktion – samma kända sandbox-begränsning (`binaries.prisma.sh` blockerad) som tidigare ändringar denna sommar, se `TODO.md`.
+- **Inte klicktestat än** – kodgranskat, `tsc --noEmit` kört (rent förutom de förväntade Prisma-client-felen som försvinner efter `prisma generate` lokalt).
+
 ---
 
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
@@ -300,7 +348,7 @@ Dokumenterat här så det inte glöms bort – dessa är medvetet **inte** byggd
 ### Datamodell (nuläge, ur `app/prisma/schema.prisma`)
 
 **User**
-`id, email, password?, pin? (tillagd 2026-07-27, se 4b.13), name?, emailVerified?, phone?, preferredCurrency, timezone, isChildProfile`
+`id, email, password?, pin? (tillagd 2026-07-27, se 4b.13), name?, emailVerified?, phone?, preferredCurrency, timezone, isChildProfile, calendarFeedToken? (tillagd 2026-07-28, se 4b.19)`
 
 **Reminder**
 `id, userId, householdId?, name, category, date, recurrence, amount?, currency, note?, reminderDaysBefore, isActive, lastSentAt?` + Pro-fält: `assignedTo, fallbackTo, visibility, handoverState, handoverTo, handoverInitiatedAt, urgencyLevel` + Chore-fält: `requiresApproval, choreRecurrenceDays`
@@ -337,6 +385,12 @@ Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar me
 
 **WishlistItem** *(tillagd 2026-07-27, uppdaterad 2026-07-28)*
 `id, householdId, childId, listId, addedBy, name, url?, price?, currency?, imageUrl?, note?, status (WANTED/RESERVED/PURCHASED), reservedBy?, reservedAt?, purchasedBy?, purchasedAt?` – vara på ett barns namngivna önskelista (`List`, kind WISHLIST, kan vara flera per barn sedan 4b.15), se 4b.9. **Viktigt:** `status`-fältet och relaterade fält exponeras aldrig till det ägande barnet via API:et – se 4b.9.
+
+**Suggestion** *(tillagd 2026-07-28, se 4b.18)*
+`id, userId, title, description?, category (IMPROVEMENT/NEW_FEATURE), status (OPEN/PLANNED/IN_PROGRESS/DONE/DECLINED), createdAt, updatedAt` – **inte** hushålls-scopad, till skillnad från alla andra modeller i detta schema. Ett förslag/förbättringsönskemål, synligt för alla inloggade kunder.
+
+**SuggestionVote** *(tillagd 2026-07-28, se 4b.18)*
+`id, suggestionId, userId, createdAt` – en röst per (förslag, användare), unikt constraint på `[suggestionId, userId]`.
 
 *Obs: "ServicePreset" (snabbval med logotyp, sektion 4.2) finns implementerat i `dashboard/new/page.tsx` och `dashboard/[id]/edit/page.tsx` som en hårdkodad lista i frontend (t.ex. Netflix), inte som en egen databastabell/Prisma-modell.*
 

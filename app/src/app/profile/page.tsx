@@ -116,6 +116,9 @@ export default function ProfilePage() {
   const [showSetPin, setShowSetPin] = useState(false);
   const [pinSaving, setPinSaving] = useState(false);
   const [pinError, setPinError] = useState("");
+  const [calendarFeedUrl, setCalendarFeedUrl] = useState<string | null>(null);
+  const [calendarFeedLoading, setCalendarFeedLoading] = useState(false);
+  const [calendarFeedCopied, setCalendarFeedCopied] = useState(false);
   const [pinSuccess, setPinSuccess] = useState("");
   const [phoneValid, setPhoneValid] = useState(true);
 
@@ -289,6 +292,28 @@ export default function ProfilePage() {
     } catch (err: unknown) {
       setBroadcastMsg({ type: "err", text: err instanceof Error ? err.message : "Something went wrong." });
     } finally { setBroadcasting(false); }
+  }
+
+  // "Sync with your calendar" — lazily fetches (or, on rotate, regenerates)
+  // the user's personal ICS feed link. See PRODUCT_SPEC.md 4b.19.
+  async function fetchCalendarFeed(rotate = false) {
+    setCalendarFeedLoading(true);
+    try {
+      const res = await fetch("/api/profile/calendar-feed", { method: rotate ? "POST" : "GET" });
+      const data = await res.json();
+      if (res.ok) setCalendarFeedUrl(data.url);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCalendarFeedLoading(false);
+    }
+  }
+
+  function copyCalendarFeedUrl() {
+    if (!calendarFeedUrl) return;
+    navigator.clipboard.writeText(calendarFeedUrl);
+    setCalendarFeedCopied(true);
+    setTimeout(() => setCalendarFeedCopied(false), 2000);
   }
 
   async function handleRenameHousehold() {
@@ -512,6 +537,73 @@ export default function ProfilePage() {
               </div>
               <Hint>Web view uses a wider column on bigger screens. Saved on this device — switch back anytime.</Hint>
             </Field>
+          </Card>
+
+          {/* ── Calendar sync ── */}
+          {/* Outbound-only ICS feed: reminders, chores and trainings visible
+              to you (same rule as the in-app dashboard), read into your own
+              Google/Outlook/Apple calendar via "Add calendar > From URL".
+              No login to Google/Microsoft required, no cost — see
+              MARKET_RESEARCH_EU.md and ROADMAP.md, "Produktriktning – nästa
+              runda". */}
+          <Card title="Calendar sync">
+            <p style={{ fontSize: 13, color: "#7C7C8A", lineHeight: 1.6, margin: "0 0 14px" }}>
+              See your reminders, chores and trainings in your own calendar app. Add this link as a subscribed calendar in Google Calendar, Outlook or Apple Calendar — it updates on its own, no login needed.
+            </p>
+            {!calendarFeedUrl ? (
+              <button
+                type="button"
+                onClick={() => fetchCalendarFeed(false)}
+                disabled={calendarFeedLoading}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%",
+                  padding: "13px 16px", background: "#1C1C28", color: "#fff", border: "none",
+                  borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: calendarFeedLoading ? "not-allowed" : "pointer",
+                  fontFamily: FONT, opacity: calendarFeedLoading ? 0.6 : 1,
+                }}
+              >
+                {calendarFeedLoading ? "Getting link…" : "Get my calendar link"}
+              </button>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    readOnly
+                    value={calendarFeedUrl}
+                    onFocus={(e) => e.target.select()}
+                    style={{
+                      flex: 1, minWidth: 0, padding: "11px 12px", borderRadius: 12,
+                      border: "1.5px solid #E4E3DE", fontSize: 12.5, color: "#4B5563",
+                      fontFamily: FONT, background: "#F5F4F0",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={copyCalendarFeedUrl}
+                    style={{
+                      flexShrink: 0, padding: "0 16px", borderRadius: 12, border: "none",
+                      background: calendarFeedCopied ? "#D4F4E6" : "#1C1C28",
+                      color: calendarFeedCopied ? "#1E7D52" : "#fff",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
+                    }}
+                  >
+                    {calendarFeedCopied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fetchCalendarFeed(true)}
+                  disabled={calendarFeedLoading}
+                  style={{
+                    marginTop: 10, background: "none", border: "none", color: "#7C7C8A",
+                    fontSize: 12, fontWeight: 600, cursor: calendarFeedLoading ? "not-allowed" : "pointer",
+                    fontFamily: FONT, padding: 0,
+                  }}
+                >
+                  Generate a new link (old one stops working)
+                </button>
+              </>
+            )}
           </Card>
 
           {/* ── Notifications ── */}

@@ -31,6 +31,9 @@ function IcLeft()  { return <svg width={18} height={18} viewBox="0 0 24 24" {...
 function IcRight() { return <svg width={18} height={18} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>; }
 function IcChevRight() { return <svg width={15} height={15} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>; }
 
+// Note: SCHOOL is deliberately absent here — School is its own category
+// section (see /dashboard/school), never created through the general
+// Reminders flow, so it never appears with a "reminder" kind below.
 const CATEGORY_LABELS: Record<string, string> = {
   SUBSCRIPTION: "Subscription", BIRTHDAY: "Birthday", INSURANCE: "Insurance",
   CONTRACT: "Contract", HEALTH: "Health", BILL: "Bill", OTHER: "Other",
@@ -42,6 +45,13 @@ const CATEGORY_COLOR: Record<string, string> = {
 };
 
 const CHORE_COLOR = "#0E9F8E";
+// Matches the mockup shown to Mikael 2026-07-28: coral for Training, so it
+// reads as a distinct "kind" from both reminders and chores at a glance.
+const TRAINING_COLOR = "#D85A30";
+// School is its own section (not routed through general Reminders — see
+// /dashboard/school and /dashboard/family/child), but still shows up here
+// since everything syncs to the calendar. Indigo, matching the mockup.
+const SCHOOL_COLOR = "#3730A3";
 
 const RECURRENCE_LABELS: Record<string, string> = {
   ONCE: "Once", DAILY: "Daily", WEEKLY: "Weekly", MONTHLY: "Monthly", YEARLY: "Yearly",
@@ -66,7 +76,7 @@ type CalendarEntry = {
   occDate: Date;
   id: string;
   name: string;
-  kind: "reminder" | "chore";
+  kind: "reminder" | "chore" | "training" | "school";
   color: string;
   subtitle: string;
 };
@@ -82,6 +92,8 @@ export default function CalendarPage() {
   const [checkedChild, setCheckedChild] = useState(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [chores, setChores] = useState<Chore[]>([]);
+  const [trainings, setTrainings] = useState<Chore[]>([]);
+  const [schoolItems, setSchoolItems] = useState<Chore[]>([]);
   const [loading, setLoading] = useState(true);
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
   const [currentMonth, setCurrentMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
@@ -112,12 +124,16 @@ export default function CalendarPage() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [remindersRes, choresRes] = await Promise.all([
+      const [remindersRes, choresRes, trainingsRes, schoolRes] = await Promise.all([
         fetch("/api/reminders").then((r) => (r.ok ? r.json() : [])).catch(() => []),
-        fetch("/api/family/chores").then((r) => (r.ok ? r.json() : { chores: [] })).catch(() => ({ chores: [] })),
+        fetch("/api/family/chores?category=CHORE").then((r) => (r.ok ? r.json() : { chores: [] })).catch(() => ({ chores: [] })),
+        fetch("/api/family/chores?category=TRAINING").then((r) => (r.ok ? r.json() : { chores: [] })).catch(() => ({ chores: [] })),
+        fetch("/api/family/chores?category=SCHOOL").then((r) => (r.ok ? r.json() : { chores: [] })).catch(() => ({ chores: [] })),
       ]);
       setReminders(Array.isArray(remindersRes) ? remindersRes : []);
       setChores(Array.isArray(choresRes?.chores) ? choresRes.chores : []);
+      setTrainings(Array.isArray(trainingsRes?.chores) ? trainingsRes.chores : []);
+      setSchoolItems(Array.isArray(schoolRes?.chores) ? schoolRes.chores : []);
     } finally {
       setLoading(false);
     }
@@ -171,11 +187,34 @@ export default function CalendarPage() {
       }
     }
 
+    for (const t of trainings) {
+      const occs = getOccurrencesInRange(t as RecurringItem, gridStart, gridEnd);
+      const who = t.assignedUser?.name?.split(" ")[0] ?? t.assignedUser?.email?.split("@")[0] ?? "Unassigned";
+      for (const occ of occs) {
+        const key = dateKey(occ);
+        const list = map.get(key) ?? [];
+        list.push({ occDate: occ, id: t.id, name: t.name, kind: "training", color: TRAINING_COLOR, subtitle: `Training · ${who}` });
+        map.set(key, list);
+      }
+    }
+
+    for (const s of schoolItems) {
+      const occs = getOccurrencesInRange(s as RecurringItem, gridStart, gridEnd);
+      const who = s.assignedUser?.name?.split(" ")[0] ?? s.assignedUser?.email?.split("@")[0] ?? "Unassigned";
+      for (const occ of occs) {
+        const key = dateKey(occ);
+        const list = map.get(key) ?? [];
+        list.push({ occDate: occ, id: s.id, name: s.name, kind: "school", color: SCHOOL_COLOR, subtitle: `School · ${who}` });
+        map.set(key, list);
+      }
+    }
+
+    const KIND_ORDER: Record<CalendarEntry["kind"], number> = { reminder: 0, training: 1, school: 2, chore: 3 };
     for (const list of Array.from(map.values())) {
-      list.sort((a: CalendarEntry, b: CalendarEntry) => (a.kind === b.kind ? a.name.localeCompare(b.name) : a.kind === "reminder" ? -1 : 1));
+      list.sort((a: CalendarEntry, b: CalendarEntry) => (a.kind === b.kind ? a.name.localeCompare(b.name) : KIND_ORDER[a.kind] - KIND_ORDER[b.kind]));
     }
     return map;
-  }, [reminders, chores, gridStart, gridDays]);
+  }, [reminders, chores, trainings, schoolItems, gridStart, gridDays]);
 
   const selectedEntries = entriesByDay.get(dateKey(selectedDate)) ?? [];
 
@@ -189,8 +228,11 @@ export default function CalendarPage() {
   }
 
   function openEntry(entry: CalendarEntry) {
+    // Chores/trainings are managed from the Family hub; School has its own
+    // dedicated section (see /dashboard/school).
     if (entry.kind === "reminder") router.push(`/dashboard/${entry.id}`);
-    else router.push("/dashboard/family"); // chores don't have their own detail page yet — managed from the Family hub
+    else if (entry.kind === "school") router.push("/dashboard/school");
+    else router.push("/dashboard/family");
   }
 
   if (status === "loading" || !checkedChild) {

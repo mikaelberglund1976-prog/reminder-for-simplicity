@@ -38,7 +38,7 @@ export async function GET() {
     reminders = await prisma.reminder.findMany({
       where: {
         isActive: true,
-        category: { not: "CHORE" as never },
+        category: { notIn: ["CHORE", "TRAINING", "SCHOOL"] as never },
         OR: [
           { userId: session.user.id },
           {

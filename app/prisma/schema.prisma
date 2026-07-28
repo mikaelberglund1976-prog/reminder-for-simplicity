@@ -31,6 +31,15 @@ model User {
 
   isChildProfile    Boolean    @default(false)
 
+  // 2026-07-28: secret token for the user's personal outbound calendar feed
+  // (see /api/calendar/feed/[token]) — lets them subscribe to "everything
+  // assigned to or visible to me" from their own Google/Outlook/Apple
+  // calendar app via "Add calendar > From URL". Same trust model as
+  // Household.shoppingListShareToken / List.shareToken: the token itself is
+  // the auth, no login required to read the feed, rotate to revoke. Null
+  // until the user first requests their feed URL (lazy-generated).
+  calendarFeedToken String?    @unique
+
   reminders         Reminder[]
   accounts          Account[]
   sessions          Session[]
@@ -48,6 +57,8 @@ model User {
   listsOwned    List[] @relation("ListOwner")
   listsCreated  List[] @relation("ListCreated")
   listMemberships ListMember[]
+  suggestions      Suggestion[]
+  suggestionVotes  SuggestionVote[]
 
   @@map("users")
 }
@@ -215,6 +226,56 @@ model ListMember {
 enum ListKind {
   SHOPPING
   WISHLIST
+}
+
+// 2026-07-28: cross-customer feedback board ("Ideas & voting" / Förbättringsförslag
+// & Nya funktioner). Deliberately NOT household-scoped — every logged-in customer,
+// across every household, sees and votes on the same shared list, matching the
+// "public roadmap" pattern used by Tribe Family and Family Folder (see
+// MARKET_RESEARCH_EU.md). Requires login (no anonymous/public access in v1).
+model Suggestion {
+  id          String             @id @default(cuid())
+  userId      String             // author
+  title       String
+  description String?
+  category    SuggestionCategory @default(NEW_FEATURE)
+  status      SuggestionStatus   @default(OPEN)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes SuggestionVote[]
+
+  @@map("suggestions")
+}
+
+// One row per (suggestion, user) — a user can upvote a given suggestion once.
+// Voting again removes the vote (toggle), same interaction as most public
+// feedback boards (Canny, GitHub reactions).
+model SuggestionVote {
+  id           String   @id @default(cuid())
+  suggestionId String
+  userId       String
+  createdAt    DateTime @default(now())
+
+  suggestion Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, userId])
+  @@map("suggestion_votes")
+}
+
+enum SuggestionCategory {
+  IMPROVEMENT  // tweak to something that already exists
+  NEW_FEATURE  // something that doesn't exist yet
+}
+
+enum SuggestionStatus {
+  OPEN         // default — awaiting triage
+  PLANNED      // we intend to build this
+  IN_PROGRESS  // actively being built
+  DONE         // shipped
+  DECLINED     // not going to build this, with reason in description/reply
 }
 
 model PasswordResetToken {
@@ -421,6 +482,23 @@ enum ReminderCategory {
   HEALTH
   BILL
   CHORE
+  // 2026-07-28: recurring booking assigned to a child (e.g. "Karate, Tuesdays") —
+  // same Reminder fields as CHORE (assignedTo/choreRecurrenceDays) but no
+  // completion/approval workflow. Created via /api/family/chores?category=TRAINING,
+  // deliberately excluded from the general /api/reminders list (see that route),
+  // same treatment as CHORE. Can also be populated by subscribing to an
+  // external club/school .ics feed — see CalendarSubscription (not yet built).
+  TRAINING
+  // 2026-07-28: tests/homework. Same Reminder fields as CHORE/TRAINING
+  // (assignedTo, no completion/approval). Deliberately its OWN section, not
+  // folded into general Reminders — corrected after initial mis-scoping;
+  // Mikael's requirement is a dedicated School area where children can add
+  // their own tests/homework and only ever see their own (see the isChild
+  // filter in /api/family/chores GET). Created via
+  // /api/family/chores?category=SCHOOL, excluded from /api/reminders (see
+  // that route's notIn filter), adult overview at /dashboard/school,
+  // child self-service at /dashboard/family/child.
+  SCHOOL
   OTHER
 }
 

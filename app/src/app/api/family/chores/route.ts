@@ -14,11 +14,27 @@ function getWeekStart(date: Date): Date {
   return d;
 }
 
-// GET /api/family/chores
-export async function GET() {
+const BOOKING_CATEGORIES = ["CHORE", "TRAINING", "SCHOOL"] as const;
+type BookingCategory = (typeof BOOKING_CATEGORIES)[number];
+
+// GET /api/family/chores?category=CHORE|TRAINING|SCHOOL (default CHORE)
+// Same endpoint now serves chores, training bookings ("Karate, Tuesdays")
+// and school items (tests/homework) — they share every field (assignedTo,
+// recurrence, choreRecurrenceDays) and only differ in whether
+// completion/approval applies. Deliberately its own category/section (not
+// routed through the general /api/reminders) so it gets the same
+// child-only-sees-their-own filtering as Chores/Training, see the isChild
+// check below. See PRODUCT_SPEC.md 4b.19/4b.20.
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { searchParams } = new URL(req.url);
+    const categoryParam = searchParams.get("category");
+    const category: BookingCategory = BOOKING_CATEGORIES.includes(categoryParam as BookingCategory)
+      ? (categoryParam as BookingCategory)
+      : "CHORE";
 
     const membership = await prisma.householdMember.findFirst({
       where: { userId: session.user.id },
@@ -48,7 +64,7 @@ export async function GET() {
     const isChild = membership.role === "CHILD";
     const whereFilter: Record<string, unknown> = {
       householdId: membership.householdId,
-      category: "CHORE",
+      category,
       isActive: true,
     };
     if (isChild) {
@@ -100,7 +116,8 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { name, assignedTo, recurrence, recurrenceDays, startDate, requiresApproval, note } = body ?? {};
+    const { name, assignedTo, recurrence, recurrenceDays, startDate, requiresApproval, note, category: rawCategory } = body ?? {};
+    const category: BookingCategory = BOOKING_CATEGORIES.includes(rawCategory) ? rawCategory : "CHORE";
 
     if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
 
@@ -121,7 +138,7 @@ export async function POST(req: Request) {
     const chore = await prisma.reminder.create({
       data: {
         name: name.trim(),
-        category: "CHORE",
+        category,
         userId: session.user.id,
         householdId: membership.householdId,
         assignedTo: finalAssignedTo,
@@ -129,8 +146,13 @@ export async function POST(req: Request) {
         choreRecurrenceDays: recurrenceDays ?? null,
         date: startDate ? new Date(startDate) : new Date(),
         visibility: "HOUSEHOLD",
-        // Children can't bypass approval — if a child creates a chore, it still requires parent approval when done.
-        requiresApproval: isChild ? true : !!requiresApproval,
+        // Approval/completion tracking is a CHORE-only concept — a training
+        // booking (e.g. "Karate, Tuesdays") or a school item (test/homework)
+        // is just a scheduled thing, nobody "approves" it. Children can't
+        // bypass approval on their own chores, but that rule doesn't apply
+        // to TRAINING/SCHOOL at all — a child logging their own test date
+        // doesn't need a parent to sign off on it.
+        requiresApproval: category === "CHORE" ? (isChild ? true : !!requiresApproval) : false,
         note: note ?? null,
       },
       include: { assignedUser: { select: { id: true, name: true } } },
