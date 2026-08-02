@@ -90,7 +90,7 @@ export default function TrainingPage() {
   if (status === "loading" || loading) {
     return (
       <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Loading training…</div>
+        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Loading activities…</div>
       </div>
     );
   }
@@ -102,7 +102,7 @@ export default function TrainingPage() {
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Set up your household first</h2>
           <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>
-            Training needs a household with at least one child added.
+            Activities need a household with at least one child added.
           </p>
           <Link href="/dashboard/family" style={{ display: "inline-flex", background: "#1C1C28", color: "#fff", borderRadius: 50, padding: "14px 28px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
             Go to Chores →
@@ -118,7 +118,7 @@ export default function TrainingPage() {
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ color: "#CBD5E1", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Trial period ended</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6 }}>Upgrade to Pro to keep using Training.</p>
+          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6 }}>Upgrade to Pro to keep using Activities.</p>
         </div>
       </Screen>
     );
@@ -139,7 +139,7 @@ export default function TrainingPage() {
     <Screen onBack={() => router.push("/dashboard")}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.5 }}>
-          Recurring practice times for each child — synced to the calendar automatically.
+          Recurring activities for each child — sports, scouts, theater, music, or anything else — synced to the calendar automatically.
         </div>
       </div>
 
@@ -153,12 +153,12 @@ export default function TrainingPage() {
         }}
       >
         <span style={{ fontSize: 18, lineHeight: 1 }}>+</span>
-        Add training
+        Add activity
       </Link>
 
       {children.length === 0 && (
         <div style={{ textAlign: "center", padding: "20px 0", color: "#9CA3AF", fontSize: 13 }}>
-          Add a child in Chores before creating trainings.
+          Add a child in Chores before creating activities.
         </div>
       )}
 
@@ -170,7 +170,7 @@ export default function TrainingPage() {
               {child.name} · {list.length}
             </div>
             {list.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#9CA3AF", padding: "8px 2px" }}>No trainings booked yet.</div>
+              <div style={{ fontSize: 13, color: "#9CA3AF", padding: "8px 2px" }}>No activities booked yet.</div>
             ) : (
               <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
                 {list.map((item, i) => (
@@ -183,7 +183,7 @@ export default function TrainingPage() {
                       color: "#D85A30", display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 16, flexShrink: 0,
                     }}>
-                      ⚽
+                      🎯
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "#0F172A", lineHeight: 1.3 }}>{item.name}</div>
@@ -221,7 +221,7 @@ function Screen({ onBack, children }: { onBack: () => void; children: React.Reac
           <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0, flex: 1 }}>⚽ Training</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0, flex: 1 }}>🎯 Activities</h1>
           <HamburgerMenu />
         </div>
       </div>

@@ -41,7 +41,7 @@ const APP_TABS: Record<string, TabDef> = {
   "shopping-list": { key: "shopping-list", href: "/dashboard/family/shopping-list", label: "Shopping list", icon: IcCart, match: (p) => p.startsWith("/dashboard/family/shopping-list") },
   wishlist: { key: "wishlist", href: "/dashboard/wishlist", label: "Wishlist", icon: IcGift, match: (p) => p.startsWith("/dashboard/wishlist") },
   chores: { key: "chores", href: "/dashboard/family", label: "Chores", icon: IcChecklist, match: (p) => p.startsWith("/dashboard/family") && !p.startsWith("/dashboard/family/shopping-list") },
-  training: { key: "training", href: "/dashboard/training", label: "Training", icon: IcTraining, match: (p) => p.startsWith("/dashboard/training") },
+  training: { key: "training", href: "/dashboard/training", label: "Activities", icon: IcTraining, match: (p) => p.startsWith("/dashboard/training") },
   school: { key: "school", href: "/dashboard/school", label: "School", icon: IcSchool, match: (p) => p.startsWith("/dashboard/school") },
 };
 

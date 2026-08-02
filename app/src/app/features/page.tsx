@@ -16,7 +16,7 @@ const PRO_FEATURES = [
   { icon: "🛒", title: "Shared shopping list", text: "Multiple lists, smart categories, and a link you can share with anyone — no login required." },
   { icon: "🎁", title: "Kids' wishlist", text: "Kids add what they want; parents reserve or mark it bought — a child never sees that status, even in the data sent to their device." },
   { icon: "🧹", title: "Chores", text: "Recurring chores per child, self-completion, optional parent approval, and weekly stats." },
-  { icon: "⚽", title: "Training bookings", text: "Recurring practice times per child — karate on Tuesdays, football on Thursdays." },
+  { icon: "🎯", title: "Activity bookings", text: "Recurring activities per child — karate on Tuesdays, scouts on Thursdays, or any club, class, or practice in between." },
   { icon: "📚", title: "School tracker", text: "Upcoming tests and homework per child, with their own simple view." },
   { icon: "📣", title: "Family broadcasts", text: "Send an update to every adult in the household at once." },
   { icon: "🔗", title: "Outgoing calendar sync", text: "Subscribe from your own Google, Outlook, or Apple calendar." },
@@ -76,7 +76,7 @@ export default function FeaturesPage() {
           <CompareRow label="Household sharing & calendar view" free pro />
           <CompareRow label="Shared shopping list" pro />
           <CompareRow label="Kids' wishlist" pro />
-          <CompareRow label="Chores, Training & School tracking" pro />
+          <CompareRow label="Chores, Activities & School tracking" pro />
           <CompareRow label="Family broadcasts & calendar sync" pro />
         </div>
         <p style={{ fontSize: 12, color: "#ACA9A3", margin: "10px 0 0", lineHeight: 1.5 }}>

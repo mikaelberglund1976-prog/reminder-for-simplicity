@@ -77,13 +77,18 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = reminderSchema.parse(body);
 
+    // Pro requirement removed 2026-08-02 (Mikael's decision, see
+    // PRODUCT_SPEC.md §7.2): sharing a reminder within your own household is
+    // now free for everyone — it previously silently fell back to PRIVATE
+    // (no error, just a household member picking "Household" and it quietly
+    // not working) unless the household was is_pro. Basic/Pro line sits at
+    // the family feature set, not at basic household coordination.
     let householdId: string | null = null;
     if (data.visibility !== "PRIVATE") {
       const membership = await prisma.householdMember.findFirst({
         where: { userId: session.user.id },
-        include: { household: { select: { is_pro: true } } },
       });
-      if (membership?.household?.is_pro) {
+      if (membership) {
         householdId = membership.householdId;
       }
     }

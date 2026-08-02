@@ -26,9 +26,13 @@ const CHORE_TEMPLATES = [
 // on a day, recurring". Reuses this exact form (assign to child + how
 // often + start date) since that's already 90% of what a training booking
 // needs; only difference is no completion/approval step. See PRODUCT_SPEC 4b.19.
+// Broadened 2026-08-02 (Mikael: "training kanske e fel, activity är bättre
+// ... scouter, teater eller liknande") — first six shown (.slice(0,6) below)
+// deliberately mix sport and non-sport so the suggestions themselves signal
+// this isn't just a sports-practice tracker.
 const TRAINING_TEMPLATES = [
-  "Karate", "Football practice", "Swimming", "Dance class",
-  "Piano lesson", "Gymnastics", "Ice hockey", "Riding lesson",
+  "Karate", "Scouts", "Dance class", "Football practice", "Theater/Drama", "Piano lesson",
+  "Swimming", "Choir", "Gymnastics", "Chess club", "Ice hockey", "Riding lesson",
 ];
 
 function NewBookingContent() {
@@ -146,7 +150,7 @@ function NewBookingContent() {
           <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0 }}>{isTraining ? "New training" : "New chore"}</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0 }}>{isTraining ? "New activity" : "New chore"}</h1>
         </div>
       </div>
 
@@ -155,7 +159,7 @@ function NewBookingContent() {
 
           {/* Chore vs. training toggle */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {([["CHORE", "🧹 Chore"], ["TRAINING", "⚽ Training"]] as const).map(([val, lbl]) => (
+            {([["CHORE", "🧹 Chore"], ["TRAINING", "🎯 Activity"]] as const).map(([val, lbl]) => (
               <button key={val} type="button" onClick={() => setCategory(val)}
                 style={{
                   padding: "10px 8px", borderRadius: 12, fontSize: 13, fontWeight: 700,
@@ -173,7 +177,7 @@ function NewBookingContent() {
           <div>
             <label style={label}>{isTraining ? "What is it?" : "Chore name"}</label>
             <input value={name} onChange={e => setName(e.target.value)}
-              placeholder={isTraining ? "e.g. Karate" : "e.g. Clean your room"}
+              placeholder={isTraining ? "e.g. Karate, Scouts, Theater…" : "e.g. Clean your room"}
               style={inp} autoFocus />
             {/* Suggestions */}
             {!name && (
@@ -302,7 +306,7 @@ function NewBookingContent() {
           <div>
             <label style={label}>Notes <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(optional)</span></label>
             <textarea value={note} onChange={e => setNote(e.target.value)}
-              placeholder={isTraining ? "e.g. location, coach, what to bring…" : "Any extra instructions for the child…"}
+              placeholder={isTraining ? "e.g. location, leader, what to bring…" : "Any extra instructions for the child…"}
               rows={3}
               style={{ ...inp, resize: "none" as const }} />
           </div>
@@ -321,7 +325,7 @@ function NewBookingContent() {
               padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer",
               fontFamily: FONT, opacity: saving || !name.trim() || !assignedTo ? 0.6 : 1,
             }}>
-            {saving ? "Saving…" : isTraining ? "Save training" : "Save chore"}
+            {saving ? "Saving…" : isTraining ? "Save activity" : "Save chore"}
           </button>
         </form>
       </main>

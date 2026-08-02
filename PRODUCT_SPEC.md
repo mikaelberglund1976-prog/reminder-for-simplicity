@@ -1,5 +1,13 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.10 | **Uppdaterad:** 2026-07-28 (natt) | **Ägare:** Mikael Berglund
+**Version:** 2.18 | **Uppdaterad:** 2026-08-02 | **Ägare:** Mikael Berglund
+**Not (2026-08-02, namnbyte + parkering bekräftad):** "Training" bytt till "Activity/Activities" i hela UI:t (4b.33, Mikaels feedback om scouter/teater), interna namn (route, enum, bottomNavTabs-nyckel) oförändrade – ingen schemaändring. "Föräldrautrymme"-modulen bekräftad parkerad (var bara en rekommendation, se `ROADMAP.md`).
+**Not (2026-08-02, produktbeslut som "utvecklingsavdelning"):** Flera länge öppna frågor avgjorda på egen hand, grundat i redan gjord konkurrens-/marknadsresearch: belöningar för Sysslor (4b.3, poäng/stjärnor), pris (§7.1, 49 kr/mån–399 kr/år), Guest-rollens hushållsgräns (4b.31, ingen begränsning), Träningskalenderns ICS-väg (`ROADMAP.md`, bekräftad). Nytt fynd: admin-godkännande av nya konton blockerar hela onboarding-upplevelsen, dokumenterat i ny sektion 4b.32 och tillagt i `LAUNCH_CHECKLIST.md` Fas A. Medvetet lämnat öppet (scope-fråga, inte UX): "Föräldrautrymme"-modulen, se `ROADMAP.md`. Fullständig sammanfattning i `TODO.md` punkt 28.
+**Not (2026-08-02, Fas A kodad):** Fyra av Fas A:s punkter kodade och klara för deploy: rate limiting/lockout på inloggning (§10, `lib/rateLimit.ts`), timing-safe `CRON_SECRET`-jämförelse, konsekvent `ADMIN_EMAIL`, och §7.2-motsägelsen löst (hushållsdelning nu gratis). Beslut fattat: ingen åldersgräns för barnprofiler, bara föräldrasamtycke (medveten avvägning mot COPPA, se `LAUNCH_CHECKLIST.md` Fas A). Fullständig status i `LAUNCH_CHECKLIST.md`.
+**Not (2026-08-02, Basic/Pro + total omprioritering):** §7 utökad med 7.1–7.3 – Basic/Pro-gränsen formaliserad (fanns redan delvis byggd i `/features`, aldrig i specen), en motsägelse mellan marknadsföring och kod hittad och en rekommendation given (hushållsdelning ska vara gratis, är idag Pro-spärrat), och den 7-dagars Pro-provperioden dokumenterad som **redan byggd** (inget nytt att koda för att erbjuda den). Samtidigt: alla öppna punkter i `TODO.md`/`ROADMAP.md`/`OPERATIONS.md`/`APP_STORE_READINESS.md` konsoliderade och omprioriterade till en enda lista, se ny fil `LAUNCH_CHECKLIST.md`.
+**Not (2026-08-02, app store-research):** Fas 3 (§6) och Affärsmodell (§7) uppdaterade efter research om vad som krävs för att lansera på Apple App Store och Google Play. Fullständig research i ny fil `APP_STORE_READINESS.md`, handlingslista i `TODO.md` punkt 25. Kort: Android är lågt jobb (PWA-grund finns redan), iOS kräver ett eget hybrid-utvecklingsprojekt eftersom Apple avvisar rena webview-wrappers. Kontoradering (fortfarande UI-shell, 4b.17) blir en hård Apple-blockerare, inte bara ett GDPR-önskemål.
+**Not (2026-08-02, säkerhetsgranskning):** §10 uppdaterad efter en konkret kodgranskning av hur användardata skyddas (autentisering, auktorisering, admin, publika tokens, barn-dataskydd, hemligheter, injektion/XSS). Fullständiga fynd i `OPERATIONS.md` §8, handlingslista i `TODO.md` punkt 24. Viktigaste fyndet: ingen rate limiting/lockout på inloggning, särskilt allvarligt för det 4-siffriga PIN-et.
+**Not (2026-08-02, uppföljning):** 4b.31 tillagd – "Guest"-roll för att dela en enskild lista med någon utanför hushållet (mor-/farföräldrar, granne/barnvakt) som kräver inloggning/konto, ingen anonym länk. Löser upp 4b.30's öppna spänning om varför delningslänken göms – det var ett medvetet val, inte en miss. Se `TODO.md` punkt 23.
+**Not (2026-08-02):** 4b.30 tillagd – rekommendationer från en ny konkurrentanalys av renodlade reminder/uppgifts/vane-appar (Bring!, TickTick, Todoist, Do Habits, Structured; se `COMPETITOR_ANALYSIS_TASKAPPS.md` och `TODO.md` punkt 22). Fokus: användarvänlighet, inte funktionsbredd – breda task-manager-funktioner (Eisenhower-matris, Pomodoro, fristående vanor) exkluderade helt eftersom de inte passar positioneringen i §3. §9 (UX-principer) utökad med två punkter från samma analys.
 **Not:** Sektion 4b (Familj/Hushåll) tillagd 2026-07-26 för att dokumentera funktionalitet som redan byggts i kodbasen men saknades i specen. 2026-07-27: 4b.8 utökad och 4b.9–4b.10 tillagda utifrån beställningen "Inköpslista & barnens önskelista". 2026-07-27 (kväll): positionering breddad (§1, §3), 4b.11 (hamburgermeny/admin-åtkomst) och 4b.12 (mobil/webb-vy) tillagda. 2026-07-27 (sen kväll): 4b.2 uppdaterad med kravet på riktig email, 4b.13 (frivillig PIN-inloggning för vuxna) tillagd, båda klicktestade skarpt. 2026-07-28: 4b.14 (kategorihantering, tight layout, optimistisk UI, varor ligger kvar tills manuell rensning) och 4b.15 (flera listor per hushåll med åtkomststyrning, notis/länk/bild på varor) tillagda efter feedback på hur trögt/klumpigt inköpslistan kändes. 2026-07-28 (kväll): 4b.16 (fem quick wins efter Best4Family-analysen: sekretess-chip, dataexport, broadcast-notis, PIN/Google-bugg fixad) och 4b.17 (kända ej byggda gap, bl.a. att Delete account-knappen bara är en UI-shell) tillagda. 2026-07-28 (natt): 4b.18 tillagd – "Ideas & voting", en delad förbättringsförslag-/röstningssektion, byggd efter en EU-marknadsundersökning (se `MARKET_RESEARCH_EU.md`) som visade att flera konkurrenter redan har publika röstningssidor. 4b.19 tillagd – Training-bokningar och utgående ICS-kalendersynk. **2026-07-28 (natt, sent): School korrigerad till en egen sektion (inte del av vanliga Reminders) efter direkt feedback från Mikael – se 4b.19's School-del och `dashboard/school/page.tsx`.**
 
 ---
@@ -106,6 +114,8 @@ Denna funktionalitet finns i kodbasen (Prisma-modeller `Household`, `HouseholdMe
 - Barn markerar sysslan som klar per vecka (`ChoreCompletion`, unikt per barn+vecka)
 - Förälder godkänner (`ChoreStatus`: DONE → PENDING_APPROVAL → APPROVED)
 - Föräldrar ser statistik över tid via `/api/family/stats`
+
+**Beslut 2026-08-02 – Belöningar (löser upp frågan som stått öppen sedan Best4Family-analysen 2026-07-28, TODO.md 19d/20):** poäng/stjärnor per godkänd syssla (virtuellt), **inte** kopplat till riktiga pengar/belöningar i v1. Motivering: matchar den redan beslutade UX-principen "gamification i små doser" (§9, princip 7) och bygger vidare på micro-gratifikations-idén från 4b.30 (konfetti vid första avklarade syssla) – samma sorts låg-komplexitet, hög-känsla-mekanik. Ett riktigt belöningssystem (fickpengar/aktiviteter) kräver att en förälder konfigurerar en belöningskatalog och värden per syssla – mer produktyta, mer att underhålla, och inget som efterfrågats konkret. Kan läggas till senare som en valfri, avstängd-som-standard-inställning om en användare specifikt efterfrågar det. Se `LAUNCH_CHECKLIST.md` Fas D för hur detta paketeras ihop med kvantitativ vy + streak-indikatorn (samma UI-yta, byggs naturligt i samma omgång).
 
 ### 4b.4 Familje-trial
 - Ett hushåll kan starta en tidsbegränsad provperiod för familjefunktioner (`FamilyTrial`), kopplad till ett barn och den vuxen som startade den
@@ -234,9 +244,11 @@ Efter konkurrentanalysen av Best4Family (`COMPETITOR_ANALYSIS_BEST4FAMILY.md`, s
 Dokumenterat här så det inte glöms bort – dessa är medvetet **inte** byggda ännu (se `TODO.md` punkt 9/12/20 och `ROADMAP.md` för prioritering):
 - **Delete account-knappen i Profile → Security är bara en UI-shell** – "Yes, delete"-knappen har inget fungerande anrop bakom sig idag. Självbetjänings-radering är ett kvarstående P1-gap inför bred lansering.
 - **Riktig Privacy Policy-sida** – uppdaterat 2026-07-28: **strukturen finns nu** (`/privacy`, se 4b.28), men innehållet är fortfarande inte klart (7 punkter kvar på sidans egen checklista, bl.a. deklarerad minimiålder/föräldrasamtycke).
-- Gästprofiler utan inloggning, Belöningar kopplat till Sysslor (öppen fråga: poäng/stjärnor eller riktiga belöningar, se `TODO.md` 19d/20), inkommande ICS-prenumeration för Training (se `TODO.md` 19h/20) – se `TODO.md` punkt 9/12 för full lista.
+- ~~Gästprofiler utan inloggning~~ **ersatt 2026-08-02 av den inloggningsbaserade "Guest"-rollen, se 4b.31** – Mikael beslutade att samarbete ska kräva konto, inte vara anonymt. Belöningar kopplat till Sysslor (öppen fråga: poäng/stjärnor eller riktiga belöningar, se `TODO.md` 19d/20), inkommande ICS-prenumeration för Training (se `TODO.md` 19h/20) – se `TODO.md` punkt 9/12 för full lista, och `LAUNCH_CHECKLIST.md` för aktuell prioritering.
 
 ### 4b.19 Training-bokningar, School-kategori, utgående kalendersynk (byggd 2026-07-28, natt – produktriktning)
+
+> **Namnbyte 2026-08-02:** allt användaren ser kallas nu **"Activity/Activities"**, inte "Training" – se 4b.33 för beslutet och vad som ändrades. Denna sektion beskriver historiskt hur funktionen byggdes (därför "Training" nedan), interna namn i koden (`ReminderCategory.TRAINING`, `/dashboard/training`, `type=training`) är oförändrade.
 
 Uppföljning direkt efter 4b.18: Mikael gick igenom marknadsundersökningen och gav riktning för tre nya bitar i samma runda.
 
@@ -321,6 +333,60 @@ Del av en större UX-genomgång (se `TODO.md` punkt 19/20). Tre separata önskem
 - **Self-service Google-koppling behövde ingen ny knapp** – att logga in med Google på ett konto vars email redan finns som ett lösenordskonto kopplar redan ihop dem automatiskt (se fyndet ovan). En tydlig "Link your Google account"-knapp i Profile är en ren UI-sockerbit ovanpå något som redan fungerar, inte byggd än.
 - **Multi-family (en person i två hushåll samtidigt) – beslut: bara förbereda datamodellen, inte bygga UI nu.** Schemat tillåter det redan tekniskt (`HouseholdMember`-jointabellen har ingen spärr mot flera hushåll per user), men all applikationslogik antar idag ett hushåll per user. Krav antecknade för en framtida byggomgång (separerade föräldrar-scenariot): tvingat val av vilket hushåll varje ny post hör till vid skapande om en person tillhör två, ingen bulk-migrering av gamla poster (bara manuell per-post-ändring).
 
+### 4b.30 Rekommendationer från konkurrentanalys – reminder/vane-appar (2026-08-02, inte byggt än)
+
+Efter en konkurrentanalys av Bring!, TickTick, Todoist, Do Habits och Structured (`COMPETITOR_ANALYSIS_TASKAPPS.md`, se `TODO.md` punkt 22) – fokus på användarvänlighet och onboarding-mönster, inte funktionsbredd. Skiljer sig från Best4Family-genomgången (4b.16/4b.17) genom att jämförelseobjekten är renodlade uppgifts-/vane-appar, inte en bred familjehub.
+
+**Explicit exkluderat** (bryter mot positioneringen i §3 – vi konkurrerar inte med generella uppgiftshanterare): Eisenhower-matris, Pomodoro-timer, fristående vanebibliotek/heatmap som egen modul, tidslinjevy à la Structured, e-posta-uppgift-till-projekt, bulk-hantering/kommentarer per post, "Achievements"-system.
+
+**Redan täckt av befintlig funktionalitet, inget nytt att bygga:** snabbval/quick-add (§4.2), delad inköpslista med kategori-minne/Recent-chips/streckkodsskanning/butiksläge (4b.14, 4b.27), flera listor med åtkomststyrning (4b.15), sekretess-chip per post (4b.16, en synlig variant av Structureds dolda "Placeholder mode").
+
+**P0/P1 – kandidater till nästa "quick wins"-omgång, låg komplexitet:**
+- **Micro-gratifikation vid första avklarade post:** t.ex. konfetti vid första avbockade reminder och första godkända syssla (Todoist-mönstret). Ren frontend, ingen databasändring.
+- **Kvantitativ vy för återkommande sysslor** ("3 av 5 denna vecka") – datan finns redan i `ChoreCompletion`/`choreRecurrenceDays`/`recurrence`, bara en UI-komponent saknas.
+- **Klicktesta det faktiska flödet från Register till första värde.** Specen beskriver idag inget uttryckligt onboarding-steg mellan registrering och en första tillagd påminnelse/vara – bör dokumenteras innan vi bygger något nytt, för att kunna jämföra mot UX-princip 6 (§9).
+
+**P2 – naturlig utökning, lägre prioritet:**
+- **Streak/"gjort över tid"-indikator för sysslor** – kan återanvända `/api/family/stats` (4b.26).
+- **Riktigt prediktiva inköpsförslag** ("du behöver troligen") utöver dagens kategori-minne – kräver ny inköpsfrekvens-logik, större jobb än övriga punkter här.
+- **"Placeholder mode" för skärmdumpar**, särskilt önskelistan (barnens överraskningar).
+
+**Avstämd med Mikael (2026-08-02) – tidigare "öppen spänning":** att gömma den anonyma delningslänken var ett medvetet val, inte en miss – Mikael vill att samarbete kräver inloggning/konto, inte en anonym länk. Genomgången av detta ledde till en ny, konkret modell: se **4b.31** nedan.
+
+**Framåtblick, ingen kod nu:** transparent provperiods-/debiteringstidslinje (à la Structured) som princip **när** Stripe-checkout byggs (Fas 3, se `ROADMAP.md`) – inte aktuellt förrän betalflödet finns; `is_pro` är fortfarande en manuell admin-toggle (4b.6).
+
+### 4b.31 Extern listdelning – "Guest"-roll (beslutad modell 2026-08-02, inte byggd än)
+
+Uppföljning på 4b.30's öppna spänning. Genomgång med Mikael delade upp "dela en lista" i två separata behov:
+
+1. **Inom hushållet – redan löst.** Vem av befintliga hushållsmedlemmar som ser en viss lista styrs redan av `ListAccessPanel`/`visibleToAll`/`ListMember` (4b.15). Inget att bygga.
+2. **Utanför hushållet – genuin lucka.** Någon som inte ska bli fullständig hushållsmedlem (ser inte reminders, ekonomi, andra listor) men som ska kunna logga in och samarbeta på en specifik lista. Konkreta fall: mor-/farföräldrar som vill se och markera ett barns önskelista som köpt (för att undvika dubbelköp) utan att se resten av familjens data, en granne/barnvakt som handlar en gång, en särboförälder som delar en lista men inte hela hushållet.
+
+**Beslutad riktning – medvetet den smalaste versionen, inte en generell multi-household-lösning:**
+- Ny, lätt roll **"Guest"**, kopplad till en eller flera specifika `List`-rader – inte till hushållet som helhet. Skiljer sig från befintliga roller (OWNER/PARENT/ADULT/CHILD/MEMBER, se 4b.1) genom att den inte ger någon hushållsåtkomst alls, bara till de listor personen bjudits in till.
+- **Inbjudan kräver konto/inloggning** (samma princip som `HouseholdInvite` idag, se 4b.1) – ingen anonym länk. Detta var Mikaels uttryckliga krav.
+- Läggs till/tas bort från samma `ListAccessPanel` som redan finns (4b.15) – ett tredje alternativ utöver "hela familjen"/"vissa medlemmar": **"Bjud in någon utifrån"**.
+- **Medvetet avgränsat:** ingen generell lösning för att en person tillhör flera hushåll samtidigt (den frågan är redan parkerad, bara datamodell förberedd, se 4b.29). Guest-rollen är smalare och löser bara "en utomstående person, en eller flera specifika listor" – inte en person som ska vara aktiv medlem i två olika familjer.
+- **Inte byggd.** Kräver: ny relation mellan `User` och `List` som inte går via `HouseholdMember` (dagens `ListMember` antar indirekt att användaren redan har en roll i hushållet via de sidor som anropar den, se `lib/lists.ts`), en inbjudningsmekanism (email, liknande `HouseholdInvite`) som skapar denna relation istället för hushållsmedlemskap, och sidor/routing som fungerar för en användare som inte "tillhör" något hushåll i vanlig mening. Se `TODO.md` punkt 23 för uppdelning i mindre steg.
+- **Beslut 2026-08-02 (löser den tidigare öppna frågan):** en Guest kan bjudas in till listor i **flera olika hushåll samtidigt**, ingen konstlad begränsning till ett hushåll. Motivering: eftersom relationen redan medvetet inte går via `HouseholdMember` finns ingen teknisk anledning att begränsa den – en enklare datamodell (bara rader på `User`↔`List`, ingen "vilket hushåll tillhör den här Guesten"-fråga) och minst förvånande beteende (en mor-/farförälder med barnbarn i två olika hushåll ska kunna vara Guest i båda utan konstigheter).
+
+### 4b.32 Admin-godkännande av nya konton – UX-avvägning identifierad (2026-08-02)
+
+Byggd tidigare (`TODO.md` punkt 16, "vi testar och bygger nytt, vill hålla det kontrollerat") men aldrig beskriven i produktspecen – dokumenteras här som nuläge, upptäckt vid en genomgång av det faktiska onboarding-flödet (Register → första värde).
+
+- **Nuläge:** varje nytt konto (både lösenord och Google) skapas med `approved: false` och blockeras helt från att logga in tills `ADMIN_EMAIL` manuellt godkänner det i `/admin` – förutom admin-kontot självt, som auto-godkänns. Gäller alla providers (`auth.ts`s `signIn`/`authorize`), med ett specifikt felmeddelande (`PENDING_APPROVAL_MESSAGE`) istället för det generiska "fel lösenord".
+- **UX-spänning identifierad:** detta bryter fullständigt mot principen "visa värde innan vi ber om något" (§9, princip 6, tillagd efter `COMPETITOR_ANALYSIS_TASKAPPS.md`) – en ny användare kan idag inte uppleva någon som helst kärnfunktion (inte ens lägga till en påminnelse) förrän en människa manuellt godkänt kontot. Det är motsatsen till Bring!/Structureds "låt användaren uppleva värde direkt"-mönster.
+- **Bedömning: rätt beslut just nu, fel beslut vid bred lansering.** Matchar Mikaels bekräftelse (2026-08-02) att appen fortfarande är i en stängd testfas utan externa användare – kontrollerad tillväxt är rimligt här. Men detta **måste stängas av eller ersättas innan Fas C (app store-lansering)/bred lansering**, annars kolliderar det direkt med både UX-principen och med att en app store-granskare/ny användare förväntar sig att kunna använda appen direkt efter registrering. Tillagd i `LAUNCH_CHECKLIST.md` Fas A som en uttrycklig punkt – fanns inte där tidigare, ett genuint gap i den listan fram tills nu.
+
+### 4b.33 "Training" → "Activity/Activities" i hela UI:t (2026-08-02, kodat)
+
+Mikaels feedback: *"träning kanske e fel, activity är bättre. Man kanske har scouter, teater eller liknande. då får man med alla?"* – funktionen (4b.19) hette "Training" med en fotbolls-emoji (⚽) trots att den redan stödde vilken återkommande aktivitet som helst (fritextnamn). Namnet signalerade sport specifikt, inte den bredare kategorin (scouter, teater, dans, kör, musik, schack …) funktionen faktiskt redan täckte.
+
+- **Genomfört:** alla användarsynliga strängar bytta från "Training"/⚽ till "Activity"/"Activities"/🎯 – hamburgermeny, bottenmeny, Profile → Preferences (bottennav-val), `/features`, `/privacy`, Activities-sidan (rubrik, tomt-läge, knappar, felmeddelanden), kalenderns typfilter/legend/klick-igenom-text, formuläret för att skapa en aktivitet (rubrik, toggle-knapp, platshållartext, spara-knapp), och den utgående ICS-kalenderns kategori-etikett (syns i Google/Outlook/Apple-kalendern).
+- **Medvetet oförändrat (internt, osynligt för användaren):** `ReminderCategory.TRAINING`-enumvärdet i databasen, routen `/dashboard/training`, query-parametern `?type=training`, och `bottomNavTabs`-nyckeln `"training"`. Att byta dessa hade krävt en schemaändring (`db push`, kan inte köras i den här sandboxen, se `OPERATIONS.md` §4/§5) och riskerat att förstöra redan sparade `bottomNavTabs`-inställningar. Samma "additiv, inte destruktiv"-princip som tidigare fältbyten (4b.14, 4b.15).
+- **Aktivitetsförslagen breddade:** `TRAINING_TEMPLATES` (`dashboard/family/new/page.tsx`) innehöll redan Dans/Piano men dominerades av sport (Karate, Fotboll, Simning, Gymnastik, Ishockey, Ridning). Scouts, Theater/Drama, Choir och Chess club tillagda, och ordningen ändrad så de första sex chipsen (det enda som visas utan att skrolla) redan blandar sport och icke-sport.
+- **Verifiering:** `tsc --noEmit` rent (exit 0) efter samtliga ändringar. Ingen schemaändring, ingen `db push` krävs. Inte pushat än, se `LAUNCH_CHECKLIST.md`.
+
 ---
 
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
@@ -343,7 +409,8 @@ Del av en större UX-genomgång (se `TODO.md` punkt 19/20). Tre separata önskem
 - [ ] **SMS-påminnelser** – Via Twilio
 - [ ] **Familj-/partnerkonto** – Delade listor för hushållet
 - [ ] **API** – För integrationer mot bokföringsprogram mm
-- [ ] **iOS-app** – Native app när webb-MVP är validerad
+- [ ] **iOS-app** – kräver ett eget hybrid-utvecklingsprojekt (t.ex. Capacitor), inte bara en paketering av webbplatsen – Apple avvisar rena webview-wrappers. Se `APP_STORE_READINESS.md` för fullständig research.
+- [ ] **Android-app (Google Play)** – lågt jobb, PWA-grunden (`manifest.json`/`sw.js`) finns redan. Se `APP_STORE_READINESS.md`.
 
 ---
 
@@ -351,9 +418,42 @@ Del av en större UX-genomgång (se `TODO.md` punkt 19/20). Tre separata önskem
 
 **Nuläge:** Pro-status sätts idag manuellt av admin per hushåll (`is_pro`-toggle). Inget betalflöde är kopplat ännu – se Fas 2.
 
-**Prenumeration (primär, planerad):**
-- Gratis: upp till 10 påminnelser, email-notiser
-- Premium (~49 kr/mån eller ~399 kr/år): obegränsat, WhatsApp, SMS, kalendersynk, prioriterad support
+**Viktigt beslut innan Stripe byggs (tillagt 2026-08-02):** om Pro ska säljas i en framtida iOS-app påverkar Apples regler vilket betalflöde som är tillåtet var – Stripe direkt är inte tillåtet i appen utanför EU (kräver Apples egen In-App Purchase där, 15–30% avgift), men inom EU kan ett särskilt "External Purchase Link Entitlement" tillåta Stripe. Se `APP_STORE_READINESS.md` §4. Bör avgöras innan Stripe-integrationen byggs, inte efteråt.
+
+### 7.1 Basic vs Pro – gränsen (formaliserad 2026-08-02)
+
+**Upptäckt under genomgången:** en Basic/Pro-uppdelning fanns redan, byggd i `app/src/app/features/page.tsx` (marknadsföringssidan) men aldrig formellt skriven in i produktspecen. Formaliserar den här, och rättar två motsägelser som hittades mellan marknadsföringstexten och vad koden faktiskt spärrar.
+
+**Basic (gratis, för alltid):**
+- Personliga reminders – **obegränsat antal** (rättelse: tidigare version av denna spec sa "upp till 10 påminnelser", men ingen sådan gräns finns eller har någonsin funnits i koden – `/features` har alltid utlovat "free, forever" utan gräns. Specen var fel, inte koden. Rättat här istället för att bygga en ny begränsning som skulle bryta ett redan givet löfte.)
+- Email-påminnelser, kategorier, kalendervy, hemskärms-PWA
+- Ideas & voting (medvetet aldrig Pro-spärrat, se 4b.18)
+- Ett hushåll + att bjuda in medlemmar till det, och att dela en enskild reminder inom hushållet (visibility HOUSEHOLD/PARENTS) – **se 7.2, detta är en rättning, inte hur koden fungerar idag**
+- Första barnprofilen i ett hushåll (andra barnprofilen kräver trial/Pro, se nedan)
+
+**Pro (betald, pris ej satt – se nedan):**
+- Delad inköpslista, önskelistor, Sysslor (Chores), Training, School-tracker
+- Broadcast-notiser till familjen, utgående kalendersynk (ICS)
+- Fler än 1 barnprofil
+
+**Pris – beslutat 2026-08-02:** **49 kr/mån eller 399 kr/år.** Tidigare bara ett riktmärke, nu bekräftat som beslut, grundat i konkurrentprissättning (websökning 2026-08-02): Cozi Gold $39/år, TickTick Premium $35,99/år eller $3,99/mån. 399 kr/år (~$38) ligger precis i linje med den marknaden, trots att vår funktionsyta (inköpslista, önskelista, sysslor, training, school) är bredare än en ren kalender/att-göra-app. Rabatten mellan månads- och årspris (~32%) matchar TickTicks eget mönster (~25%). `/features`-texten ("not final yet") bör uppdateras till detta pris när Stripe-integrationen (Fas B, `LAUNCH_CHECKLIST.md`) närmar sig.
+
+### 7.2 En motsägelse – löst 2026-08-02
+
+`/features` utlovade "Household sharing" som en gratis Basic-funktion. Koden sa något annat: **att bjuda in en medlem till hushållet** (`api/household/invite`), **att dela en enskild reminder med hushållet** (visibility ≠ PRIVATE, `api/reminders` POST+PATCH), och **att överlämna (handover) en reminder** (`api/reminders/[id]/handover`) krävde alla `is_pro` – ingen trial-fallback. En Basic-användare kunde alltså i praktiken inte bilda ett flerpersoners-hushåll alls, trots vad marknadsföringen lovade.
+
+**Mikael godkände rekommendationen 2026-08-02: alla tre är nu gratis.** `is_pro`-kontrollen borttagen i samtliga tre routes. Pro-gränsen ligger nu bara vid de faktiska familjefunktionerna (inköpslista, önskelista, sysslor, etc., §7.1) – matchar både marknadsföringslöftet och positioneringen "hemmets gemensamma bas" (§3). Kodat, `tsc --noEmit` rent, redo för deploy – se `LAUNCH_CHECKLIST.md`.
+
+### 7.3 7-dagars gratis Pro-provperiod – redan byggd
+
+**Redan implementerad, inte en ny funktion:** `FamilyTrial`-modellen ger exakt **7 dagar** (hårdkodat i `api/family/trial/route.ts`), med en fungerande "Start free 7-day trial →"-knapp (`dashboard/family/page.tsx`). Täcker samma familjefunktioner som Pro (inköpslista, önskelista, sysslor osv.) plus exakt 1 barnprofil.
+
+**Kända, medvetna begränsningar (design, inte buggar):**
+- **En trial per hushåll, någonsin** – databasen tillåter inte en andra trial för samma hushåll (`FamilyTrial.householdId` är unik). Vanligt anti-missbruks-mönster, ingen ändring rekommenderad.
+- **Ingen automatisk nedstängning vid utgång** – `is_pro` påverkas aldrig av en utgången trial. Detta är korrekt som det är: trial-status räknas alltid ut live från `expiresAt` mot nuvarande tid, så ingen cron/schemalagd nedstängning behövs – åtkomsten upphör automatiskt när datumet passerat, utan att någon databasrad behöver uppdateras.
+- **Ingen transparent debiteringstidslinje** (à la Structured, se `COMPETITOR_ANALYSIS_TASKAPPS.md`/4b.30) – relevant först när ett riktigt betalflöde finns att visa en tidslinje för.
+
+**Inget att bygga för att erbjuda en 7-dagars provperiod – den finns redan.** Det som saknas är ett riktigt betalflöde att landa i *efter* trialen (se 7.1/§6 Fas 3).
 
 **Målsättning år 1:**
 - 500 gratis-användare inom 6 månader
@@ -446,13 +546,15 @@ Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar me
 3. **Mobilanpassad** – fungerar perfekt på telefon i webbläsaren
 4. **Engelska som primärspråk** *(beslutat 2026-07-26 – matchar den redan byggda appen. Tidigare version av denna spec sa svenska; det var fel/inaktuellt.)*
 5. **Snabbval framför formulär** – välj "Netflix" istället för att skriva
+6. **Visa värde innan vi ber om något** *(tillagd 2026-08-02, se `COMPETITOR_ANALYSIS_TASKAPPS.md`)* – ny användare ska hinna uppleva kärnvärdet (en tillagd påminnelse/vara) innan konto-konfiguration, familjeinbjudan eller ett eventuellt framtida betalflöde tvingas fram. Motsatsen till Do Habits-mönstret (hård paywall innan en enda funktion testats).
+7. **Gamification i små, billiga doser** *(tillagd 2026-08-02)* – enkla mikro-belöningar (t.ex. en visuell bekräftelse vid första avklarade posten) bygger vana utan att kräva ny infrastruktur. Se 4b.30 för konkreta kandidater.
 
 ---
 
 ## 10. Icke-funktionella krav
 
-- **GDPR-kompatibel** – Integritetspolicy, rätt att radera data, unsubscribe-länk
-- **Säkerhet** – Bcrypt för lösenord, JWT för sessions, HTTPS always
+- **GDPR-kompatibel** – Integritetspolicy (struktur klar, innehåll ej klart, se 4b.28), rätt att radera data (policy-löfte finns, självbetjänings-knapp är fortfarande bara en UI-shell, se 4b.17), unsubscribe-länk
+- **Säkerhet** – Bcrypt för lösenord (cost 12) och PIN (cost 10), JWT-sessions via NextAuth, HTTPS always, hemligheter korrekt hanterade (inga läckta nycklar i repo). **Verifierat genom en konkret kodgranskning 2026-08-02** (`OPERATIONS.md` §8): auktorisering/IDOR-kontroller och adminpanelens åtkomstspärr är konsekvent implementerade, publika delningstokens är ogissbara och roterbara. **Rate limiting/lockout på inloggning byggd 2026-08-02** (`lib/rateLimit.ts`, 5 försök/15 min, delat mellan lösenord och PIN) – känd begränsning: in-memory per serverless-instans, inte en fullt delad spärr, se `OPERATIONS.md` §8. Kvarstår: barnprofilers gissbara email-mönster, se `LAUNCH_CHECKLIST.md` Fas A.
 - **Prestanda** – Dashboard laddar < 1 sekund
 - **Tillgänglighet** – Fungerar utan JavaScript disabled (grundläggande)
 

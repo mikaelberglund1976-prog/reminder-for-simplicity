@@ -60,7 +60,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     const CATEGORY_LABELS: Record<string, string> = {
       SUBSCRIPTION: "Subscription", BIRTHDAY: "Birthday", INSURANCE: "Insurance",
       CONTRACT: "Contract", HEALTH: "Health", BILL: "Bill", CHORE: "Chore",
-      TRAINING: "Training", SCHOOL: "School", OTHER: "Reminder",
+      TRAINING: "Activity", SCHOOL: "School", OTHER: "Reminder",
     };
 
     const events: IcsEvent[] = [];

@@ -90,6 +90,9 @@ export async function PATCH(
     const data = updateSchema.parse(body);
 
     // Hantera visibility och householdId
+    // Pro-kravet borttaget 2026-08-02 (se PRODUCT_SPEC.md §7.2, samma
+    // ändring som POST /api/reminders) — dela en reminder inom hushållet är
+    // nu gratis för alla.
     let householdId: string | null | undefined = undefined; // undefined = behåll befintligt
     if (data.visibility !== undefined) {
       if (data.visibility === "PRIVATE") {
@@ -97,9 +100,8 @@ export async function PATCH(
       } else {
         const membership = await prisma.householdMember.findFirst({
           where: { userId: session.user.id },
-          include: { household: { select: { is_pro: true } } },
         });
-        householdId = membership?.household?.is_pro ? membership.householdId : null;
+        householdId = membership ? membership.householdId : null;
       }
     }
 

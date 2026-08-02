@@ -48,7 +48,7 @@ const BOTTOM_NAV_APP_OPTIONS = [
   { key: "shopping-list", label: "Shopping list", emoji: "🛒" },
   { key: "wishlist", label: "Wishlist", emoji: "🎁" },
   { key: "chores", label: "Chores", emoji: "🧹" },
-  { key: "training", label: "Training", emoji: "⚽" },
+  { key: "training", label: "Activities", emoji: "🎯" },
   { key: "school", label: "School", emoji: "📚" },
 ];
 const DEFAULT_BOTTOM_NAV_APPS = ["reminders", "shopping-list", "school"];
@@ -636,7 +636,7 @@ export default function ProfilePage() {
               runda". */}
           <Card title="Calendar sync">
             <p style={{ fontSize: 13, color: "#7C7C8A", lineHeight: 1.6, margin: "0 0 14px" }}>
-              See your reminders, chores and trainings in your own calendar app. Add this link as a subscribed calendar in Google Calendar, Outlook or Apple Calendar — it updates on its own, no login needed.
+              See your reminders, chores and activities in your own calendar app. Add this link as a subscribed calendar in Google Calendar, Outlook or Apple Calendar — it updates on its own, no login needed.
             </p>
             {!calendarFeedUrl ? (
               <button

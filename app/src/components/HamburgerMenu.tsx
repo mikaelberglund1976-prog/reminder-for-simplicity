@@ -70,7 +70,7 @@ export default function HamburgerMenu() {
           <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label="Shopping list" onClick={() => setOpen(false)} />
           <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label="Wishlist" onClick={() => setOpen(false)} />
           <MenuLink href="/dashboard/family" icon={<IcChecklist />} label="Chores" onClick={() => setOpen(false)} />
-          <MenuLink href="/dashboard/training" icon={<IcTraining />} label="Training" onClick={() => setOpen(false)} />
+          <MenuLink href="/dashboard/training" icon={<IcTraining />} label="Activities" onClick={() => setOpen(false)} />
           <MenuLink href="/dashboard/school" icon={<IcSchool />} label="School" onClick={() => setOpen(false)} />
           <MenuLink href="/dashboard/suggestions" icon={<IcBulb />} label="Ideas & voting" onClick={() => setOpen(false)} />
           <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={() => setOpen(false)} />

@@ -55,7 +55,7 @@ export default function PrivacyPage() {
         <Section title="1. Who we are">
           <p>
             Reminder for Simplicity ("we", "us") provides a shared reminders, shopping list, wishlist,
-            chores, school, and training app for families.
+            chores, school, and activities app for families.
           </p>
           <TodoBox>
             Legal entity name, organisationsnummer (or equivalent), and registered address — needed here
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
           <ul style={listStyle}>
             <li><b>Account data:</b> name, email address, phone (optional), preferred currency, timezone, and either a hashed password or a hashed PIN.</li>
             <li><b>If you sign in with Google:</b> your name, email, and profile picture as provided by Google.</li>
-            <li><b>Content you create:</b> reminders, chores, shopping list and wishlist items, school and training entries, calendar sync tokens, and suggestions/votes you post.</li>
+            <li><b>Content you create:</b> reminders, chores, shopping list and wishlist items, school and activity entries, calendar sync tokens, and suggestions/votes you post.</li>
             <li><b>Child profiles:</b> a name, a hashed PIN, and a real email address (yours, an alias, or the child's own) — set up and managed by an approved adult in the household.</li>
           </ul>
         </Section>

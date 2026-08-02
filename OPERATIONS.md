@@ -106,7 +106,33 @@ Dessa är kända luckor, inte akuta – men bör tas i tur och ordning i takt me
 - Ingen verifierad egen avsändardomän för email (leveranssäkerhet)
 - Ingen formell migrations-historik (Prisma `db push` istället för `migrate`)
 - Inget backup-schema utöver Supabase's standardbackuper
+- **Ingen rate limiting/lockout på inloggning** – se §8 nedan, det allvarligaste fyndet i säkerhetsgranskningen 2026-08-02.
 
 ---
 
-*Detta dokument beskriver nuläget (2026-07-28, uppdaterat efter den stora UX-genomgången i `TODO.md` punkt 19–21). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, eller sätter upp en verifierad email-domän.*
+## 8. Säkerhetsgranskning av användardata (2026-08-02)
+
+Genomförd på Mikaels begäran ("vi har mycket användaruppgifter, viktigt att ingen kommer åt den") – en konkret kodgenomgång (inte bara dokumentation) av autentisering, auktorisering, adminpanelen, publika token-endpoints, barn-dataskydd, hemlighetshantering och injektion/XSS. Se `PRODUCT_SPEC.md` §10 för hur detta speglas i de icke-funktionella kraven, och punkt 24 i `TODO.md` för handlingslistan.
+
+**Kritiskt fynd – ÅTGÄRDAT 2026-08-02:**
+- **Ingen rate limiting/lockout på inloggning – varken lösenord eller PIN.** Inget `middleware.ts`, ingen throttling, ingen CAPTCHA. PIN-inloggningen (`auth.ts`, pin-providern) är extra känslig: bara 4 siffror (10 000 kombinationer), och barnprofilers email genereras ofta enligt ett gissbart mönster (t.ex. `förälder+barnnamn@gmail.com`, se `family/child-profiles/route.ts`). Eftersom PIN-inloggning bygger på att känna till email, är kombinationen "gissbar email + obegränsade PIN-försök" den mest konkreta risken i appen idag.
+  - **Fix:** `lib/rateLimit.ts` (nytt), kopplat in i båda providrarna i `lib/auth.ts` – 5 misslyckade försök inom 15 minuter låser kontot (delat mellan lösenord/PIN) i 15 minuter. **Kvarstår ändå, medvetet inte löst av detta:** det gissbara email-mönstret för barnprofiler – det är ett produktbeslut, inte en teknisk fix, se `LAUNCH_CHECKLIST.md` Fas A.
+  - **Känd begränsning i fixen:** in-memory, per serverless-instans – inte en delad/global spärr mellan Vercels instanser. Höjer kostnaden för att bruteforcea ett känt konto rejält, men är inte vattentätt. Uppgradera till en delad store (Upstash Redis rekommenderas, gratis-tier finns) om detta ska vara en fullständig lösning.
+
+**Viktiga fynd – ÅTGÄRDADE 2026-08-02:**
+- `CRON_SECRET`-jämförelsen i `/api/cron/send-reminders/route.ts` använde `!==` (icke-konstant-tid) istället för `crypto.timingSafeEqual`. **Fixat** – konstant-tidsjämförelse med explicit längdkontroll.
+- `ADMIN_EMAIL` var hårdkodad i `lib/adminConfig.ts`. **Fixat** – läser nu `process.env.ADMIN_EMAIL ?? "..."`, samma mönster som API-routes. Nyans: tre av fyra importställen är `"use client"`-komponenter, och utan `NEXT_PUBLIC_`-prefix bakas env-variabeln aldrig in i klientbundeln – de fortsätter alltså falla tillbaka på samma hårdkodade default som förut (ofarligt, ren UI-visning). Fixen är fullt verksam för den server-sida route:n som också importerar den.
+- Ingen auktorisering på middleware-nivå – varje route sköter sin egen `getServerSession`-kontroll. Idag konsekvent gjort rätt (se nedan), men arkitekturen saknar "försvar på djupet": en enda glömd sessionskontroll i en framtida route skulle exponera data direkt. **Inte åtgärdat** – arkitekturfråga, se `LAUNCH_CHECKLIST.md` Fas A/P2.
+
+**Redan bra löst – värt att veta, inte bara problem:**
+- Lösenord: bcrypt, cost factor 12 (registrering), cost 10 (PIN) – i linje med praxis.
+- Sessions: NextAuth JWT-strategi, `NEXTAUTH_SECRET` läses från env, inga hemligheter hårdkodade. `.env`/`.env.local` korrekt gitignorade, `.env.example` innehåller bara platshållare, ingen läckt nyckel hittad i källkoden.
+- **IDOR/auktorisering:** alla granskade `[id]`-routes (reminders, wishlist, shopping-list, household/members) filtrerar konsekvent på användarens hushåll/ägarskap innan data returneras eller ändras.
+- **Adminpanelen:** samtliga granskade `/api/admin/*`-routes kontrollerar `ADMIN_EMAIL` server-side konsekvent; exponerar aldrig lösenordshashar eller PIN.
+- **Publika tokens** (`calendarFeedToken`, `List.shareToken`): genereras med `crypto.randomBytes(18)` (~144 bitar, ogissbara), kan roteras/återkallas av användaren själv, läcker inte andra medlemmars privata data.
+- **Barn-dataskydd:** wishlist-statusstrippningen för barn är verifierad korrekt i både GET och PATCH, server-side, ingen väg runt den hittad.
+- **Injektion/XSS:** ingen rå SQL, all databasåtkomst via Prisma; `dangerouslySetInnerHTML` används bara på en fast kodkonstant, aldrig på användarinmatning.
+
+---
+
+*Detta dokument beskriver nuläget (2026-08-02, uppdaterat med säkerhetsgranskningen i §8). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, sätter upp en verifierad email-domän, eller åtgärdar fynden i §8.*

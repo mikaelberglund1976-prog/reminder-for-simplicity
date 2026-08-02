@@ -1,4 +1,7 @@
 # Todo – Reminder for Simplicity
+
+> **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
+
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
 **Uppdaterad:** 2026-07-27 (kväll) – hamburgermeny + admin-åtkomst byggd, alla md-filer (PRODUCT_SPEC, ROADMAP, BRAND, OPERATIONS, TODO) synkade mot nuläget. Sektionerna nedan är nu i kronologisk ordning (döpte om 4d0→4e osv, som tidigare låg fel i ordning).
 **Uppdaterad igen:** 2026-07-27 (sen kväll) – punkt 16 klar: delningslänk, kategori-katalog/Recent-chips och PIN-inloggning klicktestade på skarpa `www.assistiq.se` (commit `1ad791d`). Se 4i/4j nedan för detaljer och en liten kosmetisk bugg som hittades under testet.
@@ -16,6 +19,7 @@
 **Uppdaterad igen:** 2026-07-28 – de två stora beslutspunkterna avgjorda (se 19g): multi-family blir bara datamodell-förberedelse nu (ingen växlare/UI), kontosammanslagning blir "flytta allt" med bekräftelseskärm, automatisk trigger vid Google-inloggning. Streckkodsskanning/receptimport/butiksläge (redan i ROADMAP) infogade i 19c, belöningar-för-sysslor infogat i 19d – samma sidor byggs ändå om, så ingen anledning att vänta. Dessutom byggd: `/privacy`-sidan som en strukturell scaffold (`app/src/app/privacy/page.tsx`), länkad från Register och `/features`. Varje sektion som saknar riktigt innehåll eller ett beslut är markerad med en tydlig gul "Needs a decision"-ruta i UI:t, med en samlad checklista längst ner på sidan (7 punkter: juridisk enhet, minimiålder för barnprofiler, Vercel/Resend DPA-status, datalagringstid, självbetjänings-radering, riktig kontaktadress). `tsc --noEmit` kört rent.
 **Uppdaterad igen:** 2026-07-28 – hela punkt 19 (utom rewards och inkommande ICS-import) byggd i en lång omgång efter "kör". Se ny punkt 20 nedan för en fullständig genomgång av vad som är klart, vad som medvetet skjutits upp och varför, och vad som krävs innan det fungerar i produktion.
 **Uppdaterad igen:** 2026-07-28 – du körde `prisma generate`/`db push` lokalt (klart), men nästa deploy failade i Vercel. Grundorsak hittad och fixad: `useSearchParams()` utan `<Suspense>`-gräns i `/dashboard/new` och `/dashboard/school` (Next 14:s prerender-krav, fångas inte av `tsc`). Se ny punkt 21 nedan. Redo för commit + push.
+**Uppdaterad igen:** 2026-08-02 – konkurrentanalys av renodlade reminder/uppgifts/vane-appar (Bring!, TickTick, Todoist, Do Habits, Structured) genomförd på begäran, fokus på användarvänlighet/onboarding, inte funktionsbredd. Inga kodändringar gjorda. Fullständig analys i `COMPETITOR_ANALYSIS_TASKAPPS.md`, kondenserad handlingslista i ny punkt 22 nedan, och `PRODUCT_SPEC.md` uppdaterad (4b.30 + två nya UX-principer i §9).
 
 ---
 
@@ -338,7 +342,7 @@ Beställning: en kalender baserad på datan vi redan har (reminders + sysslors d
 Feedback direkt efter första kalenderversionen (punkt 14): griden känns "tråkig" som enda vy. Fyra separata önskemål, ingen av dem byggd – loggat för nästa runda.
 
 - [ ] **Agenda-vy under griden:** istället för (eller som komplement till) dagens "klicka en dag → se den dagens poster"-panel, visa hela innevarande månadens aktiviteter som en löpande lista grupperad per dag, med dagens datum som startpunkt/fokus (t.ex. auto-scrollad dit, eller tydligt markerad). Griden överst blir då mer en navigering/översikt, agenda-listan under gör kalendern faktiskt användbar utan att klicka runt.
-- [ ] **"+"-knapp högst upp i kalendern** för att lägga till direkt därifrån, istället för att behöva gå till Reminders-fliken → New. **Öppen fråga att lösa innan bygge:** ska den fråga "Reminder eller Chore?" (två olika underliggande flöden idag) eller alltid skapa en vanlig reminder? Behöver ett beslut, inte bara "bygg det".
+- [x] **"+"-knapp högst upp i kalendern** – **byggd samma dag, se 4b.25**: en flytande "+"-knapp öppnar en 2-stegs guide (välj typ → välj datum). Löser öppna frågan här av sig själv – den frågar typ explicit istället för att gissa "alltid en vanlig reminder". (Upptäckt 2026-08-02 vid en dokumentationsgenomgång – den här raden hade blivit stående som "öppen" trots att den redan var byggd.)
 - [ ] **Bottenmeny-omstrukturering:** Calendar ska flyttas till **mittenpositionen** i bottenmenyn. Sista knappen (längst till höger) ska bli en **"All functions"-flik** som samlar det som inte får plats i de synliga positionerna – i praktiken en ersättning/utökning av dagens hamburgermeny, fast som en bottenmeny-flik istället för en meny i sidhuvudet.
 - [ ] **Admin-inställning: valbara kategorier i bottenmenyn.** Under Admin ska (troligen OWNER/PARENT, samma mönster som andra admin-inställningar) kunna välja vilka funktioner/kategorier som ligger i de kvarvarande synliga bottenmeny-slotsen (utöver Calendar i mitten och "All functions" sist, som är fasta). **Öppna frågor att lösa innan bygge:** hur många totala slots ska bottenmenyn ha (idag 4: Reminders/Shopping list/Wishlist/Calendar)? Är "kategorier" detsamma som dagens tre flikar (Reminders/Shopping list/Wishlist), eller något bredare (t.ex. även Family/Sysslor som egen flik)? Gäller valet per hushåll eller per person? Detta är en informationsarkitektur-förändring, inte bara en UI-justering – förtjänar en kort spec-runda med dig innan kodning, samma resonemang som "Föräldrautrymme" i `ROADMAP.md`.
 
@@ -480,5 +484,144 @@ Error: Command "npm run build" exited with 1
 **Verifiering:** `tsc --noEmit` rent (inga fel alls nu — dina lokala `prisma generate`/`db push` har redan synkat bort de tidigare väntade `bottomNavTabs`-felen också). Kunde **inte** köra ett fullständigt `next build` i sandboxen för att bekräfta prerenderingen rakt av — `prisma generate` (som `npm run build` kör först) blockeras av samma kända nätverksbegränsning (403 mot `binaries.prisma.sh`), och bakgrundsprocesser dör mellan sandbox-anrop innan `next build` hinner klart (56 sidor). Förlitar mig istället på att mönstret är identiskt kopierat från den variant som redan är bevisat fungerande i produktion (`family/new`). Verifiera gärna själv med ett lokalt `npm run build` innan/efter push om du vill vara helt säker.
 
 **Lärdom (läggs till punkt 13:s lista):** `tsc --noEmit` fångar typfel, inte Next.js byggtidsregler som Suspense-kravet kring `useSearchParams()`. Nya sidor/komponenter som läser query-parametrar bör alltid wrappas i `<Suspense>` direkt, även om `tsc` är tyst.
+
+## 22. Konkurrentanalys – reminder/vane-appar (Bring!, TickTick, Todoist, Do Habits, Structured) (2026-08-02) – handlingslista
+
+Fullständig analys i `COMPETITOR_ANALYSIS_TASKAPPS.md`. Till skillnad från Best4Family-genomgången (punkt 9) tittar den här på renodlade uppgifts-/vane-appar, med fokus på **användarvänlighet och onboarding**, inte funktionsbredd. Inget av detta är byggt – prioriterad att-diskutera/att-bygga-lista. Se `PRODUCT_SPEC.md` 4b.30 för samma innehåll infogat i produktspecen, och §9 för två nya UX-principer som tillkom.
+
+**Explicit bortvalt (bryter mot vår positionering, `PRODUCT_SPEC.md` §3):** Eisenhower-matris, Pomodoro-timer, fristående vanebibliotek/heatmap, tidslinjevy à la Structured, e-posta-uppgift-till-projekt, bulk-hantering/kommentarer per post, "Achievements"-system. Ingen separat "parkerad"-lista för dessa (beslut: filtrera bort, inte skjuta upp).
+
+**Redan täckt, inget att bygga:** snabbval/quick-add, delad inköpslista med kategori-minne/Recent-chips/streckkodsskanning/butiksläge, flera listor med åtkomststyrning, sekretess-chip per post.
+
+**P0/P1 – låg komplexitet, starkt fit:**
+- [ ] Micro-gratifikation (t.ex. konfetti) vid första avklarade reminder och första godkända syssla. Ren frontend, ingen databasändring.
+- [ ] Kvantitativ vy för återkommande sysslor ("3 av 5 denna vecka") – datan finns redan i `ChoreCompletion`/`choreRecurrenceDays`/`recurrence`, bara en UI-komponent saknas.
+- [ ] Klicktesta det faktiska flödet från Register till första riktiga värde (en tillagd påminnelse/vara) och dokumentera nuläget – finns inget beskrivet onboarding-steg i specen idag.
+
+**P2 – naturlig utökning, lägre prioritet:**
+- [ ] Streak/"gjort över tid"-indikator för sysslor, återanvänder `/api/family/stats`.
+- [ ] Riktigt prediktiva inköpsförslag ("du behöver troligen") utöver dagens kategori-minne – större jobb, kräver ny inköpsfrekvens-logik.
+- [ ] "Placeholder mode" för skärmdumpar, särskilt önskelistan.
+
+**Avstämt (2026-08-02) – var en öppen spänning, nu löst:**
+- [x] Delningslänken på inköpslistan doldes med flit – Mikael vill att samarbete kräver inloggning/konto, inte en anonym länk. Genomgången ledde till en ny funktion, se punkt 23 nedan.
+
+**Framåtblick, ingen kod nu:**
+- [ ] Transparent provperiods-/debiteringstidslinje som princip när Stripe-checkout byggs (Fas 3) – inte aktuellt förrän betalflödet finns.
+
+## 23. "Guest"-roll – dela en enskild lista med någon utanför hushållet (beslutad 2026-08-02, inte byggd än)
+
+Uppföljning på punkt 22's öppna spänning om den dolda delningslänken. Se `PRODUCT_SPEC.md` 4b.31 för det fulla resonemanget. Kort sammanfattning:
+
+- Vem av **befintliga** hushållsmedlemmar som ser en viss lista är redan löst (`ListAccessPanel`, 4b.15). Detta gäller bara personer som **inte** ska bli fullständiga hushållsmedlemmar (mor-/farföräldrar, granne/barnvakt, särboförälder).
+- Beslutad modell: ny lätt roll **"Guest"**, kopplad till specifika listor, inte hushållet. Kräver inloggning/konto (som `HouseholdInvite` idag) – ingen anonym länk.
+- Medvetet **inte** samma sak som multi-household-frågan (4b.29, redan parkerad) – Guest är smalare: en utomstående person, en eller flera listor, ingen aktiv "medlem i två familjer"-situation.
+
+**Nedbrytning, inget byggt än:**
+- [ ] Datamodell: en relation mellan `User` och `List` som fungerar utan att användaren har en roll i hushållet (dagens `ListMember` antar indirekt hushållsmedlemskap via de sidor som anropar `lib/lists.ts`).
+- [ ] Inbjudningsflöde: email-inbjudan liknande `HouseholdInvite`, men skapar Guest-relationen istället för hushållsmedlemskap.
+- [ ] Routing/sidor: en inloggad Guest-användare "tillhör" inget hushåll i vanlig mening – kräver att sidorna som idag antar `session.user.householdId` hanterar det fallet.
+- [ ] UI: tredje alternativet i `ListAccessPanel` ("Bjud in någon utifrån") utöver "hela familjen"/"vissa medlemmar".
+- [ ] Öppen fråga att avgöra innan bygge: kan en Guest bjudas in till flera listor i olika hushåll samtidigt, eller bara ett hushåll åt gången? Påverkar hur relationen modelleras.
+
+## 24. Säkerhetsgranskning av användardata (2026-08-02) – handlingslista
+
+Genomförd på begäran ("vi har mycket användaruppgifter, viktigt att ingen kommer åt den") – en konkret kodgranskning, inte bara en genomgång av dokumentationen. Fullständiga fynd i `OPERATIONS.md` §8 (nytt avsnitt), kondenserat i `PRODUCT_SPEC.md` §10. Ingen kod ändrad, ren research inför prioritering – precis som Best4Family-genomgången (punkt 9) och task-app-analysen (punkt 22).
+
+**P0 – bör åtgärdas innan PIN-inloggning/bred lansering (mest konkreta risken hittad):**
+- [ ] **Rate limiting/lockout på inloggning**, både lösenord och PIN. Ingen throttling finns idag – varken `middleware.ts` eller per-route. PIN är extra utsatt: bara 4 siffror (10 000 kombinationer), obegränsade försök.
+- [ ] **Se över hur barnprofilers email genereras/väljs.** PIN-inloggning bygger på att känna till kontots email – om mönstret är gissbart (t.ex. `förälder+barnnamn@gmail.com`, se `family/child-profiles/route.ts`) blir "gissbar email + obegränsade PIN-försök" en praktisk brute-force-väg in på ett barns konto.
+
+**P1 – låg komplexitet, bör in i närtid:**
+- [ ] Byt `CRON_SECRET`-jämförelsen i `/api/cron/send-reminders/route.ts` från `!==` till `crypto.timingSafeEqual` (konstant-tid) – skyddar mot en teoretisk timing-attack.
+- [ ] Städa `ADMIN_EMAIL`-inkonsekvensen: `lib/adminConfig.ts` hårdkodar adressen istället för att läsa `process.env.ADMIN_EMAIL` som API-routes redan gör. Ingen läckrisk idag, men risk för att adminåtkomsten beter sig oväntat om mailet någonsin roteras via env.
+
+**P2 – arkitektur, inte akut:**
+- [ ] Överväg ett gemensamt middleware-lager för auktorisering ("försvar på djupet") istället för att förlita sig på att varje enskild route kommer ihåg sin egen sessionskontroll. Idag är detta konsekvent gjort rätt (verifierat), men inget skydd finns mot att en framtida route glömmer det.
+
+**Redan kända gap som hör ihop med detta (inga nya, bara cross-referens):**
+- Inga nya npm-CVE:er hittade utöver de redan kända i Next.js 14.2 (se punkt 6/`ROADMAP.md`).
+- Självbetjänings-kontoradering är fortfarande bara en UI-shell (se punkt 9/`PRODUCT_SPEC.md` 4b.17).
+- Ingen error tracking/monitoring (se `OPERATIONS.md` §7) – skulle ha upptäckt ovanliga inloggningsmönster (t.ex. en brute-force-attack) snabbare.
+
+**Redan bra löst, inget att göra:** bcrypt-hashning (cost 12/10), NextAuth JWT + `NEXTAUTH_SECRET` från env, korrekt gitignorade hemligheter, konsekventa ägarskapskontroller (IDOR) i granskade `[id]`-routes, konsekvent adminspärr på alla `/api/admin/*`, ogissbara/roterbara publika tokens, verifierat barn-dataskydd i wishlist, ingen rå SQL/XSS-risk. Se `OPERATIONS.md` §8 för detaljer och filreferenser.
+
+## 25. App Store-lansering (Apple + Google) – research + handlingslista (2026-08-02)
+
+På fråga: "om jag skulle vilja lansera för Apple och Google, vad måste vi göra om". Fullständig research + resonemang i ny fil `APP_STORE_READINESS.md` (källor längst ner i den filen). Kort sammanfattning: **inte symmetriskt** – Android är ett litet jobb ovanpå det vi redan har (PWA-grund finns: `public/manifest.json` + `public/sw.js`, registrerad i `layout.tsx`), iOS kräver ett eget utvecklingsprojekt eftersom Apple avvisar rena webview-wrappers (Guideline 4.2.2).
+
+**Blockerare som gäller oavsett plattform, bör lösas först:**
+- [ ] Riktig kontoradering i backend (inte bara UI-shell) – redan känt gap (punkt 9/`PRODUCT_SPEC.md` 4b.17), men blir nu en **hård Apple-blockerare** (Guideline 5.1.1(v)), inte bara ett GDPR-önskemål.
+- [ ] Komplett, publicerad Privacy Policy (4b.28, 7 punkter kvar på checklistan) – krävs av båda butikerna innan inlämning.
+- [ ] Besluta minimiålder + föräldrasamtycke för barnprofiler (redan öppet sedan punkt 9) – nu kopplat till COPPA-efterlevnad (2026 års skärpta regler, deadline redan passerad 22 april 2026), inte bara policy-text.
+
+**Android/Google Play – lågt jobb:**
+- [ ] `assetlinks.json` i `/.well-known/` för domänverifiering (TWA-krav).
+- [ ] Kör Lighthouse PWA-audit, verifiera poäng ≥80 – okänt nuläge idag.
+- [ ] Paketera med Bubblewrap/PWABuilder, sätt upp Play Console ($25 engångsavgift).
+- [ ] Fyll i Data Safety-formuläret (inkl. att barns uppgifter samlas in).
+
+**iOS/Apple – eget utvecklingsprojekt, inte en paketering:**
+- [ ] Bygg en hybrid-app (rekommenderat: Capacitor) med minst en genuin native-funktion, annars risk för avslag som "repackaged website". Naturlig kandidat: riktiga push-notiser (idag bara email) eller native streckkodsskanning (löser samtidigt att dagens `BarcodeDetector`-skanning inte funkar i Safari, se 4b.27).
+- [ ] **Beslut krävs innan Stripe-integrationen byggs (Fas 3):** hur ska Pro-prenumeration säljas i appen? Inom EU (primärmarknad) kan Apples "External Purchase Link Entitlement" tillåta Stripe direkt (kräver ansökan + prisparitet mot Guideline 3.1.3); utanför EU krävs Apples egen In-App Purchase (15–30% avgift).
+- [ ] Apple Developer Program, $99/år.
+
+**Billigare mellansteg:** PWA-grunden som redan finns gör att användare kan "Lägg till på hemskärmen" på både Android och iOS redan idag, utan app store-granskning eller avgift – ingen sökbarhet i butikerna, men en billig väg att testa efterfrågan innan Capacitor-arbetet för iOS prioriteras.
+
+## 26. Total omprioritering + Basic/Pro-gräns + 7-dagars trial (2026-08-02)
+
+På begäran: "hur borde vi gå vidare, kolla alla saker vi ska göra totalt... gör en omprioritering... slå ihop så mycket som möjligt" plus Basic/Pro-gräns och en 7-dagars Pro-provperiod.
+
+**Konsoliderad handlingslista:** alla öppna punkter ur denna fil (punkt 1–25), `PRODUCT_SPEC.md`, `ROADMAP.md`, `OPERATIONS.md` och `APP_STORE_READINESS.md` avdubblerade och omgrupperade i en ny fil, **`LAUNCH_CHECKLIST.md`** (Fas A–G, i prioritetsordning). Den filen är nu förstahandskällan för "vad är kvar" – se pekaren högst upp i den här filen.
+
+**Basic vs Pro:** upptäckte att en gräns redan fanns byggd i `/features` (marknadsföringssidan) men aldrig formaliserad i produktspecen. Formaliserad i `PRODUCT_SPEC.md` §7.1. Hittade samtidigt en verklig motsägelse: `/features` lovar gratis hushållsdelning, men koden kräver `is_pro` för att bjuda in medlemmar eller dela en reminder inom hushållet. Rekommendation (§7.2): gör båda gratis, matcha löftet – i `LAUNCH_CHECKLIST.md` Fas A. Även hittat: den gamla "10 påminnelser gratis"-gränsen i specen har aldrig funnits i koden – reminders har alltid varit obegränsat gratis. Specen rättad, inte koden.
+
+**7-dagars Pro-trial:** redan fullt byggd (`FamilyTrial`, hårdkodad 7-dagarslängd, fungerande "Start free 7-day trial →"-knapp) – inget nytt att bygga. Dokumenterat i `PRODUCT_SPEC.md` §7.3. Det som saknas är ett riktigt betalflöde att landa i efteråt (Fas B i `LAUNCH_CHECKLIST.md`).
+
+**Städning:** den gamla roadmap-idén "gästprofiler utan inloggning" motsade det redan beslutade Guest-konceptet (kräver inloggning, se 4b.31) – markerad ersatt i `ROADMAP.md` och `PRODUCT_SPEC.md` istället för att lämnas som en tyst motsägelse.
+
+## 27. Fas A kodad: rate limiting, timing-safe cron secret, ADMIN_EMAIL, gratis hushållsdelning (2026-08-02)
+
+På "ställ de frågor du behöver så att du kan köra vidare" följt av tre beslut: kör kodarbetet nu, gör hushållsdelning gratis, ingen åldersgräns för barnprofiler (bara föräldrasamtycke). Fyra av Fas A:s schema-fria punkter kodade i en omgång. `tsc --noEmit` kört rent efter varje ändring. Ingen schemaändring – ingen `db push` krävs. **Inte pushat än**, se `LAUNCH_CHECKLIST.md` för deploy-kommandot och vad som bör klicktestas först.
+
+- [x] **Rate limiting/lockout på inloggning.** Ny fil `lib/rateLimit.ts` – in-memory räknare, 5 misslyckade försök inom 15 minuter låser kontot i 15 minuter, delat mellan lösenords- och PIN-providern (samma nyckel: `login:${email}`). Kopplat in i `lib/auth.ts`s båda `authorize()`-funktioner. **Känd begränsning, dokumenterad i koden och i `OPERATIONS.md` §8:** in-memory är per serverless-instans, inte en global spärr – riktig lösning kräver en delad store (Upstash Redis) längre fram.
+- [x] **`CRON_SECRET`-jämförelse:** `api/cron/send-reminders/route.ts` byggd om till `crypto.timingSafeEqual` med explicit längdkontroll istället för `!==`.
+- [x] **`ADMIN_EMAIL`-inkonsekvens:** `lib/adminConfig.ts` läser nu `process.env.ADMIN_EMAIL ?? "..."`. Notera: fixen är fullt verksam bara för den ena server-route:n som importerar konstanten – de tre `"use client"`-importställena (menyn, admin-sidan, suggestions-sidan) bakar aldrig in en icke-`NEXT_PUBLIC_`-prefixad env-variabel i klientbundeln, så de faller fortsatt tillbaka på samma hårdkodade default (ofarligt, ren UI-visning, ingen säkerhetsspärr).
+- [x] **Gratis hushållsdelning (§7.2-motsägelsen):** `is_pro`-kravet borttaget i `api/household/invite`, `api/reminders` (POST+PATCH, visibility-hantering) och `api/reminders/[id]/handover`. Matchar nu vad `/features` alltid lovat.
+- [ ] Inte gjort i denna omgång: barnprofilers gissbara email-mönster (produktbeslut, inte kodfix), kontosammanslagnings-bekräftelseskärm, kontoradering, Privacy Policy-innehåll. Se `LAUNCH_CHECKLIST.md` Fas A för resten.
+
+**Beslut fattade samtidigt:**
+- Ingen åldersgräns för barnprofiler – bara föräldrasamtycke vid skapandet. Mikael valde bort 13-årsförslaget. Medveten avvägning mot COPPA (svagare position om appen någonsin når amerikanska app stores) – ska in i Privacy Policy-texten när den skrivs.
+- Ingen extern lansering än, men säkerhet prioriteras ändå högt ("jätteviktigt trots att vi inte har användare ännu, vi måste lägga mycket på säkra data").
+
+**Kräver innan skarpt:**
+- [ ] `git add -A && git commit -m "security: rate limiting, timing-safe cron secret, consistent ADMIN_EMAIL; free household sharing" && git push`, bekräfta grön deploy i Vercel.
+- [ ] Klicktesta: 5 fel lösenords-/PIN-försök → kontot låst 15 min (testkonto, inte eget); bjud in till ett icke-Pro-hushåll; dela en reminder i ett icke-Pro-hushåll.
+
+## 28. Produktbeslut fattade av "utvecklingsavdelningen" (2026-08-02)
+
+På begäran: "gå in i tanken som en utvecklingsavdelning, med experter på användarupplevelse... ta med tankar på marknadsundersökningarna... ta de beslut du kan, fråga mig bara om du är osäker." Gick igenom alla kvarvarande öppna frågor i dokumentationen (grep efter "öppen fråga"/"väntar på"/"blockerad"/"not final" över alla md-filer) och fattade beslut på de som gick att grunda i redan gjord research eller UX-principer, utan att gissa på rena affärs-/scope-frågor.
+
+**Beslut fattade:**
+- **Belöningar för Sysslor:** poäng/stjärnor, inte riktiga pengar/belöningar i v1 (`PRODUCT_SPEC.md` 4b.3). Löste en fråga som stått öppen sedan 2026-07-28.
+- **Pris:** 49 kr/mån / 399 kr/år bekräftat som beslut, inte bara riktmärke – grundat i en snabb konkurrentprissökning (Cozi Gold $39/år, TickTick $35,99/år). Se `PRODUCT_SPEC.md` §7.1.
+- **Guest-roll:** kan bjudas in till listor i flera hushåll samtidigt, ingen konstlad begränsning (`PRODUCT_SPEC.md` 4b.31).
+- **Träningskalender:** ICS-prenumeration bekräftat som slutgiltigt beslut, var tidigare bara ett antagande (`ROADMAP.md`).
+- **Kalenderns "+"-knapp-fråga:** upptäcktes redan löst av 4b.25, bara aldrig avbockad – rättat.
+- **Fas D omprioriterad:** belöningar + kvantitativ vy + streak-indikator paketerade som en byggomgång (samma UI-yta). Onboarding-klicktest nedprioriterat tills admin-godkännande-gaten hanteras (se nedan) – ingen idé testa ett flöde som ändå är blockerat av något annat just nu.
+
+**Nytt fynd, inte tidigare dokumenterat:** admin-godkännande av nya konton (byggd sedan tidigare) blockerar hela onboarding-upplevelsen och bryter mot "visa värde innan vi ber om något". Rätt för nuvarande stängda testfas, men måste hanteras innan bred lansering – tillagd i `PRODUCT_SPEC.md` 4b.32 och `LAUNCH_CHECKLIST.md` Fas A.
+
+**Medvetet INTE beslutat – lämnat till dig, med en rekommendation:** "Föräldrautrymme"-modulen för separerade föräldrar. Skillnaden mot övriga punkter: det här är en scope-/målgruppsutökning (nya användare, inte en UX-förbättring för befintlig positionering), en riktig strategisk fråga snarare än något ett UX-team kan avgöra åt en grundare. Rekommendation: parkera till efter lansering. Se `ROADMAP.md`.
+
+## 29. Namnbyte: Training → Activity i hela UI:t (2026-08-02)
+
+På feedback: *"träning kanske e fel, activity är bättre. Man kanske har scouter, teater eller liknande. då får man med alla?"* – bekräftar samtidigt punkt 28:s parkering av Föräldrautrymme-modulen (var en rekommendation, nu ett beslut, se `ROADMAP.md`).
+
+**Genomfört:** alla användarsynliga "Training"/⚽-strängar bytta till "Activity"/"Activities"/🎯 i elva filer (hamburgermeny, bottenmeny, Preferences, `/features`, `/privacy`, Activities-sidan, kalendern, skapa-formuläret, utgående ICS-feed). Aktivitetsförslagen breddade med Scouts/Theater/Choir/Chess club, omordnade så de första sex synliga redan visar bredd. Fullständig lista och motivering i `PRODUCT_SPEC.md` 4b.33.
+
+**Medvetet oförändrat:** interna namn (`ReminderCategory.TRAINING`, routen `/dashboard/training`, `?type=training`, `bottomNavTabs`-nyckeln `"training"`) – att byta dessa kräver en schemaändring/riskerar sparade inställningar, samma "additiv inte destruktiv"-princip som tidigare (4b.14/4b.15). Osynligt för användaren.
+
+`tsc --noEmit` kört rent (exit 0). Ingen schemaändring, ingen `db push` krävs. **Inte pushat än** – ligger i samma commit-kö som punkt 27:s säkerhetsfixar, se `LAUNCH_CHECKLIST.md` för deploy-kommandot och vad som bör klicktestas.
 
 **Nästa steg:** `git add -A && git commit -m "fix: wrap useSearchParams in Suspense on /dashboard/new and /dashboard/school" && git push`, sedan kolla Vercel-dashboarden för grönt.

@@ -62,7 +62,7 @@ const REMINDER_KIND_COLOR = "#5A6080";
 const KIND_META: Record<CalendarEntry["kind"], { label: string; color: string; emoji: string }> = {
   reminder: { label: "Reminders", color: REMINDER_KIND_COLOR, emoji: "🔔" },
   chore: { label: "Chores", color: CHORE_COLOR, emoji: "🧹" },
-  training: { label: "Training", color: TRAINING_COLOR, emoji: "⚽" },
+  training: { label: "Activities", color: TRAINING_COLOR, emoji: "🎯" },
   school: { label: "School", color: SCHOOL_COLOR, emoji: "📚" },
 };
 
@@ -245,7 +245,7 @@ export default function CalendarPage() {
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: t.id, name: t.name, kind: "training", color: TRAINING_COLOR, subtitle: `Training · ${who}` });
+        list.push({ occDate: occ, id: t.id, name: t.name, kind: "training", color: TRAINING_COLOR, subtitle: `Activity · ${who}` });
         map.set(key, list);
       }
     }

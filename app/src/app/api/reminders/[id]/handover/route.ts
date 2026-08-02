@@ -29,13 +29,15 @@ export async function POST(
       return NextResponse.json({ error: "A handover is already pending for this reminder" }, { status: 400 });
     }
 
-    // Verify Pro and household membership
+    // Verify household membership. Pro requirement removed 2026-08-02 (see
+    // PRODUCT_SPEC.md §7.2, same change as household/invite and the
+    // reminders visibility routes) — handing a reminder to another household
+    // member is basic household coordination, not a Pro family feature.
     const membership = await prisma.householdMember.findFirst({
       where: { userId: session.user.id },
-      include: { household: true },
     });
-    if (!membership?.household.is_pro) {
-      return NextResponse.json({ error: "Household sharing requires Pro" }, { status: 403 });
+    if (!membership) {
+      return NextResponse.json({ error: "No household found" }, { status: 400 });
     }
 
     // Verify target user is in the same household

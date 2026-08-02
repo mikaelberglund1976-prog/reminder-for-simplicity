@@ -5,6 +5,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { sendAdminApprovalRequestEmail } from "@/lib/email";
+import { checkRateLimit, recordFailedAttempt, clearRateLimit } from "@/lib/rateLimit";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
 
@@ -41,17 +42,25 @@ providers.push(
         throw new Error("Email and password are required");
       }
 
+      // Rate limiting (2026-08-02, see lib/rateLimit.ts) — shared per-account
+      // lockout across both the password and PIN providers, since both are
+      // ultimately "log in as this account" attempts.
+      const rateLimitKey = `login:${credentials.email.toLowerCase()}`;
+      checkRateLimit(rateLimitKey);
+
       const user = await prisma.user.findUnique({
         where: { email: credentials.email.toLowerCase() },
       });
 
       if (!user || !user.password) {
+        recordFailedAttempt(rateLimitKey);
         throw new Error("Incorrect email or password");
       }
 
       const isValid = await bcrypt.compare(credentials.password, user.password);
 
       if (!isValid) {
+        recordFailedAttempt(rateLimitKey);
         throw new Error("Incorrect email or password");
       }
 
@@ -59,6 +68,7 @@ providers.push(
         throw new Error(PENDING_APPROVAL_MESSAGE);
       }
 
+      clearRateLimit(rateLimitKey);
       return {
         id: user.id,
         email: user.email,
@@ -89,21 +99,34 @@ providers.push(
         throw new Error("PIN is required");
       }
 
+      // Rate limiting (2026-08-02, see lib/rateLimit.ts) — same shared,
+      // per-account key as the password provider. PIN is only 4 digits
+      // (10,000 combinations), so this matters more here than anywhere else.
+      const rateLimitKey = `login:${credentials.email.toLowerCase()}`;
+      checkRateLimit(rateLimitKey);
+
       const user = await prisma.user.findUnique({
         where: { email: credentials.email.toLowerCase() },
       });
-      if (!user) throw new Error("Account not found");
+      if (!user) {
+        recordFailedAttempt(rateLimitKey);
+        throw new Error("Account not found");
+      }
 
       const hash = user.isChildProfile ? user.password : user.pin;
       if (!hash) throw new Error("PIN login isn't set up for this account");
 
       const isValid = await bcrypt.compare(credentials.pin, hash);
-      if (!isValid) throw new Error("Wrong PIN");
+      if (!isValid) {
+        recordFailedAttempt(rateLimitKey);
+        throw new Error("Wrong PIN");
+      }
 
       if (!user.approved) {
         throw new Error(PENDING_APPROVAL_MESSAGE);
       }
 
+      clearRateLimit(rateLimitKey);
       return {
         id: user.id,
         email: user.email,

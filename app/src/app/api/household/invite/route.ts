@@ -27,9 +27,12 @@ export async function POST(req: Request) {
     if (membership.role !== "OWNER") {
       return NextResponse.json({ error: "Only household owners can send invites" }, { status: 403 });
     }
-    if (!membership.household.is_pro) {
-      return NextResponse.json({ error: "Household sharing requires Pro" }, { status: 403 });
-    }
+    // Pro requirement removed 2026-08-02 (Mikael's decision, see PRODUCT_SPEC.md
+    // §7.2): /features has always marketed "household sharing" as free, but
+    // this route silently required is_pro — a Basic household couldn't
+    // actually become a household. Basic/Pro line now sits at the family
+    // feature set (shopping list, wishlist, chores, etc.), not at forming
+    // the household itself.
 
     // Check if already a member
     const existingUser = await prisma.user.findUnique({ where: { email } });
