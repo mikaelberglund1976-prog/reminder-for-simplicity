@@ -9,7 +9,7 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 function IcBack() { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><polyline points="15 18 9 12 15 6"/></svg>; }
 
-type Member = { id: string; name: string; role: string };
+type Member = { id: string; name: string; role: string; memberId?: string };
 type BookingCategory = "CHORE" | "TRAINING";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -39,7 +39,9 @@ function NewBookingContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [category, setCategory] = useState<BookingCategory>(
+  // Locked for the lifetime of this form — set once from the entry point
+  // (URL `?type=`), never toggled by the user. See the 2026-08-18 note below.
+  const [category] = useState<BookingCategory>(
     searchParams.get("type") === "training" ? "TRAINING" : "CHORE"
   );
 
@@ -52,7 +54,10 @@ function NewBookingContent() {
   const [startDate, setStartDate] = useState(searchParams.get("date") ?? new Date().toISOString().split("T")[0]);
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [note, setNote] = useState("");
-  const [children, setChildren] = useState<Member[]>([]);
+  // 2026-08-18: assignable to ANY household member, not just children — see
+  // Mikael's feedback ("chores kan utföras av en familjemedlem, inte bara
+  // barn"). Was `childMembers`/`children`; now `householdMembers`/`members`.
+  const [members, setMembers] = useState<Member[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [trialChildId, setTrialChildId] = useState<string | null>(null);
@@ -70,12 +75,12 @@ function NewBookingContent() {
       const res = await fetch("/api/family/trial");
       if (res.ok) {
         const data = await res.json();
-        const childMembers: Member[] = data.childMembers ?? [];
-        setChildren(childMembers);
+        const householdMembers: Member[] = data.householdMembers ?? [];
+        setMembers(householdMembers);
         setTrialChildId(data.trialChildId);
-        // Pre-select the trial child or first child
+        // Pre-select the trial child, else the first member
         if (data.trialChildId) setAssignedTo(data.trialChildId);
-        else if (childMembers.length > 0) setAssignedTo(childMembers[0].id);
+        else if (householdMembers.length > 0) setAssignedTo(householdMembers[0].id);
       }
     } catch (e) { console.error(e); }
   }
@@ -91,7 +96,7 @@ function NewBookingContent() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) { setError(isTraining ? "Name is required" : "Chore name is required"); return; }
-    if (!assignedTo) { setError("Assign to a child"); return; }
+    if (!assignedTo) { setError("Assign to someone"); return; }
     if (recurrence === "DAYS" && selectedDays.length === 0) { setError("Select at least one day"); return; }
 
     setSaving(true);
@@ -157,20 +162,20 @@ function NewBookingContent() {
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "24px 20px 60px" }}>
         <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-          {/* Chore vs. training toggle */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {([["CHORE", "🧹 Chore"], ["TRAINING", "🎯 Activity"]] as const).map(([val, lbl]) => (
-              <button key={val} type="button" onClick={() => setCategory(val)}
-                style={{
-                  padding: "10px 8px", borderRadius: 12, fontSize: 13, fontWeight: 700,
-                  background: category === val ? "#1C1C28" : "#fff",
-                  color: category === val ? "#fff" : "#4B5563",
-                  border: category === val ? "none" : "1.5px solid #E4E3DE",
-                  cursor: "pointer", fontFamily: FONT,
-                }}>
-                {lbl}
-              </button>
-            ))}
+          {/* 2026-08-18: Chore and Activity are now fully separate flows —
+              each entry point (Chores tab vs. Activities tab, or the
+              Calendar's "+" wizard) locks `category` via the URL and this
+              form never lets you switch between them, so an "Activity" can
+              no longer show up while creating a chore (see Mikael's
+              feedback). A small label instead of the old toggle just
+              confirms which one you're creating. */}
+          <div style={{
+            display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 8,
+            background: "#F0F3FA", borderRadius: 999, padding: "6px 14px",
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#4B5563" }}>
+              {isTraining ? "🎯 New activity" : "🧹 New chore"}
+            </span>
           </div>
 
           {/* Name */}
@@ -195,13 +200,13 @@ function NewBookingContent() {
           {/* Assigned to */}
           <div>
             <label style={label}>Assigned to</label>
-            {children.length === 0 ? (
+            {members.length === 0 ? (
               <div style={{ background: "#FFF3CC", borderRadius: 12, padding: 14, fontSize: 13, color: "#92400E" }}>
-                No children in household. Add a child member first.
+                No family members yet. Add someone in Family first.
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {children.map(c => {
+                {members.map(c => {
                   const isTrialLocked = trialChildId !== null && c.id !== trialChildId;
                   return (
                     <button key={c.id} type="button"

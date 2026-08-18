@@ -25,7 +25,10 @@ type TrialInfo = {
   status: "NO_HOUSEHOLD" | "NO_TRIAL" | "TRIAL" | "TRIAL_EXPIRED" | "PRO";
   isPro: boolean;
   trialActive: boolean;
-  childMembers: { id: string; name: string }[];
+  // 2026-08-18: School items can be logged for any household member now, not
+  // just children (Mikael: "samma med läxor" — same as chores). Was
+  // `childMembers`.
+  householdMembers: { id: string; name: string }[];
 };
 
 // Dedicated School section — separate from the general Reminders flow and
@@ -85,7 +88,7 @@ function SchoolPageInner() {
       if (tRes.ok) {
         const tData = await tRes.json();
         setTrial(tData);
-        if (tData.childMembers?.length && !newChild) setNewChild(tData.childMembers[0].id);
+        if (tData.householdMembers?.length && !newChild) setNewChild(tData.householdMembers[0].id);
       }
       const res = await fetch("/api/family/chores?category=SCHOOL");
       if (res.ok) {
@@ -153,7 +156,7 @@ function SchoolPageInner() {
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Set up your household first</h2>
           <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>
-            School needs a household with at least one child added.
+            School needs a household to belong to.
           </p>
           <Link href="/dashboard/family" style={{ display: "inline-flex", background: "#1C1C28", color: "#fff", borderRadius: 50, padding: "14px 28px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
             Go to Family →
@@ -175,7 +178,7 @@ function SchoolPageInner() {
     );
   }
 
-  const children = trial.childMembers ?? [];
+  const children = trial.householdMembers ?? [];
   const byChild = new Map<string, SchoolItem[]>();
   for (const item of items) {
     const key = item.assignedUser?.id ?? "unknown";
@@ -190,7 +193,7 @@ function SchoolPageInner() {
     <Screen onBack={() => router.push("/dashboard")}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.5 }}>
-          Upcoming tests and homework for the whole family — synced to the calendar automatically. Children can also add their own from their child view.
+          Upcoming tests and homework for the whole family — synced to the calendar automatically. Anyone can add their own, and children can add theirs from their child view.
         </div>
       </div>
 
@@ -303,7 +306,7 @@ function SchoolPageInner() {
 
       {children.length === 0 && (
         <div style={{ textAlign: "center", padding: "20px 0", color: "#9CA3AF", fontSize: 13 }}>
-          Add a child in Family before creating school items.
+          Add someone in Family before creating school items.
         </div>
       )}
 

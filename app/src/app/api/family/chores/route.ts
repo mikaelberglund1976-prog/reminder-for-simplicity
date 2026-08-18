@@ -3,7 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const ADULT_ROLES = ["OWNER", "PARENT", "ADULT"];
+// 2026-08-18: MEMBER included too — a chore/activity/school item can be
+// created by any household member, not just an OWNER/PARENT/ADULT (Mikael:
+// "chores kan ju utföras av en familjemedlem, måste inte vara barn").
+const ADULT_ROLES = ["OWNER", "PARENT", "ADULT", "MEMBER"];
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);

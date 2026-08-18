@@ -924,18 +924,25 @@ export default function ShoppingListPage() {
 
               {addTab === "categories" && (
                 <div style={{ paddingBottom: 8 }}>
+                  {/* 2026-08-18: was a wrapped grid of full-size pill "bubbles"
+                      (one per item, ~8-24 per category after the catalog was
+                      expanded) which ate a lot of vertical space — see
+                      Mikael's feedback comparing it unfavourably to the
+                      compact name-only rows in "Manage categories" above.
+                      Same data, denser two-column list instead. */}
                   {CATALOG_SLUG_ORDER.map((slug) => {
                     const def = categories.find((c) => c.slug === slug) ?? DEFAULT_CATEGORIES.find((d) => d.slug === slug);
                     if (!def) return null;
                     return (
-                      <div key={slug} style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 2px 6px", display: "flex", alignItems: "center", gap: 5 }}>
+                      <div key={slug} style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 2px 4px", display: "flex", alignItems: "center", gap: 5 }}>
                           <span>{def.icon}</span>{def.label}
                         </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 12 }}>
                           {CATALOG_ITEMS[slug].map((itemName) => (
-                            <button key={itemName} onClick={() => quickAddAndClose(itemName)} style={chipStyle}>
-                              + {itemName}
+                            <button key={itemName} onClick={() => quickAddAndClose(itemName)} style={catalogRowStyle}>
+                              <span style={{ color: "#B0B7C8", flexShrink: 0 }}>+</span>
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{itemName}</span>
                             </button>
                           ))}
                         </div>
@@ -1152,6 +1159,15 @@ const chipStyle: React.CSSProperties = {
   flexShrink: 0, whiteSpace: "nowrap", background: "#fff", border: "1.5px solid #E4E3DE",
   borderRadius: 999, padding: "7px 13px", fontSize: 13, fontWeight: 600, color: "#0F172A",
   cursor: "pointer", fontFamily: FONT,
+};
+
+// Compact, name-only row used in the "Categories" browse tab — same density
+// as "Manage categories" instead of the old full-size pill chips.
+const catalogRowStyle: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 6, width: "100%", minWidth: 0,
+  background: "none", border: "none", borderBottom: "1px solid #F0F3F8",
+  padding: "6px 2px", fontSize: 13, fontWeight: 600, color: "#0F172A",
+  cursor: "pointer", fontFamily: FONT, textAlign: "left",
 };
 
 const detailInputStyle: React.CSSProperties = {

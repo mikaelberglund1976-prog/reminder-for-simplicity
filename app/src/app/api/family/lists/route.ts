@@ -32,21 +32,24 @@ export async function GET(req: Request) {
     // Lazily create a default list so nobody lands on an empty "no lists" screen.
     if (kind === "SHOPPING") {
       await ensureDefaultList({ householdId: membership.householdId, kind: "SHOPPING", createdBy: session.user.id, name: "Shopping list" });
-    } else if (role === "CHILD") {
-      await ensureDefaultList({ householdId: membership.householdId, kind: "WISHLIST", ownerId: session.user.id, createdBy: session.user.id, name: "Wishlist" });
     } else {
-      // Fixed 2026-07-28: previously only a CHILD's own visit lazily created
-      // their default wishlist, so an OWNER/PARENT/ADULT who opened the
-      // Wishlist page *before* any child had ever logged in saw "No child
-      // profiles yet" even though a real child profile existed — there was
-      // just no List row for it yet. Ensure every child in the household has
-      // a default wishlist whenever an adult loads this page too.
-      const children = await prisma.householdMember.findMany({
-        where: { householdId: membership.householdId, role: "CHILD" },
-        select: { userId: true },
-      });
-      for (const child of children) {
-        await ensureDefaultList({ householdId: membership.householdId, kind: "WISHLIST", ownerId: child.userId, createdBy: child.userId, name: "Wishlist" });
+      // 2026-08-18: wishlists are no longer CHILD-only — every household
+      // member (adult or child) can have their own. Always make sure the
+      // caller has their own default wishlist...
+      await ensureDefaultList({ householdId: membership.householdId, kind: "WISHLIST", ownerId: session.user.id, createdBy: session.user.id, name: "Wishlist" });
+
+      // ...and, for OWNER/PARENT (who also get the "Family" browsing tab),
+      // make sure every *other* member has one too, so they don't land on an
+      // empty "no lists" screen before anyone else has visited the page yet.
+      // (Fixed 2026-07-28 for children only; broadened 2026-08-18 to every role.)
+      if (canEditListAccess(role)) {
+        const others = await prisma.householdMember.findMany({
+          where: { householdId: membership.householdId, userId: { not: session.user.id } },
+          select: { userId: true },
+        });
+        for (const other of others) {
+          await ensureDefaultList({ householdId: membership.householdId, kind: "WISHLIST", ownerId: other.userId, createdBy: other.userId, name: "Wishlist" });
+        }
       }
     }
 
@@ -98,9 +101,12 @@ export async function POST(req: Request) {
       if (resolvedOwnerId !== session.user.id && !canEditListAccess(role)) {
         return NextResponse.json({ error: "Only an OWNER/PARENT can create a wishlist for someone else" }, { status: 403 });
       }
+      // 2026-08-18: a wishlist can belong to ANY household member, not just a
+      // CHILD — everyone should be able to have their own wishlist, it's just
+      // always tied to one specific person (see Mikael's 2026-08-18 feedback).
       const ownerMembership = await prisma.householdMember.findFirst({ where: { userId: resolvedOwnerId, householdId: membership.householdId } });
-      if (!ownerMembership || ownerMembership.role !== "CHILD") {
-        return NextResponse.json({ error: "Wishlist owner must be a child in this household" }, { status: 400 });
+      if (!ownerMembership) {
+        return NextResponse.json({ error: "Selected person is not in this household" }, { status: 400 });
       }
     }
 

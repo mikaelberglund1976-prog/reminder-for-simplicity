@@ -34,13 +34,19 @@ type AdultItem = ChildSafeItem & {
 type ListInfo = { id: string; name: string; ownerId: string | null; ownerName: string | null; visibleToAll: boolean; memberIds: string[]; isMine: boolean };
 
 export default function WishlistPage() {
-  const { status: authStatus } = useSession();
+  const { data: session, status: authStatus } = useSession();
   const router = useRouter();
+  const myId = session?.user?.id;
 
   const [access, setAccess] = useState<"LOADING" | "NO_HOUSEHOLD" | "LOCKED" | "PRO" | "TRIAL">("LOADING");
   const [role, setRole] = useState<"OWNER" | "PARENT" | "ADULT" | "CHILD" | "MEMBER" | null>(null);
   const [lists, setLists] = useState<ListInfo[]>([]);
   const [canEditAccess, setCanEditAccess] = useState(false);
+  // 2026-08-18: everyone gets a self-service "My wishlist" now (previously
+  // only CHILD role did) — non-child roles get a second "Family" tab to keep
+  // the existing browse/reserve-for-others view. See Mikael's feedback:
+  // "alla ska kunna skapa sin önskelista, men vi vill knyta den till en person".
+  const [tab, setTab] = useState<"mine" | "family">("mine");
 
   useEffect(() => {
     if (authStatus === "unauthenticated") router.push("/login");
@@ -102,12 +108,39 @@ export default function WishlistPage() {
     return <ChildWishlist lists={lists} canEditAccess={canEditAccess} onChange={fetchLists} />;
   }
 
-  return <AdultWishlist lists={lists} canEditAccess={canEditAccess} onChange={fetchLists} />;
+  // Non-child roles get both: their own self-service wishlist ("mine", same
+  // component a child uses for their own list) and the existing "Family" tab
+  // to browse/reserve gifts for everyone else.
+  const myLists = lists.filter((l) => l.ownerId === myId);
+  const tabBar = (
+    <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+      <TabButton active={tab === "mine"} onClick={() => setTab("mine")}>My wishlist</TabButton>
+      <TabButton active={tab === "family"} onClick={() => setTab("family")}>Family</TabButton>
+    </div>
+  );
+
+  return tab === "mine"
+    ? <ChildWishlist lists={myLists} canEditAccess={canEditAccess} onChange={fetchLists} tabBar={tabBar} />
+    : <AdultWishlist lists={lists} canEditAccess={canEditAccess} onChange={fetchLists} tabBar={tabBar} myId={myId} />;
+}
+
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} style={{
+      flex: 1, padding: "9px 0", borderRadius: 999, fontFamily: FONT,
+      fontSize: 13, fontWeight: 700, cursor: "pointer",
+      border: active ? "none" : "1.5px solid #E4E3DE",
+      background: active ? "#1C1C28" : "#fff",
+      color: active ? "#fff" : "#4B5563",
+    }}>
+      {children}
+    </button>
+  );
 }
 
 // ---------- Child view: own list(s), ADD/EDIT/DELETE only, never any purchase status ----------
 
-function ChildWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; canEditAccess: boolean; onChange: () => void }) {
+function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: ListInfo[]; canEditAccess: boolean; onChange: () => void; tabBar?: React.ReactNode }) {
   const router = useRouter();
   const [activeListId, setActiveListId] = useState<string | null>(lists[0]?.id ?? null);
   const [items, setItems] = useState<ChildSafeItem[]>([]);
@@ -209,6 +242,7 @@ function ChildWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; 
 
   return (
     <Screen title="My wishlist" onBack={() => router.push("/dashboard")}>
+      {tabBar}
       {lists.length > 1 || true ? (
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2, marginBottom: 10 }}>
           {lists.map((l) => (
@@ -325,7 +359,7 @@ const STATUS_COLOR: Record<AdultItem["status"], { bg: string; color: string }> =
   PURCHASED: { bg: "#D4F4E6", color: "#1E7D52" },
 };
 
-function AdultWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; canEditAccess: boolean; onChange: () => void }) {
+function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists: ListInfo[]; canEditAccess: boolean; onChange: () => void; tabBar?: React.ReactNode; myId?: string }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [items, setItems] = useState<AdultItem[]>([]);
@@ -336,7 +370,10 @@ function AdultWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; 
   const [creatingList, setCreatingList] = useState(false);
   const [newListError, setNewListError] = useState("");
 
-  const children = Array.from(new Map(lists.filter((l) => l.ownerId).map((l) => [l.ownerId as string, l.ownerName ?? "Child"])).entries());
+  // Own wishlist now lives under the "My wishlist" tab, so it's excluded
+  // here to avoid showing it twice (and reserve/purchase controls on your
+  // own gifts don't make sense anyway).
+  const children = Array.from(new Map(lists.filter((l) => l.ownerId && l.ownerId !== myId).map((l) => [l.ownerId as string, l.ownerName ?? "Family member"])).entries());
   const [activeChild, setActiveChild] = useState<string>(children[0]?.[0] ?? "");
   useEffect(() => {
     if (!activeChild && children[0]) setActiveChild(children[0][0]);
@@ -426,10 +463,11 @@ function AdultWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; 
   if (children.length === 0) {
     return (
       <Screen title="Wishlists" onBack={() => router.push("/dashboard")}>
+        {tabBar}
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ marginBottom: 16, display: "flex", justifyContent: "center", color: "#CBD5E1" }}><IcGift /></div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>No child profiles yet</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>Add a child profile from Family settings to start a wishlist for them.</p>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>No one else yet</h2>
+          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>Invite a family member or add a child profile from Family settings — everyone gets their own wishlist automatically.</p>
           <Link href="/dashboard/family" style={btnStyle("#1C1C28")}>Go to Family →</Link>
         </div>
       </Screen>
@@ -438,6 +476,7 @@ function AdultWishlist({ lists, canEditAccess, onChange }: { lists: ListInfo[]; 
 
   return (
     <Screen title="Wishlists" onBack={() => router.push("/dashboard")}>
+      {tabBar}
       {children.length > 1 && (
         <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto" }}>
           {children.map(([childId, childName]) => (

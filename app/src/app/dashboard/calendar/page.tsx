@@ -385,48 +385,71 @@ export default function CalendarPage() {
               ))}
             </div>
 
-            {/* Month grid */}
+            {/* Month grid — 2026-08-18: Outlook/Google-style, event titles
+                shown directly inside each day cell instead of just colored
+                dots (Mikael picked "option B" from the redesign mockup).
+                Cell is a <div> now (not a <button>) since it holds two kinds
+                of tap targets: the day itself (selects the day, same as
+                before) and each event row (jumps straight to that entry,
+                like clicking an event in Outlook) — the event row's onClick
+                stops propagation so it doesn't also just select the day. */}
             <div style={{
-              display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4,
-              background: "#fff", border: "1px solid #E4E3DE", borderRadius: 16, padding: 6,
-              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+              display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1,
+              background: "#E4E3DE", border: "1px solid #E4E3DE", borderRadius: 16,
+              overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             }}>
               {gridDays.map((day) => {
                 const inMonth = day.getMonth() === currentMonth.getMonth();
                 const isToday = isSameDay(day, today);
                 const isSelected = isSameDay(day, selectedDate);
                 const entries = visibleEntriesByDay.get(dateKey(day)) ?? [];
-                const shown = entries.slice(0, 3);
+                const shown = entries.slice(0, 2);
                 const overflow = entries.length - shown.length;
                 return (
-                  <button
+                  <div
                     key={day.toISOString()}
                     onClick={() => setSelectedDate(day)}
                     style={{
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                      padding: "8px 2px 6px", borderRadius: 10, cursor: "pointer",
-                      border: isSelected ? "1.5px solid #4A5FD5" : "1.5px solid transparent",
-                      background: isSelected ? "#EEF0FD" : "transparent",
-                      opacity: inMonth ? 1 : 0.35,
-                      fontFamily: FONT, minHeight: 52,
+                      display: "flex", flexDirection: "column", gap: 2,
+                      padding: "4px 3px 5px", cursor: "pointer",
+                      background: isSelected ? "#EEF0FD" : inMonth ? "#fff" : "#FAFAF8",
+                      boxShadow: isSelected ? "inset 0 0 0 1.5px #4A5FD5" : "none",
+                      fontFamily: FONT, minHeight: 72,
                     }}
                   >
-                    <span style={{
-                      fontSize: 13, fontWeight: isToday ? 800 : 600,
-                      color: isToday ? "#fff" : "#0F172A",
-                      background: isToday ? "#4A5FD5" : "transparent",
-                      width: 22, height: 22, borderRadius: "50%",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {day.getDate()}
-                    </span>
-                    <span style={{ display: "flex", gap: 2, height: 6, alignItems: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                      <span style={{
+                        fontSize: 11.5, fontWeight: isToday ? 800 : 600,
+                        color: isToday ? "#fff" : inMonth ? "#0F172A" : "#C0C5D0",
+                        background: isToday ? "#4A5FD5" : "transparent",
+                        width: 19, height: 19, borderRadius: "50%",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {day.getDate()}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
                       {shown.map((e, i) => (
-                        <span key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: e.color }} />
+                        <span
+                          key={i}
+                          onClick={(ev) => { ev.stopPropagation(); setSelectedDate(day); openEntry(e); }}
+                          style={{
+                            display: "block", fontSize: 9.5, fontWeight: 700, color: "#fff",
+                            background: e.color, borderRadius: 4, padding: "1.5px 4px",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                            opacity: inMonth ? 1 : 0.55,
+                          }}
+                        >
+                          {e.name}
+                        </span>
                       ))}
-                      {overflow > 0 && <span style={{ fontSize: 8, fontWeight: 700, color: "#9CA3AF", marginLeft: 1 }}>+{overflow}</span>}
-                    </span>
-                  </button>
+                      {overflow > 0 && (
+                        <span style={{ fontSize: 9, fontWeight: 700, color: "#9CA3AF", padding: "0 2px" }}>
+                          +{overflow} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
             </div>

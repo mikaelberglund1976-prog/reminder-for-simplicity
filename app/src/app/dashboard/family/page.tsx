@@ -392,6 +392,35 @@ export default function FamilyPage() {
         </div>
       )}
 
+      {/* 2026-08-18: adding a child was only reachable during onboarding
+          (the NO_TRIAL activation screen above) — once a trial/Pro household
+          reached this main overview there was no way to add another child
+          without leaving to Profile, which is exactly the loop Mikael hit
+          (School's "add a child" link pointed back here with no way to
+          actually do it). Reuses the same showAddChild/AddChildForm/
+          createChildProfile already built for onboarding. */}
+      <div style={{ marginBottom: 16 }}>
+        {!showAddChild ? (
+          <button onClick={() => setShowAddChild(true)} style={{
+            display: "flex", alignItems: "center", gap: 8, width: "100%",
+            background: "#fff", border: "1.5px dashed #C7CDF5", borderRadius: 14,
+            padding: "12px 16px", color: "#4A5FD5", fontSize: 13, fontWeight: 700,
+            cursor: "pointer", fontFamily: FONT,
+          }}>
+            <IcPlus /> Add child
+          </button>
+        ) : (
+          <AddChildForm
+            name={newChildName} setName={setNewChildName}
+            pin={newChildPin} setPin={setNewChildPin}
+            pinConfirm={newChildPinConfirm} setPinConfirm={setNewChildPinConfirm}
+            error={addChildError} loading={addingChild}
+            onSave={createChildProfile}
+            onCancel={resetAddChildForm}
+          />
+        )}
+      </div>
+
       {/* Week summary card */}
       {viewChild && (
         <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: "20px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
