@@ -6,7 +6,7 @@
 export type ThemeMode = "system" | "light" | "dark";
 
 const STORAGE_KEY = "rfs:theme";
-const THEME_COLORS = { light: "var(--background)", dark: "#0E1220" };
+const THEME_COLORS = { light: "#F5F4F0", dark: "#0E1220" };
 
 export function getThemeMode(): ThemeMode {
   if (typeof window === "undefined") return "system";
