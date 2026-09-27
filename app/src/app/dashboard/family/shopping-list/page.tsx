@@ -602,8 +602,8 @@ export default function ShoppingListPage() {
 
   if (status === "loading" || access === "LOADING") {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Loading shopping list…</div>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading shopping list…</div>
       </div>
     );
   }
@@ -613,11 +613,11 @@ export default function ShoppingListPage() {
       <Screen title="Shopping list" onBack={() => router.push("/dashboard/family")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Set up your household first</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Set up your household first</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>
             A shared shopping list needs a household. Invite your family to get started.
           </p>
-          <Link href="/profile" style={btnStyle("#1C1C28")}>Go to settings →</Link>
+          <Link href="/profile" style={btnStyle("var(--ink)")}>Go to settings →</Link>
         </div>
       </Screen>
     );
@@ -627,12 +627,12 @@ export default function ShoppingListPage() {
     return (
       <Screen title="Shopping list" onBack={() => router.push("/dashboard/family")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
-          <div style={{ color: "#CBD5E1", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Family features required</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>
+          <div style={{ color: "var(--faint)", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Family features required</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>
             The shared shopping list is part of family responsibilities — start your free trial or upgrade to Pro to use it.
           </p>
-          <Link href="/dashboard/family" style={btnStyle("#1C1C28")}>Go to Family →</Link>
+          <Link href="/dashboard/family" style={btnStyle("var(--ink)")}>Go to Family →</Link>
         </div>
       </Screen>
     );
@@ -665,15 +665,15 @@ export default function ShoppingListPage() {
             onClick={() => setActiveListId(l.id)}
             style={{
               flexShrink: 0, whiteSpace: "nowrap", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
-              border: l.id === activeListId ? "none" : "1px solid #E4E3DE",
-              background: l.id === activeListId ? "#1C1C28" : "#fff",
-              color: l.id === activeListId ? "#fff" : "#4B5563",
+              border: l.id === activeListId ? "none" : "1px solid var(--border)",
+              background: l.id === activeListId ? "var(--ink)" : "var(--surface)",
+              color: l.id === activeListId ? "#fff" : "var(--fg-2)",
             }}
           >
             {l.name}
           </button>
         ))}
-        <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed #C7CDF5", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "#4A5FD5", cursor: "pointer", fontFamily: FONT }}>
+        <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed var(--accent-border)", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
           + New list
         </button>
       </div>
@@ -684,9 +684,9 @@ export default function ShoppingListPage() {
             value={newListName}
             onChange={(e) => setNewListName(e.target.value)}
             placeholder="e.g. IKEA, weekly groceries…"
-            style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid #E4E3DE", borderRadius: 10, padding: "9px 12px", outline: "none" }}
+            style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 12px", outline: "none" }}
           />
-          <button type="submit" disabled={addingList || !newListName.trim()} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "#1C1C28", border: "none", borderRadius: 10, padding: "0 16px", cursor: addingList || !newListName.trim() ? "not-allowed" : "pointer", opacity: addingList || !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
+          <button type="submit" disabled={addingList || !newListName.trim()} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "var(--ink)", border: "none", borderRadius: 10, padding: "0 16px", cursor: addingList || !newListName.trim() ? "not-allowed" : "pointer", opacity: addingList || !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
             Create
           </button>
         </form>
@@ -694,7 +694,7 @@ export default function ShoppingListPage() {
 
       <button
         onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetchMembers(); }}
-        style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#4A5FD5", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}
+        style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}
       >
         <IcSettings /> {activeList?.visibleToAll ? "Everyone can see this list" : "Only some people can see this list"}
       </button>
@@ -719,22 +719,22 @@ export default function ShoppingListPage() {
       <div style={{ display: "flex", gap: 16, marginBottom: 14 }}>
         <button
           onClick={() => setStoreMode(true)}
-          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#4A5FD5", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT }}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT }}
         >
           🏪 Store mode
         </button>
         <button
           onClick={() => setShowManage((v) => !v)}
-          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#4A5FD5", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT }}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT }}
         >
           <IcSettings /> Manage categories
         </button>
       </div>
 
       {showManage && (
-        <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E4E3DE", padding: "6px 14px", marginBottom: 18 }}>
+        <div style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--border)", padding: "6px 14px", marginBottom: 18 }}>
           {sortedCategories.map((c, i) => (
-            <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 0", borderTop: i === 0 ? "none" : "1px solid #F0F3F8" }}>
+            <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 0", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)" }}>
               <span style={{ fontSize: 14, flexShrink: 0 }}>{c.icon}</span>
               {renamingId === c.id ? (
                 <input
@@ -743,12 +743,12 @@ export default function ShoppingListPage() {
                   onChange={(e) => setRenameValue(e.target.value)}
                   onBlur={() => renameCategory(c.id)}
                   onKeyDown={(e) => { if (e.key === "Enter") renameCategory(c.id); if (e.key === "Escape") setRenamingId(null); }}
-                  style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid #C7CDF5", borderRadius: 8, padding: "4px 8px", outline: "none" }}
+                  style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--accent-border)", borderRadius: 8, padding: "4px 8px", outline: "none" }}
                 />
               ) : (
                 <button
                   onClick={() => { setRenamingId(c.id); setRenameValue(c.label); }}
-                  style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#0F172A", cursor: "pointer", fontFamily: FONT, padding: 0 }}
+                  style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "var(--fg)", cursor: "pointer", fontFamily: FONT, padding: 0 }}
                 >
                   {c.label}
                 </button>
@@ -759,17 +759,17 @@ export default function ShoppingListPage() {
               </div>
             </div>
           ))}
-          <form onSubmit={addCategory} style={{ display: "flex", gap: 8, padding: "10px 0 8px", borderTop: "1px solid #F0F3F8" }}>
+          <form onSubmit={addCategory} style={{ display: "flex", gap: 8, padding: "10px 0 8px", borderTop: "1px solid var(--border-soft)" }}>
             <input
               value={newCatLabel}
               onChange={(e) => setNewCatLabel(e.target.value)}
               placeholder="Add a category…"
-              style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid #E4E3DE", borderRadius: 8, padding: "7px 10px", outline: "none" }}
+              style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 8, padding: "7px 10px", outline: "none" }}
             />
             <button
               type="submit"
               disabled={addingCat || !newCatLabel.trim()}
-              style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "#1C1C28", border: "none", borderRadius: 8, padding: "0 14px", cursor: addingCat || !newCatLabel.trim() ? "not-allowed" : "pointer", opacity: addingCat || !newCatLabel.trim() ? 0.5 : 1, fontFamily: FONT }}
+              style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "var(--ink)", border: "none", borderRadius: 8, padding: "0 14px", cursor: addingCat || !newCatLabel.trim() ? "not-allowed" : "pointer", opacity: addingCat || !newCatLabel.trim() ? 0.5 : 1, fontFamily: FONT }}
             >
               Add
             </button>
@@ -779,10 +779,10 @@ export default function ShoppingListPage() {
 
       {/* To buy, grouped by category */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <span style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", letterSpacing: "0.01em" }}>To buy</span>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", letterSpacing: "0.01em" }}>To buy</span>
         {pending.length > 0 && (
           <span style={{
-            background: "#4A5FD5", color: "#fff", fontSize: 12, fontWeight: 800,
+            background: "var(--accent-bg)", color: "#fff", fontSize: 12, fontWeight: 800,
             borderRadius: 999, padding: "1px 9px", lineHeight: "18px", minWidth: 18, textAlign: "center",
           }}>
             {pending.length}
@@ -791,16 +791,16 @@ export default function ShoppingListPage() {
       </div>
 
       {pending.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "24px 0 32px", color: "#9CA3AF", fontSize: 13 }}>
+        <div style={{ textAlign: "center", padding: "24px 0 32px", color: "var(--subtle)", fontSize: 13 }}>
           Nothing on the list right now.
         </div>
       ) : (
-        <div style={{ background: "#fff", border: "1px solid #E4E3DE", borderRadius: 18, padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 24 }}>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 24 }}>
           {groups.map((group, gi) => (
             <div key={group.key}>
               <div style={{
-                fontSize: 11, fontWeight: 800, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase",
-                padding: gi === 0 ? "10px 0 4px" : "14px 0 4px", borderTop: gi === 0 ? "none" : "1px solid #F0F3F8",
+                fontSize: 11, fontWeight: 800, color: "var(--subtle)", letterSpacing: "0.04em", textTransform: "uppercase",
+                padding: gi === 0 ? "10px 0 4px" : "14px 0 4px", borderTop: gi === 0 ? "none" : "1px solid var(--border-soft)",
                 display: "flex", alignItems: "center", gap: 6,
               }}>
                 <span>{group.icon}</span>{group.label}
@@ -826,14 +826,14 @@ export default function ShoppingListPage() {
       {purchased.length > 0 && (
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#2A9D6F" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "var(--success)" }}>
               <span>✓</span> Already in the cart ({purchased.length})
             </div>
             <button
               onClick={clearBought}
               disabled={clearing}
               style={{
-                background: "#fff", border: "1.5px solid #2A9D6F", color: "#2A9D6F",
+                background: "var(--surface)", border: "1.5px solid var(--success)", color: "var(--success)",
                 fontSize: 12, fontWeight: 700, borderRadius: 999, padding: "5px 12px",
                 cursor: clearing ? "not-allowed" : "pointer", opacity: clearing ? 0.6 : 1, fontFamily: FONT,
               }}
@@ -846,7 +846,7 @@ export default function ShoppingListPage() {
               <ItemRow key={item.id} item={item} isFirst={i === 0} busy={busyId === item.id} categories={categories} onToggle={() => togglePurchased(item)} onRemove={() => removeItem(item.id)} onCategoryChange={(catId) => changeCategory(item, catId)} />
             ))}
           </div>
-          <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 8, textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 8, textAlign: "center" }}>
             Bought items stay here until you clear them — handy since you often buy the same things again.
           </div>
         </>
@@ -855,12 +855,12 @@ export default function ShoppingListPage() {
       {/* Floating "+" — same style as Reminders/Chores/Calendar. Opens the
           add sheet below (2026-07-28). */}
       <button
-        onClick={() => { setAddTab("recent"); setAddSheetOpen(true); }}
+        onClick={() => { setAddTab("create"); setAddSheetOpen(true); }}
         aria-label="Add item"
         style={{
-          position: "fixed", right: 20, bottom: 84, zIndex: 19,
+          position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
           width: 52, height: 52, borderRadius: "50%",
-          background: "#1C1C28", color: "#fff", border: "none", cursor: "pointer",
+          background: "var(--accent-bg)", color: "#fff", border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 14px rgba(28,28,40,0.35)",
         }}
@@ -876,7 +876,7 @@ export default function ShoppingListPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "100%", maxWidth: "var(--content-max-width)", background: "#fff",
+              width: "100%", maxWidth: "var(--content-max-width)", background: "var(--surface)",
               borderRadius: "20px 20px 0 0", padding: "16px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
               fontFamily: FONT, maxHeight: "80vh", display: "flex", flexDirection: "column",
             }}
@@ -884,9 +884,11 @@ export default function ShoppingListPage() {
             {/* Tabs */}
             <div style={{ display: "flex", gap: 6, marginBottom: 14, flexShrink: 0 }}>
               {([
+                // 2026-09-27 UI review: typing an item is the #1 job, so
+                // "New" is first and the default when the sheet opens.
+                ["create", "New"],
                 ["recent", "Recent"],
                 ["categories", "Categories"],
-                ["create", "New"],
                 ["scan", "Scan"],
               ] as const).map(([key, label]) => (
                 <button
@@ -895,9 +897,9 @@ export default function ShoppingListPage() {
                   style={{
                     flex: 1, padding: "9px 0", borderRadius: 999, cursor: "pointer", fontFamily: FONT,
                     fontSize: 12.5, fontWeight: 700,
-                    border: addTab === key ? "none" : "1.5px solid #E4E3DE",
-                    background: addTab === key ? "#1C1C28" : "#fff",
-                    color: addTab === key ? "#fff" : "#4B5563",
+                    border: addTab === key ? "none" : "1.5px solid var(--border)",
+                    background: addTab === key ? "var(--ink)" : "var(--surface)",
+                    color: addTab === key ? "#fff" : "var(--fg-2)",
                   }}
                 >
                   {label}
@@ -908,7 +910,7 @@ export default function ShoppingListPage() {
             <div style={{ overflowY: "auto" }}>
               {addTab === "recent" && (
                 recent.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "24px 0", color: "#9CA3AF", fontSize: 13 }}>
+                  <div style={{ textAlign: "center", padding: "24px 0", color: "var(--subtle)", fontSize: 13 }}>
                     Nothing recent yet — items you add will show up here next time.
                   </div>
                 ) : (
@@ -935,13 +937,13 @@ export default function ShoppingListPage() {
                     if (!def) return null;
                     return (
                       <div key={slug} style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 2px 4px", display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--subtle)", letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 2px 4px", display: "flex", alignItems: "center", gap: 5 }}>
                           <span>{def.icon}</span>{def.label}
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 12 }}>
                           {CATALOG_ITEMS[slug].map((itemName) => (
                             <button key={itemName} onClick={() => quickAddAndClose(itemName)} style={catalogRowStyle}>
-                              <span style={{ color: "#B0B7C8", flexShrink: 0 }}>+</span>
+                              <span style={{ color: "var(--faint)", flexShrink: 0 }}>+</span>
                               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{itemName}</span>
                             </button>
                           ))}
@@ -960,16 +962,16 @@ export default function ShoppingListPage() {
                       value={name}
                       onChange={e => setName(e.target.value)}
                       placeholder="Item name…"
-                      style={{ flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
+                      style={{ flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 12, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
                     />
                     <input
                       value={quantity}
                       onChange={e => setQuantity(e.target.value)}
                       placeholder="Qty"
-                      style={{ width: 72, padding: "12px 10px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
+                      style={{ width: 72, padding: "12px 10px", borderRadius: 12, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
                     />
                   </div>
-                  <button type="button" onClick={() => setShowDetails((v) => !v)} style={{ background: "none", border: "none", color: "#4A5FD5", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+                  <button type="button" onClick={() => setShowDetails((v) => !v)} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
                     <IcChevron open={showDetails} /> Note, link or picture
                   </button>
                   {showDetails && (
@@ -979,13 +981,13 @@ export default function ShoppingListPage() {
                       <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL (optional)" style={detailInputStyle} />
                     </div>
                   )}
-                  {error && <div style={{ fontSize: 13, color: "#C44444", marginBottom: 8 }}>{error}</div>}
+                  {error && <div style={{ fontSize: 13, color: "var(--danger)", marginBottom: 8 }}>{error}</div>}
                   <button
                     type="submit"
                     disabled={!name.trim() || !activeListId}
                     style={{
                       width: "100%", padding: "13px", borderRadius: 50,
-                      background: "#1C1C28", color: "#fff", border: "none",
+                      background: "var(--ink)", color: "#fff", border: "none",
                       fontSize: 14, fontWeight: 700, fontFamily: FONT,
                       cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1,
                     }}
@@ -999,12 +1001,12 @@ export default function ShoppingListPage() {
                 <div style={{ paddingBottom: 8, textAlign: "center" }}>
                   {!scanning ? (
                     <>
-                      <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 14, lineHeight: 1.5 }}>
+                      <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14, lineHeight: 1.5 }}>
                         Point your camera at a barcode — we'll look it up and add it for you.
                       </div>
                       <button
                         onClick={startScan}
-                        style={{ padding: "13px 24px", borderRadius: 50, background: "#1C1C28", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
+                        style={{ padding: "13px 24px", borderRadius: 50, background: "var(--ink)", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
                       >
                         📷 Start scanning
                       </button>
@@ -1014,15 +1016,15 @@ export default function ShoppingListPage() {
                       <video ref={videoRef} playsInline muted style={{ width: "100%", borderRadius: 14, background: "#000", marginBottom: 10 }} />
                       <button
                         onClick={stopScan}
-                        style={{ padding: "10px 20px", borderRadius: 50, background: "#F0F3FA", border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}
+                        style={{ padding: "10px 20px", borderRadius: 50, background: "var(--surface-3)", border: "none", fontSize: 13, fontWeight: 700, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}
                       >
                         Cancel
                       </button>
                     </>
                   )}
-                  {scanStatus && <div style={{ fontSize: 13, color: "#4A5FD5", marginTop: 12 }}>{scanStatus}</div>}
-                  {scanError && <div style={{ fontSize: 13, color: "#C44444", marginTop: 12 }}>{scanError}</div>}
-                  <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 14 }}>
+                  {scanStatus && <div style={{ fontSize: 13, color: "var(--accent)", marginTop: 12 }}>{scanStatus}</div>}
+                  {scanError && <div style={{ fontSize: 13, color: "var(--danger)", marginTop: 12 }}>{scanError}</div>}
+                  <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 14 }}>
                     Works in Chrome/Edge on Android and most desktops. Recipe-photo import is planned but not built yet — see the roadmap.
                   </div>
                 </div>
@@ -1035,39 +1037,39 @@ export default function ShoppingListPage() {
       {/* Store mode — 2026-07-28: fullscreen, large-text, one-handed view for
           use while actually shopping. */}
       {storeMode && (
-        <div style={{ position: "fixed", inset: 0, background: "#F5F4F0", zIndex: 39, fontFamily: FONT, overflowY: "auto" }}>
-          <div style={{ position: "sticky", top: 0, background: "#fff", borderBottom: "1px solid #E4E3DE", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 17, fontWeight: 800, color: "#0F172A" }}>🏪 Store mode</span>
+        <div style={{ position: "fixed", inset: 0, background: "var(--background)", zIndex: 39, fontFamily: FONT, overflowY: "auto" }}>
+          <div style={{ position: "sticky", top: 0, background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)" }}>🏪 Store mode</span>
             <button
               onClick={() => setStoreMode(false)}
-              style={{ padding: "10px 18px", borderRadius: 50, background: "#1C1C28", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
+              style={{ padding: "10px 18px", borderRadius: 50, background: "var(--ink)", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
             >
               Done
             </button>
           </div>
           <div style={{ padding: "16px 20px 60px" }}>
             {pending.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 0", color: "#9CA3AF", fontSize: 16 }}>Nothing left to buy 🎉</div>
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 16 }}>Nothing left to buy 🎉</div>
             ) : (
               groups.map((g) => (
                 <div key={g.key} style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#6B7280", marginBottom: 8 }}>{g.icon} {g.label}</div>
-                  <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE", overflow: "hidden" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--muted)", marginBottom: 8 }}>{g.icon} {g.label}</div>
+                  <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", overflow: "hidden" }}>
                     {g.items.map((item, i) => (
                       <button
                         key={item.id}
                         onClick={() => togglePurchased(item)}
                         style={{
                           width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "18px 18px",
-                          borderTop: i === 0 ? "none" : "1px solid #F0F3F8", background: "none", border: "none",
+                          borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", background: "none", border: "none",
                           borderTopWidth: i === 0 ? 0 : 1, cursor: "pointer", textAlign: "left", fontFamily: FONT,
                         }}
                       >
                         <span style={{
-                          width: 28, height: 28, borderRadius: "50%", border: "2px solid #C7CDF5",
+                          width: 28, height: 28, borderRadius: "50%", border: "2px solid var(--accent-border)",
                           flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
                         }} />
-                        <span style={{ fontSize: 18, fontWeight: 700, color: "#0F172A" }}>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: "var(--fg)" }}>
                           {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
                         </span>
                       </button>
@@ -1089,7 +1091,7 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", gap: 12,
-      borderTop: isFirst ? "none" : "1px solid #F0F3F8",
+      borderTop: isFirst ? "none" : "1px solid var(--border-soft)",
       padding: "12px 0",
     }}>
       <button
@@ -1097,7 +1099,7 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
         aria-label={item.isPurchased ? "Mark as not bought" : "Mark as bought"}
         style={{
           width: 24, height: 24, borderRadius: "50%", flexShrink: 0, marginTop: 1, cursor: "pointer",
-          border: item.isPurchased ? "none" : "2px solid #E4E3DE",
+          border: item.isPurchased ? "none" : "2px solid var(--border)",
           background: item.isPurchased ? "#2A9D6F" : "transparent",
           display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
         }}
@@ -1109,25 +1111,25 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
 
       {item.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "#F0F3F8" }} />
+        <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--surface-3)" }} />
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 14, fontWeight: 600,
-          color: item.isPurchased ? "#9CA3AF" : "#0F172A",
+          color: item.isPurchased ? "var(--subtle)" : "var(--fg)",
           textDecoration: item.isPurchased ? "line-through" : "none",
         }}>
           {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
         </div>
-        {item.note && <div style={{ fontSize: 11.5, color: "#9CA3AF", marginTop: 2 }}>{item.note}</div>}
+        {item.note && <div style={{ fontSize: 11.5, color: "var(--subtle)", marginTop: 2 }}>{item.note}</div>}
         {!item.isPurchased && (
-          <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
             <select
               value={item.categoryId ?? ""}
               onChange={(e) => onCategoryChange(e.target.value || null)}
               disabled={busy}
-              style={{ fontSize: 11, color: "#B0B7C8", border: "none", background: "transparent", fontFamily: FONT, cursor: busy ? "not-allowed" : "pointer", padding: 0 }}
+              style={{ fontSize: 11, color: "var(--faint)", border: "none", background: "transparent", fontFamily: FONT, cursor: busy ? "not-allowed" : "pointer", padding: 0 }}
             >
               <option value="">{UNSORTED_ICON} {UNSORTED_LABEL}</option>
               {categories.map(c => (
@@ -1139,7 +1141,7 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
       </div>
 
       {item.url && (
-        <a href={item.url} target="_blank" rel="noreferrer" aria-label="Open link" style={{ color: "#4A5FD5", padding: 6, flexShrink: 0, display: "flex" }}>
+        <a href={item.url} target="_blank" rel="noreferrer" aria-label="Open link" style={{ color: "var(--accent)", padding: 6, flexShrink: 0, display: "flex" }}>
           <IcLink />
         </a>
       )}
@@ -1147,7 +1149,7 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
       <button
         onClick={onRemove}
         aria-label="Remove item"
-        style={{ background: "none", border: "none", cursor: "pointer", color: "#C0C5D0", padding: 6, flexShrink: 0 }}
+        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--faint)", padding: 6, flexShrink: 0 }}
       >
         <IcTrash />
       </button>
@@ -1156,8 +1158,8 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
 }
 
 const chipStyle: React.CSSProperties = {
-  flexShrink: 0, whiteSpace: "nowrap", background: "#fff", border: "1.5px solid #E4E3DE",
-  borderRadius: 999, padding: "7px 13px", fontSize: 13, fontWeight: 600, color: "#0F172A",
+  flexShrink: 0, whiteSpace: "nowrap", background: "var(--surface)", border: "1.5px solid var(--border)",
+  borderRadius: 999, padding: "7px 13px", fontSize: 13, fontWeight: 600, color: "var(--fg)",
   cursor: "pointer", fontFamily: FONT,
 };
 
@@ -1165,19 +1167,19 @@ const chipStyle: React.CSSProperties = {
 // as "Manage categories" instead of the old full-size pill chips.
 const catalogRowStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 6, width: "100%", minWidth: 0,
-  background: "none", border: "none", borderBottom: "1px solid #F0F3F8",
-  padding: "6px 2px", fontSize: 13, fontWeight: 600, color: "#0F172A",
+  background: "none", border: "none", borderBottom: "1px solid var(--border-soft)",
+  padding: "6px 2px", fontSize: 13, fontWeight: 600, color: "var(--fg)",
   cursor: "pointer", fontFamily: FONT, textAlign: "left",
 };
 
 const detailInputStyle: React.CSSProperties = {
-  padding: "9px 12px", borderRadius: 10, border: "1.5px solid #E4E3DE", fontSize: 13, fontFamily: FONT, outline: "none", boxSizing: "border-box",
+  padding: "9px 12px", borderRadius: 10, border: "1.5px solid var(--border)", fontSize: 13, fontFamily: FONT, outline: "none", boxSizing: "border-box",
 };
 
 function reorderBtnStyle(disabled: boolean): React.CSSProperties {
   return {
     width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center",
-    background: "#F5F4F0", border: "none", borderRadius: 6, color: disabled ? "#D8D6CE" : "#6B7280",
+    background: "var(--background)", border: "none", borderRadius: 6, color: disabled ? "var(--faint)" : "var(--muted)",
     cursor: disabled ? "not-allowed" : "pointer",
   };
 }
@@ -1193,13 +1195,13 @@ function btnStyle(bg: string): React.CSSProperties {
 
 function Screen({ title, onBack, headerExtra, children }: { title: string; onBack: () => void; headerExtra?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
-      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
+      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
+          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0, flex: 1 }}>{title}</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>{title}</h1>
           {headerExtra}
           <HamburgerMenu />
         </div>

@@ -138,24 +138,24 @@ function NewBookingContent() {
 
   const inp: React.CSSProperties = {
     width: "100%", boxSizing: "border-box",
-    background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 12,
-    padding: "12px 14px", fontSize: 15, color: "#0F172A", fontFamily: FONT,
+    background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 12,
+    padding: "12px 14px", fontSize: 15, color: "var(--fg)", fontFamily: FONT,
     outline: "none",
   };
 
   const label: React.CSSProperties = {
-    fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6, display: "block",
+    fontSize: 13, fontWeight: 700, color: "var(--fg-2)", marginBottom: 6, display: "block",
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
       {/* Header */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
+      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
+          <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0 }}>{isTraining ? "New activity" : "New chore"}</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0 }}>{isTraining ? "New activity" : "New chore"}</h1>
         </div>
       </div>
 
@@ -171,9 +171,9 @@ function NewBookingContent() {
               confirms which one you're creating. */}
           <div style={{
             display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 8,
-            background: "#F0F3FA", borderRadius: 999, padding: "6px 14px",
+            background: "var(--surface-3)", borderRadius: 999, padding: "6px 14px",
           }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#4B5563" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--fg-2)" }}>
               {isTraining ? "🎯 New activity" : "🧹 New chore"}
             </span>
           </div>
@@ -189,7 +189,7 @@ function NewBookingContent() {
               <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {(isTraining ? TRAINING_TEMPLATES : CHORE_TEMPLATES).slice(0, 6).map(t => (
                   <button key={t} type="button" onClick={() => setName(t)}
-                    style={{ background: "#F0F3FA", border: "none", borderRadius: 50, padding: "7px 14px", fontSize: 12, fontWeight: 600, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}>
+                    style={{ background: "var(--surface-3)", border: "none", borderRadius: 50, padding: "7px 14px", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}>
                     {t}
                   </button>
                 ))}
@@ -201,7 +201,7 @@ function NewBookingContent() {
           <div>
             <label style={label}>Assigned to</label>
             {members.length === 0 ? (
-              <div style={{ background: "#FFF3CC", borderRadius: 12, padding: 14, fontSize: 13, color: "#92400E" }}>
+              <div style={{ background: "var(--tint-warning)", borderRadius: 12, padding: 14, fontSize: 13, color: "var(--warning)" }}>
                 No family members yet. Add someone in Family first.
               </div>
             ) : (
@@ -214,16 +214,16 @@ function NewBookingContent() {
                       onClick={() => !isTrialLocked && setAssignedTo(c.id)}
                       style={{
                         display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                        background: assignedTo === c.id ? "#E4E7FB" : isTrialLocked ? "#FAF9F5" : "#fff",
-                        border: assignedTo === c.id ? "2px solid #4A5FD5" : "1.5px solid #E4E3DE",
+                        background: assignedTo === c.id ? "var(--tint-accent)" : isTrialLocked ? "var(--surface-2)" : "var(--surface)",
+                        border: assignedTo === c.id ? "2px solid var(--accent)" : "1.5px solid var(--border)",
                         borderRadius: 12, cursor: isTrialLocked ? "not-allowed" : "pointer",
                         opacity: isTrialLocked ? 0.5 : 1, fontFamily: FONT, textAlign: "left",
                       }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1C1C28", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--ink)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
                         {c.name.charAt(0).toUpperCase()}
                       </div>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{c.name}</span>
-                      {isTrialLocked && <span style={{ marginLeft: "auto", fontSize: 11, color: "#9CA3AF" }}>Pro only</span>}
+                      <span style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{c.name}</span>
+                      {isTrialLocked && <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--subtle)" }}>Pro only</span>}
                     </button>
                   );
                 })}
@@ -239,9 +239,9 @@ function NewBookingContent() {
                 <button key={val} type="button" onClick={() => setRecurrence(val)}
                   style={{
                     padding: "10px 8px", borderRadius: 12, fontSize: 12, fontWeight: 700,
-                    background: recurrence === val ? "#1C1C28" : "#fff",
-                    color: recurrence === val ? "#fff" : "#4B5563",
-                    border: recurrence === val ? "none" : "1.5px solid #E4E3DE",
+                    background: recurrence === val ? "var(--ink)" : "var(--surface)",
+                    color: recurrence === val ? "#fff" : "var(--fg-2)",
+                    border: recurrence === val ? "none" : "1.5px solid var(--border)",
                     cursor: "pointer", fontFamily: FONT,
                   }}>
                   {lbl}
@@ -259,9 +259,9 @@ function NewBookingContent() {
                     <button key={d} type="button" onClick={() => toggleDay(num)}
                       style={{
                         width: 42, height: 42, borderRadius: "50%", fontSize: 12, fontWeight: 700,
-                        background: active ? "#4A5FD5" : "#fff",
-                        color: active ? "#fff" : "#4B5563",
-                        border: active ? "none" : "1.5px solid #E4E3DE",
+                        background: active ? "var(--accent-bg)" : "var(--surface)",
+                        color: active ? "#fff" : "var(--fg-2)",
+                        border: active ? "none" : "1.5px solid var(--border)",
                         cursor: "pointer", fontFamily: FONT,
                       }}>
                       {d}
@@ -281,22 +281,22 @@ function NewBookingContent() {
 
           {/* Requires approval toggle — a CHORE-only concept, no one "approves" a training booking */}
           {!isTraining && (
-            <div style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #E4E3DE", padding: "16px" }}>
+            <div style={{ background: "var(--surface)", borderRadius: 14, border: "1.5px solid var(--border)", padding: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>Requires adult approval</div>
-                  <div style={{ fontSize: 12, color: "#6B7280", marginTop: 3 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>Requires adult approval</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
                     Child marks done → you approve it
                   </div>
                 </div>
                 <button type="button" onClick={() => setRequiresApproval(p => !p)}
                   style={{
                     width: 48, height: 28, borderRadius: 50, border: "none", cursor: "pointer",
-                    background: requiresApproval ? "#4A5FD5" : "#D1D5DB",
+                    background: requiresApproval ? "var(--accent-bg)" : "var(--border)",
                     transition: "background 0.2s", position: "relative", flexShrink: 0,
                   }}>
                   <div style={{
-                    width: 22, height: 22, borderRadius: "50%", background: "#fff",
+                    width: 22, height: 22, borderRadius: "50%", background: "var(--surface)",
                     position: "absolute", top: 3,
                     left: requiresApproval ? 23 : 3,
                     transition: "left 0.2s",
@@ -309,7 +309,7 @@ function NewBookingContent() {
 
           {/* Notes (optional) */}
           <div>
-            <label style={label}>Notes <span style={{ fontWeight: 400, color: "#9CA3AF" }}>(optional)</span></label>
+            <label style={label}>Notes <span style={{ fontWeight: 400, color: "var(--subtle)" }}>(optional)</span></label>
             <textarea value={note} onChange={e => setNote(e.target.value)}
               placeholder={isTraining ? "e.g. location, leader, what to bring…" : "Any extra instructions for the child…"}
               rows={3}
@@ -318,7 +318,7 @@ function NewBookingContent() {
 
           {/* Error */}
           {error && (
-            <div style={{ background: "#FFE8E8", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#C44444", fontWeight: 600 }}>
+            <div style={{ background: "var(--tint-danger)", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "var(--danger)", fontWeight: 600 }}>
               {error}
             </div>
           )}
@@ -326,7 +326,7 @@ function NewBookingContent() {
           {/* Save */}
           <button type="submit" disabled={saving || !name.trim() || !assignedTo}
             style={{
-              background: "#1C1C28", color: "#fff", border: "none", borderRadius: 50,
+              background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50,
               padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer",
               fontFamily: FONT, opacity: saving || !name.trim() || !assignedTo ? 0.6 : 1,
             }}>
@@ -341,8 +341,8 @@ function NewBookingContent() {
 export default function NewBookingPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A" }}>Loading…</div>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "var(--muted)" }}>Loading…</div>
       </div>
     }>
       <NewBookingContent />

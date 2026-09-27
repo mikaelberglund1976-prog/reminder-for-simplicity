@@ -63,40 +63,40 @@ function JoinHouseholdContent() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <span style={{ color: "#7C7C8A", fontSize: 15 }}>Validating invite…</span>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <span style={{ color: "var(--muted)", fontSize: 15 }}>Validating invite…</span>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #EEF5FF 0%, #F5F0FF 100%)", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, var(--tint-accent) 0%, var(--tint-accent) 100%)", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
       <div style={{ maxWidth: 420, width: "100%" }}>
 
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#4a7ee0,#2e5ec8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🔔</div>
-            <span style={{ fontSize: 22, fontWeight: 800, color: "#1C1C28", letterSpacing: "-0.5px" }}>Reminder for Simplicity</span>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,var(--accent),var(--accent))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🔔</div>
+            <span style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", letterSpacing: "-0.5px" }}>Reminder for Simplicity</span>
           </div>
         </div>
 
-        <div style={{ background: "#fff", borderRadius: 24, padding: "36px 32px", boxShadow: "0 4px 24px rgba(91,156,245,0.12)", border: "1.5px solid #E4E3DE" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 24, padding: "36px 32px", boxShadow: "0 4px 24px rgba(91,156,245,0.12)", border: "1.5px solid var(--border)" }}>
 
           {joined ? (
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1C1C28", margin: "0 0 12px" }}>You&apos;re in!</h2>
-              <p style={{ fontSize: 15, color: "#7C7C8A", lineHeight: 1.6, margin: 0 }}>
-                Welcome to <strong style={{ color: "#1C1C28" }}>{info?.householdName ?? "the household"}</strong>. Redirecting to dashboard…
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", margin: "0 0 12px" }}>You&apos;re in!</h2>
+              <p style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.6, margin: 0 }}>
+                Welcome to <strong style={{ color: "var(--fg)" }}>{info?.householdName ?? "the household"}</strong>. Redirecting to dashboard…
               </p>
             </div>
           ) : error ? (
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#1C1C28", margin: "0 0 12px" }}>Invalid invite</h2>
-              <p style={{ fontSize: 14, color: "#D94F4F", marginBottom: 24 }}>{error}</p>
-              <Link href="/dashboard" style={{ display: "inline-block", padding: "12px 28px", background: "#1C1C28", color: "#fff", borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 12px" }}>Invalid invite</h2>
+              <p style={{ fontSize: 14, color: "var(--danger)", marginBottom: 24 }}>{error}</p>
+              <Link href="/dashboard" style={{ display: "inline-block", padding: "12px 28px", background: "var(--ink)", color: "#fff", borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
                 Go to dashboard
               </Link>
             </div>
@@ -104,31 +104,31 @@ function JoinHouseholdContent() {
             <>
               <div style={{ textAlign: "center", marginBottom: 28 }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🏠</div>
-                <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1C1C28", margin: "0 0 8px", letterSpacing: "-0.4px" }}>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", margin: "0 0 8px", letterSpacing: "-0.4px" }}>
                   Join {info.householdName ?? "a household"}
                 </h2>
-                <p style={{ fontSize: 15, color: "#7C7C8A", margin: 0, lineHeight: 1.6 }}>
-                  <strong style={{ color: "#1C1C28" }}>{info.ownerName}</strong> invited you to share reminders and manage tasks together.
+                <p style={{ fontSize: 15, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
+                  <strong style={{ color: "var(--fg)" }}>{info.ownerName}</strong> invited you to share reminders and manage tasks together.
                 </p>
               </div>
 
               {/* Pro badge */}
-              <div style={{ background: "linear-gradient(135deg,#EEF5FF,#F5F0FF)", borderRadius: 14, padding: "14px 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ background: "linear-gradient(135deg,var(--tint-accent),var(--tint-accent))", borderRadius: 14, padding: "14px 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ fontSize: 20 }}>⚡</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1C28" }}>Reminder for Simplicity Pro household</div>
-                  <div style={{ fontSize: 12, color: "#7C7C8A", marginTop: 2 }}>Shared reminders, handovers & safety net included</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)" }}>Reminder for Simplicity Pro household</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>Shared reminders, handovers & safety net included</div>
                 </div>
               </div>
 
               {status === "unauthenticated" ? (
                 <>
-                  <p style={{ fontSize: 14, color: "#7C7C8A", textAlign: "center", marginBottom: 20 }}>
+                  <p style={{ fontSize: 14, color: "var(--muted)", textAlign: "center", marginBottom: 20 }}>
                     You need to be signed in to accept this invite.
                   </p>
                   <button
                     onClick={handleJoin}
-                    style={{ width: "100%", padding: "16px", background: "linear-gradient(135deg,#4a7ee0,#2e5ec8)", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: FONT, boxShadow: "0 4px 14px rgba(46,94,200,0.3)" }}
+                    style={{ width: "100%", padding: "16px", background: "linear-gradient(135deg,var(--accent),var(--accent))", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: FONT, boxShadow: "0 4px 14px rgba(46,94,200,0.3)" }}
                   >
                     Sign in to accept →
                   </button>
@@ -137,13 +137,13 @@ function JoinHouseholdContent() {
                 <button
                   onClick={handleJoin}
                   disabled={joining}
-                  style={{ width: "100%", padding: "16px", background: joining ? "rgba(74,126,224,0.6)" : "linear-gradient(135deg,#4a7ee0,#2e5ec8)", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "#fff", cursor: joining ? "not-allowed" : "pointer", fontFamily: FONT, boxShadow: "0 4px 14px rgba(46,94,200,0.3)", transition: "all 0.15s" }}
+                  style={{ width: "100%", padding: "16px", background: joining ? "rgba(74,126,224,0.6)" : "linear-gradient(135deg,var(--accent),var(--accent))", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "#fff", cursor: joining ? "not-allowed" : "pointer", fontFamily: FONT, boxShadow: "0 4px 14px rgba(46,94,200,0.3)", transition: "all 0.15s" }}
                 >
                   {joining ? "Joining…" : `Accept & join ${info.householdName ?? "household"}`}
                 </button>
               )}
 
-              <p style={{ fontSize: 12, color: "#C0C7D6", textAlign: "center", marginTop: 16 }}>
+              <p style={{ fontSize: 12, color: "var(--faint)", textAlign: "center", marginTop: 16 }}>
                 By joining, you agree to share your reminders visibility with household members.
               </p>
             </>
@@ -157,8 +157,8 @@ function JoinHouseholdContent() {
 export default function JoinHouseholdPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <span style={{ color: "#7C7C8A", fontSize: 15 }}>Loading…</span>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <span style={{ color: "var(--muted)", fontSize: 15 }}>Loading…</span>
       </div>
     }>
       <JoinHouseholdContent />

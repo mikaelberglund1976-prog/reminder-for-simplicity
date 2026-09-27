@@ -44,13 +44,13 @@ const RECURRENCE_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_BADGE: Record<string, { bg: string; color: string }> = {
-  SUBSCRIPTION: { bg: "#E4E7FB", color: "#3A4FC5" },
-  BIRTHDAY:     { bg: "#FFE8F5", color: "#C4367A" },
-  INSURANCE:    { bg: "#D4F4E6", color: "#1E7D52" },
-  CONTRACT:     { bg: "#FFF0E0", color: "#C06010" },
-  HEALTH:       { bg: "#FFE8E8", color: "#C44444" },
-  BILL:         { bg: "#EDE8FF", color: "#6A44CC" },
-  OTHER:        { bg: "#E4E3DE", color: "#5A6080" },
+  SUBSCRIPTION: { bg: "var(--tint-accent)", color: "var(--accent-strong)" },
+  BIRTHDAY:     { bg: "var(--tint-pink)", color: "var(--pink)" },
+  INSURANCE:    { bg: "var(--tint-success)", color: "var(--success)" },
+  CONTRACT:     { bg: "var(--tint-warning)", color: "var(--warning)" },
+  HEALTH:       { bg: "var(--tint-danger)", color: "var(--danger)" },
+  BILL:         { bg: "var(--tint-violet)", color: "var(--violet)" },
+  OTHER:        { bg: "var(--border)", color: "var(--slate)" },
 };
 
 const BRAND_COLORS: Record<string, { bg: string; text: string }> = {
@@ -106,7 +106,7 @@ function getBrandInfo(name: string) {
       return { color: BRAND_COLORS[brand], domain: BRAND_DOMAINS[brand] ?? null };
     }
   }
-  return { color: { bg: "#4A5FD5", text: "#fff" }, domain: null };
+  return { color: { bg: "var(--accent-bg)", text: "#fff" }, domain: null };
 }
 
 function getDaysUntil(dateStr: string) {
@@ -144,7 +144,7 @@ function ServiceLogo({ name }: { name: string }) {
   return (
     <div style={{
       width: 44, height: 44, borderRadius: 14, overflow: "hidden", flexShrink: 0,
-      background: (!domain || imgError) ? color.bg : "#f0f0f0",
+      background: (!domain || imgError) ? color.bg : "var(--surface-3)",
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
       {domain && !imgError ? (
@@ -165,29 +165,54 @@ const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, str
 function IcBell()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>; }
 function IcCard()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>; }
 function IcAlert()   { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>; }
-function IcCheck()   { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><polyline points="20 6 9 17 4 12"/></svg>; }
-function IcStar()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>; }
-function IcRight()   { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="9 18 15 12 9 6"/></svg>; }
 function IcDown()    { return <svg width={13} height={13} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="6 9 12 15 18 9"/></svg>; }
 function IcPlus()    { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>; }
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
+function IcCart()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 6H5.6"/></svg>; }
+function IcSchool()  { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12.5V17c0 1.5 2.5 3 6 3s6-1.5 6-3v-4.5"/></svg>; }
+function IcChecklist() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="m4 6 1 1 2-2"/><path d="m4 12 1 1 2-2"/><path d="m4 18 1 1 2-2"/></svg>; }
+function IcGift()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="8" width="18" height="4"/><rect x="4" y="12" width="16" height="9"/><path d="M12 8v13M12 8c-1.5-3-5-3-5-1s2 1 5 1zM12 8c1.5-3 5-3 5-1s-2 1-5 1z"/></svg>; }
+function IcCalendar() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
+function IcBellPlus() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M12 6v5M9.5 8.5h5"/></svg>; }
+
+// Order = how often the personas reached for them in the review.
+const QUICK_ACTIONS: { label: string; href: string; Icon: () => React.ReactElement; color: string; tint: string }[] = [
+  { label: "New reminder",  href: "/dashboard/new",                 Icon: IcBellPlus,  color: "var(--accent)",  tint: "var(--tint-accent)" },
+  { label: "Shopping list", href: "/dashboard/family/shopping-list", Icon: IcCart,      color: "var(--success)", tint: "var(--tint-success)" },
+  { label: "Homework & tests", href: "/dashboard/school",           Icon: IcSchool,    color: "var(--accent)",  tint: "var(--tint-accent)" },
+  { label: "Chores",        href: "/dashboard/family",               Icon: IcChecklist, color: "var(--warning)", tint: "var(--tint-warning)" },
+  { label: "Wishlists",     href: "/dashboard/wishlist",             Icon: IcGift,      color: "var(--danger)",  tint: "var(--tint-danger)" },
+  { label: "Calendar",      href: "/dashboard/calendar",             Icon: IcCalendar,  color: "var(--fg-2)",    tint: "var(--surface-3)" },
+];
+
+function SectionTitle({ children, inline }: { children: React.ReactNode; inline?: boolean }) {
+  return <h2 style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)", margin: inline ? 0 : "0 0 10px", letterSpacing: "-0.2px" }}>{children}</h2>;
+}
+
+function compactAmount(n: number) {
+  if (n >= 100000) return Math.round(n / 1000) + "k";
+  if (n >= 10000) return (n / 1000).toFixed(1).replace(".0", "") + "k";
+  return Math.round(n).toLocaleString("sv");
+}
+
+
 function StatCard({ icon, iconColor, iconBg, value, label }: {
   icon: React.ReactNode; iconColor: string; iconBg: string; value: number | string; label: string;
 }) {
   return (
-    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE", padding: "14px 12px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", padding: "14px 12px", boxShadow: "var(--shadow)", height: "100%", boxSizing: "border-box" }}>
       <div style={{ background: iconBg, borderRadius: 10, padding: 8, color: iconColor, display: "inline-flex", marginBottom: 10 }}>{icon}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 11, color: "#6B7280", fontWeight: 600, marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
     </div>
   );
 }
 
 const VISIBILITY_CHIP: Record<string, { icon: string; label: string; bg: string; color: string }> = {
-  PRIVATE: { icon: "🔒", label: "Private", bg: "#F5F4F0", color: "#7C7C8A" },
-  PARENTS: { icon: "👪", label: "Parents", bg: "#FFF0D4", color: "#C06010" },
+  PRIVATE: { icon: "🔒", label: "Private", bg: "var(--background)", color: "var(--muted)" },
+  PARENTS: { icon: "👪", label: "Parents", bg: "var(--tint-warning)", color: "var(--warning)" },
   // HOUSEHOLD isn't shown as a chip — it's the "everyone sees this" default
   // once you're in a household, so flagging it would just be noise next to
   // the other badges.
@@ -208,28 +233,28 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
     <div onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       style={{
         display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-        borderTop: isFirst ? "none" : "1px solid #F0F3F8", cursor: "pointer",
-        background: hovered ? "#FAF9F5" : "transparent", transition: "background 0.12s",
+        borderTop: isFirst ? "none" : "1px solid var(--border-soft)", cursor: "pointer",
+        background: hovered ? "var(--surface-2)" : "transparent", transition: "background 0.12s",
       }}>
       <ServiceLogo name={reminder.name} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>{reminder.name}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{reminder.name}</span>
           <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 50, fontSize: 11, fontWeight: 600, background: badge.bg, color: badge.color }}>
             {CATEGORY_LABELS[reminder.category] ?? reminder.category}
           </span>
           {isShared && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#EEF5FF", color: "#3A4FC5", gap: 3 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "var(--tint-accent)", color: "var(--accent-strong)", gap: 3 }}>
               👤 {sharedByName}
             </span>
           )}
           {ownerName && !isShared && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#EEF5FF", color: "#3A4FC5", gap: 3 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "var(--tint-accent)", color: "var(--accent-strong)", gap: 3 }}>
               👤 {ownerName}
             </span>
           )}
           {isUnassigned && !isShared && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "#F5F4F0", color: "#9CA3AF" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "var(--background)", color: "var(--subtle)" }}>
               Unassigned
             </span>
           )}
@@ -245,13 +270,13 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
             </span>
           )}
         </div>
-        <div style={{ fontSize: 12, color: "#7C7C8A", marginTop: 3 }}>
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
           {formatDate(reminder.date)}
           {showAmount && <> &middot; {reminder.amount!.toLocaleString("sv")} {reminder.currency}</>}
           {showRecurrence && <> &middot; {RECURRENCE_LABELS[reminder.recurrence] ?? reminder.recurrence}</>}
         </div>
       </div>
-      <div style={{ color: "#C0C5D0", flexShrink: 0 }}>
+      <div style={{ color: "var(--faint)", flexShrink: 0 }}>
         <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 18 15 12 9 6" />
         </svg>
@@ -266,8 +291,7 @@ export default function DashboardPage() {
   const [reminders, setReminders]        = useState<Reminder[]>([]);
   const [loading, setLoading]            = useState(true);
   const [preferredCurrency, setCurrency] = useState("SEK");
-  const [activeSection, setSection]      = useState<"reminders" | "family">("reminders");
-  const [filterCategory, setFilter]      = useState("ALL");
+    const [filterCategory, setFilter]      = useState("ALL");
   const [sortBy, setSort]                = useState("date_asc");
   const [hasHousehold, setHasHousehold]  = useState(false);
   const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
@@ -340,10 +364,6 @@ export default function DashboardPage() {
   const attentionItems = [...reminders]
     .filter(r => getDaysUntil(r.date) <= 7)
     .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date));
-  const completedLast30 = reminders.filter(r => {
-    if (!r.lastSentAt) return false;
-    return (Date.now() - new Date(r.lastSentAt).getTime()) < 30 * 24 * 60 * 60 * 1000;
-  }).length;
 
   // Yearly budget — annualise each amount by recurrence
   const yearlyTotal = reminders
@@ -358,12 +378,7 @@ export default function DashboardPage() {
       }
     }, 0);
 
-  // IQ Spotlight — nearest upcoming reminder
-  const spotlight = [...reminders]
-    .filter(r => getDaysUntil(r.date) >= 0)
-    .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date))[0] ?? null;
 
-  const myReminders     = reminders.filter(r => !r.user || r.user.id === session?.user?.id);
   const sharedReminders = reminders.filter(r => r.user && r.user.id !== session?.user?.id);
 
   const sorted = [...reminders].sort((a, b) => {
@@ -393,200 +408,147 @@ export default function DashboardPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Reminder for Simplicity is thinking…</div>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>Reminder for Simplicity is thinking…</div>
       </div>
     );
   }
 
   const dropdownStyle = {
     width: "100%", appearance: "none" as const, WebkitAppearance: "none" as const,
-    background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 12,
-    padding: "11px 38px 11px 14px", fontSize: 13, fontWeight: 600, color: "#1C1C28",
+    background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 12,
+    padding: "11px 38px 11px 14px", fontSize: 13, fontWeight: 600, color: "var(--fg)",
     cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", fontFamily: FONT,
   };
 
-  const sectionCardStyle = (active: boolean) => ({
-    background: "#fff",
-    border: active ? "2px solid #4A5FD5" : "1.5px solid #E4E3DE",
-    borderRadius: 18, padding: "16px 14px", cursor: "pointer", textAlign: "left" as const,
-    boxShadow: active ? "0 2px 12px rgba(91,156,245,0.18)" : "0 1px 4px rgba(0,0,0,0.04)",
-    transition: "all 0.15s",
-  });
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", paddingBottom: 24, fontFamily: FONT }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", paddingBottom: 24, fontFamily: FONT }}>
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "32px 20px 0" }}>
 
-        {/* Welcome */}
-        <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        {/* Header — 2026-09-27 UI review: short greeting + today's date
+            instead of a paragraph of explanation (personas skimmed past it). */}
+        <div style={{ marginBottom: 22, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
           <div>
-            <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0F172A", margin: 0, letterSpacing: "-0.5px" }}>
-              Welcome back, {firstName}
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 4 }}>
+              {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+            </div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--fg)", margin: 0, letterSpacing: "-0.6px" }}>
+              Hi {firstName}
             </h1>
-            <p style={{ fontSize: 14, color: "#4B5563", margin: "6px 0 0", lineHeight: 1.5 }}>
-              Get a quick overview of what is coming up and what needs your attention.
-            </p>
           </div>
           <HamburgerMenu />
         </div>
 
-        {/* Needs your attention */}
-        {attentionItems.length > 0 && (
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#0F172A", margin: 0 }}>
-                Needs your attention
-              </h2>
-              <span style={{ fontSize: 12, color: "#DC2626", fontWeight: 700 }}>
-                {attentionItems.length} item{attentionItems.length !== 1 ? "s" : ""}
+        {/* Quick actions — "What would you like to do?" row, borrowed from the
+            reference app: the most common jobs one tap away, horizontally
+            scrollable so the row never wraps on a phone. */}
+        <SectionTitle>What would you like to do?</SectionTitle>
+        <div className="rfs-hscroll" style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 24px", padding: "2px 20px 4px", scrollSnapType: "x proximity", scrollPaddingInline: 20 }}>
+          {QUICK_ACTIONS.map((qa) => (
+            <Link key={qa.href + qa.label} href={qa.href} style={{
+              flex: "0 0 auto", width: 104, minHeight: 96, scrollSnapAlign: "start",
+              background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18,
+              padding: "14px 10px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10,
+              textDecoration: "none", color: "var(--fg)", boxShadow: "var(--shadow)",
+            }}>
+              <span style={{ width: 40, height: 40, borderRadius: 12, background: qa.tint, color: qa.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <qa.Icon />
               </span>
-            </div>
-            <div style={{ background: "#fff", borderRadius: 20, border: "1.5px solid #FFD9D4", overflow: "hidden", boxShadow: "0 1px 6px rgba(220,38,38,0.07)" }}>
-              {attentionItems.slice(0, 3).map((r, i) => (
-                <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
-                  isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
-              ))}
-              {attentionItems.length > 3 && (
-                <div style={{ padding: "12px 16px", borderTop: "1px solid #F0F3F8", textAlign: "center" }}>
-                  <button
-                    onClick={() => { setSort("date_asc"); setSection("reminders"); }}
-                    style={{ background: "none", border: "none", color: "#DC2626", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}
-                  >
-                    View all {attentionItems.length} items →
-                  </button>
-                </div>
-              )}
-            </div>
+              <span style={{ fontSize: 13, fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>{qa.label}</span>
+            </Link>
+          ))}
+        </div>
+
+        {/* Coming up — horizontal cards for the next 7 days (overdue first).
+            Replaces both the old "Needs your attention" list (which repeated
+            the same rows as the main list below) and the "IQ Spotlight" card. */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+          <SectionTitle inline>Coming up</SectionTitle>
+          <Link href="/dashboard/calendar" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>Calendar →</Link>
+        </div>
+        {attentionItems.length === 0 ? (
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "18px 16px", marginBottom: 24, fontSize: 14, color: "var(--muted)" }}>
+            Nothing in the next 7 days. Enjoy the calm.
+          </div>
+        ) : (
+          <div className="rfs-hscroll" style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 24px", padding: "2px 20px 4px", scrollSnapType: "x mandatory", scrollPaddingInline: 20 }}>
+            {attentionItems.slice(0, 10).map((r) => {
+              const days = getDaysUntil(r.date);
+              const overdue = days < 0;
+              const badge = CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER;
+              const owner = r.assignedTo ? householdMembers.find(m => m.userId === r.assignedTo) : null;
+              const ownerName = owner ? (owner.user.name?.split(" ")[0] ?? owner.user.email.split("@")[0]) : null;
+              return (
+                <button key={r.id} onClick={() => router.push(`/dashboard/${r.id}`)} style={{
+                  flex: "0 0 auto", width: 250, scrollSnapAlign: "start", textAlign: "left", cursor: "pointer",
+                  background: "var(--surface)", border: overdue ? "1.5px solid var(--border-danger)" : "1px solid var(--border)",
+                  borderRadius: 18, padding: 14, display: "flex", gap: 12, alignItems: "center", fontFamily: FONT, boxShadow: "var(--shadow)",
+                }}>
+                  <ServiceLogo name={r.name} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: overdue ? "var(--danger)" : days <= 1 ? "var(--warning)" : "var(--accent)", marginTop: 3 }}>
+                      {overdue ? `Overdue · ${formatDate(r.date)}` : getRelativeTime(r.date)}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "nowrap", overflow: "hidden" }}>
+                      <span style={{ padding: "2px 8px", borderRadius: 50, fontSize: 10.5, fontWeight: 700, background: badge.bg, color: badge.color, whiteSpace: "nowrap" }}>
+                        {CATEGORY_LABELS[r.category] ?? r.category}
+                      </span>
+                      {ownerName && <span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>👤 {ownerName}</span>}
+                      {r.amount != null && r.amount > 0 && <span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>{r.amount.toLocaleString("sv")} {r.currency}</span>}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {/* IQ Spotlight */}
-        {spotlight ? (
-          <div style={{
-            background: "linear-gradient(135deg, #1C1C28 0%, #2C3E6E 100%)",
-            borderRadius: 20, padding: "18px 20px", marginBottom: 12,
-            display: "flex", alignItems: "center", gap: 16,
-            boxShadow: "0 4px 20px rgba(26,35,64,0.18)",
+        {/* Overview tiles — three honest numbers. "Needs attention" used to
+            count only overdue items while the list above said "4 items";
+            it's now labelled for what it is. */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
+          <StatCard icon={<IcBell />} iconColor="var(--accent)" iconBg="var(--tint-accent)" value={totalActive} label="Active" />
+          <StatCard icon={<IcAlert />} iconColor="var(--danger)" iconBg="var(--tint-danger)" value={passedCount} label="Overdue" />
+          <button onClick={() => { setSort("amount_desc"); document.getElementById("all-reminders")?.scrollIntoView({ behavior: "smooth" }); }}
+            style={{ all: "unset", cursor: "pointer", display: "block" }} aria-label="Review recurring costs">
+            <StatCard icon={<IcCard />} iconColor="var(--success)" iconBg="var(--tint-success)"
+              value={yearlyTotal > 0 ? compactAmount(yearlyTotal) : "—"} label={`Per year${yearlyTotal > 0 ? " · " + preferredCurrency : ""}`} />
+          </button>
+        </div>
+
+        {/* Family progress — only when there's something to show. */}
+        {familyCardRows.length > 0 && (
+          <Link href="/dashboard/family" style={{
+            display: "block", textDecoration: "none", background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: 18, padding: "14px 16px", marginBottom: 12, boxShadow: "var(--shadow)",
           }}>
-            <div style={{ background: "rgba(91,156,245,0.2)", borderRadius: 14, padding: 10, flexShrink: 0 }}>
-              <IcStar />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>🏠 Chores this week</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: pendingApprovals > 0 ? "var(--warning)" : "var(--muted)" }}>
+                {pendingApprovals > 0 ? `${pendingApprovals} waiting approval` : "Open →"}
+              </span>
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>
-                IQ Spotlight · Up next
+            {familyCardRows.map(row => (
+              <div key={row.id} style={{ marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--fg-2)" }}>{row.name}</span>
+                  <span style={{ fontSize: 12, color: "var(--muted)" }}>{row.label}</span>
+                </div>
+                <div style={{ height: 6, background: "var(--surface-3)", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 3, background: row.allDone ? "#2A9D6F" : "var(--accent-bg)", width: row.pct + "%" }} />
+                </div>
               </div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {spotlight.name}
-              </div>
-            </div>
-            <div style={{
-              background: "rgba(91,156,245,0.25)", borderRadius: 50,
-              padding: "6px 14px", fontSize: 13, fontWeight: 700, color: "#7BB8FF",
-              whiteSpace: "nowrap", flexShrink: 0,
-            }}>
-              {getRelativeTime(spotlight.date)}
-            </div>
-          </div>
-        ) : null}
+            ))}
+          </Link>
+        )}
 
-        {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-          <StatCard icon={<IcBell />}  iconColor="#4A5FD5" iconBg="#E4E7FB"
-            value={totalActive} label="Reminders" />
-          <StatCard icon={<IcAlert />} iconColor="#D94F4F" iconBg="#FFE8E8"
-            value={passedCount} label="Needs attention" />
-        </div>
-
-        {/* Budget action card */}
-        <div
-          onClick={() => { setSort("amount_desc"); setSection("reminders"); }}
-          style={{
-            background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE",
-            padding: "16px", marginBottom: 12, cursor: "pointer",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-            display: "flex", alignItems: "center", gap: 14,
-          }}
-        >
-          <div style={{ background: "#D4F4E6", borderRadius: 10, padding: 8, color: "#2A9D6F", display: "inline-flex", flexShrink: 0 }}>
-            <IcCard />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, color: "#6B7280", fontWeight: 600 }}>Recurring costs this year</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", lineHeight: 1.1, marginTop: 2 }}>
-              {yearlyTotal > 0 ? yearlyTotal.toLocaleString("sv") + " " + preferredCurrency : "—"}
-            </div>
-            <div style={{ fontSize: 12, color: "#7C7C8A", marginTop: 3 }}>See what&apos;s coming up and where you can cut back</div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 700, color: "#2A9D6F", flexShrink: 0 }}>
-            Review costs <IcRight />
-          </div>
-        </div>
-
-        {/* Activity strip */}
-        <div style={{
-          background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE",
-          padding: "14px 16px", marginBottom: 16,
-          display: "flex", alignItems: "center", gap: 12,
-          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-        }}>
-          <div style={{ background: "#D4F4E6", borderRadius: 10, padding: 8, color: "#2A9D6F", display: "flex" }}><IcCheck /></div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: "#6B7280", fontWeight: 600 }}>Completed last 30 days</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", lineHeight: 1.1, marginTop: 2 }}>{completedLast30}</div>
-          </div>
-          <div style={{ fontSize: 12, color: "#6B7280", fontWeight: 500 }}>reminders sent</div>
-        </div>
-
-        {/* Section selector */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
-          <button onClick={() => setSection("reminders")} style={sectionCardStyle(activeSection === "reminders")}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-              <div style={{ background: "#E4E7FB", borderRadius: 10, padding: 8, color: "#4A5FD5", display: "flex" }}><IcBell /></div>
-              <div style={{ color: "#C0C5D0" }}><IcRight /></div>
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C28", marginBottom: 4 }}>My reminders</div>
-            <div style={{ fontSize: 12, color: "#7C7C8A", lineHeight: 1.4 }}>
-              {myReminders.length} reminder{myReminders.length !== 1 ? "s" : ""}
-            </div>
-          </button>
-
-          <button onClick={() => router.push("/dashboard/family")} style={sectionCardStyle(activeSection === "family")}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-              <div style={{ background: hasHousehold ? "#FFF0D4" : "#F0F2F7", borderRadius: 10, padding: 8, color: hasHousehold ? "#C06010" : "#ACA9A3", display: "flex", fontSize: 18, lineHeight: 1 }}>🏠</div>
-              <div style={{ color: "#C0C5D0" }}><IcRight /></div>
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C28", marginBottom: 6 }}>Family</div>
-            {familyCardRows.length > 0 ? (
-              <div>
-                {familyCardRows.map(row => (
-                  <div key={row.id} style={{ marginBottom: 7 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>{row.name}</span>
-                      <span style={{ fontSize: 11, color: "#7C7C8A" }}>{row.label}</span>
-                    </div>
-                    <div style={{ height: 5, background: "#E4E3DE", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 3, background: row.allDone ? "#2A9D6F" : "#4A5FD5", width: row.pct + "%" }} />
-                    </div>
-                  </div>
-                ))}
-                {pendingApprovals > 0 && (
-                  <div style={{ fontSize: 11, color: "#B45309", fontWeight: 700, marginTop: 4 }}>
-                    {pendingApprovals} waiting approval
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ fontSize: 12, color: "#7C7C8A", lineHeight: 1.4 }}>
-                Chores, responsibilities &amp; routines
-              </div>
-            )}
-          </button>
-        </div>
+        <div id="all-reminders" style={{ scrollMarginTop: 16 }} />
+        <SectionTitle>All reminders</SectionTitle>
 
         {/* Section content */}
-        {activeSection === "reminders" ? (
-          <>
+        <>
             {/* Filters */}
             <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
               <div style={{ position: "relative", flex: 1 }}>
@@ -606,7 +568,7 @@ export default function DashboardPage() {
                   <option value="BILL">Bills</option>
                   <option value="OTHER">Other</option>
                 </select>
-                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#7C7C8A" }}><IcDown /></div>
+                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted)" }}><IcDown /></div>
               </div>
               <div style={{ position: "relative", flex: 1 }}>
                 <select value={sortBy} onChange={e => setSort(e.target.value)} style={dropdownStyle}>
@@ -615,22 +577,22 @@ export default function DashboardPage() {
                   <option value="name_asc">Name A–Z</option>
                   <option value="amount_desc">Highest amount</option>
                 </select>
-                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#7C7C8A" }}><IcDown /></div>
+                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted)" }}><IcDown /></div>
               </div>
             </div>
 
             {/* List */}
             {filtered.length === 0 ? (
-              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>&#128237;</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 6 }}>No reminders yet</div>
-                <div style={{ fontSize: 14, color: "#7C7C8A", marginBottom: 24 }}>Add the things you don&apos;t want to forget.</div>
-                <Link href="/dashboard/new" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#4A5FD5", color: "#fff", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 6 }}>No reminders yet</div>
+                <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24 }}>Add the things you don&apos;t want to forget.</div>
+                <Link href="/dashboard/new" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "var(--accent-bg)", color: "#fff", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
                   + Add your first reminder
                 </Link>
               </div>
             ) : (
-              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 12 }}>
+              <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 12 }}>
                 {filtered.map((r, i) => (
                   <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
                     isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
@@ -641,45 +603,13 @@ export default function DashboardPage() {
             {/* Add reminder */}
             <Link href="/dashboard/new" style={{
               display: "flex", alignItems: "center", justifyContent: "center",
-              width: "100%", background: "#fff", border: "1.5px dashed #D0D7E8",
+              width: "100%", background: "var(--surface)", border: "1.5px dashed var(--border)",
               borderRadius: 16, padding: "15px", fontSize: 14, fontWeight: 600,
-              color: "#7C7C8A", textDecoration: "none", boxSizing: "border-box",
+              color: "var(--muted)", textDecoration: "none", boxSizing: "border-box",
             }}>
               + Add reminder
             </Link>
           </>
-        ) : (
-          /* Family section */
-          hasHousehold ? (
-            sharedReminders.length > 0 ? (
-              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-                {sharedReminders.map((r, i) => (
-                  <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
-                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
-                ))}
-              </div>
-            ) : (
-              <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>&#127968;</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 6 }}>No shared reminders yet</div>
-                <div style={{ fontSize: 14, color: "#7C7C8A", lineHeight: 1.6 }}>
-                  When a family member shares a reminder with you, it will appear here.
-                </div>
-              </div>
-            )
-          ) : (
-            <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>&#127968;</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 6 }}>Family sharing</div>
-              <div style={{ fontSize: 14, color: "#7C7C8A", lineHeight: 1.6, maxWidth: 260, margin: "0 auto 24px" }}>
-                Invite your family to share reminders and never miss what matters together.
-              </div>
-              <Link href="/profile" style={{ display: "inline-block", padding: "12px 24px", background: "#1C1C28", color: "#fff", borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
-                Set up family sharing \u2192
-              </Link>
-            </div>
-          )
-        )}
 
       </main>
 
@@ -687,9 +617,9 @@ export default function DashboardPage() {
           (see app/dashboard/layout.tsx + components/BottomNav.tsx) instead of living
           inside its own nav row, so the two don't stack on top of each other. */}
       <Link href="/dashboard/new" aria-label="Add reminder" style={{
-        position: "fixed", right: 20, bottom: 84, zIndex: 19,
+        position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
         width: 52, height: 52, borderRadius: "50%",
-        background: "#1C1C28", color: "#fff",
+        background: "var(--accent-bg)", color: "#fff",
         display: "flex", alignItems: "center", justifyContent: "center",
         boxShadow: "0 4px 16px rgba(26,35,64,0.28)", textDecoration: "none",
       }}>

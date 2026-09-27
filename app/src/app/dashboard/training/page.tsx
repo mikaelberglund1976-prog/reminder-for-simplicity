@@ -89,8 +89,8 @@ export default function TrainingPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Loading activities…</div>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading activities…</div>
       </div>
     );
   }
@@ -100,11 +100,11 @@ export default function TrainingPage() {
       <Screen onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Set up your household first</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Set up your household first</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>
             Activities need a household with at least one child added.
           </p>
-          <Link href="/dashboard/family" style={{ display: "inline-flex", background: "#1C1C28", color: "#fff", borderRadius: 50, padding: "14px 28px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+          <Link href="/dashboard/family" style={{ display: "inline-flex", background: "var(--ink)", color: "#fff", borderRadius: 50, padding: "14px 28px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
             Go to Chores →
           </Link>
         </div>
@@ -116,9 +116,9 @@ export default function TrainingPage() {
     return (
       <Screen onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
-          <div style={{ color: "#CBD5E1", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Trial period ended</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6 }}>Upgrade to Pro to keep using Activities.</p>
+          <div style={{ color: "var(--faint)", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Trial period ended</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6 }}>Upgrade to Pro to keep using Activities.</p>
         </div>
       </Screen>
     );
@@ -138,7 +138,7 @@ export default function TrainingPage() {
   return (
     <Screen onBack={() => router.push("/dashboard")}>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
           Recurring activities for each child — sports, scouts, theater, music, or anything else — synced to the calendar automatically.
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function TrainingPage() {
       </Link>
 
       {children.length === 0 && (
-        <div style={{ textAlign: "center", padding: "20px 0", color: "#9CA3AF", fontSize: 13 }}>
+        <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
           Add a child in Chores before creating activities.
         </div>
       )}
@@ -166,28 +166,28 @@ export default function TrainingPage() {
         const list = byChild.get(child.id) ?? [];
         return (
           <div key={child.id} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
               {child.name} · {list.length}
             </div>
             {list.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#9CA3AF", padding: "8px 2px" }}>No activities booked yet.</div>
+              <div style={{ fontSize: 13, color: "var(--subtle)", padding: "8px 2px" }}>No activities booked yet.</div>
             ) : (
-              <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+              <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
                 {list.map((item, i) => (
                   <div key={item.id} style={{
                     display: "flex", alignItems: "center", gap: 14, padding: "14px 18px",
-                    borderTop: i === 0 ? "none" : "1px solid #F0F3F8",
+                    borderTop: i === 0 ? "none" : "1px solid var(--border-soft)",
                   }}>
                     <div style={{
-                      width: 36, height: 36, borderRadius: 10, background: "#FBEAE2",
+                      width: 36, height: 36, borderRadius: 10, background: "var(--tint-warning)",
                       color: "#D85A30", display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 16, flexShrink: 0,
                     }}>
                       🎯
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#0F172A", lineHeight: 1.3 }}>{item.name}</div>
-                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", lineHeight: 1.3 }}>{item.name}</div>
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
                         {formatSchedule(item)}{item.note ? ` · ${item.note}` : ""}
                       </div>
                     </div>
@@ -195,7 +195,7 @@ export default function TrainingPage() {
                       onClick={() => handleDelete(item.id)}
                       disabled={deletingId === item.id}
                       style={{
-                        background: "none", border: "none", color: "#C0C5D0",
+                        background: "none", border: "none", color: "var(--faint)",
                         cursor: deletingId === item.id ? "wait" : "pointer", padding: 6, display: "flex",
                       }}
                       aria-label="Remove"
@@ -215,13 +215,13 @@ export default function TrainingPage() {
 
 function Screen({ onBack, children }: { onBack: () => void; children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
-      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
+      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
+          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0, flex: 1 }}>🎯 Activities</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>🎯 Activities</h1>
           <HamburgerMenu />
         </div>
       </div>

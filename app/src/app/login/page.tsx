@@ -51,7 +51,7 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#F5F4F0",
+      minHeight: "100vh", background: "var(--background)",
       fontFamily: FONT, display: "flex", flexDirection: "column",
       position: "relative", overflow: "hidden",
     }}>
@@ -61,17 +61,17 @@ export default function LoginPage() {
 
         {/* Title */}
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1C1C28", margin: 0, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
             Welcome back
           </h1>
-          <p style={{ fontSize: 15, color: "#4B5563", margin: "8px 0 0" }}>
+          <p style={{ fontSize: 15, color: "var(--fg-2)", margin: "8px 0 0" }}>
             Log in to your account.
           </p>
         </div>
 
         {error && (
           <div style={{
-            background: "#FFF0F0", border: "1px solid #F5CCCC", color: "#D94F4F",
+            background: "var(--tint-danger)", border: "1px solid var(--border-danger)", color: "var(--danger)",
             borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 20,
           }}>
             {error}
@@ -85,8 +85,8 @@ export default function LoginPage() {
           disabled={googleLoading}
           style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 12, background: "#fff", color: "#1C1C28", fontWeight: 500, fontSize: 15,
-            padding: "15px 16px", borderRadius: 14, border: "1.5px solid #E4E3DE",
+            gap: 12, background: "var(--surface)", color: "var(--fg)", fontWeight: 500, fontSize: 15,
+            padding: "15px 16px", borderRadius: 14, border: "1.5px solid var(--border)",
             cursor: googleLoading ? "not-allowed" : "pointer",
             opacity: googleLoading ? 0.6 : 1, marginBottom: 24,
             boxShadow: "0 1px 4px rgba(0,0,0,0.05)", fontFamily: FONT,
@@ -103,18 +103,18 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-          <div style={{ flex: 1, height: 1, background: "#E4E3DE" }} />
-          <span style={{ color: "#6B7280", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
+          <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+          <span style={{ color: "var(--muted)", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
             or sign in with email
           </span>
-          <div style={{ flex: 1, height: 1, background: "#E4E3DE" }} />
+          <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
         </div>
 
         <form onSubmit={handleSubmit}>
 
           {/* Email */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#1C1C28", marginBottom: 10 }}>Email</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>Email</div>
             <input
               type="email"
               placeholder="Email"
@@ -128,8 +128,8 @@ export default function LoginPage() {
           {/* Password */}
           <div style={{ marginBottom: 28 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1C1C28" }}>Password</div>
-              <Link href="/forgot-password" style={{ fontSize: 13, fontWeight: 600, color: "#2563EB", textDecoration: "none" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)" }}>Password</div>
+              <Link href="/forgot-password" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
                 Forgot password?
               </Link>
             </div>
@@ -148,7 +148,7 @@ export default function LoginPage() {
                 style={{
                   position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
                   background: "none", border: "none", cursor: "pointer",
-                  color: "#7C7C8A", display: "flex", alignItems: "center", padding: 0,
+                  color: "var(--muted)", display: "flex", alignItems: "center", padding: 0,
                 }}
               >
                 {showPassword ? (
@@ -173,7 +173,7 @@ export default function LoginPage() {
             disabled={loading}
             style={{
               width: "100%", padding: "17px", borderRadius: 50,
-              background: loading ? "#7C7C8A" : "#1C1C28", border: "none",
+              background: loading ? "#7C7C8A" : "var(--ink)", border: "none",
               fontSize: 16, fontWeight: 700,
               color: "#fff",
               cursor: loading ? "not-allowed" : "pointer",
@@ -187,9 +187,9 @@ export default function LoginPage() {
         </form>
 
         {/* Create account */}
-        <p style={{ textAlign: "center", fontSize: 14, color: "#4B5563", marginTop: 24 }}>
+        <p style={{ textAlign: "center", fontSize: 14, color: "var(--fg-2)", marginTop: 24 }}>
           No account?{" "}
-          <Link href="/register" style={{ color: "#2563EB", fontWeight: 600, textDecoration: "none" }}>
+          <Link href="/register" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
             Create account
           </Link>
         </p>
@@ -197,7 +197,7 @@ export default function LoginPage() {
       </main>
 
       {/* Decorative wave at bottom */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, pointerEvents: "none", lineHeight: 0 }}>
+      <div className="rfs-deco" style={{ position: "absolute", bottom: 0, left: 0, right: 0, pointerEvents: "none", lineHeight: 0 }}>
         <svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", display: "block" }}>
           <ellipse cx="340" cy="200" rx="260" ry="130" fill="#E4E7FB" opacity="0.45" />
           <ellipse cx="180" cy="220" rx="220" ry="110" fill="#E4E7FB" opacity="0.5" />
@@ -211,12 +211,12 @@ export default function LoginPage() {
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  background: "#fff",
-  border: "1.5px solid #E4E3DE",
+  background: "var(--surface)",
+  border: "1.5px solid var(--border)",
   borderRadius: 14,
   padding: "14px 16px",
   fontSize: 15,
-  color: "#1C1C28",
+  color: "var(--fg)",
   outline: "none",
   fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
   boxSizing: "border-box" as const,

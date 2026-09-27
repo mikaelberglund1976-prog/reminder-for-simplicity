@@ -16,7 +16,7 @@ const LAST_UPDATED = "Draft — not yet published";
 
 export default function PrivacyPage() {
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, overflowX: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, overflowX: "hidden" }}>
 
       {/* Header — same pattern as /features */}
       <header style={{
@@ -25,10 +25,10 @@ export default function PrivacyPage() {
         padding: "24px 24px 0", boxSizing: "border-box",
       }}>
         <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: "#1C1C28", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔔</div>
-          <span style={{ fontWeight: 700, fontSize: 16, color: "#1C1C28" }}>Reminder for Simplicity</span>
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔔</div>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "var(--fg)" }}>Reminder for Simplicity</span>
         </Link>
-        <Link href="/login" style={{ fontSize: 14, fontWeight: 600, color: "#4A5FD5", textDecoration: "none" }}>
+        <Link href="/login" style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
           Log in
         </Link>
       </header>
@@ -36,8 +36,8 @@ export default function PrivacyPage() {
       {/* Draft banner — remove once content is finalized */}
       <div style={{ maxWidth: "var(--content-max-width)", margin: "20px auto 0", padding: "0 24px", boxSizing: "border-box" }}>
         <div style={{
-          background: "#FFF3CC", border: "1px solid #FDE68A", borderRadius: 14,
-          padding: "12px 16px", fontSize: 13, color: "#92400E", lineHeight: 1.5,
+          background: "var(--tint-warning)", border: "1px solid #FDE68A", borderRadius: 14,
+          padding: "12px 16px", fontSize: 13, color: "var(--warning)", lineHeight: 1.5,
         }}>
           🚧 <strong>This page is a structural draft, not a published policy.</strong> Every yellow box below marks something that needs a real decision or a real piece of information before this can go live — see the list at the bottom for a single consolidated view.
         </div>
@@ -45,10 +45,10 @@ export default function PrivacyPage() {
 
       {/* Hero */}
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", width: "100%", padding: "28px 24px 0", boxSizing: "border-box" }}>
-        <h1 style={{ fontSize: "clamp(26px, 6vw, 34px)", fontWeight: 800, color: "#1C1C28", lineHeight: 1.2, letterSpacing: "-0.5px", margin: "0 0 8px" }}>
+        <h1 style={{ fontSize: "clamp(26px, 6vw, 34px)", fontWeight: 800, color: "var(--fg)", lineHeight: 1.2, letterSpacing: "-0.5px", margin: "0 0 8px" }}>
           Privacy Policy
         </h1>
-        <p style={{ fontSize: 13, color: "#ACA9A3", margin: "0 0 32px" }}>
+        <p style={{ fontSize: 13, color: "var(--subtle)", margin: "0 0 32px" }}>
           Last updated: {LAST_UPDATED}
         </p>
 
@@ -139,7 +139,7 @@ export default function PrivacyPage() {
             <li><b>Object / restrict processing</b> — <TodoInline>describe the process once decided.</TodoInline></li>
             <li>
               <b>Complain to a supervisory authority</b> — in Sweden, the{" "}
-              <a href="https://www.imy.se" target="_blank" rel="noreferrer" style={{ color: "#4A5FD5" }}>
+              <a href="https://www.imy.se" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>
                 Swedish Authority for Privacy Protection (IMY)
               </a>.
             </li>
@@ -179,7 +179,7 @@ export default function PrivacyPage() {
 
         {/* Consolidated checklist */}
         <div style={{ margin: "36px 0 56px" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: "#1C1C28", margin: "0 0 12px" }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)", margin: "0 0 12px" }}>
             Everything that needs a decision or real content before this can be published
           </h2>
           <ol style={{ ...listStyle, paddingLeft: 20 }}>
@@ -202,8 +202,8 @@ const listStyle: React.CSSProperties = { margin: 0, paddingLeft: 20, display: "f
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section style={{ marginBottom: 28 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: "#1C1C28", margin: "0 0 10px" }}>{title}</h2>
-      <div style={{ fontSize: 14, color: "#4B5563", lineHeight: 1.65, display: "flex", flexDirection: "column", gap: 10 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>{title}</h2>
+      <div style={{ fontSize: 14, color: "var(--fg-2)", lineHeight: 1.65, display: "flex", flexDirection: "column", gap: 10 }}>
         {children}
       </div>
     </section>
@@ -213,8 +213,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function TodoBox({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      background: "#FFF9E6", border: "1px dashed #FDE68A", borderRadius: 10,
-      padding: "10px 14px", fontSize: 13, color: "#92400E", lineHeight: 1.55,
+      background: "var(--tint-warning)", border: "1px dashed #FDE68A", borderRadius: 10,
+      padding: "10px 14px", fontSize: 13, color: "var(--warning)", lineHeight: 1.55,
     }}>
       <b>Needs a decision / real content:</b> {children}
     </div>
@@ -222,5 +222,5 @@ function TodoBox({ children }: { children: React.ReactNode }) {
 }
 
 function TodoInline({ children }: { children: React.ReactNode }) {
-  return <span style={{ color: "#B45309", fontStyle: "italic" }}>[{children}]</span>;
+  return <span style={{ color: "var(--warning)", fontStyle: "italic" }}>[{children}]</span>;
 }

@@ -38,11 +38,11 @@ type Suggestion = {
 
 const STATUS_LABEL: Record<Status, string> = { OPEN: "Open", PLANNED: "Planned", IN_PROGRESS: "In progress", DONE: "Done", DECLINED: "Declined" };
 const STATUS_COLOR: Record<Status, { bg: string; color: string }> = {
-  OPEN: { bg: "#EDEBFB", color: "#5B4FCF" },
-  PLANNED: { bg: "#FFF0E0", color: "#C06010" },
-  IN_PROGRESS: { bg: "#DCEAFE", color: "#2560C4" },
-  DONE: { bg: "#D4F4E6", color: "#1E7D52" },
-  DECLINED: { bg: "#F0F3F8", color: "#9CA3AF" },
+  OPEN: { bg: "var(--tint-accent)", color: "var(--violet)" },
+  PLANNED: { bg: "var(--tint-warning)", color: "var(--warning)" },
+  IN_PROGRESS: { bg: "var(--tint-accent)", color: "#2560C4" },
+  DONE: { bg: "var(--tint-success)", color: "var(--success)" },
+  DECLINED: { bg: "var(--surface-3)", color: "var(--subtle)" },
 };
 
 export default function SuggestionsPage() {
@@ -149,19 +149,19 @@ export default function SuggestionsPage() {
   const closed = filtered.filter((s) => s.status === "DONE" || s.status === "DECLINED");
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
-      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
+      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => router.push("/dashboard")} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
+          <button onClick={() => router.push("/dashboard")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0, flex: 1 }}>Ideas &amp; voting</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>Ideas &amp; voting</h1>
           <HamburgerMenu />
         </div>
       </div>
 
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 40px", paddingBottom: 96 }}>
-        <p style={{ fontSize: 13, color: "#7C7C8A", lineHeight: 1.6, margin: "0 0 18px" }}>
+        <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6, margin: "0 0 18px" }}>
           Suggest an improvement or a brand-new feature, and vote on what other families want most. Every customer sees the same list — this shapes what we build next.
         </p>
 
@@ -173,9 +173,9 @@ export default function SuggestionsPage() {
           ].map((t) => (
             <button key={t.key} onClick={() => setFilter(t.key)} style={{
               flexShrink: 0, borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
-              border: filter === t.key ? "none" : "1px solid #E4E3DE",
-              background: filter === t.key ? "#4A5FD5" : "#fff",
-              color: filter === t.key ? "#fff" : "#4B5563",
+              border: filter === t.key ? "none" : "1px solid var(--border)",
+              background: filter === t.key ? "var(--accent-bg)" : "var(--surface)",
+              color: filter === t.key ? "#fff" : "var(--fg-2)",
             }}>
               {t.label}
             </button>
@@ -185,20 +185,20 @@ export default function SuggestionsPage() {
         {!showForm ? (
           <button onClick={() => setShowForm(true)} style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            background: "#1C1C28", color: "#fff", border: "none", borderRadius: 12, padding: "12px 0",
+            background: "var(--ink)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 0",
             fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT, marginBottom: 20,
           }}>
             <IcPlus /> Suggest an idea
           </button>
         ) : (
-          <form onSubmit={submitIdea} style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+          <form onSubmit={submitIdea} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
               {(["NEW_FEATURE", "IMPROVEMENT"] as const).map((c) => (
                 <button key={c} type="button" onClick={() => setCategory(c)} style={{
                   flex: 1, borderRadius: 10, padding: "9px 0", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
-                  border: category === c ? "none" : "1.5px solid #E4E3DE",
-                  background: category === c ? "#4A5FD5" : "#fff",
-                  color: category === c ? "#fff" : "#7C7C8A",
+                  border: category === c ? "none" : "1.5px solid var(--border)",
+                  background: category === c ? "var(--accent-bg)" : "var(--surface)",
+                  color: category === c ? "#fff" : "var(--muted)",
                 }}>
                   {c === "NEW_FEATURE" ? "New feature" : "Improvement"}
                 </button>
@@ -207,12 +207,12 @@ export default function SuggestionsPage() {
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Short, clear title" maxLength={140} style={inputStyle()} />
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add detail (optional) — what problem would this solve?" rows={3}
               style={{ ...inputStyle(), marginTop: 8, resize: "vertical" as const, fontFamily: FONT }} />
-            {error && <div style={{ fontSize: 13, color: "#C44444", marginTop: 10 }}>{error}</div>}
+            {error && <div style={{ fontSize: 13, color: "var(--danger)", marginTop: 10 }}>{error}</div>}
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button type="button" onClick={() => { setShowForm(false); setError(""); }} style={{ flex: 1, background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, color: "#7C7C8A", cursor: "pointer", fontFamily: FONT }}>
+              <button type="button" onClick={() => { setShowForm(false); setError(""); }} style={{ flex: 1, background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, color: "var(--muted)", cursor: "pointer", fontFamily: FONT }}>
                 Cancel
               </button>
-              <button type="submit" disabled={!title.trim() || submitting} style={{ flex: 2, background: "#1C1C28", color: "#fff", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, cursor: !title.trim() ? "not-allowed" : "pointer", opacity: !title.trim() || submitting ? 0.6 : 1, fontFamily: FONT }}>
+              <button type="submit" disabled={!title.trim() || submitting} style={{ flex: 2, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, cursor: !title.trim() ? "not-allowed" : "pointer", opacity: !title.trim() || submitting ? 0.6 : 1, fontFamily: FONT }}>
                 {submitting ? "Posting…" : "Post idea"}
               </button>
             </div>
@@ -220,12 +220,12 @@ export default function SuggestionsPage() {
         )}
 
         {items === null ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#9CA3AF", fontSize: 13 }}>Loading…</div>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 13 }}>Loading…</div>
         ) : active.length === 0 && closed.length === 0 ? (
           <div style={{ textAlign: "center", padding: "50px 24px" }}>
-            <div style={{ marginBottom: 14, display: "flex", justifyContent: "center", color: "#CBD5E1" }}><IcBulb /></div>
-            <h2 style={{ fontSize: 17, fontWeight: 800, color: "#0F172A", margin: "0 0 8px" }}>No ideas yet</h2>
-            <p style={{ fontSize: 13.5, color: "#7C7C8A", lineHeight: 1.6, maxWidth: 320, margin: "0 auto" }}>
+            <div style={{ marginBottom: 14, display: "flex", justifyContent: "center", color: "var(--faint)" }}><IcBulb /></div>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)", margin: "0 0 8px" }}>No ideas yet</h2>
+            <p style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6, maxWidth: 320, margin: "0 auto" }}>
               Be the first to suggest something — every family&apos;s vote helps shape what we build next.
             </p>
           </div>
@@ -239,7 +239,7 @@ export default function SuggestionsPage() {
 
             {closed.length > 0 && (
               <div style={{ marginTop: 20 }}>
-                <button onClick={() => setShowClosed((v) => !v)} style={{ background: "none", border: "none", color: "#4A5FD5", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT, padding: "6px 2px" }}>
+                <button onClick={() => setShowClosed((v) => !v)} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT, padding: "6px 2px" }}>
                   {showClosed ? "Hide" : "Show"} shipped &amp; declined ({closed.length})
                 </button>
                 {showClosed && (
@@ -267,37 +267,37 @@ function SuggestionCard({ s, isAdmin, onVote, onStatusChange, onDelete }: {
 }) {
   const badge = STATUS_COLOR[s.status];
   return (
-    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E4E3DE", padding: 14, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", display: "flex", gap: 12 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", padding: 14, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", display: "flex", gap: 12 }}>
       <button
         onClick={() => onVote(s.id)}
         aria-label={s.hasVoted ? "Remove vote" : "Vote for this"}
         style={{
           flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
           width: 46, height: 46, borderRadius: 12, cursor: "pointer",
-          border: s.hasVoted ? "1.5px solid #4A5FD5" : "1.5px solid #E4E3DE",
-          background: s.hasVoted ? "#EEF0FC" : "#fff",
+          border: s.hasVoted ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
+          background: s.hasVoted ? "var(--tint-accent)" : "var(--surface)",
         }}
       >
         <IcUp filled={s.hasVoted} />
-        <span style={{ fontSize: 13, fontWeight: 800, color: s.hasVoted ? "#3A4FC5" : "#4B5563" }}>{s.voteCount}</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: s.hasVoted ? "var(--accent-strong)" : "var(--fg-2)" }}>{s.voteCount}</span>
       </button>
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, justifyContent: "space-between" }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, color: "#0F172A", lineHeight: 1.4 }}>{s.title}</div>
+          <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--fg)", lineHeight: 1.4 }}>{s.title}</div>
           <span style={{ flexShrink: 0, background: badge.bg, color: badge.color, fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 50 }}>
             {STATUS_LABEL[s.status]}
           </span>
         </div>
-        {s.description && <div style={{ fontSize: 12.5, color: "#7C7C8A", marginTop: 4, lineHeight: 1.5 }}>{s.description}</div>}
-        <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const }}>
+        {s.description && <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 4, lineHeight: 1.5 }}>{s.description}</div>}
+        <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const }}>
           <span>{s.category === "NEW_FEATURE" ? "💡 New feature" : "🔧 Improvement"}</span>
           <span>·</span>
           <span>{s.isOwn ? "You" : s.authorName}</span>
           {s.isOwn && s.status === "OPEN" && (
             <>
               <span>·</span>
-              <button onClick={() => onDelete(s.id)} style={{ background: "none", border: "none", color: "#D94F4F", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT, padding: 0 }}>
+              <button onClick={() => onDelete(s.id)} style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT, padding: 0 }}>
                 Remove
               </button>
             </>
@@ -309,9 +309,9 @@ function SuggestionCard({ s, isAdmin, onVote, onStatusChange, onDelete }: {
               <button key={st} onClick={() => onStatusChange(s.id, st)} disabled={st === s.status} style={{
                 fontSize: 10.5, fontWeight: 700, fontFamily: FONT, padding: "4px 9px", borderRadius: 50,
                 cursor: st === s.status ? "default" : "pointer",
-                border: "1px solid #E4E3DE",
-                background: st === s.status ? "#1C1C28" : "#fff",
-                color: st === s.status ? "#fff" : "#9CA3AF",
+                border: "1px solid var(--border)",
+                background: st === s.status ? "var(--ink)" : "var(--surface)",
+                color: st === s.status ? "#fff" : "var(--subtle)",
               }}>
                 {STATUS_LABEL[st]}
               </button>
@@ -324,5 +324,5 @@ function SuggestionCard({ s, isAdmin, onVote, onStatusChange, onDelete }: {
 }
 
 function inputStyle(): React.CSSProperties {
-  return { width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const };
+  return { width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const };
 }

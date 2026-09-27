@@ -3,23 +3,102 @@
 @tailwind utilities;
 
 :root {
+  /* ── Theme tokens (2026-09-27) ──────────────────────────────────────────
+     Every color in the app goes through these variables, so light/dark is
+     one attribute flip on <html> (see lib/theme.ts). Light values are the
+     BRAND.md palette; dark values are tuned for the same roles.          */
   --background: #F5F4F0;
   --surface: #FFFFFF;
+  --surface-2: #FAF9F5;
+  --surface-3: #F0F3F8;
   --foreground: #1C1C28;
+  --fg: #1C1C28;
+  --fg-2: #4B5563;
   --muted: #7C7C8A;
-  --accent: #4A5FD5;
-  --accent-hover: #3A4FC5;
-  --accent-light: #E4E7FB;
+  --subtle: #9CA3AF;
+  --faint: #C0C5D0;
   --border: #E4E3DE;
-  --success: #2A9D6F;
-  --warning: #E5873A;
+  --border-soft: #F0F3F8;
+  --ink: #1C1C28;            /* dark filled buttons / hero cards */
+  --ink-hover: #2C2C36;
+  --accent: #4A5FD5;         /* accent as text / border */
+  --accent-bg: #4A5FD5;      /* accent as filled background (white text on top) */
+  --accent-hover: #3A4FC5;
+  --accent-strong: #3A4FC5;
+  --accent-light: #E4E7FB;
+  --accent-border: #C7CDF5;
+  --tint-accent: #E4E7FB;
+  --success: #1E7D52;
+  --tint-success: #D4F4E6;
+  --warning: #B45309;
+  --tint-warning: #FFF3CC;
   --danger: #D94F4F;
+  --tint-danger: #FFF0F0;
+  --border-danger: #F5CCCC;
+  --school: #3730A3;
+  --school-bg: #3730A3;
+  --tint-school: #EEF0FC;
+  --pink: #C4367A;
+  --tint-pink: #FFE8F5;
+  --violet: #6A44CC;
+  --tint-violet: #EDE8FF;
+  --slate: #5A6080;
+  --shadow: 0 1px 6px rgba(0,0,0,0.05);
+  --nav-bg: rgba(255,255,255,0.92);
+  --hero-grad: linear-gradient(135deg, #1C1C28 0%, #2E3A6E 100%);
+  color-scheme: light;
 
   /* Content column width. Every page centers its content at this width via
      `maxWidth: "var(--content-max-width)"` — one variable controls the whole
      app, so the mobile/web view toggle (see lib/viewMode.ts + profile page)
      only has to flip one attribute instead of touching every page. */
   --content-max-width: 480px;
+}
+
+/* Dark palette — deep navy like the reference app, brand indigo kept as the
+   accent (brightened so it reads on dark). Applied either explicitly
+   (data-theme="dark") or via the OS setting when the person chose "System". */
+html[data-theme="dark"] {
+  --background: #0E1220;
+  --surface: #171C2B;
+  --surface-2: #1C2233;
+  --surface-3: #232A3D;
+  --foreground: #EEF0F7;
+  --fg: #EEF0F7;
+  --fg-2: #C3C8D6;
+  --muted: #9AA1B5;
+  --subtle: #7C8499;
+  --faint: #525A70;
+  --border: #283047;
+  --border-soft: #222838;
+  --ink: #34406C;
+  --ink-hover: #3E4B7D;
+  --accent: #8E9CFF;
+  --accent-bg: #5468E0;
+  --accent-hover: #6377EA;
+  --accent-strong: #AAB5FF;
+  --accent-light: rgba(124,142,255,0.16);
+  --accent-border: rgba(124,142,255,0.4);
+  --tint-accent: rgba(124,142,255,0.16);
+  --success: #4FD69C;
+  --tint-success: rgba(79,214,156,0.14);
+  --warning: #F5B056;
+  --tint-warning: rgba(245,176,86,0.15);
+  --danger: #FF7B7B;
+  --tint-danger: rgba(255,107,107,0.14);
+  --border-danger: rgba(255,107,107,0.35);
+  --school: #A9A4FF;
+  --school-bg: #5B55D6;
+  --tint-school: rgba(169,164,255,0.14);
+  --pink: #F28AC0;
+  --tint-pink: rgba(242,138,192,0.15);
+  --violet: #B79CFF;
+  --tint-violet: rgba(183,156,255,0.15);
+  --slate: #A3AAC4;
+  --shadow: 0 1px 6px rgba(0,0,0,0.35);
+  --nav-bg: rgba(20,25,40,0.92);
+  --hero-grad: linear-gradient(135deg, #1B2240 0%, #2B3770 100%);
+  color-scheme: dark;
 }
 
 /* "Web view" preference — wider single column, more breathing room on a
@@ -30,12 +109,16 @@ html[data-view="web"] {
 }
 
 @layer base {
+  /* Inputs without their own inline colors follow the theme. */
+  input, textarea, select { background-color: var(--surface-2); color: var(--fg); }
   body {
-    @apply bg-[#F5F4F0] text-[#1C1C28] antialiased;
+    @apply antialiased;
+    background: var(--background);
+    color: var(--fg);
     font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
   }
   * {
-    @apply border-[#E4E3DE];
+    border-color: var(--border);
   }
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight;
@@ -45,46 +128,46 @@ html[data-view="web"] {
 @layer components {
   /* Primary — dark filled pill */
   .btn-primary {
-    @apply inline-flex items-center justify-center bg-[#1C1C28] text-white px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[#2C2C36] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center bg-[var(--ink)] text-white px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[var(--ink-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   /* Secondary — outlined pill */
   .btn-secondary {
-    @apply inline-flex items-center justify-center bg-white text-[#1C1C28] border border-[#E4E3DE] px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[#F5F4F0] transition-colors disabled:opacity-50;
+    @apply inline-flex items-center justify-center bg-[var(--surface)] text-[var(--fg)] border border-[var(--border)] px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[var(--surface-3)] transition-colors disabled:opacity-50;
   }
 
   /* Ghost */
   .btn-ghost {
-    @apply inline-flex items-center justify-center text-[#7C7C8A] px-4 py-2 rounded-full text-[14px] font-medium hover:text-[#1C1C28] hover:bg-[#E4E3DE] transition-colors;
+    @apply inline-flex items-center justify-center text-[var(--muted)] px-4 py-2 rounded-full text-[14px] font-medium hover:text-[var(--fg)] hover:bg-[var(--surface-3)] transition-colors;
   }
 
   /* Danger — light red pill */
   .btn-danger {
-    @apply inline-flex items-center justify-center bg-[#FFF0F0] text-[#D94F4F] px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-red-100 transition-colors disabled:opacity-50;
+    @apply inline-flex items-center justify-center bg-[var(--tint-danger)] text-[var(--danger)] px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-red-100 transition-colors disabled:opacity-50;
   }
 
   /* Accent pill */
   .btn-accent {
-    @apply inline-flex items-center justify-center bg-[#4A5FD5] text-white px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[#3A4FC5] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center bg-[var(--accent-bg)] text-white px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   /* Card */
   .card {
-    @apply bg-white rounded-2xl border border-[#E4E3DE] p-6 shadow-[0_1px_6px_rgba(0,0,0,0.05)];
+    @apply bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 shadow-[var(--shadow)];
   }
 
   .card-sm {
-    @apply bg-white rounded-xl border border-[#E4E3DE] p-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)];
+    @apply bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)];
   }
 
   /* Input */
   .input {
-    @apply w-full border border-[#E4E3DE] rounded-xl px-4 py-3 text-[#1C1C28] placeholder-[#ACA9A3] bg-[#FAF9F5] focus:outline-none focus:ring-2 focus:ring-[#4A5FD5] focus:border-transparent transition-all text-[15px];
+    @apply w-full border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--fg)] placeholder-[var(--subtle)] bg-[var(--surface-2)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all text-[15px];
   }
 
   /* Label */
   .label {
-    @apply block text-[13px] font-semibold text-[#1C1C28] mb-1.5;
+    @apply block text-[13px] font-semibold text-[var(--fg)] mb-1.5;
   }
 
   /* Badge */
@@ -92,25 +175,39 @@ html[data-view="web"] {
     @apply inline-flex items-center px-3 py-1 rounded-full text-[12px] font-semibold;
   }
   .badge-blue {
-    @apply bg-[#E4E7FB] text-[#3A4FC5];
+    @apply bg-[var(--tint-accent)] text-[var(--accent-strong)];
   }
   .badge-green {
-    @apply bg-[#D4F4E6] text-[#1E7D52];
+    @apply bg-[var(--tint-success)] text-[var(--success)];
   }
   .badge-orange {
-    @apply bg-[#FFF0E0] text-[#C06010];
+    @apply bg-[var(--tint-warning)] text-[var(--warning)];
   }
 
   /* Category pill toggle */
   .pill-active {
-    @apply bg-[#4A5FD5] text-white border-transparent shadow-sm;
+    @apply bg-[var(--accent-bg)] text-white border-transparent shadow-sm;
   }
   .pill-inactive {
-    @apply bg-white text-[#7C7C8A] border border-[#E4E3DE] hover:bg-[#F5F4F0] hover:text-[#1C1C28];
+    @apply bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] hover:bg-[var(--surface-3)] hover:text-[var(--fg)];
   }
 
   /* Divider */
   .divider {
-    @apply border-t border-[#E4E3DE];
+    @apply border-t;
+    border-color: var(--border);
   }
 }
+
+/* Native form controls (date pickers, selects) follow the theme. */
+input, select, textarea { color-scheme: inherit; }
+html[data-theme="dark"] input::placeholder, html[data-theme="dark"] textarea::placeholder { color: var(--subtle); }
+html[data-theme="dark"] img.invert-on-dark { filter: invert(1) hue-rotate(180deg); }
+
+
+/* Horizontal scrollers (quick actions, coming-up cards): swipeable, no bar. */
+.rfs-hscroll { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.rfs-hscroll::-webkit-scrollbar { display: none; }
+
+/* Decorative light shapes (login wave etc.) — nearly invisible on dark. */
+html[data-theme="dark"] .rfs-deco { opacity: 0.08; }

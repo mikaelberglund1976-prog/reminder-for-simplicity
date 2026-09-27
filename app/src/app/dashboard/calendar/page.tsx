@@ -317,8 +317,8 @@ export default function CalendarPage() {
 
   if (status === "loading" || !checkedChild) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Loading calendar…</div>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading calendar…</div>
       </div>
     );
   }
@@ -326,28 +326,28 @@ export default function CalendarPage() {
   const monthLabel = currentMonth.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
-      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
+      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => router.push("/dashboard")} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
+          <button onClick={() => router.push("/dashboard")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0, flex: 1 }}>Calendar</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>Calendar</h1>
           <HamburgerMenu />
         </div>
       </div>
 
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 40px", paddingBottom: 96 }}>
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "#7C7C8A", fontSize: 14 }}>Loading…</div>
+          <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)", fontSize: 14 }}>Loading…</div>
         ) : (
           <>
             {/* Month navigation */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <button onClick={() => goToMonth(-1)} aria-label="Previous month" style={navBtnStyle}><IcLeft /></button>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: "#0F172A" }}>{monthLabel}</span>
-                <button onClick={goToToday} style={{ fontSize: 11, fontWeight: 700, color: "#4A5FD5", background: "#EEF0FD", border: "none", borderRadius: 50, padding: "4px 10px", cursor: "pointer", fontFamily: FONT }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)" }}>{monthLabel}</span>
+                <button onClick={goToToday} style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", background: "var(--tint-accent)", border: "none", borderRadius: 50, padding: "4px 10px", cursor: "pointer", fontFamily: FONT }}>
                   Today
                 </button>
               </div>
@@ -366,22 +366,22 @@ export default function CalendarPage() {
                     style={{
                       display: "flex", alignItems: "center", gap: 6,
                       padding: "6px 12px", borderRadius: 50, cursor: "pointer", fontFamily: FONT,
-                      border: active ? "1.5px solid transparent" : "1.5px solid #E4E3DE",
-                      background: active ? `${meta.color}1A` : "#fff",
+                      border: active ? "1.5px solid transparent" : "1.5px solid var(--border)",
+                      background: active ? `${meta.color}1A` : "var(--surface)",
                       opacity: active ? 1 : 0.55,
                     }}
                   >
                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: active ? meta.color : "#9CA3AF" }}>{meta.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: active ? meta.color : "var(--subtle)" }}>{meta.label}</span>
                   </button>
                 );
               })}
             </div>
 
             {/* Weekday header */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", marginBottom: 6 }}>
               {WEEKDAY_HEADERS.map((w) => (
-                <div key={w} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: "#9CA3AF", padding: "4px 0" }}>{w}</div>
+                <div key={w} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: "var(--subtle)", padding: "4px 0" }}>{w}</div>
               ))}
             </div>
 
@@ -394,8 +394,8 @@ export default function CalendarPage() {
                 like clicking an event in Outlook) — the event row's onClick
                 stops propagation so it doesn't also just select the day. */}
             <div style={{
-              display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1,
-              background: "#E4E3DE", border: "1px solid #E4E3DE", borderRadius: 16,
+              display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 1,
+              background: "var(--border)", border: "1px solid var(--border)", borderRadius: 16,
               overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             }}>
               {gridDays.map((day) => {
@@ -412,16 +412,16 @@ export default function CalendarPage() {
                     style={{
                       display: "flex", flexDirection: "column", gap: 2,
                       padding: "4px 3px 5px", cursor: "pointer",
-                      background: isSelected ? "#EEF0FD" : inMonth ? "#fff" : "#FAFAF8",
-                      boxShadow: isSelected ? "inset 0 0 0 1.5px #4A5FD5" : "none",
+                      background: isSelected ? "var(--tint-accent)" : inMonth ? "var(--surface)" : "var(--surface-2)",
+                      boxShadow: isSelected ? "inset 0 0 0 1.5px var(--accent)" : "none",
                       fontFamily: FONT, minHeight: 72,
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
                       <span style={{
                         fontSize: 11.5, fontWeight: isToday ? 800 : 600,
-                        color: isToday ? "#fff" : inMonth ? "#0F172A" : "#C0C5D0",
-                        background: isToday ? "#4A5FD5" : "transparent",
+                        color: isToday ? "#fff" : inMonth ? "var(--fg)" : "var(--faint)",
+                        background: isToday ? "var(--accent-bg)" : "transparent",
                         width: 19, height: 19, borderRadius: "50%",
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}>
@@ -444,7 +444,7 @@ export default function CalendarPage() {
                         </span>
                       ))}
                       {overflow > 0 && (
-                        <span style={{ fontSize: 9, fontWeight: 700, color: "#9CA3AF", padding: "0 2px" }}>
+                        <span style={{ fontSize: 9, fontWeight: 700, color: "var(--subtle)", padding: "0 2px" }}>
                           +{overflow} more
                         </span>
                       )}
@@ -456,31 +456,31 @@ export default function CalendarPage() {
 
             {/* Selected day panel */}
             <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#7C7C8A", marginBottom: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)", marginBottom: 8 }}>
                 {selectedDate.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
               </div>
 
               {selectedEntries.length === 0 ? (
-                <div style={{ background: "#fff", border: "1px solid #E4E3DE", borderRadius: 16, padding: "24px 16px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>
+                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "24px 16px", textAlign: "center", color: "var(--subtle)", fontSize: 13 }}>
                   Nothing on this day.
                 </div>
               ) : (
-                <div style={{ background: "#fff", border: "1px solid #E4E3DE", borderRadius: 16, overflow: "hidden" }}>
+                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
                   {selectedEntries.map((e, i) => (
                     <div
                       key={`${e.kind}-${e.id}-${i}`}
                       onClick={() => openEntry(e)}
                       style={{
                         display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
-                        borderTop: i === 0 ? "none" : "1px solid #F0F3F8", cursor: "pointer",
+                        borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", cursor: "pointer",
                       }}
                     >
                       <span style={{ width: 8, height: 8, borderRadius: "50%", background: e.color, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>{e.name}</div>
-                        <div style={{ fontSize: 12, color: "#7C7C8A", marginTop: 2 }}>{e.subtitle}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{e.name}</div>
+                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{e.subtitle}</div>
                       </div>
-                      <span style={{ color: "#C0C5D0", flexShrink: 0, display: "flex" }}><IcChevRight /></span>
+                      <span style={{ color: "var(--faint)", flexShrink: 0, display: "flex" }}><IcChevRight /></span>
                     </div>
                   ))}
                 </div>
@@ -492,36 +492,36 @@ export default function CalendarPage() {
                 for the whole month, grouped by day, so browsing doesn't
                 require clicking through every day one at a time. */}
             <div style={{ marginTop: 28 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#7C7C8A", marginBottom: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)", marginBottom: 8 }}>
                 Everything this month
               </div>
               {monthEntries.length === 0 ? (
-                <div style={{ background: "#fff", border: "1px solid #E4E3DE", borderRadius: 16, padding: "24px 16px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>
+                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "24px 16px", textAlign: "center", color: "var(--subtle)", fontSize: 13 }}>
                   Nothing to show for {monthLabel}.
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {monthEntries.map(({ key, date, entries }) => (
                     <div key={key}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: isSameDay(date, today) ? "#4A5FD5" : "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: isSameDay(date, today) ? "var(--accent)" : "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
                         {date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}{isSameDay(date, today) ? " · Today" : ""}
                       </div>
-                      <div style={{ background: "#fff", border: "1px solid #E4E3DE", borderRadius: 16, overflow: "hidden" }}>
+                      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
                         {entries.map((e, i) => (
                           <div
                             key={`${e.kind}-${e.id}-${i}`}
                             onClick={() => { setSelectedDate(date); openEntry(e); }}
                             style={{
                               display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
-                              borderTop: i === 0 ? "none" : "1px solid #F0F3F8", cursor: "pointer",
+                              borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", cursor: "pointer",
                             }}
                           >
                             <span style={{ width: 8, height: 8, borderRadius: "50%", background: e.color, flexShrink: 0 }} />
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>{e.name}</div>
-                              <div style={{ fontSize: 11.5, color: "#7C7C8A", marginTop: 1 }}>{e.subtitle}</div>
+                              <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--fg)" }}>{e.name}</div>
+                              <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{e.subtitle}</div>
                             </div>
-                            <span style={{ color: "#C0C5D0", flexShrink: 0, display: "flex" }}><IcChevRight /></span>
+                            <span style={{ color: "var(--faint)", flexShrink: 0, display: "flex" }}><IcChevRight /></span>
                           </div>
                         ))}
                       </div>
@@ -540,9 +540,9 @@ export default function CalendarPage() {
         onClick={openAddWizard}
         aria-label="Add"
         style={{
-          position: "fixed", right: 20, bottom: 84, zIndex: 19,
+          position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
           width: 52, height: 52, borderRadius: "50%",
-          background: "#1C1C28", color: "#fff", border: "none", cursor: "pointer",
+          background: "var(--accent-bg)", color: "#fff", border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 14px rgba(28,28,40,0.35)",
         }}
@@ -558,15 +558,15 @@ export default function CalendarPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "100%", maxWidth: "var(--content-max-width)", background: "#fff",
+              width: "100%", maxWidth: "var(--content-max-width)", background: "var(--surface)",
               borderRadius: "20px 20px 0 0", padding: "20px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
               fontFamily: FONT,
             }}
           >
             {addStep === 1 && (
               <>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>What are you adding?</div>
-                <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 16 }}>Step 1 of 2 — type</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>What are you adding?</div>
+                <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 16 }}>Step 1 of 2 — type</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {(Object.keys(KIND_META) as (keyof typeof KIND_META)[]).map((kind) => {
                     const meta = KIND_META[kind];
@@ -576,14 +576,14 @@ export default function CalendarPage() {
                         onClick={() => chooseAddKind(kind)}
                         style={{
                           display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
-                          borderRadius: 14, border: "1.5px solid #E4E3DE", background: "#fff",
+                          borderRadius: 14, border: "1.5px solid var(--border)", background: "var(--surface)",
                           cursor: "pointer", fontFamily: FONT, textAlign: "left",
                         }}
                       >
                         <span style={{ width: 34, height: 34, borderRadius: 10, background: `${meta.color}1A`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                           {meta.emoji}
                         </span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>{meta.label.replace(/s$/, "")}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{meta.label.replace(/s$/, "")}</span>
                       </button>
                     );
                   })}
@@ -592,28 +592,28 @@ export default function CalendarPage() {
             )}
             {addStep === 2 && (
               <>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>When?</div>
-                <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 16 }}>Step 2 of 2 — date · {KIND_META[addKind].label}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>When?</div>
+                <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 16 }}>Step 2 of 2 — date · {KIND_META[addKind].label}</div>
                 <input
                   type="date"
                   value={addDate}
                   onChange={(e) => setAddDate(e.target.value)}
                   style={{
                     width: "100%", padding: "13px 14px", borderRadius: 12,
-                    border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT,
+                    border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT,
                     outline: "none", boxSizing: "border-box", marginBottom: 16,
                   }}
                 />
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     onClick={() => setAddStep(1)}
-                    style={{ padding: "13px 18px", borderRadius: 50, background: "#F0F3FA", border: "none", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: FONT }}
+                    style={{ padding: "13px 18px", borderRadius: 50, background: "var(--surface-3)", border: "none", fontSize: 13, fontWeight: 700, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}
                   >
                     Back
                   </button>
                   <button
                     onClick={confirmAddDate}
-                    style={{ flex: 1, padding: "13px 18px", borderRadius: 50, background: "#1C1C28", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
+                    style={{ flex: 1, padding: "13px 18px", borderRadius: 50, background: "var(--ink)", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
                   >
                     Continue
                   </button>
@@ -628,6 +628,6 @@ export default function CalendarPage() {
 }
 
 const navBtnStyle: React.CSSProperties = {
-  width: 32, height: 32, borderRadius: "50%", border: "1px solid #E4E3DE", background: "#fff",
-  color: "#4B5563", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+  width: 32, height: 32, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface)",
+  color: "var(--fg-2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
 };

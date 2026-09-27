@@ -4,11 +4,12 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { SwRegister } from "./sw-register";
 import { VIEW_MODE_INIT_SCRIPT } from "@/lib/viewMode";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
-  themeColor: "#1C1C28",
+  themeColor: "#F5F4F0",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -48,13 +49,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="light" suppressHydrationWarning>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         {/* Applies the saved mobile/web view preference before first paint,
             so there's no visible flash of the wrong width on load. */}
         <script dangerouslySetInnerHTML={{ __html: VIEW_MODE_INIT_SCRIPT }} />
+        {/* Same idea for light/dark — applied before first paint (lib/theme.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className={inter.className}>
         <SwRegister />

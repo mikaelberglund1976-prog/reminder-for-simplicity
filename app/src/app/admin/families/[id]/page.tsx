@@ -520,7 +520,7 @@ export default function FamilyDetailPage() {
                       height: 32,
                       borderRadius: "50%",
                       background: m.role === "OWNER" ? "#ffd080" : m.role === "CHILD" ? "#A5B4FC" : "#7BB8FF",
-                      color: "#1C1C28",
+                      color: "var(--fg)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -847,7 +847,7 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 const primaryBtn: React.CSSProperties = {
-  background: "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)",
+  background: "linear-gradient(160deg, var(--accent) 0%, var(--accent) 100%)",
   border: "none",
   color: "#fff",
   fontSize: 13,

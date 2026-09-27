@@ -120,7 +120,7 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
   }
 
   if (state === "loading") {
-    return <Shell><div style={{ color: "#7C7C8A", fontSize: 15, textAlign: "center", padding: "60px 0" }}>Loading list…</div></Shell>;
+    return <Shell><div style={{ color: "var(--muted)", fontSize: 15, textAlign: "center", padding: "60px 0" }}>Loading list…</div></Shell>;
   }
 
   if (state === "not-found") {
@@ -128,8 +128,8 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
       <Shell>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🔗</div>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: "0 0 8px" }}>This link isn&apos;t valid anymore</h1>
-          <p style={{ fontSize: 14, color: "#6B7280" }}>The family may have turned off sharing. Ask them to send you a fresh link.</p>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: "0 0 8px" }}>This link isn&apos;t valid anymore</h1>
+          <p style={{ fontSize: 14, color: "var(--muted)" }}>The family may have turned off sharing. Ask them to send you a fresh link.</p>
         </div>
       </Shell>
     );
@@ -155,47 +155,47 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
     <Shell>
       <div style={{ textAlign: "center", marginBottom: 20 }}>
         <div style={{ fontSize: 28, marginBottom: 6 }}>🛒</div>
-        <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: "0 0 4px" }}>{householdName}&apos;s shopping list</h1>
-        <p style={{ fontSize: 12.5, color: "#9CA3AF", margin: 0 }}>Shared with you — add, check off, or remove anything.</p>
+        <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: "0 0 4px" }}>{householdName}&apos;s shopping list</h1>
+        <p style={{ fontSize: 12.5, color: "var(--subtle)", margin: 0 }}>Shared with you — add, check off, or remove anything.</p>
       </div>
 
-      <form onSubmit={addItem} style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+      <form onSubmit={addItem} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
         <div style={{ display: "flex", gap: 8 }}>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Add an item…"
-            style={{ flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" }}
+            style={{ flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 12, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" }}
           />
           <input
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             placeholder="Qty"
-            style={{ width: 72, padding: "12px 10px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" }}
+            style={{ width: 72, padding: "12px 10px", borderRadius: 12, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" }}
           />
           <button
             type="submit"
             disabled={!name.trim()}
-            style={{ width: 48, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#1C1C28", color: "#fff", border: "none", borderRadius: 12, cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1 }}
+            style={{ width: 48, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--ink)", color: "#fff", border: "none", borderRadius: 12, cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1 }}
           >
             <IcPlus />
           </button>
         </div>
       </form>
 
-      <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", marginBottom: 12 }}>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", marginBottom: 12 }}>
         To buy {pending.length > 0 && `(${pending.length})`}
       </div>
 
       {pending.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "24px 0 32px", color: "#9CA3AF", fontSize: 13 }}>Nothing on the list right now.</div>
+        <div style={{ textAlign: "center", padding: "24px 0 32px", color: "var(--subtle)", fontSize: 13 }}>Nothing on the list right now.</div>
       ) : (
-        <div style={{ background: "#fff", border: "1px solid #E4E3DE", borderRadius: 18, padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 24 }}>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 24 }}>
           {groups.map((group, gi) => (
             <div key={group.key}>
               <div style={{
-                fontSize: 11, fontWeight: 800, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase",
-                padding: gi === 0 ? "10px 0 4px" : "14px 0 4px", borderTop: gi === 0 ? "none" : "1px solid #F0F3F8",
+                fontSize: 11, fontWeight: 800, color: "var(--subtle)", letterSpacing: "0.04em", textTransform: "uppercase",
+                padding: gi === 0 ? "10px 0 4px" : "14px 0 4px", borderTop: gi === 0 ? "none" : "1px solid var(--border-soft)",
                 display: "flex", alignItems: "center", gap: 6,
               }}>
                 <span>{group.icon}</span>{group.label}
@@ -210,7 +210,7 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
 
       {purchased.length > 0 && (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#2A9D6F", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "var(--success)", marginBottom: 10 }}>
             <span>✓</span> Already in the cart ({purchased.length})
           </div>
           <div style={{ background: "rgba(42,157,111,0.06)", borderRadius: 18, border: "1px solid rgba(42,157,111,0.25)", padding: "4px 16px" }}>
@@ -221,7 +221,7 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
         </>
       )}
 
-      <p style={{ textAlign: "center", fontSize: 11.5, color: "#B0B7C8", marginTop: 32 }}>
+      <p style={{ textAlign: "center", fontSize: 11.5, color: "var(--faint)", marginTop: 32 }}>
         Made with Reminder for Simplicity
       </p>
     </Shell>
@@ -230,30 +230,30 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
 
 function Row({ item, isFirst, onToggle, onRemove }: { item: Item; isFirst: boolean; onToggle: () => void; onRemove: () => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, borderTop: isFirst ? "none" : "1px solid #F0F3F8", padding: "12px 0" }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, borderTop: isFirst ? "none" : "1px solid var(--border-soft)", padding: "12px 0" }}>
       <button
         onClick={onToggle}
         aria-label={item.isPurchased ? "Mark as not bought" : "Mark as bought"}
-        style={{ width: 24, height: 24, borderRadius: "50%", flexShrink: 0, marginTop: 1, cursor: "pointer", border: item.isPurchased ? "none" : "2px solid #E4E3DE", background: item.isPurchased ? "#2A9D6F" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}
+        style={{ width: 24, height: 24, borderRadius: "50%", flexShrink: 0, marginTop: 1, cursor: "pointer", border: item.isPurchased ? "none" : "2px solid var(--border)", background: item.isPurchased ? "#2A9D6F" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}
       >
         {item.isPurchased && <svg width={14} height={14} viewBox="0 0 24 24" {...STR} stroke="#fff"><polyline points="20 6 9 17 4 12" /></svg>}
       </button>
       {item.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "#F0F3F8" }} />
+        <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--surface-3)" }} />
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: item.isPurchased ? "#9CA3AF" : "#0F172A", textDecoration: item.isPurchased ? "line-through" : "none" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: item.isPurchased ? "var(--subtle)" : "var(--fg)", textDecoration: item.isPurchased ? "line-through" : "none" }}>
           {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
         </div>
-        {item.note && <div style={{ fontSize: 11.5, color: "#9CA3AF", marginTop: 2 }}>{item.note}</div>}
+        {item.note && <div style={{ fontSize: 11.5, color: "var(--subtle)", marginTop: 2 }}>{item.note}</div>}
       </div>
       {item.url && (
-        <a href={item.url} target="_blank" rel="noreferrer" aria-label="Open link" style={{ color: "#4A5FD5", padding: 6, flexShrink: 0, display: "flex" }}>
+        <a href={item.url} target="_blank" rel="noreferrer" aria-label="Open link" style={{ color: "var(--accent)", padding: 6, flexShrink: 0, display: "flex" }}>
           <IcLink />
         </a>
       )}
-      <button onClick={onRemove} aria-label="Remove item" style={{ background: "none", border: "none", cursor: "pointer", color: "#C0C5D0", padding: 6, flexShrink: 0 }}>
+      <button onClick={onRemove} aria-label="Remove item" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--faint)", padding: 6, flexShrink: 0 }}>
         <IcTrash />
       </button>
     </div>
@@ -262,7 +262,7 @@ function Row({ item, isFirst, onToggle, onRemove }: { item: Item; isFirst: boole
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "32px 20px 60px" }}>{children}</div>
     </div>
   );

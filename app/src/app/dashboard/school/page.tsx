@@ -143,8 +143,8 @@ function SchoolPageInner() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Loading school…</div>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading school…</div>
       </div>
     );
   }
@@ -154,11 +154,11 @@ function SchoolPageInner() {
       <Screen onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Set up your household first</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Set up your household first</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>
             School needs a household to belong to.
           </p>
-          <Link href="/dashboard/family" style={{ display: "inline-flex", background: "#1C1C28", color: "#fff", borderRadius: 50, padding: "14px 28px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+          <Link href="/dashboard/family" style={{ display: "inline-flex", background: "var(--ink)", color: "#fff", borderRadius: 50, padding: "14px 28px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
             Go to Family →
           </Link>
         </div>
@@ -170,9 +170,9 @@ function SchoolPageInner() {
     return (
       <Screen onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
-          <div style={{ color: "#CBD5E1", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Trial period ended</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6 }}>Upgrade to Pro to keep using School.</p>
+          <div style={{ color: "var(--faint)", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Trial period ended</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6 }}>Upgrade to Pro to keep using School.</p>
         </div>
       </Screen>
     );
@@ -192,7 +192,7 @@ function SchoolPageInner() {
   return (
     <Screen onBack={() => router.push("/dashboard")}>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
           Upcoming tests and homework for the whole family — synced to the calendar automatically. Anyone can add their own, and children can add theirs from their child view.
         </div>
       </div>
@@ -202,7 +202,7 @@ function SchoolPageInner() {
           onClick={() => { setShowAdd(true); setAddError(null); }}
           style={{
             width: "100%", padding: "14px 16px", borderRadius: 14, marginBottom: 20,
-            background: "#3730A3", border: "none", color: "#fff",
+            background: "var(--school-bg)", border: "none", color: "#fff",
             fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}
@@ -212,10 +212,10 @@ function SchoolPageInner() {
         </button>
       ) : (
         <form onSubmit={handleAdd} style={{
-          background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE",
+          background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)",
           padding: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.04)", marginBottom: 20,
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1C28", marginBottom: 10 }}>New school item</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>New school item</div>
 
           {children.length > 1 && (
             <select
@@ -224,8 +224,8 @@ function SchoolPageInner() {
               disabled={adding}
               style={{
                 width: "100%", padding: "12px 14px", borderRadius: 12,
-                background: "#F5F4F0", border: "1.5px solid #E4E3DE",
-                fontSize: 14, color: "#1C1C28", outline: "none",
+                background: "var(--background)", border: "1.5px solid var(--border)",
+                fontSize: 14, color: "var(--fg)", outline: "none",
                 fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
               }}
             >
@@ -242,8 +242,8 @@ function SchoolPageInner() {
             autoFocus
             style={{
               width: "100%", padding: "12px 14px", borderRadius: 12,
-              background: "#F5F4F0", border: "1.5px solid #E4E3DE",
-              fontSize: 14, color: "#1C1C28", outline: "none",
+              background: "var(--background)", border: "1.5px solid var(--border)",
+              fontSize: 14, color: "var(--fg)", outline: "none",
               fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
             }}
           />
@@ -254,8 +254,8 @@ function SchoolPageInner() {
             disabled={adding}
             style={{
               width: "100%", padding: "12px 14px", borderRadius: 12,
-              background: "#F5F4F0", border: "1.5px solid #E4E3DE",
-              fontSize: 14, color: "#1C1C28", outline: "none",
+              background: "var(--background)", border: "1.5px solid var(--border)",
+              fontSize: 14, color: "var(--fg)", outline: "none",
               fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
             }}
           />
@@ -267,12 +267,12 @@ function SchoolPageInner() {
             disabled={adding}
             style={{
               width: "100%", padding: "12px 14px", borderRadius: 12,
-              background: "#F5F4F0", border: "1.5px solid #E4E3DE",
-              fontSize: 14, color: "#1C1C28", outline: "none",
+              background: "var(--background)", border: "1.5px solid var(--border)",
+              fontSize: 14, color: "var(--fg)", outline: "none",
               fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
             }}
           />
-          {addError && <div style={{ fontSize: 12, color: "#D94F4F", marginBottom: 10 }}>{addError}</div>}
+          {addError && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{addError}</div>}
           <div style={{ display: "flex", gap: 8 }}>
             <button
               type="button"
@@ -280,8 +280,8 @@ function SchoolPageInner() {
               disabled={adding}
               style={{
                 flex: 1, padding: "12px 14px", borderRadius: 12,
-                background: "#F5F4F0", border: "1.5px solid #E4E3DE",
-                color: "#4B5563", fontSize: 14, fontWeight: 700,
+                background: "var(--background)", border: "1.5px solid var(--border)",
+                color: "var(--fg-2)", fontSize: 14, fontWeight: 700,
                 cursor: adding ? "not-allowed" : "pointer", fontFamily: FONT,
               }}
             >
@@ -292,7 +292,7 @@ function SchoolPageInner() {
               disabled={adding || !newName.trim() || !newChild}
               style={{
                 flex: 1, padding: "12px 14px", borderRadius: 12,
-                background: !newName.trim() || adding ? "#B3ACDD" : "#3730A3",
+                background: !newName.trim() || adding ? "var(--faint)" : "var(--school-bg)",
                 border: "none", color: "#fff", fontSize: 14, fontWeight: 700,
                 cursor: adding || !newName.trim() ? "not-allowed" : "pointer",
                 fontFamily: FONT,
@@ -305,7 +305,7 @@ function SchoolPageInner() {
       )}
 
       {children.length === 0 && (
-        <div style={{ textAlign: "center", padding: "20px 0", color: "#9CA3AF", fontSize: 13 }}>
+        <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
           Add someone in Family before creating school items.
         </div>
       )}
@@ -314,28 +314,28 @@ function SchoolPageInner() {
         const list = byChild.get(child.id) ?? [];
         return (
           <div key={child.id} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
               {child.name} · {list.length}
             </div>
             {list.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#9CA3AF", padding: "8px 2px" }}>Nothing logged yet.</div>
+              <div style={{ fontSize: 13, color: "var(--subtle)", padding: "8px 2px" }}>Nothing logged yet.</div>
             ) : (
-              <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+              <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
                 {list.map((item, i) => (
                   <div key={item.id} style={{
                     display: "flex", alignItems: "center", gap: 14, padding: "14px 18px",
-                    borderTop: i === 0 ? "none" : "1px solid #F0F3F8",
+                    borderTop: i === 0 ? "none" : "1px solid var(--border-soft)",
                   }}>
                     <div style={{
-                      width: 36, height: 36, borderRadius: 10, background: "#EEF0FC",
-                      color: "#3730A3", display: "flex", alignItems: "center", justifyContent: "center",
+                      width: 36, height: 36, borderRadius: 10, background: "var(--tint-accent)",
+                      color: "var(--school)", display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 15, fontWeight: 800, flexShrink: 0,
                     }}>
                       {new Date(item.date).getDate()}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#0F172A", lineHeight: 1.3 }}>{item.name}</div>
-                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", lineHeight: 1.3 }}>{item.name}</div>
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
                         {new Date(item.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
                         {item.note ? ` · ${item.note}` : ""}
                       </div>
@@ -344,7 +344,7 @@ function SchoolPageInner() {
                       onClick={() => handleDelete(item.id)}
                       disabled={deletingId === item.id}
                       style={{
-                        background: "none", border: "none", color: "#C0C5D0", fontSize: 18,
+                        background: "none", border: "none", color: "var(--faint)", fontSize: 18,
                         cursor: deletingId === item.id ? "wait" : "pointer", padding: 6, lineHeight: 1,
                       }}
                       aria-label="Remove"
@@ -364,13 +364,13 @@ function SchoolPageInner() {
 
 function Screen({ onBack, children }: { onBack: () => void; children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
-      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
+      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
+          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0, flex: 1 }}>📚 School</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>📚 School</h1>
           <HamburgerMenu />
         </div>
       </div>

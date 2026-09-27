@@ -165,3 +165,21 @@ Mikael at Reminder for Simplicity
 ---
 
 *Uppdatera brand guide när varumärket utvecklas. Alla i projektet (inklusive Claude) ska följa denna guide.*
+
+---
+
+## 6. Mörkt läge (tillagt 2026-09-27, se `UI_REVIEW_2026-09-27.md`)
+
+Tre val per enhet: Auto (följer telefonen, standard) / Light / Dark. Alla färger går via variabler i `app/src/app/globals.css` – använd `var(--surface)`, `var(--fg)`, `var(--accent)` osv., aldrig hårdkodade hex-färger i nya sidor.
+
+```
+Mörk palett:
+Bakgrund:      #0E1220  (djup marinblå)
+Yta/kort:      #171C2B
+Text:          #EEF0F7
+Dämpad text:   #9AA1B5
+Kant/border:   #283047
+Accent (text): #8E9CFF  (ljusare indigo – samma varumärke)
+Accent (knapp):#5468E0  (vit text ovanpå)
+Framgång:      #4FD69C · Varning: #F5B056 · Fel: #FF7B7B
+```

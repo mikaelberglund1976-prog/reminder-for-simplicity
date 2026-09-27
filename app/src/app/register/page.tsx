@@ -8,8 +8,8 @@ import { signIn } from "next-auth/react";
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", background: "#fff", border: "1.5px solid #E4E3DE",
-  borderRadius: 14, padding: "13px 16px", fontSize: 15, color: "#1C1C28",
+  width: "100%", background: "var(--surface)", border: "1.5px solid var(--border)",
+  borderRadius: 14, padding: "13px 16px", fontSize: 15, color: "var(--fg)",
   outline: "none", fontFamily: FONT, boxSizing: "border-box",
   boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
 };
@@ -72,19 +72,19 @@ export default function RegisterPage() {
 
   if (pending) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
+      <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
         <div style={{ maxWidth: 400, width: "100%", margin: "0 auto", textAlign: "center" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1C1C28", margin: "0 0 12px", letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--fg)", margin: "0 0 12px", letterSpacing: "-0.5px" }}>
             Account created — pending approval
           </h1>
-          <p style={{ fontSize: 15, color: "#7C7C8A", margin: "0 0 28px", lineHeight: 1.6 }}>
+          <p style={{ fontSize: 15, color: "var(--muted)", margin: "0 0 28px", lineHeight: 1.6 }}>
             We're in a testing phase, so every new account needs a quick admin approval before it can log in. You'll get an email at <strong>{form.email}</strong> as soon as you're approved.
           </p>
           <Link href="/" style={{
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             padding: "14px 28px", borderRadius: 50,
-            background: "#1C1C28", color: "#fff",
+            background: "var(--ink)", color: "#fff",
             fontSize: 15, fontWeight: 600, textDecoration: "none",
           }}>
             Back to home
@@ -95,19 +95,19 @@ export default function RegisterPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
       <div style={{ maxWidth: 400, width: "100%", margin: "0 auto" }}>
 
         {/* Logo */}
         <div style={{ marginBottom: 32 }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", marginBottom: 28 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: "#1C1C28", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔔</div>
-            <span style={{ fontWeight: 700, fontSize: 16, color: "#1C1C28" }}>Reminder for Simplicity</span>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔔</div>
+            <span style={{ fontWeight: 700, fontSize: 16, color: "var(--fg)" }}>Reminder for Simplicity</span>
           </Link>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#1C1C28", margin: 0, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
             Create your account
           </h1>
-          <p style={{ fontSize: 14, color: "#7C7C8A", margin: "6px 0 0" }}>Free. Takes 30 seconds.</p>
+          <p style={{ fontSize: 14, color: "var(--muted)", margin: "6px 0 0" }}>Free. Takes 30 seconds.</p>
         </div>
 
         {/* Google */}
@@ -117,8 +117,8 @@ export default function RegisterPage() {
           disabled={googleLoading}
           style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
-            background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 50,
-            padding: "14px 20px", fontSize: 15, fontWeight: 600, color: "#1C1C28",
+            background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 50,
+            padding: "14px 20px", fontSize: 15, fontWeight: 600, color: "var(--fg)",
             cursor: googleLoading ? "not-allowed" : "pointer",
             opacity: googleLoading ? 0.7 : 1, boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
             fontFamily: FONT, marginBottom: 20, boxSizing: "border-box",
@@ -135,24 +135,24 @@ export default function RegisterPage() {
 
         {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: "#E4E3DE" }} />
-          <span style={{ fontSize: 13, color: "#ACA9A3", fontWeight: 500 }}>or sign up with email</span>
-          <div style={{ flex: 1, height: 1, background: "#E4E3DE" }} />
+          <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+          <span style={{ fontSize: 13, color: "var(--subtle)", fontWeight: 500 }}>or sign up with email</span>
+          <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
           {error && (
-            <div style={{ background: "#FFF0F0", border: "1px solid #F5CCCC", color: "#D94F4F", borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 20 }}>
+            <div style={{ background: "var(--tint-danger)", border: "1px solid var(--border-danger)", color: "var(--danger)", borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 20 }}>
               {error}
             </div>
           )}
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1C28", marginBottom: 8 }}>Full name</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>Full name</div>
             <input
               type="text"
-              placeholder="Mikael Berglund"
+              placeholder="e.g. Anna Andersson"
               value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
               required
@@ -162,7 +162,7 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1C28", marginBottom: 8 }}>Email</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>Email</div>
             <input
               type="email"
               placeholder="you@example.com"
@@ -174,7 +174,7 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1C28", marginBottom: 8 }}>Password</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>Password</div>
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
@@ -188,7 +188,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
-                style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#7C7C8A", padding: 0, display: "flex" }}
+                style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 0, display: "flex" }}
               >
                 {showPassword ? (
                   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -210,7 +210,7 @@ export default function RegisterPage() {
             disabled={loading}
             style={{
               width: "100%", padding: "17px", borderRadius: 50,
-              background: "#1C1C28", border: "none",
+              background: "var(--ink)", border: "none",
               fontSize: 16, fontWeight: 600, color: "#fff",
               cursor: loading ? "not-allowed" : "pointer",
               fontFamily: FONT, opacity: loading ? 0.7 : 1,
@@ -222,16 +222,16 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: "center", fontSize: 14, color: "#7C7C8A", marginTop: 24 }}>
+        <p style={{ textAlign: "center", fontSize: 14, color: "var(--muted)", marginTop: 24 }}>
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "#4A5FD5", fontWeight: 600, textDecoration: "none" }}>
+          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
             Log in
           </Link>
         </p>
 
-        <p style={{ textAlign: "center", fontSize: 12, color: "#ACA9A3", marginTop: 12 }}>
+        <p style={{ textAlign: "center", fontSize: 12, color: "var(--subtle)", marginTop: 12 }}>
           By creating an account you agree to our{" "}
-          <Link href="/privacy" style={{ color: "#ACA9A3", textDecoration: "underline" }}>
+          <Link href="/privacy" style={{ color: "var(--subtle)", textDecoration: "underline" }}>
             Privacy Policy
           </Link>
           .

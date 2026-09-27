@@ -72,8 +72,8 @@ export default function WishlistPage() {
 
   if (authStatus === "loading" || access === "LOADING") {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A", fontSize: 15 }}>Loading wishlist…</div>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading wishlist…</div>
       </div>
     );
   }
@@ -83,9 +83,9 @@ export default function WishlistPage() {
       <Screen title="Wishlist" onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Set up your household first</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>Wishlists live inside a household. Invite your family to get started.</p>
-          <Link href="/profile" style={btnStyle("#1C1C28")}>Go to settings →</Link>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Set up your household first</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>Wishlists live inside a household. Invite your family to get started.</p>
+          <Link href="/profile" style={btnStyle("var(--ink)")}>Go to settings →</Link>
         </div>
       </Screen>
     );
@@ -95,17 +95,22 @@ export default function WishlistPage() {
     return (
       <Screen title="Wishlist" onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
-          <div style={{ color: "#CBD5E1", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Family features required</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>Wishlists are part of family responsibilities — start your free trial or upgrade to Pro to use them.</p>
-          <Link href="/dashboard/family" style={btnStyle("#1C1C28")}>Go to Family →</Link>
+          <div style={{ color: "var(--faint)", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Family features required</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>Wishlists are part of family responsibilities — start your free trial or upgrade to Pro to use them.</p>
+          <Link href="/dashboard/family" style={btnStyle("var(--ink)")}>Go to Family →</Link>
         </div>
       </Screen>
     );
   }
 
   if (role === "CHILD") {
-    return <ChildWishlist lists={lists} canEditAccess={canEditAccess} onChange={fetchLists} />;
+    // 2026-09-27 UI review: a child's "My wishlist" only shows lists they own
+    // or made. Before, every family member's default list ("Wishlist",
+    // "Wishlist", "Wishlist"…) showed up as tabs, and a child could add
+    // wishes to a parent's list by mistake.
+    const own = lists.filter((l) => l.ownerId === myId || (!l.ownerId && l.isMine));
+    return <ChildWishlist lists={own.length ? own : lists} canEditAccess={canEditAccess} onChange={fetchLists} />;
   }
 
   // Non-child roles get both: their own self-service wishlist ("mine", same
@@ -129,9 +134,9 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
     <button onClick={onClick} style={{
       flex: 1, padding: "9px 0", borderRadius: 999, fontFamily: FONT,
       fontSize: 13, fontWeight: 700, cursor: "pointer",
-      border: active ? "none" : "1.5px solid #E4E3DE",
-      background: active ? "#1C1C28" : "#fff",
-      color: active ? "#fff" : "#4B5563",
+      border: active ? "none" : "1.5px solid var(--border)",
+      background: active ? "var(--ink)" : "var(--surface)",
+      color: active ? "#fff" : "var(--fg-2)",
     }}>
       {children}
     </button>
@@ -248,14 +253,14 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
           {lists.map((l) => (
             <button key={l.id} onClick={() => setActiveListId(l.id)} style={{
               flexShrink: 0, whiteSpace: "nowrap", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
-              border: l.id === activeListId ? "none" : "1px solid #E4E3DE",
-              background: l.id === activeListId ? "#1C1C28" : "#fff",
-              color: l.id === activeListId ? "#fff" : "#4B5563",
+              border: l.id === activeListId ? "none" : "1px solid var(--border)",
+              background: l.id === activeListId ? "var(--ink)" : "var(--surface)",
+              color: l.id === activeListId ? "#fff" : "var(--fg-2)",
             }}>
               {l.name}
             </button>
           ))}
-          <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed #C7CDF5", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "#4A5FD5", cursor: "pointer", fontFamily: FONT }}>
+          <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed var(--accent-border)", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
             + New list
           </button>
         </div>
@@ -263,14 +268,14 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
 
       {showNewList && (
         <form onSubmit={createList} style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="e.g. Birthday, Christmas…" style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid #E4E3DE", borderRadius: 10, padding: "9px 12px", outline: "none" }} />
-          <button type="submit" disabled={!newListName.trim()} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "#1C1C28", border: "none", borderRadius: 10, padding: "0 16px", cursor: !newListName.trim() ? "not-allowed" : "pointer", opacity: !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
+          <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="e.g. Birthday, Christmas…" style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 12px", outline: "none" }} />
+          <button type="submit" disabled={!newListName.trim()} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "var(--ink)", border: "none", borderRadius: 10, padding: "0 16px", cursor: !newListName.trim() ? "not-allowed" : "pointer", opacity: !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
             Create
           </button>
         </form>
       )}
 
-      <button onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetch("/api/family/members").then((r) => r.json()).then((d) => setMembers(d.members ?? [])); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#4A5FD5", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}>
+      <button onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetch("/api/family/members").then((r) => r.json()).then((d) => setMembers(d.members ?? [])); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}>
         <IcSettings /> {activeList?.visibleToAll ? "Everyone can see this list" : "Only some people can see this list"}
       </button>
 
@@ -291,11 +296,11 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
         />
       )}
 
-      <form onSubmit={addWish} style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+      <form onSubmit={addWish} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
         <input value={name} onChange={e => setName(e.target.value)} placeholder="Something you'd like…" style={inputStyle()} />
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" style={{ ...inputStyle(), width: 90 }} />
-          <button type="button" onClick={() => setShowDetails((v) => !v)} style={{ flex: 1, background: "none", border: "1.5px solid #E4E3DE", borderRadius: 12, color: "#4A5FD5", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+          <button type="button" onClick={() => setShowDetails((v) => !v)} style={{ flex: 1, background: "none", border: "1.5px solid var(--border)", borderRadius: 12, color: "var(--accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
             {showDetails ? "Hide link & note" : "+ Link, picture or note"}
           </button>
         </div>
@@ -306,40 +311,40 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" style={inputStyle()} />
           </div>
         )}
-        {error && <div style={{ fontSize: 13, color: "#C44444", marginTop: 10 }}>{error}</div>}
+        {error && <div style={{ fontSize: 13, color: "var(--danger)", marginTop: 10 }}>{error}</div>}
         <button
           type="submit" disabled={!name.trim() || !activeListId}
-          style={{ marginTop: 12, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#1C1C28", color: "#fff", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1, fontFamily: FONT }}
+          style={{ marginTop: 12, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1, fontFamily: FONT }}
         >
           <IcPlus /> Add to my wishlist
         </button>
       </form>
 
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 10, letterSpacing: "0.02em" }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 10, letterSpacing: "0.02em" }}>
         Your wishes {items.length > 0 && `(${items.length})`}
       </div>
 
       {items.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "#9CA3AF", fontSize: 13 }}>
+        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 13 }}>
           Nothing here yet — add something you'd like above.
         </div>
       ) : (
-        <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
           {items.map((item, i) => (
-            <div key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, borderTop: i === 0 ? "none" : "1px solid #F0F3F8", padding: "12px 0" }}>
+            <div key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", padding: "12px 0" }}>
               {item.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "#F0F3F8" }} />
+                <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--surface-3)" }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{item.name}</div>
-                {item.note && <div style={{ fontSize: 11.5, color: "#9CA3AF", marginTop: 2 }}>{item.note}</div>}
-                <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 2 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{item.name}</div>
+                {item.note && <div style={{ fontSize: 11.5, color: "var(--subtle)", marginTop: 2 }}>{item.note}</div>}
+                <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 2 }}>
                   {item.price != null ? `${item.price} ${item.currency ?? "SEK"}` : ""}
                   {item.url ? (item.price != null ? " · " : "") + "has a link" : ""}
                 </div>
               </div>
-              <button onClick={() => removeWish(item.id)} aria-label="Remove wish" style={{ background: "none", border: "none", cursor: "pointer", color: "#C0C5D0", padding: 6, flexShrink: 0 }}>
+              <button onClick={() => removeWish(item.id)} aria-label="Remove wish" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--faint)", padding: 6, flexShrink: 0 }}>
                 <IcTrash />
               </button>
             </div>
@@ -354,9 +359,9 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
 
 const STATUS_LABEL: Record<AdultItem["status"], string> = { WANTED: "Wanted", RESERVED: "Reserved", PURCHASED: "Bought" };
 const STATUS_COLOR: Record<AdultItem["status"], { bg: string; color: string }> = {
-  WANTED: { bg: "#EDEBFB", color: "#5B4FCF" },
-  RESERVED: { bg: "#FFF0E0", color: "#C06010" },
-  PURCHASED: { bg: "#D4F4E6", color: "#1E7D52" },
+  WANTED: { bg: "var(--tint-accent)", color: "var(--violet)" },
+  RESERVED: { bg: "var(--tint-warning)", color: "var(--warning)" },
+  PURCHASED: { bg: "var(--tint-success)", color: "var(--success)" },
 };
 
 function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists: ListInfo[]; canEditAccess: boolean; onChange: () => void; tabBar?: React.ReactNode; myId?: string }) {
@@ -465,10 +470,10 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
       <Screen title="Wishlists" onBack={() => router.push("/dashboard")}>
         {tabBar}
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
-          <div style={{ marginBottom: 16, display: "flex", justifyContent: "center", color: "#CBD5E1" }}><IcGift /></div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>No one else yet</h2>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, marginBottom: 28 }}>Invite a family member or add a child profile from Family settings — everyone gets their own wishlist automatically.</p>
-          <Link href="/dashboard/family" style={btnStyle("#1C1C28")}>Go to Family →</Link>
+          <div style={{ marginBottom: 16, display: "flex", justifyContent: "center", color: "var(--faint)" }}><IcGift /></div>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>No one else yet</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>Invite a family member or add a child profile from Family settings — everyone gets their own wishlist automatically.</p>
+          <Link href="/dashboard/family" style={btnStyle("var(--ink)")}>Go to Family →</Link>
         </div>
       </Screen>
     );
@@ -484,9 +489,9 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
               key={childId} onClick={() => setActiveChild(childId)}
               style={{
                 flexShrink: 0, padding: "8px 16px", borderRadius: 50, fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
-                border: childId === activeChild ? "none" : "1px solid #E4E3DE",
-                background: childId === activeChild ? "#1C1C28" : "#fff",
-                color: childId === activeChild ? "#fff" : "#4B5563",
+                border: childId === activeChild ? "none" : "1px solid var(--border)",
+                background: childId === activeChild ? "var(--ink)" : "var(--surface)",
+                color: childId === activeChild ? "#fff" : "var(--fg-2)",
               }}
             >
               {childName}
@@ -500,15 +505,15 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
           {childLists.map((l) => (
             <button key={l.id} onClick={() => setActiveListId(l.id)} style={{
               flexShrink: 0, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 12px", fontSize: 12.5, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
-              border: l.id === activeListId ? "1.5px solid #4A5FD5" : "1px solid #E4E3DE",
-              background: l.id === activeListId ? "#EEF0FC" : "#fff",
-              color: l.id === activeListId ? "#3A4FC5" : "#6B7280",
+              border: l.id === activeListId ? "1.5px solid var(--accent)" : "1px solid var(--border)",
+              background: l.id === activeListId ? "var(--tint-accent)" : "var(--surface)",
+              color: l.id === activeListId ? "var(--accent-strong)" : "var(--muted)",
             }}>
-              {l.name}
+              {listLabel(l, myId)}
             </button>
           ))}
           {canEditAccess && (
-            <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed #C7CDF5", borderRadius: 999, padding: "6px 12px", fontSize: 12.5, fontWeight: 700, color: "#4A5FD5", cursor: "pointer", fontFamily: FONT }}>
+            <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed var(--accent-border)", borderRadius: 999, padding: "6px 12px", fontSize: 12.5, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
               + New list
             </button>
           )}
@@ -517,17 +522,17 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
 
       {showNewList && (
         <form onSubmit={createList} style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="e.g. Birthday, Christmas…" style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid #E4E3DE", borderRadius: 10, padding: "9px 12px", outline: "none" }} />
-          <button type="submit" disabled={!newListName.trim() || creatingList} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "#1C1C28", border: "none", borderRadius: 10, padding: "0 16px", cursor: !newListName.trim() ? "not-allowed" : "pointer", opacity: !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
+          <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="e.g. Birthday, Christmas…" style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 12px", outline: "none" }} />
+          <button type="submit" disabled={!newListName.trim() || creatingList} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "var(--ink)", border: "none", borderRadius: 10, padding: "0 16px", cursor: !newListName.trim() ? "not-allowed" : "pointer", opacity: !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
             {creatingList ? "…" : "Create"}
           </button>
         </form>
       )}
       {newListError && (
-        <div style={{ fontSize: 13, color: "#C44444", marginBottom: 14 }}>{newListError}</div>
+        <div style={{ fontSize: 13, color: "var(--danger)", marginBottom: 14 }}>{newListError}</div>
       )}
 
-      <button onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetch("/api/family/members").then((r) => r.json()).then((d) => setMembers(d.members ?? [])); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#4A5FD5", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}>
+      <button onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetch("/api/family/members").then((r) => r.json()).then((d) => setMembers(d.members ?? [])); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}>
         <IcSettings /> {activeList?.visibleToAll ? "Everyone can see this list" : "Only some people can see this list"}
       </button>
 
@@ -548,36 +553,36 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
         />
       )}
 
-      <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 14, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 14, lineHeight: 1.5 }}>
         Only adults see this — they never see reserved or bought status on their own list.
       </div>
 
       {items.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "#9CA3AF", fontSize: 13 }}>
+        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 13 }}>
           Nothing on this wishlist yet.
         </div>
       ) : (
-        <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E4E3DE", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
           {items.map((item, i) => {
             const badge = STATUS_COLOR[item.status];
             return (
-              <div key={item.id} style={{ borderTop: i === 0 ? "none" : "1px solid #F0F3F8", padding: "14px 0" }}>
+              <div key={item.id} style={{ borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", padding: "14px 0" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                   {item.imageUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "#F0F3F8" }} />
+                    <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--surface-3)" }} />
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{item.name}</div>
-                    {item.note && <div style={{ fontSize: 11.5, color: "#9CA3AF", marginTop: 2 }}>{item.note}</div>}
-                    <div style={{ fontSize: 11, color: "#B0B7C8", marginTop: 2 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{item.name}</div>
+                    {item.note && <div style={{ fontSize: 11.5, color: "var(--subtle)", marginTop: 2 }}>{item.note}</div>}
+                    <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 2 }}>
                       {item.price != null ? `${item.price} ${item.currency ?? "SEK"}` : ""}
                       {item.url ? (
-                        <> {item.price != null && "· "}<a href={item.url} target="_blank" rel="noreferrer" style={{ color: "#4A5FD5" }}>view link</a></>
+                        <> {item.price != null && "· "}<a href={item.url} target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>view link</a></>
                       ) : ""}
                     </div>
                     {item.status !== "WANTED" && (
-                      <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: "var(--subtle)", marginTop: 2 }}>
                         {item.status === "RESERVED" && `Reserved by ${item.reserver?.name ?? "someone"}`}
                         {item.status === "PURCHASED" && `Bought by ${item.purchaser?.name ?? "someone"}`}
                       </div>
@@ -613,9 +618,9 @@ function StatusBtn({ label, busy, onClick, subtle }: { label: string; busy: bool
       onClick={onClick} disabled={busy}
       style={{
         fontSize: 12, fontWeight: 700, fontFamily: FONT, padding: "6px 12px", borderRadius: 50, cursor: busy ? "not-allowed" : "pointer",
-        border: subtle ? "1px solid #E4E3DE" : "none",
-        background: subtle ? "#fff" : "#1C1C28",
-        color: subtle ? "#6B7280" : "#fff",
+        border: subtle ? "1px solid var(--border)" : "none",
+        background: subtle ? "var(--surface)" : "var(--ink)",
+        color: subtle ? "var(--muted)" : "#fff",
         opacity: busy ? 0.6 : 1,
       }}
     >
@@ -624,8 +629,16 @@ function StatusBtn({ label, busy, onClick, subtle }: { label: string; busy: bool
   );
 }
 
+// Default lists are all called "Wishlist" — show whose it is instead.
+function listLabel(l: ListInfo, myId?: string) {
+  if (l.ownerId && l.ownerId !== myId && l.name.trim().toLowerCase() === "wishlist") {
+    return `${(l.ownerName ?? "Family member").split(" ")[0]}'s wishlist`;
+  }
+  return l.name;
+}
+
 function inputStyle(): React.CSSProperties {
-  return { width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid #E4E3DE", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const };
+  return { width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const };
 }
 
 function btnStyle(bg: string): React.CSSProperties {
@@ -634,13 +647,13 @@ function btnStyle(bg: string): React.CSSProperties {
 
 function Screen({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
-      <div style={{ background: "#fff", borderBottom: "1px solid #E4E3DE", position: "sticky", top: 0, zIndex: 10 }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
+      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "#4B5563", display: "flex", padding: 4 }}>
+          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", margin: 0, flex: 1 }}>{title}</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>{title}</h1>
           <HamburgerMenu />
         </div>
       </div>

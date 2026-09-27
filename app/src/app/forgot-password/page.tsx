@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#F5F4F0",
+      minHeight: "100vh", background: "var(--background)",
       fontFamily: FONT, display: "flex", flexDirection: "column",
       position: "relative", overflow: "hidden",
     }}>
@@ -44,17 +44,17 @@ export default function ForgotPasswordPage() {
       <main style={{ flex: 1, maxWidth: "var(--content-max-width)", width: "100%", margin: "0 auto", padding: "60px 28px 0" }}>
 
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1C1C28", margin: 0, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
             Reset your password
           </h1>
-          <p style={{ fontSize: 15, color: "#4B5563", margin: "8px 0 0" }}>
+          <p style={{ fontSize: 15, color: "var(--fg-2)", margin: "8px 0 0" }}>
             Enter your email and we'll send you a reset link.
           </p>
         </div>
 
         {error && (
           <div style={{
-            background: "#FFF0F0", border: "1px solid #F5CCCC", color: "#D94F4F",
+            background: "var(--tint-danger)", border: "1px solid var(--border-danger)", color: "var(--danger)",
             borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 20,
           }}>
             {error}
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
 
         {sent ? (
           <div style={{
-            background: "#D4F4E6", border: "1px solid #A8E6C6", color: "#1E7D52",
+            background: "var(--tint-success)", border: "1px solid var(--tint-success)", color: "var(--success)",
             borderRadius: 12, padding: "16px", fontSize: 14, lineHeight: 1.6,
           }}>
             If an account exists for <strong>{email}</strong>, we've sent a password reset link. Check your inbox.
@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1C1C28", marginBottom: 10 }}>Email</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>Email</div>
               <input
                 type="email"
                 placeholder="Email"
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               style={{
                 width: "100%", padding: "17px", borderRadius: 50,
-                background: loading ? "#7C7C8A" : "#1C1C28", border: "none",
+                background: loading ? "#7C7C8A" : "var(--ink)", border: "none",
                 fontSize: 16, fontWeight: 700,
                 color: "#fff",
                 cursor: loading ? "not-allowed" : "pointer",
@@ -100,8 +100,8 @@ export default function ForgotPasswordPage() {
           </form>
         )}
 
-        <p style={{ textAlign: "center", fontSize: 14, color: "#4B5563", marginTop: 24 }}>
-          <Link href="/login" style={{ color: "#2563EB", fontWeight: 600, textDecoration: "none" }}>
+        <p style={{ textAlign: "center", fontSize: 14, color: "var(--fg-2)", marginTop: 24 }}>
+          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
             Back to log in
           </Link>
         </p>
@@ -122,12 +122,12 @@ export default function ForgotPasswordPage() {
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  background: "#fff",
-  border: "1.5px solid #E4E3DE",
+  background: "var(--surface)",
+  border: "1.5px solid var(--border)",
   borderRadius: 14,
   padding: "14px 16px",
   fontSize: 15,
-  color: "#1C1C28",
+  color: "var(--fg)",
   outline: "none",
   fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
   boxSizing: "border-box" as const,

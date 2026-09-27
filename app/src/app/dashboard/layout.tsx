@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Extra bottom space so the fixed nav never permanently covers the
           last bit of any page's content, regardless of that page's own
           padding (pages were written before the nav existed). */}
-      <div style={{ paddingBottom: 70 }}>{children}</div>
+      <div style={{ paddingBottom: 96 }}>{children}</div>
       <BottomNav />
     </>
   );

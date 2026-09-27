@@ -117,12 +117,12 @@ export default function PhoneInput({ value, onChange, onValidChange, placeholder
             style={{
               appearance: "none",
               WebkitAppearance: "none",
-              background: "#F5F4F0",
-              border: "1.5px solid #E4E3DE",
+              background: "var(--background)",
+              border: "1.5px solid var(--border)",
               borderRadius: 12,
               padding: "12px 28px 12px 12px",
               fontSize: 14,
-              color: "#1C1C28",
+              color: "var(--fg)",
               outline: "none",
               fontFamily: FONT,
               cursor: disabled ? "not-allowed" : "pointer",
@@ -142,7 +142,7 @@ export default function PhoneInput({ value, onChange, onValidChange, placeholder
               top: "50%",
               transform: "translateY(-50%)",
               pointerEvents: "none",
-              color: "#7C7C8A",
+              color: "var(--muted)",
               fontSize: 10,
             }}
           >
@@ -159,12 +159,14 @@ export default function PhoneInput({ value, onChange, onValidChange, placeholder
           disabled={disabled}
           style={{
             flex: 1,
-            background: "#F5F4F0",
-            border: `1.5px solid ${error ? "#F5CCCC" : "#E4E3DE"}`,
+            minWidth: 0,
+            width: "100%",
+            background: "var(--background)",
+            border: `1.5px solid ${error ? "var(--border-danger)" : "var(--border)"}`,
             borderRadius: 12,
             padding: "12px 14px",
             fontSize: 14,
-            color: "#1C1C28",
+            color: "var(--fg)",
             outline: "none",
             fontFamily: FONT,
             boxSizing: "border-box",
@@ -172,7 +174,7 @@ export default function PhoneInput({ value, onChange, onValidChange, placeholder
         />
       </div>
       {error && (
-        <div style={{ fontSize: 12, color: "#D94F4F", marginTop: 6 }}>{error}</div>
+        <div style={{ fontSize: 12, color: "var(--danger)", marginTop: 6 }}>{error}</div>
       )}
     </div>
   );

@@ -104,19 +104,19 @@ function FamilySwitchContent() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A" }}>Loading…</div>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "var(--muted)" }}>Loading…</div>
       </div>
     );
   }
 
   if (!householdId) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: 24 }}>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: 24 }}>
         <div style={{ textAlign: "center", maxWidth: 320 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>👨‍👩‍👧</div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", margin: "0 0 10px" }}>Family login</h1>
-          <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Family login</h1>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6 }}>
             Ask a parent to share your family link so you can log in with your PIN.
           </p>
         </div>
@@ -130,26 +130,26 @@ function FamilySwitchContent() {
     const dots = [0, 1, 2, 3];
 
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: 24 }}>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: 24 }}>
         <div style={{ width: 72, height: 72, borderRadius: "50%", background: color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800, marginBottom: 12 }}>
           {selected.name.charAt(0).toUpperCase()}
         </div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>{selected.name}</div>
-        <div style={{ fontSize: 14, color: "#6B7280", marginBottom: 32 }}>Enter your PIN</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>{selected.name}</div>
+        <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 32 }}>Enter your PIN</div>
 
         {/* PIN dots */}
         <div style={{ display: "flex", gap: 16, marginBottom: 32 }}>
           {dots.map(i => (
             <div key={i} style={{
               width: 18, height: 18, borderRadius: "50%",
-              background: i < pin.length ? color : "#D1D5DB",
+              background: i < pin.length ? color : "var(--border)",
               transition: "background 0.15s",
             }} />
           ))}
         </div>
 
         {error && (
-          <div style={{ fontSize: 13, color: "#C44444", fontWeight: 600, marginBottom: 20, background: "#FFE8E8", padding: "8px 16px", borderRadius: 50 }}>
+          <div style={{ fontSize: 13, color: "var(--danger)", fontWeight: 600, marginBottom: 20, background: "var(--tint-danger)", padding: "8px 16px", borderRadius: 50 }}>
             {error}
           </div>
         )}
@@ -164,9 +164,9 @@ function FamilySwitchContent() {
                 disabled={signing}
                 style={{
                   height: 72, borderRadius: 18, fontSize: isBack ? 22 : 26, fontWeight: 700,
-                  background: isBack ? "#F0F3FA" : "#fff",
-                  color: isBack ? "#6B7280" : "#0F172A",
-                  border: "1.5px solid #E4E3DE",
+                  background: isBack ? "var(--surface-3)" : "var(--surface)",
+                  color: isBack ? "var(--muted)" : "var(--fg)",
+                  border: "1.5px solid var(--border)",
                   cursor: "pointer", fontFamily: FONT,
                   boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
                 }}>
@@ -177,7 +177,7 @@ function FamilySwitchContent() {
         </div>
 
         <button onClick={() => { setSelected(null); setPin(""); setError(""); }}
-          style={{ marginTop: 28, background: "none", border: "none", color: "#7C7C8A", fontSize: 14, cursor: "pointer", fontFamily: FONT }}>
+          style={{ marginTop: 28, background: "none", border: "none", color: "var(--muted)", fontSize: 14, cursor: "pointer", fontFamily: FONT }}>
           Back to profiles
         </button>
       </div>
@@ -186,20 +186,20 @@ function FamilySwitchContent() {
 
   // Child profile picker
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
       <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "48px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ fontSize: 13, color: "#6B7280", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+          <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
             {householdName}
           </div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#0F172A", margin: 0 }}>Who are you?</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--fg)", margin: 0 }}>Who are you?</h1>
         </div>
 
         {children.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 24px" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>👤</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C28", marginBottom: 8 }}>No child profiles yet</div>
-            <div style={{ fontSize: 14, color: "#6B7280" }}>Ask a parent to add your profile first.</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 8 }}>No child profiles yet</div>
+            <div style={{ fontSize: 14, color: "var(--muted)" }}>Ask a parent to add your profile first.</div>
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: children.length === 1 ? "1fr" : "1fr 1fr", gap: 16 }}>
@@ -208,7 +208,7 @@ function FamilySwitchContent() {
               return (
                 <button key={child.id} onClick={() => { setSelected(child); setPin(""); setError(""); }}
                   style={{
-                    background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 24,
+                    background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 24,
                     padding: "32px 16px", display: "flex", flexDirection: "column",
                     alignItems: "center", gap: 12, cursor: "pointer", fontFamily: FONT,
                     boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
@@ -216,9 +216,9 @@ function FamilySwitchContent() {
                   <div style={{ width: 64, height: 64, borderRadius: "50%", background: color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800 }}>
                     {child.name.charAt(0).toUpperCase()}
                   </div>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: "#0F172A" }}>{child.name}</div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: "var(--fg)" }}>{child.name}</div>
                   {!child.isChildProfile && (
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.04em", textTransform: "uppercase", marginTop: -6 }}>Adult</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "var(--subtle)", letterSpacing: "0.04em", textTransform: "uppercase", marginTop: -6 }}>Adult</span>
                   )}
                 </button>
               );
@@ -233,8 +233,8 @@ function FamilySwitchContent() {
 export default function FamilyPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "#7C7C8A" }}>Loading…</div>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <div style={{ color: "var(--muted)" }}>Loading…</div>
       </div>
     }>
       <FamilySwitchContent />

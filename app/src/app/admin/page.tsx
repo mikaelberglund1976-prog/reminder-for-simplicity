@@ -379,7 +379,7 @@ export default function AdminPage() {
               onClick={handleTriggerCron}
               disabled={triggering}
               style={{
-                background: triggering ? "rgba(74,127,220,0.4)" : "linear-gradient(160deg, #4a7ee0 0%, #2e5ec8 100%)",
+                background: triggering ? "rgba(74,127,220,0.4)" : "linear-gradient(160deg, var(--accent) 0%, var(--accent) 100%)",
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 14,

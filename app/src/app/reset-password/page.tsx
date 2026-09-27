@@ -53,7 +53,7 @@ function ResetPasswordContent() {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#F5F4F0",
+      minHeight: "100vh", background: "var(--background)",
       fontFamily: FONT, display: "flex", flexDirection: "column",
       position: "relative", overflow: "hidden",
     }}>
@@ -61,17 +61,17 @@ function ResetPasswordContent() {
       <main style={{ flex: 1, maxWidth: "var(--content-max-width)", width: "100%", margin: "0 auto", padding: "60px 28px 0" }}>
 
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: "#1C1C28", margin: 0, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
             Choose a new password
           </h1>
-          <p style={{ fontSize: 15, color: "#4B5563", margin: "8px 0 0" }}>
+          <p style={{ fontSize: 15, color: "var(--fg-2)", margin: "8px 0 0" }}>
             Must be at least 8 characters, with an uppercase letter and a number.
           </p>
         </div>
 
         {error && (
           <div style={{
-            background: "#FFF0F0", border: "1px solid #F5CCCC", color: "#D94F4F",
+            background: "var(--tint-danger)", border: "1px solid var(--border-danger)", color: "var(--danger)",
             borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 20,
           }}>
             {error}
@@ -80,7 +80,7 @@ function ResetPasswordContent() {
 
         {done ? (
           <div style={{
-            background: "#D4F4E6", border: "1px solid #A8E6C6", color: "#1E7D52",
+            background: "var(--tint-success)", border: "1px solid var(--tint-success)", color: "var(--success)",
             borderRadius: 12, padding: "16px", fontSize: 14, lineHeight: 1.6,
           }}>
             Password updated! Redirecting you to log in…
@@ -88,7 +88,7 @@ function ResetPasswordContent() {
         ) : (
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1C1C28", marginBottom: 10 }}>New password</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>New password</div>
               <input
                 type="password"
                 placeholder="New password"
@@ -100,7 +100,7 @@ function ResetPasswordContent() {
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1C1C28", marginBottom: 10 }}>Confirm password</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>Confirm password</div>
               <input
                 type="password"
                 placeholder="Confirm password"
@@ -116,7 +116,7 @@ function ResetPasswordContent() {
               disabled={loading}
               style={{
                 width: "100%", padding: "17px", borderRadius: 50,
-                background: loading ? "#7C7C8A" : "#1C1C28", border: "none",
+                background: loading ? "#7C7C8A" : "var(--ink)", border: "none",
                 fontSize: 16, fontWeight: 700,
                 color: "#fff",
                 cursor: loading ? "not-allowed" : "pointer",
@@ -129,8 +129,8 @@ function ResetPasswordContent() {
           </form>
         )}
 
-        <p style={{ textAlign: "center", fontSize: 14, color: "#4B5563", marginTop: 24 }}>
-          <Link href="/login" style={{ color: "#2563EB", fontWeight: 600, textDecoration: "none" }}>
+        <p style={{ textAlign: "center", fontSize: 14, color: "var(--fg-2)", marginTop: 24 }}>
+          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
             Back to log in
           </Link>
         </p>
@@ -152,8 +152,8 @@ function ResetPasswordContent() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <span style={{ color: "#7C7C8A", fontSize: 15 }}>Reminder for Simplicity is thinking…</span>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <span style={{ color: "var(--muted)", fontSize: 15 }}>Reminder for Simplicity is thinking…</span>
       </div>
     }>
       <ResetPasswordContent />
@@ -163,12 +163,12 @@ export default function ResetPasswordPage() {
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  background: "#fff",
-  border: "1.5px solid #E4E3DE",
+  background: "var(--surface)",
+  border: "1.5px solid var(--border)",
   borderRadius: 14,
   padding: "14px 16px",
   fontSize: 15,
-  color: "#1C1C28",
+  color: "var(--fg)",
   outline: "none",
   fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif",
   boxSizing: "border-box" as const,

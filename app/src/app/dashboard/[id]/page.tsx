@@ -18,13 +18,13 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_BADGE: Record<string, { bg: string; color: string }> = {
-  SUBSCRIPTION: { bg: "#E4E7FB", color: "#3A4FC5" },
-  BIRTHDAY:     { bg: "#FFE8F5", color: "#C4367A" },
-  INSURANCE:    { bg: "#D4F4E6", color: "#1E7D52" },
-  CONTRACT:     { bg: "#FFF0E0", color: "#C06010" },
-  HEALTH:       { bg: "#FFE8E8", color: "#C44444" },
-  BILL:         { bg: "#EDE8FF", color: "#6A44CC" },
-  OTHER:        { bg: "#E4E3DE", color: "#5A6080" },
+  SUBSCRIPTION: { bg: "var(--tint-accent)", color: "var(--accent-strong)" },
+  BIRTHDAY:     { bg: "var(--tint-pink)", color: "var(--pink)" },
+  INSURANCE:    { bg: "var(--tint-success)", color: "var(--success)" },
+  CONTRACT:     { bg: "var(--tint-warning)", color: "var(--warning)" },
+  HEALTH:       { bg: "var(--tint-danger)", color: "var(--danger)" },
+  BILL:         { bg: "var(--tint-violet)", color: "var(--violet)" },
+  OTHER:        { bg: "var(--border)", color: "var(--slate)" },
 };
 
 const RECURRENCE_LABELS: Record<string, string> = {
@@ -86,7 +86,7 @@ function getBrandInfo(name: string) {
       return { color: BRAND_COLORS[brand], domain: BRAND_DOMAINS[brand] ?? null };
     }
   }
-  return { color: { bg: "#4A5FD5", text: "#fff" }, domain: null };
+  return { color: { bg: "var(--accent-bg)", text: "#fff" }, domain: null };
 }
 
 type HouseholdMember = { id: string; userId: string; user: { id: string; name: string | null; email: string } };
@@ -121,7 +121,7 @@ function ServiceLogo({ name }: { name: string }) {
   return (
     <div style={{
       width: 52, height: 52, borderRadius: 16, overflow: "hidden", flexShrink: 0,
-      background: (!domain || imgError) ? color.bg : "#f0f0f0",
+      background: (!domain || imgError) ? color.bg : "var(--surface-3)",
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
       {domain && !imgError ? (
@@ -162,13 +162,13 @@ function Row({ icon, label, value, valueColor }: {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "15px 0", borderTop: "1px solid #F0F3F8",
+      padding: "15px 0", borderTop: "1px solid var(--border-soft)",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#7C7C8A" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--muted)" }}>
         {icon}
-        <span style={{ fontSize: 14, color: "#6B7280", fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 14, color: "var(--muted)", fontWeight: 500 }}>{label}</span>
       </div>
-      <span style={{ fontSize: 15, fontWeight: 600, color: valueColor ?? "#1C1C28" }}>{value}</span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: valueColor ?? "var(--fg)" }}>{value}</span>
     </div>
   );
 }
@@ -273,8 +273,8 @@ export default function ReminderDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F5F4F0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <span style={{ color: "#7C7C8A", fontSize: 15 }}>Reminder for Simplicity is thinking…</span>
+      <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <span style={{ color: "var(--muted)", fontSize: 15 }}>Reminder for Simplicity is thinking…</span>
       </div>
     );
   }
@@ -288,7 +288,7 @@ export default function ReminderDetailPage() {
     ? Math.abs(daysUntil) + " days ago"
     : daysUntil === 0 ? "Today"
     : daysUntil + " days left";
-  const statusColor = daysUntil < 0 ? "#DC2626" : daysUntil <= 3 ? "#B45309" : "#15803D";
+  const statusColor = daysUntil < 0 ? "var(--danger)" : daysUntil <= 3 ? "var(--warning)" : "var(--success)";
   const badge = CATEGORY_BADGE[reminder.category] ?? CATEGORY_BADGE.OTHER;
 
   const ownerMember = reminder.assignedTo
@@ -299,13 +299,13 @@ export default function ReminderDetailPage() {
     : "Unassigned";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F4F0", fontFamily: FONT, paddingBottom: 40 }}>
+    <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, paddingBottom: 40 }}>
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "24px 20px 0" }}>
 
         {/* Back */}
         <Link href="/dashboard" style={{
           display: "inline-flex", alignItems: "center", gap: 4,
-          color: "#2563EB", fontSize: 14, fontWeight: 600,
+          color: "var(--accent)", fontSize: 14, fontWeight: 600,
           textDecoration: "none", marginBottom: 20,
         }}>
           <IcBack /> Back
@@ -313,24 +313,24 @@ export default function ReminderDetailPage() {
 
         {/* Title */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#1C1C28", margin: 0, letterSpacing: "-0.5px" }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
             Reminder
           </h1>
-          <p style={{ fontSize: 14, color: "#4B5563", margin: "6px 0 0" }}>
+          <p style={{ fontSize: 14, color: "var(--fg-2)", margin: "6px 0 0" }}>
             Edit the details or remove this reminder.
           </p>
         </div>
 
         {/* Main card */}
         <div style={{
-          background: "#fff", borderRadius: 20, border: "1px solid #E4E3DE",
+          background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)",
           padding: "20px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 14,
         }}>
           {/* Logo + name + badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
             <ServiceLogo name={reminder.name} />
             <div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "#1C1C28", letterSpacing: "-0.3px" }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: "var(--fg)", letterSpacing: "-0.3px" }}>
                 {reminder.name}
               </div>
               <div style={{ marginTop: 6 }}>
@@ -347,8 +347,8 @@ export default function ReminderDetailPage() {
           </div>
 
           {/* Date row — no icon, just label: value */}
-          <div style={{ borderTop: "1px solid #F0F3F8", padding: "15px 0 0" }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: "#0F172A" }}>
+          <div style={{ borderTop: "1px solid var(--border-soft)", padding: "15px 0 0" }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)" }}>
               Date: {formatDate(reminder.date)}
             </span>
           </div>
@@ -365,29 +365,29 @@ export default function ReminderDetailPage() {
           {householdMembers.length > 0 && (
             <Row icon={<IcUser />} label="Owner"
               value={ownerDisplayName}
-              valueColor={reminder.assignedTo ? undefined : "#9CA3AF"} />
+              valueColor={reminder.assignedTo ? undefined : "var(--subtle)"} />
           )}
 
           {/* Note if present */}
           {reminder.note && (
-            <div style={{ borderTop: "1px solid #F0F3F8", paddingTop: 14, marginTop: 2 }}>
-              <div style={{ fontSize: 13, color: "#7C7C8A", fontWeight: 500, marginBottom: 4 }}>Note</div>
-              <div style={{ fontSize: 14, color: "#1C1C28", lineHeight: 1.5 }}>{reminder.note}</div>
+            <div style={{ borderTop: "1px solid var(--border-soft)", paddingTop: 14, marginTop: 2 }}>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500, marginBottom: 4 }}>Note</div>
+              <div style={{ fontSize: 14, color: "var(--fg)", lineHeight: 1.5 }}>{reminder.note}</div>
             </div>
           )}
         </div>
 
         {/* Handover message */}
         {handoverMsg && (
-          <div style={{ background: handoverMsg.type === "ok" ? "#F0FFF6" : "#FFF0F0", border: `1px solid ${handoverMsg.type === "ok" ? "#B8F0D0" : "#F5CCCC"}`, color: handoverMsg.type === "ok" ? "#2E9A5F" : "#D94F4F", borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 12 }}>
+          <div style={{ background: handoverMsg.type === "ok" ? "var(--tint-success)" : "var(--tint-danger)", border: `1px solid ${handoverMsg.type === "ok" ? "var(--tint-success)" : "var(--border-danger)"}`, color: handoverMsg.type === "ok" ? "var(--success)" : "var(--danger)", borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 12 }}>
             {handoverMsg.text}
           </div>
         )}
 
         {/* Pending handover — receiver sees Accept/Reject */}
         {reminder.handoverState === "PENDING" && reminder.handoverTo === session?.user?.id && (
-          <div style={{ background: "#FFF9E6", border: "1.5px solid #F6E05E", borderRadius: 18, padding: 20, marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#B7791F", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>🤝 Pending handover — your response needed</div>
+          <div style={{ background: "var(--tint-warning)", border: "1.5px solid #F6E05E", borderRadius: 18, padding: 20, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--warning)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>🤝 Pending handover — your response needed</div>
             <p style={{ fontSize: 14, color: "#4A3728", lineHeight: 1.5, marginBottom: 16 }}>
               Someone wants to transfer <strong>{reminder.name}</strong> to you. If you accept, you become the responsible owner.
             </p>
@@ -402,7 +402,7 @@ export default function ReminderDetailPage() {
               <button
                 onClick={() => handleRespondHandover("reject")}
                 disabled={respondingHandover}
-                style={{ flex: 1, padding: "13px", background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 50, fontSize: 14, fontWeight: 600, color: "#D94F4F", cursor: "pointer", fontFamily: FONT, opacity: respondingHandover ? 0.6 : 1 }}
+                style={{ flex: 1, padding: "13px", background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 50, fontSize: 14, fontWeight: 600, color: "var(--danger)", cursor: "pointer", fontFamily: FONT, opacity: respondingHandover ? 0.6 : 1 }}
               >
                 ✕ Decline
               </button>
@@ -412,7 +412,7 @@ export default function ReminderDetailPage() {
 
         {/* Pending handover indicator — for initiator */}
         {reminder.handoverState === "PENDING" && reminder.handoverTo !== session?.user?.id && (
-          <div style={{ background: "#FFF9E6", border: "1.5px solid #F6E05E", borderRadius: 14, padding: "14px 16px", marginBottom: 12, fontSize: 14, color: "#B7791F", fontWeight: 600 }}>
+          <div style={{ background: "var(--tint-warning)", border: "1.5px solid #F6E05E", borderRadius: 14, padding: "14px 16px", marginBottom: 12, fontSize: 14, color: "var(--warning)", fontWeight: 600 }}>
             🕐 Handover pending — waiting for response
           </div>
         )}
@@ -423,32 +423,32 @@ export default function ReminderDetailPage() {
             {!showHandoverPanel ? (
               <button
                 onClick={() => setShowHandoverPanel(true)}
-                style={{ width: "100%", padding: "15px", borderRadius: 50, background: "#fff", border: "1.5px solid #E4E3DE", fontSize: 15, fontWeight: 600, color: "#1C1C28", cursor: "pointer", fontFamily: FONT, marginBottom: 10, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
+                style={{ width: "100%", padding: "15px", borderRadius: 50, background: "var(--surface)", border: "1.5px solid var(--border)", fontSize: 15, fontWeight: 600, color: "var(--fg)", cursor: "pointer", fontFamily: FONT, marginBottom: 10, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
               >
                 🤝 Assign owner
               </button>
             ) : (
-              <form onSubmit={handleInitiateHandover} style={{ background: "#FAF9F5", border: "1.5px solid #E4E3DE", borderRadius: 18, padding: 20, marginBottom: 10 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C28", marginBottom: 14 }}>Assign owner:</div>
+              <form onSubmit={handleInitiateHandover} style={{ background: "var(--surface-2)", border: "1.5px solid var(--border)", borderRadius: 18, padding: 20, marginBottom: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)", marginBottom: 14 }}>Assign owner:</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                   {householdMembers
                     .filter(m => m.userId !== session?.user?.id)
                     .map(m => (
-                      <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: selectedHandoverUser === m.userId ? "#EEF5FF" : "#fff", border: `1.5px solid ${selectedHandoverUser === m.userId ? "#4A5FD5" : "#E4E3DE"}`, borderRadius: 12, cursor: "pointer" }}>
-                        <input type="radio" name="handoverUser" value={m.userId} checked={selectedHandoverUser === m.userId} onChange={() => setSelectedHandoverUser(m.userId)} style={{ accentColor: "#4A5FD5" }} />
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#EEF5FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#4A5FD5" }}>
+                      <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: selectedHandoverUser === m.userId ? "var(--tint-accent)" : "var(--surface)", border: `1.5px solid ${selectedHandoverUser === m.userId ? "var(--accent)" : "var(--border)"}`, borderRadius: 12, cursor: "pointer" }}>
+                        <input type="radio" name="handoverUser" value={m.userId} checked={selectedHandoverUser === m.userId} onChange={() => setSelectedHandoverUser(m.userId)} style={{ accentColor: "var(--accent)" }} />
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--tint-accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>
                           {(m.user.name ?? m.user.email)[0].toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: "#1C1C28" }}>{m.user.name ?? m.user.email}</div>
-                          <div style={{ fontSize: 12, color: "#7C7C8A" }}>{m.user.email}</div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{m.user.name ?? m.user.email}</div>
+                          <div style={{ fontSize: 12, color: "var(--muted)" }}>{m.user.email}</div>
                         </div>
                       </label>
                     ))}
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button type="button" onClick={() => setShowHandoverPanel(false)} style={{ flex: 1, padding: "13px", background: "#fff", border: "1.5px solid #E4E3DE", borderRadius: 50, fontSize: 14, fontWeight: 600, color: "#7C7C8A", cursor: "pointer", fontFamily: FONT }}>Cancel</button>
-                  <button type="submit" disabled={!selectedHandoverUser || handoverLoading} style={{ flex: 2, padding: "13px", background: selectedHandoverUser ? "#1C1C28" : "#E4E3DE", border: "none", borderRadius: 50, fontSize: 14, fontWeight: 700, color: selectedHandoverUser ? "#fff" : "#ACA9A3", cursor: selectedHandoverUser ? "pointer" : "not-allowed", fontFamily: FONT, opacity: handoverLoading ? 0.6 : 1 }}>
+                  <button type="button" onClick={() => setShowHandoverPanel(false)} style={{ flex: 1, padding: "13px", background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 50, fontSize: 14, fontWeight: 600, color: "var(--muted)", cursor: "pointer", fontFamily: FONT }}>Cancel</button>
+                  <button type="submit" disabled={!selectedHandoverUser || handoverLoading} style={{ flex: 2, padding: "13px", background: selectedHandoverUser ? "var(--ink)" : "var(--border)", border: "none", borderRadius: 50, fontSize: 14, fontWeight: 700, color: selectedHandoverUser ? "#fff" : "var(--subtle)", cursor: selectedHandoverUser ? "pointer" : "not-allowed", fontFamily: FONT, opacity: handoverLoading ? 0.6 : 1 }}>
                     {handoverLoading ? "Sending…" : "Send handover request"}
                   </button>
                 </div>
@@ -459,10 +459,10 @@ export default function ReminderDetailPage() {
 
         {/* Upsell card — shown when not Pro */}
         {!isPro && (
-          <div style={{ background: "linear-gradient(135deg,#EEF5FF,#F5F0FF)", border: "1.5px solid #D4CCFF", borderRadius: 18, padding: 18, marginBottom: 10 }}>
+          <div style={{ background: "linear-gradient(135deg,var(--tint-accent),var(--tint-accent))", border: "1.5px solid var(--accent-border)", borderRadius: 18, padding: 18, marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
               <span style={{ fontSize: 22 }}>⚡</span>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C28" }}>Pro feature — Handover</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>Pro feature — Handover</div>
             </div>
             <div style={{ fontSize: 13, color: "#6B7080", lineHeight: 1.5 }}>
               Transfer responsibility to a family member with a digital handshake. They confirm before ownership shifts.
@@ -475,7 +475,7 @@ export default function ReminderDetailPage() {
         <Link href={"/dashboard/" + reminder.id + "/edit"} style={{
           display: "flex", alignItems: "center", justifyContent: "center",
           width: "100%", padding: "17px", borderRadius: 50,
-          background: "#1C1C28", border: "none",
+          background: "var(--ink)", border: "none",
           fontSize: 16, fontWeight: 700, color: "#fff",
           textDecoration: "none", boxSizing: "border-box",
           boxShadow: "0 2px 10px rgba(26,35,64,0.22)", marginBottom: 10,
@@ -489,8 +489,8 @@ export default function ReminderDetailPage() {
             onClick={() => setConfirmDelete(true)}
             style={{
               width: "100%", padding: "17px", borderRadius: 50,
-              background: "#FFF0EE", border: "1.5px solid #FFD9D4",
-              fontSize: 16, fontWeight: 600, color: "#D94F4F",
+              background: "var(--tint-danger)", border: "1.5px solid var(--border-danger)",
+              fontSize: 16, fontWeight: 600, color: "var(--danger)",
               cursor: "pointer", fontFamily: FONT,
               boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             }}
@@ -499,13 +499,13 @@ export default function ReminderDetailPage() {
           </button>
         ) : (
           <div style={{
-            background: "#FFF0EE", border: "1.5px solid #FFD9D4",
+            background: "var(--tint-danger)", border: "1.5px solid var(--border-danger)",
             borderRadius: 20, padding: "18px 20px", textAlign: "center",
           }}>
-            <div style={{ fontSize: 14, color: "#1C1C28", fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ fontSize: 14, color: "var(--fg)", fontWeight: 600, marginBottom: 4 }}>
               Delete this reminder?
             </div>
-            <div style={{ fontSize: 13, color: "#7C7C8A", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
               This cannot be undone.
             </div>
             <div style={{ display: "flex", gap: 10 }}>
@@ -513,8 +513,8 @@ export default function ReminderDetailPage() {
                 onClick={() => setConfirmDelete(false)}
                 style={{
                   flex: 1, padding: "12px", borderRadius: 50,
-                  background: "#fff", border: "1.5px solid #E4E3DE",
-                  fontSize: 14, fontWeight: 600, color: "#1C1C28",
+                  background: "var(--surface)", border: "1.5px solid var(--border)",
+                  fontSize: 14, fontWeight: 600, color: "var(--fg)",
                   cursor: "pointer", fontFamily: FONT,
                  }}
               >

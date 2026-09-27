@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ADMIN_EMAIL } from "@/lib/adminConfig";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -51,8 +52,8 @@ export default function HamburgerMenu() {
         style={{
           display: "flex", alignItems: "center", justifyContent: "center",
           width: 36, height: 36, borderRadius: "50%",
-          background: open ? "#F0F3FA" : "transparent", border: "none",
-          color: "#4B5563", cursor: "pointer",
+          background: open ? "var(--surface-3)" : "transparent", border: "none",
+          color: "var(--fg-2)", cursor: "pointer",
         }}
       >
         <IcMenu />
@@ -61,11 +62,11 @@ export default function HamburgerMenu() {
       {open && (
         <div style={{
           position: "absolute", top: 44, right: 0, zIndex: 30,
-          width: 200, background: "#fff", borderRadius: 14,
-          border: "1px solid #E4E3DE", boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          width: 236, background: "var(--surface)", borderRadius: 14,
+          border: "1px solid var(--border)", boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           padding: 6, fontFamily: FONT,
         }}>
-          <MenuLink href="/dashboard" icon={<IcHome />} label="Reminders" onClick={() => setOpen(false)} />
+          <MenuLink href="/dashboard" icon={<IcHome />} label="Home" onClick={() => setOpen(false)} />
           <MenuLink href="/dashboard/calendar" icon={<IcCalendar />} label="Calendar" onClick={() => setOpen(false)} />
           <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label="Shopping list" onClick={() => setOpen(false)} />
           <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label="Wishlist" onClick={() => setOpen(false)} />
@@ -77,13 +78,17 @@ export default function HamburgerMenu() {
           {isAdmin && (
             <MenuLink href="/admin" icon={<IcShield />} label="Admin" onClick={() => setOpen(false)} />
           )}
-          <div style={{ borderTop: "1px solid #F0F3F8", margin: "4px 0" }} />
+          <div style={{ borderTop: "1px solid var(--border-soft)", margin: "4px 0" }} />
+          <div style={{ padding: "4px 4px 6px" }}>
+            <ThemeSwitcher compact />
+          </div>
+          <div style={{ borderTop: "1px solid var(--border-soft)", margin: "4px 0" }} />
           <button
             onClick={() => { setOpen(false); signOut({ callbackUrl: "/login" }); }}
             style={{
               width: "100%", display: "flex", alignItems: "center", gap: 10,
               padding: "9px 10px", borderRadius: 10, border: "none", background: "none",
-              color: "#D94F4F", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              color: "var(--danger)", fontSize: 13, fontWeight: 600, cursor: "pointer",
               fontFamily: FONT, textAlign: "left",
             }}
           >
@@ -103,7 +108,7 @@ function MenuLink({ href, icon, label, onClick }: { href: string; icon: React.Re
       style={{
         display: "flex", alignItems: "center", gap: 10,
         padding: "9px 10px", borderRadius: 10,
-        color: "#1C1C28", fontSize: 13, fontWeight: 600,
+        color: "var(--fg)", fontSize: 13, fontWeight: 600,
         textDecoration: "none",
       }}
     >
