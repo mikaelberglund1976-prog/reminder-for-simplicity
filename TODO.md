@@ -19,6 +19,7 @@
 **Uppdaterad igen:** 2026-07-28 – de två stora beslutspunkterna avgjorda (se 19g): multi-family blir bara datamodell-förberedelse nu (ingen växlare/UI), kontosammanslagning blir "flytta allt" med bekräftelseskärm, automatisk trigger vid Google-inloggning. Streckkodsskanning/receptimport/butiksläge (redan i ROADMAP) infogade i 19c, belöningar-för-sysslor infogat i 19d – samma sidor byggs ändå om, så ingen anledning att vänta. Dessutom byggd: `/privacy`-sidan som en strukturell scaffold (`app/src/app/privacy/page.tsx`), länkad från Register och `/features`. Varje sektion som saknar riktigt innehåll eller ett beslut är markerad med en tydlig gul "Needs a decision"-ruta i UI:t, med en samlad checklista längst ner på sidan (7 punkter: juridisk enhet, minimiålder för barnprofiler, Vercel/Resend DPA-status, datalagringstid, självbetjänings-radering, riktig kontaktadress). `tsc --noEmit` kört rent.
 **Uppdaterad igen:** 2026-07-28 – hela punkt 19 (utom rewards och inkommande ICS-import) byggd i en lång omgång efter "kör". Se ny punkt 20 nedan för en fullständig genomgång av vad som är klart, vad som medvetet skjutits upp och varför, och vad som krävs innan det fungerar i produktion.
 **Uppdaterad igen:** 2026-07-28 – du körde `prisma generate`/`db push` lokalt (klart), men nästa deploy failade i Vercel. Grundorsak hittad och fixad: `useSearchParams()` utan `<Suspense>`-gräns i `/dashboard/new` och `/dashboard/school` (Next 14:s prerender-krav, fångas inte av `tsc`). Se ny punkt 21 nedan. Redo för commit + push.
+**Uppdaterad igen:** 2026-09-28 – punkt 31 + UI-review + planer (Free/Pro, 14 dagars provperiod), Pro-förfrågan/admin-beviljning, förberedd betalning och egen reklam **LIVE i produktion**. Se ny punkt 32 och `RELEASE_2026-09-28.md`.
 **Uppdaterad igen:** 2026-09-27 – statusgenomgång. Två saker saknades i loggen och är nu inlagda: punkt 30b (commit `35fb226` från 2026-08-18 – familjebegränsningar + inköpslista/kalender-UI, **live i produktion** via `c1d2f92`, deployment `dpl_GTA4kuFnca2j1Wxy1ie62gv4GxTM` READY) och punkt 31 (PIN borttaget + e-postverifiering, mjuk radering 60 dagar, läxor & prov – **kodat, inte committat/deployat**). Arbetet pausat för en UI-review, se `ATT_GORA_PAUSAT_2026-09-27.md`. Alla md-filer synkade mot detta.
 **Uppdaterad igen:** 2026-08-02 – konkurrentanalys av renodlade reminder/uppgifts/vane-appar (Bring!, TickTick, Todoist, Do Habits, Structured) genomförd på begäran, fokus på användarvänlighet/onboarding, inte funktionsbredd. Inga kodändringar gjorda. Fullständig analys i `COMPETITOR_ANALYSIS_TASKAPPS.md`, kondenserad handlingslista i ny punkt 22 nedan, och `PRODUCT_SPEC.md` uppdaterad (4b.30 + två nya UX-principer i §9).
 
@@ -679,3 +680,31 @@ Beslut från Mikael samma dag: *"Barnprofiler ska inte ha bara pin, för osäker
 - Obs: School är fortfarande Pro/trial-låst (oförändrat) – utan trial ser barnet bara en låst ruta. Kan vara därför det kändes som att funktionen saknades.
 
 **Status 2026-09-27:** kodat och `tsc --noEmit`-verifierat, **inte committat**. Pausat för Mikaels UI-review – se `ATT_GORA_PAUSAT_2026-09-27.md` för körordning och varning om att inte pusha till `master` innan `db push`. Punkt 6 "Tekniska skulder": ny `db push` + `node scripts/migrate-2026-09-retire-pin.js` krävs för denna punkt.
+
+
+## 32. Release 2026-09-28 – UI-review, punkt 31, planer och reklam – LIVE ✅
+
+Allt nedan är deployat till produktion (Vercel READY, commit `17db285` + städcommit). Detaljer, beslut och testresultat: `RELEASE_2026-09-28.md`, `UI_REVIEW_2026-09-27.md`.
+
+**Klart:**
+- [x] UI-review med testpersoner: ljust/mörkt/auto-tema, ny startsida (snabbknappar, "Coming up"-kort, tre nyckeltal), svävande bottenmeny med "Home", kalenderns söndagskolumn fixad, barn ser bara sina egna önskelistor.
+- [x] Punkt 31 live: verifierad e-post för alla, barnkonton via e-postlänk, PIN borttagen, mjuk radering (60 dagar), läxor & prov.
+- [x] Databasändringar i produktion via tillfällig, tokenskyddad migreringsväg (borttagen efteråt). 3 vuxna markerades verifierade, 1 barnkonto behöver ny inbjudan.
+- [x] Planer: Free (påminnelser, familj, 1 delad inköpslista, kalender) / Pro (barn, sysslor, läxor, önskelistor, aktiviteter, fler listor, ingen reklam). Spärrat på servern.
+- [x] 14 dagars provperiod för hela familjen (ersätter "1 barn, 7 dagar").
+- [x] `/upgrade` (planjämförelse), "I want Pro" → mail till admin, admin ger Pro +14/30/90/365/valfritt antal dagar/forever/remove, mail till familjen.
+- [x] Betalning förberedd: `proUntil`, `plan`, `proSource`, `stripeCustomerId`, `stripeSubscriptionId`; all logik i `app/src/lib/entitlements.ts`.
+- [x] Radering: tilldelningar tas bort direkt (sakerna blir kvar), reservationer släpps, egna listor göms under 60 dagar och återkommer vid återställning.
+- [x] Reklam: egna annonser i `/admin/ads` (visningar/klick/CTR), bara för vuxna på gratisplanen, aldrig barn; "Remove ads" → /upgrade; "reklamfritt"-läge (`adFreeUntil`) förberett och kan ges i admin.
+- [x] 81 automatiska kontroller mot testdatabas (gratis, provperiod, Pro, utgången provperiod, barn, radering/återställning, registrering, reklam, admin-behörighet).
+
+**Kvar / nästa steg:**
+- [ ] **Mikael:** skicka ny inbjudan till barnkontot som hade PIN (Profile → Child accounts → Resend invite).
+- [ ] **Mikael:** klicktesta i mobilen (tema, /upgrade, provperiod, /admin/ads, /admin → familj → Grant Pro) – se `TEST_VERIFICATION.md` §8.
+- [ ] Stripe-kassa (pris redan beslutat: 49 kr/mån / 399 kr/år, `PRODUCT_SPEC.md` §7.1) – ersätter "I want Pro"-förfrågan. Webhook sätter `proUntil`/`plan`/`proSource="stripe"`.
+- [ ] Beslut: ska "reklamfritt" säljas separat (billigare än Pro)? Tekniken finns (`adFreeUntil`).
+- [ ] Automatiska mail före provperiodens slut (t.ex. 3 dagar kvar) – finns inte ännu.
+- [ ] Datumfält visar mm/dd/yyyy i vissa webbläsare – egen datumväljare eller svenskt format.
+- [ ] Barnvyn för yngre barn (Leo, 8 år): större ikoner/bilder på sysslor.
+- [ ] Admin- och publika delade listsidan har fått mörkt läge automatiskt men är inte finputsade.
+- [ ] `/features` (marknadsföringssidan) bör uppdateras med nya Free/Pro-gränsen och 14 dagars provperiod.

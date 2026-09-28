@@ -2,7 +2,7 @@
 
 **Syfte:** en enda, avdubblerad, omprioriterad lista över allt som återstår innan produkten är "helt klar" för bred lansering. Ersätter inte `TODO.md` (som förblir den kronologiska arbetsloggen/historiken) utan sitter ovanpå den – det här dokumentet är **den aktuella sanningen om vad som är kvar**, `TODO.md` är **hur vi kom hit**.
 **Metod:** allt `- [ ]` extraherat ur `TODO.md` (punkt 1–25), `PRODUCT_SPEC.md`, `ROADMAP.md`, `OPERATIONS.md`, `APP_STORE_READINESS.md`, dubbletter slagna ihop, omgrupperat i faser efter vad som faktiskt blockerar vad.
-**Senast synkad:** 2026-09-27 – punkt 30b (live) och 31 (kodat, ej deployat) inlagda. Pausat arbete: `ATT_GORA_PAUSAT_2026-09-27.md`.
+**Senast synkad:** 2026-09-28 – punkt 31 + UI-review + planer/reklam LIVE (se `RELEASE_2026-09-28.md`, `TODO.md` punkt 32). `ATT_GORA_PAUSAT_2026-09-27.md` är avklarad.
 **Uppdatera detta dokument** när en punkt blir klar (bocka av `- [x]`) eller när prioritet ändras – det tappar sitt värde annars.
 
 ---
@@ -46,10 +46,12 @@ Ingen inbördes teknisk ordning inom fasen, men allt här bör vara klart innan 
 
 ## Fas B – Betalning (innan riktiga pengar tas emot)
 
-**Redan klart, inget att göra:** 7-dagars gratis Pro-trial är fullt byggd och fungerar (`FamilyTrial`, "Start free 7-day trial →"-knapp) – se `PRODUCT_SPEC.md` §7.3.
+**Redan klart (2026-09-28):** 14 dagars provperiod för hela familjen, `/upgrade`, "I want Pro"-förfrågan, admin ger Pro i N dagar, databasfält för Stripe (`proUntil`, `plan`, `proSource`, `stripeCustomerId`, `stripeSubscriptionId`), all behörighetslogik i `lib/entitlements.ts`. Egen reklam för gratis-vuxna + förberett "reklamfritt" (`adFreeUntil`).
 
 - [ ] **Beslut krävs INNAN Stripe kodas:** betalmetod för en framtida iOS-app. Inom EU (primärmarknad) kan Apples "External Purchase Link Entitlement" tillåta Stripe direkt; utanför EU krävs Apples egen In-App Purchase (15–30% avgift). Se `APP_STORE_READINESS.md` §4.
-- [ ] Bygg riktig Stripe-integration – ersätter dagens manuella `is_pro`-admin-toggle.
+- [ ] Bygg riktig Stripe-integration – ersätter "I want Pro"-förfrågan + admin "Grant Pro". Webhook sätter `proUntil`/`plan`/`proSource="stripe"` (fälten finns redan).
+- [ ] Beslut: sälja "reklamfritt" separat, billigare än Pro? (tekniken finns: `adFreeUntil`)
+- [ ] Mail före provperiodens slut (t.ex. 3 dagar kvar) – saknas.
 - [x] **Pris beslutat 2026-08-02: 49 kr/mån / 399 kr/år** – grundat i konkurrentprissättning (Cozi Gold $39/år, TickTick $35,99/år), se `PRODUCT_SPEC.md` §7.1. Kvarstår: `/features`-texten säger fortfarande "not final yet" och behöver uppdateras när Stripe närmar sig.
 - [ ] Transparent debiteringstidslinje i UI när Stripe byggs (UX-princip från `COMPETITOR_ANALYSIS_TASKAPPS.md`, à la Structured) – bygg in samtidigt, inte som eftertanke.
 
@@ -147,14 +149,14 @@ Ingen schemaändring i någon av omgångarna – ingen `db push`/`prisma generat
 
 ---
 
-## Kodändringar 2026-09-27 – INTE deployade än
+## Kodändringar 2026-09-27 + 2026-09-28 – DEPLOYADE 2026-09-28 ✅
 
 PIN borttaget + e-postverifiering, mjuk radering med 60 dagars återställning, läxor & prov (typ, ämne, avbockning, överst för barnet, visa i kalender, påminnelse dagen före). Se `TODO.md` punkt 31 för filer och körordning.
 
-- [ ] `npx prisma generate && npm run db:push` (från `app/`)
-- [ ] `node scripts/migrate-2026-09-retire-pin.js`
-- [ ] Verifiera Resend-domän (se Fas A) – annars når verifieringsmail inte fram
-- [ ] Commit + push via VS Code, kolla Vercel READY
+- [x] Databasändringar – gjorda via tillfällig tokenskyddad migreringsväg (motsvarar `db push`), borttagen efteråt
+- [x] PIN-migreringen (samma SQL som `scripts/migrate-2026-09-retire-pin.js`): 3 vuxna verifierade, 1 barn behöver inbjudan
+- [x] Resend: DNS för assistiq.se (DKIM, SPF, MX på send.) finns på plats
+- [x] Commit + push via VS Code, kolla Vercel READY
 - [ ] Skicka nya inbjudningar till barnkonton (Profile → Child accounts → Resend invite)
 - [ ] Klicktesta: registrera → mail → bekräfta → logga in; skapa barn → mail → välj lösenord; radera som medlem (begäran) och som admin; återställ i `/admin`; lägg till läxa/prov, bocka av, dölj i kalender
 

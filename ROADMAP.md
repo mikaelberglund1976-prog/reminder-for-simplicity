@@ -1,4 +1,5 @@
 # Roadmap – Reminder for Simplicity
+**Uppdaterad igen:** 2026-09-28 – ljust/mörkt tema, ny startsida, planer (Free/Pro + 14 dagars provperiod), Pro-förfrågan + admin-beviljning, betalning förberedd och egen reklam – allt live. Se ny sektion "Fas 1.6" och `RELEASE_2026-09-28.md`.
 **Uppdaterad igen:** 2026-09-27 – PIN-inloggning pensionerad (verifierad e-post + lösenord/Google för alla), självbetjänings-kontoradering byggd (mjuk radering, 60 dagar), Läxor & prov utökat (typ/ämne/avbockning/kalenderval). Kodat, **inte deployat** – se `TODO.md` punkt 31. Även 2026-08-18-ändringarna (punkt 30b, live) inlagda nedan.
 **Uppdaterad igen:** 2026-07-28 (natt) – EU-marknadsundersökning genomförd (`MARKET_RESEARCH_EU.md`), ny delad "Ideas & voting"-sektion byggd (`/dashboard/suggestions`, se `PRODUCT_SPEC.md` 4b.18), och en samlad USP-/prioriteringssektion tillagd nedan inför kommande användartester.
 **Senast uppdaterad:** 2026-07-27 kväll (hamburgermeny + mobil/webb-vy-växlare tillagda, ovanpå dagens tidigare inköpslista/önskelista/bottenmeny-arbete)
@@ -86,6 +87,18 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] **Synlig sekretess-"chip"** (Privat/Hushåll/Föräldrar) på reminders – `visibility`-fältet fanns redan i schemat (4b.5). **Byggt 2026-07-28**, se `TODO.md` punkt 10.
 
 ---
+
+## Fas 1.6 – Planer, tema och reklam (2026-09-28, LIVE)
+- [x] Ljust / mörkt / auto-tema (hela appen går via färgvariabler i `globals.css`)
+- [x] Ny startsida à la Padelmates: snabbknappar, "Coming up"-kort, tre nyckeltal; svävande bottenmeny med "Home"
+- [x] Verifierad e-post för alla, barnkonton via e-postlänk, PIN borttagen
+- [x] Mjuk radering med 60 dagars återställning; tilldelningar tas bort direkt
+- [x] Läxor & prov (typ, ämne, avbockning, kalender, mail dagen före)
+- [x] Free/Pro-gräns spärrad på servern; 14 dagars provperiod för hela familjen
+- [x] `/upgrade`, "I want Pro"-förfrågan, admin ger Pro i N dagar
+- [x] Betalning förberedd i databasen (Stripe-fält) + `lib/entitlements.ts`
+- [x] Egen reklam (`/admin/ads`) för gratis-vuxna, aldrig barn; "reklamfritt" förberett
+- [ ] **Nästa:** Stripe-kassa (49 kr/mån / 399 kr/år), mail före provperiodens slut, uppdatera `/features`
 
 ## USP:ar och prioritet inför användartester (2026-07-28)
 

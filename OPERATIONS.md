@@ -57,6 +57,12 @@ Det finns ingen roll-nivå inom admin – man antingen är `ADMIN_EMAIL` eller i
 
 ---
 
+### 3b. Planer och reklam i admin (2026-09-28)
+- **Pro-förfrågningar:** "Free · wants Pro" syns i familjelistan i `/admin`, och du får ett mail. Öppna familjen → **Grant Pro** +14/30/90/365 dagar, *Custom…* (valfritt antal), *Forever* eller *Remove Pro*. Förlängning läggs på nuvarande slutdatum. Familjens ägare får ett mail.
+- **Reklamfritt utan Pro:** samma sida → *Ad-free* +30/365 dagar.
+- **Annonser:** `/admin/ads` (länk "Ads →" i `/admin`). Skapa/ändra/pausa/radera; se visningar, klick och CTR. Bara http(s)-länkar godkänns. Klick går via `/api/ads/[id]/click` som räknar och skickar vidare.
+- **Radering:** `/admin` → Deleted: Restore eller Delete now. Automatisk permanent radering efter 60 dagar sker i cron.
+
 ## 4. Miljöer & secrets
 
 | Miljö | Var | Kommentar |
@@ -87,6 +93,13 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 - **Rollback:** Vercel → Deployments → "Promote to Production" på en tidigare deploy. Databasändringar rullas INTE tillbaka automatiskt av detta – om en deploy innehöll en destruktiv schemaändring krävs manuell databas-rollback.
 
 ---
+
+### 5b. Databasändringar i produktion (lärdom 2026-09-28)
+Varken Claudes molnmiljö eller Cowork-VM:en på Macen når Supabase direkt (port 5432), så `npm run db:push` kan bara köras från din egen terminal. Alternativet som användes 28/9 och fungerade utan avbrott:
+1. Deploya en tillfällig route som kör idempotent SQL (`ADD COLUMN IF NOT EXISTS` osv.), skyddad med en engångstoken (bara SHA-256 i koden).
+2. Anropa den (status → schema → data) mot `reminder-for-simplicity.vercel.app`.
+3. Deploya den nya koden. 4. Ta bort routen i en städcommit.
+Håll ändringarna additiva (nya kolumner/tabeller, NOT NULL tas bort, aldrig tvärtom) så att gammal och ny kod fungerar under övergången.
 
 ## 6. Incidenter (lightweight – ingen formell process idag)
 

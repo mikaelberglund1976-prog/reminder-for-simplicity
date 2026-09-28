@@ -1,4 +1,6 @@
 # Steg-för-steg: Från noll till live app
+
+> **Tillägg 2026-09-28:** inga nya miljövariabler behövs för planer/reklam. `RESEND_FROM_EMAIL` måste vara en adress på en verifierad domän (assistiq.se) – annars når bekräftelse- och inbjudningsmail inte fram. Admin-adressen styrs av `ADMIN_EMAIL`. Hur databasändringar görs i produktion: `OPERATIONS.md` §5b.
 **För dig utan teknisk bakgrund – inga förkunskaper krävs**
 
 Räkna med ca **2-3 timmar** totalt, men du kan ta en paus när du vill.

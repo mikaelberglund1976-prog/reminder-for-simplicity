@@ -13,6 +13,8 @@ De två plattformarna är **inte symmetriska**. Android/Google Play är en rimli
 
 ---
 
+> **Tillägg 2026-09-28:** appen har nu planer (Free/Pro), en 14 dagars provperiod och egen reklam för gratis-vuxna (aldrig barn). Två saker att tänka på vid store-lansering: (1) Pro som köps *inne i* en iOS-app kräver normalt Apples In-App Purchase (utanför EU:s undantag) – därför är betalningen förberedd med `proSource` så att "apple"/"google" kan läggas till bredvid "stripe"; (2) en app med reklam måste deklarera det i butikerna, och en app i familje-/barnkategorin har hårdare reklamregler – vår reklam visas bara för vuxna och utan spårning, vilket underlättar.
+
 ## 2. Nuläget i vår kodbas (bättre grund än väntat)
 
 - ✅ `public/manifest.json` finns redan – namn, ikoner **192×192 och 512×512 med `maskable`-stöd**, standalone-läge, tema/bakgrundsfärg. Precis vad Google Play kräver för ikonresurser.

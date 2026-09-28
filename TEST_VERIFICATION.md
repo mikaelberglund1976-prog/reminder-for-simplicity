@@ -54,7 +54,7 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Inköpslista → Browse: tvåkolumnslista, fler varor per kategori.
 - [ ] Kalender → månadsvy: titlar syns i dagrutorna.
 
-## 7. Punkt 31 – kräver `db push` + migreringsscript + Resend-domän + deploy först
+## 7. Punkt 31 – LIVE 2026-09-28 (automattestat lokalt, klicktesta skarpt)
 - [ ] Registrera nytt konto → "Check your inbox" → klicka länken → "Email confirmed" → logga in.
 - [ ] Logga in innan bekräftelse → felmeddelande + "Resend confirmation email" fungerar.
 - [ ] Skapa barnkonto (namn + e-post) → barnet får mail → väljer lösenord → loggar in → hamnar i barnvyn med Läxor & prov överst.
@@ -67,6 +67,16 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Läxor & prov: lägg till läxa + prov med ämne och datum, nedräkning stämmer, bocka av → hamnar under "Done".
 - [ ] 📅-knappen döljer/visar posten i kalendern och i ICS-flödet.
 - [ ] Mail dagen före kommer till barnet (och till föräldern som skapade posten), inte om posten är avbockad.
+
+## 8. Release 2026-09-28 – planer, provperiod, reklam, tema (LIVE, automattestat lokalt – klicktesta skarpt)
+- [ ] ☰-menyn → Auto/Light/Dark byter tema direkt och minns valet efter omladdning. Auto följer telefonens mörka läge.
+- [ ] Startsidan: planchip ("Free · Try Pro" / "⚡ Trial · Xd left" / "⚡ Pro") leder till `/upgrade`.
+- [ ] Gratisfamilj: en inköpslista fungerar och delas med partnern; "+ New list ⚡" leder till `/upgrade`; Önskelistor/Sysslor/Läxor visar "…is part of Pro" + "Start free 14-day trial".
+- [ ] Starta provperioden → allt låses upp, 14 dagar kvar; kan inte startas igen.
+- [ ] "I want Pro" → mail till dig → `/admin` → familjen → Grant Pro +30 → familjen ser "⚡ Pro", får mail.
+- [ ] `/admin/ads` → skapa en annons → syns på startsidan för en gratis-vuxen men **inte** för barn eller Pro. Klick räknas.
+- [ ] Radera en medlem → hens påminnelser blir "Unassigned" men finns kvar; återställ i `/admin` → önskelistan tillbaka.
+- [ ] Mörkt läge: gå igenom Home, Calendar, Shopping list, Chores, School, Profile, /upgrade – ingen oläslig text.
 
 ---
 

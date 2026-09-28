@@ -1,5 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.19 | **Uppdaterad:** 2026-08-18 | **Ägare:** Mikael Berglund
+**Version:** 2.20 | **Uppdaterad:** 2026-09-28 | **Ägare:** Mikael Berglund
+**Not (2026-09-28, live):** §7.4 tillagd – ny Free/Pro-gräns, 14 dagars provperiod, Pro-förfrågan/admin-beviljning, förberedd betalning och reklam. Ersätter delar av §7.1 och hela §7.3 (7-dagars trial). Se `RELEASE_2026-09-28.md`.
 **Not (2026-08-18, deploy bekräftad live):** Fas A:s säkerhetsfixar och Training→Activity-namnbytet (nedan) pushade till GitHub och bekräftat deployade till produktion på Vercel (commit `29bf8e9`, deployment `dpl_3qWTb64whz1ZuTNefwK3TXnUuxUx`, state READY). Se `TODO.md` punkt 30 och `LAUNCH_CHECKLIST.md`. Kvarstår: manuell klicktestning i den skarpa appen (rate limit-låsning, gratis hushållsdelning, Activity-namnet överallt).
 **Not (2026-08-02, namnbyte + parkering bekräftad):** "Training" bytt till "Activity/Activities" i hela UI:t (4b.33, Mikaels feedback om scouter/teater), interna namn (route, enum, bottomNavTabs-nyckel) oförändrade – ingen schemaändring. "Föräldrautrymme"-modulen bekräftad parkerad (var bara en rekommendation, se `ROADMAP.md`).
 **Not (2026-08-02, produktbeslut som "utvecklingsavdelning"):** Flera länge öppna frågor avgjorda på egen hand, grundat i redan gjord konkurrens-/marknadsresearch: belöningar för Sysslor (4b.3, poäng/stjärnor), pris (§7.1, 49 kr/mån–399 kr/år), Guest-rollens hushållsgräns (4b.31, ingen begränsning), Träningskalenderns ICS-väg (`ROADMAP.md`, bekräftad). Nytt fynd: admin-godkännande av nya konton blockerar hela onboarding-upplevelsen, dokumenterat i ny sektion 4b.32 och tillagt i `LAUNCH_CHECKLIST.md` Fas A. Medvetet lämnat öppet (scope-fråga, inte UX): "Föräldrautrymme"-modulen, se `ROADMAP.md`. Fullständig sammanfattning i `TODO.md` punkt 28.
@@ -484,6 +485,24 @@ Detaljer: `TODO.md` punkt 31.
 - **Ingen transparent debiteringstidslinje** (à la Structured, se `COMPETITOR_ANALYSIS_TASKAPPS.md`/4b.30) – relevant först när ett riktigt betalflöde finns att visa en tidslinje för.
 
 **Inget att bygga för att erbjuda en 7-dagars provperiod – den finns redan.** Det som saknas är ett riktigt betalflöde att landa i *efter* trialen (se 7.1/§6 Fas 3).
+
+### 7.4 Planer, provperiod och reklam (beslutat och live 2026-09-28)
+
+Ersätter "Basic/Pro" i 7.1 där de skiljer sig, och hela 7.3. Källan till sanning i koden är `app/src/lib/entitlements.ts` – den enda funktionen som avgör FREE / TRIAL / PRO.
+
+**Free (för alltid):** påminnelser (obegränsat), hushåll + bjuda in vuxna, dela påminnelser, **en** delad inköpslista (den äldsta i hushållet), kalender + ICS-kalendersynk, Ideas & voting. Visar ett "Sponsored"-kort för vuxna.
+
+**Pro:** barnkonton, sysslor med godkännande, läxor & prov, önskelistor + reservationer, aktiviteter, obegränsat antal inköpslistor, ingen reklam. (Ändring mot 7.1: första barnprofilen är inte längre gratis, och ICS-synk förblir gratis – som koden redan gjorde.)
+
+**Provperiod:** 14 dagar, hela familjen, utan kort, en gång per hushåll, startas av en vuxen (`FamilyTrial.childId` är nu frivilligt). Ångerrätt (14 dagar enligt lag) gäller när betalning införs – inget produktval.
+
+**Pro-källor:** `is_pro` = "Pro forever" (manuellt/legacy); `proUntil` = Pro till ett datum, satt av admin idag (`proSource="admin"`) och av Stripe senare (`proSource="stripe"`, `plan` t.ex. `pro_monthly`). `stripeCustomerId`/`stripeSubscriptionId` finns redan.
+
+**Uppgradera idag (ingen betalning än):** `/upgrade` → "I want Pro" → mail till admin + `proRequestedAt`. Admin → familjen → Grant Pro +14/30/90/365/valfritt/forever/remove → familjen får mail.
+
+**Reklam:** egna sponsorkort (`Ad`-tabellen, `/admin/ads`), placering Home / Shopping list / Calendar / Anywhere, start/slut, visningar + klick räknas per annons (ingen data om tittaren). Visas bara för vuxna i FREE-hushåll – **aldrig för barn** (DSA förbjuder profilerad reklam till minderåriga; svensk marknadsföringslag begränsar reklam riktad till barn), aldrig på Pro/provperiod/reklamfritt. **Köpa sig fri:** Pro, eller framtida separat "reklamfritt" (`adFreeUntil`, kan ges av admin redan nu).
+
+**Radering (uppdaterat):** allt personen var ansvarig för blir kvar men "Unassigned" direkt; reservationer släpps; personens egna listor göms under 60 dagar och kommer tillbaka vid återställning (utan att ansvar återställs).
 
 **Målsättning år 1:**
 - 500 gratis-användare inom 6 månader
