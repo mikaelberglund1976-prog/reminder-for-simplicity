@@ -645,3 +645,23 @@ model Ad {
 
   @@map("ads")
 }
+
+// 2026-09-28 (test round, row 40): family photos — a header picture for the
+// home screen (kind "header", ownerId = household id) and a profile picture
+// per person (kind "avatar", ownerId = user id). Kept in their own table so
+// no existing query (which often loads a whole User/Household) ever drags
+// image bytes along. Images are compressed in the browser before upload
+// (avatar 320×320 JPEG, header ≤1400 px wide), so rows stay ~20–150 KB.
+// The table is created on first use by lib/media.ts (CREATE TABLE IF NOT
+// EXISTS) — no manual migration step needed.
+model MediaImage {
+  id        String   @id @default(cuid())
+  kind      String
+  ownerId   String
+  mime      String
+  data      Bytes
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([kind, ownerId])
+  @@map("media_images")
+}

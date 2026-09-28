@@ -120,23 +120,31 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { name, assignedTo, recurrence, recurrenceDays, startDate, requiresApproval, note, category: rawCategory, schoolKind: rawSchoolKind, subject, showInCalendar } = body ?? {};
+    const { name, assignedTo, assignees, recurrence, recurrenceDays, startDate, requiresApproval, note, category: rawCategory, schoolKind: rawSchoolKind, subject, showInCalendar } = body ?? {};
     const category: BookingCategory = BOOKING_CATEGORIES.includes(rawCategory) ? rawCategory : "CHORE";
 
     if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
 
     // Children can only create chores for themselves (auto self-assign, ignore any assignedTo in body)
-    let finalAssignedTo: string;
+    // 2026-09-28 (test round, row 46): an adult can pick several people at
+    // once (e.g. both parents for a parents' meeting) — each person gets
+    // their own copy, so it lands in everyone's calendar and feed and can be
+    // ticked off / removed per person.
+    let targets: string[];
     if (isChild) {
-      finalAssignedTo = session.user.id;
+      targets = [session.user.id];
     } else {
-      if (!assignedTo) return NextResponse.json({ error: "assignedTo required" }, { status: 400 });
-      finalAssignedTo = assignedTo;
-    }
-
-    // Trial child-limit: on non-Pro trial, only the trial's one child is allowed
-    if (!isPro && trial?.childId && finalAssignedTo !== trial.childId) {
-      return NextResponse.json({ error: "Trial only supports 1 child" }, { status: 403 });
+      const requested: string[] = Array.isArray(assignees)
+        ? assignees.filter((v: unknown): v is string => typeof v === "string")
+        : assignedTo ? [assignedTo] : [];
+      if (requested.length === 0) return NextResponse.json({ error: "assignedTo required" }, { status: 400 });
+      const valid = await prisma.householdMember.findMany({
+        where: { householdId: membership.householdId, userId: { in: requested } },
+        select: { userId: true },
+      });
+      const validIds = new Set(valid.map((v) => v.userId));
+      targets = Array.from(new Set(requested)).filter((id) => validIds.has(id)).slice(0, 12);
+      if (targets.length === 0) return NextResponse.json({ error: "Pick someone in your family" }, { status: 400 });
     }
 
     // 2026-09-27: School items are one-off (a test/homework has a date, it
@@ -146,6 +154,8 @@ export async function POST(req: Request) {
       ? (["HOMEWORK", "TEST", "OTHER"].includes(rawSchoolKind) ? rawSchoolKind : "HOMEWORK")
       : null;
 
+    const created = [];
+    for (const finalAssignedTo of targets) {
     const chore = await prisma.reminder.create({
       data: {
         name: name.trim(),
@@ -176,8 +186,12 @@ export async function POST(req: Request) {
       },
       include: { assignedUser: { select: { id: true, name: true } } },
     });
+    created.push(chore);
+    }
 
-    return NextResponse.json(chore, { status: 201 });
+    // Single target → the item itself (unchanged response shape); several →
+    // the first one plus `created` with all of them.
+    return NextResponse.json(created.length === 1 ? created[0] : { ...created[0], created }, { status: 201 });
   } catch (err) {
     console.error("Chore POST error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";

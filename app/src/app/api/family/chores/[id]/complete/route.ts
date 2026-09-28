@@ -52,7 +52,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     await prisma.choreCompletion.delete({ where: { id: existing.id } });
     return NextResponse.json({ done: false });
   } else {
-    const newStatus = chore.requiresApproval ? "PENDING_APPROVAL" : "DONE";
+    // 2026-09-28: approval is for a child's own tick. An adult ticking a
+    // chore (their own, or on a child's behalf) is already the approval.
+    const newStatus = chore.requiresApproval && !isAdult ? "PENDING_APPROVAL" : "DONE";
     const completion = await prisma.choreCompletion.create({
       data: { reminderId: params.id, childId, weekStart, status: newStatus },
     });

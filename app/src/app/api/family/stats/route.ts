@@ -25,8 +25,8 @@ export async function GET() {
         household: {
           include: {
             familyTrial: true,
+            // 2026-09-28 (row 43): chores can be anyone's, so stats are too.
             members: {
-              where: { role: "CHILD" },
               include: { user: { select: { id: true, name: true, email: true } } },
             },
           },

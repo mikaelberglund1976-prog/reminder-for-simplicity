@@ -16,6 +16,7 @@ function IcPlus()  { return <svg width={20} height={20} viewBox="0 0 24 24" {...
 function IcCheck() { return <svg width={18} height={18} viewBox="0 0 24 24" {...STR}><polyline points="20 6 9 17 4 12"/></svg>; }
 
 type ChildSummary = {
+  role?: string;
   childId: string;
   childName: string;
   total: number;
@@ -56,14 +57,6 @@ export default function FamilyPage() {
   const [loading, setLoading] = useState(true);
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
-  const [householdId, setHouseholdId] = useState<string | null>(null);
-  const [showAddChild, setShowAddChild] = useState(false);
-  const [newChildName, setNewChildName] = useState("");
-  // 2026-09-27: child accounts use email + password now (PIN retired).
-  const [newChildEmail, setNewChildEmail] = useState("");
-  const [childInviteSentTo, setChildInviteSentTo] = useState<string | null>(null);
-  const [addChildError, setAddChildError] = useState("");
-  const [addingChild, setAddingChild] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -82,9 +75,10 @@ export default function FamilyPage() {
       if (res.ok) {
         const data = await res.json();
         setTrial(data);
-        if (data.householdId) setHouseholdId(data.householdId);
-        if ((data.trialActive || data.isPro) && data.childMembers?.length > 0) {
-          setSelectedChild(data.trialChildId ?? data.childMembers[0]?.id ?? "");
+        // 2026-09-28 (row 43): chores can belong to adults too, so load the
+        // week even when the family has no children.
+        if (data.trialActive || data.isPro) {
+          setSelectedChild(data.childMembers?.[0]?.id ?? "");
           fetchSummary();
           fetchStats();
         }
@@ -113,38 +107,17 @@ export default function FamilyPage() {
     } catch (e) { console.error(e); }
   }
 
-  async function createChildProfile() {
-    if (!newChildName.trim()) { setAddChildError("Enter a name"); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newChildEmail.trim())) { setAddChildError("Enter a valid email address"); return; }
-    setAddingChild(true);
-    setAddChildError("");
+  // 2026-09-28: an adult can tick off any chore (their own, or on a child's
+  // behalf) straight from the overview.
+  async function handleToggleDone(choreId: string) {
+    setApprovingId(choreId);
     try {
-      const res = await fetch("/api/family/child-profiles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newChildName.trim(), email: newChildEmail.trim() }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        if (data.householdId) setHouseholdId(data.householdId);
-        setShowAddChild(false);
-        setChildInviteSentTo(newChildEmail.trim());
-        setNewChildName(""); setNewChildEmail("");
-        await fetchTrial();
-      } else {
-        setAddChildError(data.error ?? "Something went wrong");
-      }
-    } catch { setAddChildError("Network error"); }
-    finally { setAddingChild(false); }
+      await fetch(`/api/family/chores/${choreId}/complete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      await fetchSummary();
+      await fetchStats();
+    } catch (e) { console.error(e); }
+    finally { setApprovingId(null); }
   }
-
-  function resetAddChildForm() {
-    setShowAddChild(false);
-    setNewChildName("");
-    setNewChildEmail("");
-    setAddChildError("");
-  }
-
 
   async function handleApprove(choreId: string, childId: string, action: "approve" | "reopen") {
     setApprovingId(choreId);
@@ -239,7 +212,7 @@ export default function FamilyPage() {
   const viewStats = stats.find(s => s.childId === (viewChild?.childId ?? selectedChild));
 
   return (
-    <Screen title="Family" onBack={() => router.push("/dashboard")}>
+    <Screen title="Chores" onBack={() => router.push("/dashboard")}>
       {/* Trial banner */}
       {trial?.trialActive && !trial.isPro && (
         <div style={{ background: "var(--tint-warning)", border: "1px solid var(--tint-warning)", borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -271,39 +244,18 @@ export default function FamilyPage() {
         </div>
       )}
 
-      {/* 2026-08-18: adding a child was only reachable during onboarding
-          (the NO_TRIAL activation screen above) — once a trial/Pro household
-          reached this main overview there was no way to add another child
-          without leaving to Profile, which is exactly the loop Mikael hit
-          (School's "add a child" link pointed back here with no way to
-          actually do it). Reuses the same showAddChild/AddChildForm/
-          createChildProfile already built for onboarding. */}
       <DeletionRequestsCard />
-      <div style={{ marginBottom: 16 }}>
-        {childInviteSentTo && !showAddChild && (
-          <div style={{ fontSize: 13, color: "var(--success)", background: "var(--tint-success)", border: "1px solid var(--tint-success)", borderRadius: 10, padding: "8px 12px", marginBottom: 8, fontWeight: 600 }}>
-            ✓ Invite sent to {childInviteSentTo}
-          </div>
-        )}
-        {!showAddChild ? (
-          <button onClick={() => setShowAddChild(true)} style={{
-            display: "flex", alignItems: "center", gap: 8, width: "100%",
-            background: "var(--surface)", border: "1.5px dashed var(--accent-border)", borderRadius: 14,
-            padding: "12px 16px", color: "var(--accent)", fontSize: 13, fontWeight: 700,
-            cursor: "pointer", fontFamily: FONT,
-          }}>
-            <IcPlus /> Add child
-          </button>
-        ) : (
-          <AddChildForm
-            name={newChildName} setName={setNewChildName}
-            email={newChildEmail} setEmail={setNewChildEmail}
-            error={addChildError} loading={addingChild}
-            onSave={createChildProfile}
-            onCancel={resetAddChildForm}
-          />
-        )}
-      </div>
+      {/* 2026-09-28 (test round, row 44): adding people used to be split —
+          children here, adults only deep in Settings. Both now live on one
+          "Family members" page, reachable from here, Home and the menu. */}
+      <Link href="/dashboard/family/members" style={{
+        display: "flex", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box",
+        background: "var(--surface)", border: "1.5px dashed var(--accent-border)", borderRadius: 14,
+        padding: "12px 16px", color: "var(--accent)", fontSize: 13, fontWeight: 700,
+        textDecoration: "none", fontFamily: FONT, marginBottom: 16,
+      }}>
+        <IcPlus /> Add family member
+      </Link>
 
       {/* Week summary card */}
       {viewChild && (
@@ -313,10 +265,12 @@ export default function FamilyPage() {
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)" }}>{viewChild.childName}</div>
               <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>This week</div>
             </div>
-            <Link href={`/dashboard/family/child?id=${viewChild.childId}`}
-              style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-              Child view →
-            </Link>
+            {(viewChild.role ?? "CHILD") === "CHILD" && (
+              <Link href={`/dashboard/family/child?id=${viewChild.childId}`}
+                style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
+                Child view →
+              </Link>
+            )}
           </div>
 
           {/* Stats row */}
@@ -354,9 +308,13 @@ export default function FamilyPage() {
                   )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                  <span style={{ padding: "4px 10px", borderRadius: 50, fontSize: 11, fontWeight: 700, background: style.bg, color: style.color }}>
-                    {style.label}
-                  </span>
+                  <button
+                    onClick={() => !isPending && handleToggleDone(chore.id)}
+                    disabled={approvingId === chore.id || isPending}
+                    title={isDone ? "Mark as not done" : "Mark as done"}
+                    style={{ padding: "4px 10px", borderRadius: 50, fontSize: 11, fontWeight: 700, background: style.bg, color: style.color, border: "none", cursor: isPending ? "default" : "pointer", fontFamily: FONT }}>
+                    {isDone ? "✓ Done" : isPending ? style.label : "Mark done"}
+                  </button>
                   {isPending && (
                     <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={() => handleApprove(chore.id, viewChild.childId, "approve")}
@@ -421,7 +379,7 @@ export default function FamilyPage() {
           <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
           <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 8 }}>No chores yet</div>
           <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24, lineHeight: 1.5 }}>
-            Create your first recurring chore for your child.
+            Create a recurring chore for anyone in the family — children or adults.
           </div>
           <Link href="/dashboard/family/new" style={btnStyle("var(--ink)")}>Create first chore</Link>
         </div>
@@ -445,73 +403,6 @@ export default function FamilyPage() {
         </Link>
       )}
     </Screen>
-  );
-}
-
-// ── Shared components ──────────────────────────────────────────
-
-type AddChildFormProps = {
-  name: string;
-  setName: (v: string) => void;
-  email: string;
-  setEmail: (v: string) => void;
-  error: string;
-  loading: boolean;
-  onSave: () => void;
-  onCancel: () => void;
-};
-
-function AddChildForm({ name, setName, email, setEmail, error, loading, onSave, onCancel }: AddChildFormProps) {
-  return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1.5px solid var(--border)", padding: "20px", marginTop: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-      <div style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>Add child profile</div>
-      <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 18, lineHeight: 1.4 }}>
-        We email your child a link to confirm the address and choose a password. Use their own email, or an alias of yours like you+emma@gmail.com.
-      </div>
-
-      <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Name</label>
-        <input
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="e.g. Emma"
-          autoComplete="off"
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 18 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Email</label>
-        <input
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="emma@example.com"
-          type="email"
-          autoComplete="off"
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
-        />
-      </div>
-
-      {error && (
-        <div style={{ fontSize: 13, color: "var(--danger)", background: "var(--tint-danger)", border: "1px solid var(--border-danger)", borderRadius: 8, padding: "10px 12px", marginBottom: 14 }}>
-          {error}
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          onClick={onSave}
-          disabled={loading}
-          style={{ flex: 1, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "13px", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", fontFamily: FONT, opacity: loading ? 0.6 : 1 }}>
-          {loading ? "Sending…" : "Add & send invite"}
-        </button>
-        <button
-          onClick={onCancel}
-          style={{ padding: "13px 20px", borderRadius: 50, background: "var(--surface-3)", border: "none", fontSize: 13, fontWeight: 700, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}>
-          Cancel
-        </button>
-      </div>
-    </div>
   );
 }
 

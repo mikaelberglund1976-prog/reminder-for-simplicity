@@ -20,7 +20,7 @@ type TrialInfo = {
   // 2026-08-18: School items can be logged for any household member now, not
   // just children (Mikael: "samma med läxor" — same as chores). Was
   // `childMembers`.
-  householdMembers: { id: string; name: string }[];
+  householdMembers: { id: string; name: string; role?: string }[];
 };
 
 // Dedicated School section — separate from the general Reminders flow and
@@ -107,7 +107,8 @@ function SchoolPageInner() {
     );
   }
 
-  const members = trial.householdMembers ?? [];
+  // 2026-09-28: children first — they're who homework is usually for.
+  const members = [...(trial.householdMembers ?? [])].sort((a, b) => (a.role === "CHILD" ? 0 : 1) - (b.role === "CHILD" ? 0 : 1));
 
   return (
     <Screen onBack={() => router.push("/dashboard")}>

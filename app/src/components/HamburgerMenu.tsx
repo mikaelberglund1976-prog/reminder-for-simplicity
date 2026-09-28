@@ -3,6 +3,8 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useMe } from "@/lib/me";
 import { ADMIN_EMAIL } from "@/lib/adminConfig";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 
@@ -30,23 +32,108 @@ function IcLogout() { return <svg width={17} height={17} viewBox="0 0 24 24" {..
 // narrow screens the way an independently-positioned floating button could.
 export default function HamburgerMenu() {
   const { data: session } = useSession();
+  const me = useMe();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; right: number }>({ top: 60, right: 12 });
 
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    function onClickOutside(e: MouseEvent | TouchEvent) {
+      const t = e.target as Node;
+      if (menuRef.current?.contains(t) || btnRef.current?.contains(t)) return;
+      setOpen(false);
     }
-    if (open) document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
+    if (open) {
+      document.addEventListener("mousedown", onClickOutside);
+      document.addEventListener("touchstart", onClickOutside);
+      document.addEventListener("keydown", onKey);
+    }
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("touchstart", onClickOutside);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
+  function toggle() {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) });
+    setOpen((v) => !v);
+  }
+
   const isAdmin = session?.user?.email === ADMIN_EMAIL;
+  // 2026-09-28 (row 38): a child only gets links to their own things.
+  const isChild = !!me?.isChildProfile;
+  const close = () => setOpen(false);
+
+  // 2026-09-28 (test round, row 48): the menu used to be an absolutely
+  // positioned child of the sticky page header — on a phone the list ran past
+  // the bottom of the screen, under the floating bottom nav, and couldn't be
+  // scrolled. It's now rendered in a portal on top of everything, capped to
+  // the visible height and scrollable inside.
+  const menu = open ? (
+    <div
+      ref={menuRef}
+      role="menu"
+      style={{
+        position: "fixed", top: pos.top, right: pos.right, zIndex: 1000,
+        width: 236, maxHeight: `calc(100dvh - ${pos.top}px - 12px - env(safe-area-inset-bottom, 0px))`,
+        overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch",
+        background: "var(--surface)", borderRadius: 14,
+        border: "1px solid var(--border)", boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+        padding: 6, fontFamily: FONT,
+      }}
+    >
+      {isChild ? (
+        <>
+          <MenuLink href="/dashboard/family/child" icon={<IcHome />} label="My week" onClick={close} />
+          <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label="Shopping list" onClick={close} />
+          <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label="My wishlist" onClick={close} />
+          <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={close} />
+        </>
+      ) : (
+        <>
+          <MenuLink href="/dashboard" icon={<IcHome />} label="Home" onClick={close} />
+          <MenuLink href="/dashboard/calendar" icon={<IcCalendar />} label="Calendar" onClick={close} />
+          <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label="Shopping list" onClick={close} />
+          <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label="Wishlist" onClick={close} />
+          <MenuLink href="/dashboard/family" icon={<IcChecklist />} label="Chores" onClick={close} />
+          <MenuLink href="/dashboard/training" icon={<IcTraining />} label="Activities" onClick={close} />
+          <MenuLink href="/dashboard/school" icon={<IcSchool />} label="School" onClick={close} />
+          <MenuLink href="/dashboard/family/members" icon={<IcUsers />} label="Family members" onClick={close} />
+          <MenuLink href="/dashboard/suggestions" icon={<IcBulb />} label="Ideas & voting" onClick={close} />
+          <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={close} />
+          {isAdmin && (
+            <MenuLink href="/admin" icon={<IcShield />} label="Admin" onClick={close} />
+          )}
+        </>
+      )}
+      <div style={{ borderTop: "1px solid var(--border-soft)", margin: "4px 0" }} />
+      <div style={{ padding: "4px 4px 6px" }}>
+        <ThemeSwitcher compact />
+      </div>
+      <div style={{ borderTop: "1px solid var(--border-soft)", margin: "4px 0" }} />
+      <button
+        onClick={() => { close(); signOut({ callbackUrl: "/login" }); }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 10,
+          padding: "9px 10px", borderRadius: 10, border: "none", background: "none",
+          color: "var(--danger)", fontSize: 13, fontWeight: 600, cursor: "pointer",
+          fontFamily: FONT, textAlign: "left",
+        }}
+      >
+        <IcLogout /> Sign out
+      </button>
+    </div>
+  ) : null;
 
   return (
-    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
+    <div style={{ position: "relative", flexShrink: 0 }}>
       <button
-        onClick={() => setOpen(v => !v)}
+        ref={btnRef}
+        onClick={toggle}
         aria-label="Menu"
         aria-expanded={open}
         style={{
@@ -58,44 +145,7 @@ export default function HamburgerMenu() {
       >
         <IcMenu />
       </button>
-
-      {open && (
-        <div style={{
-          position: "absolute", top: 44, right: 0, zIndex: 30,
-          width: 236, background: "var(--surface)", borderRadius: 14,
-          border: "1px solid var(--border)", boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-          padding: 6, fontFamily: FONT,
-        }}>
-          <MenuLink href="/dashboard" icon={<IcHome />} label="Home" onClick={() => setOpen(false)} />
-          <MenuLink href="/dashboard/calendar" icon={<IcCalendar />} label="Calendar" onClick={() => setOpen(false)} />
-          <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label="Shopping list" onClick={() => setOpen(false)} />
-          <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label="Wishlist" onClick={() => setOpen(false)} />
-          <MenuLink href="/dashboard/family" icon={<IcChecklist />} label="Chores" onClick={() => setOpen(false)} />
-          <MenuLink href="/dashboard/training" icon={<IcTraining />} label="Activities" onClick={() => setOpen(false)} />
-          <MenuLink href="/dashboard/school" icon={<IcSchool />} label="School" onClick={() => setOpen(false)} />
-          <MenuLink href="/dashboard/suggestions" icon={<IcBulb />} label="Ideas & voting" onClick={() => setOpen(false)} />
-          <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={() => setOpen(false)} />
-          {isAdmin && (
-            <MenuLink href="/admin" icon={<IcShield />} label="Admin" onClick={() => setOpen(false)} />
-          )}
-          <div style={{ borderTop: "1px solid var(--border-soft)", margin: "4px 0" }} />
-          <div style={{ padding: "4px 4px 6px" }}>
-            <ThemeSwitcher compact />
-          </div>
-          <div style={{ borderTop: "1px solid var(--border-soft)", margin: "4px 0" }} />
-          <button
-            onClick={() => { setOpen(false); signOut({ callbackUrl: "/login" }); }}
-            style={{
-              width: "100%", display: "flex", alignItems: "center", gap: 10,
-              padding: "9px 10px", borderRadius: 10, border: "none", background: "none",
-              color: "var(--danger)", fontSize: 13, fontWeight: 600, cursor: "pointer",
-              fontFamily: FONT, textAlign: "left",
-            }}
-          >
-            <IcLogout /> Sign out
-          </button>
-        </div>
-      )}
+      {menu && typeof document !== "undefined" ? createPortal(menu, document.body) : null}
     </div>
   );
 }

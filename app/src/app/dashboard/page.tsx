@@ -6,8 +6,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import AdSlot from "@/components/AdSlot";
+import Avatar from "@/components/Avatar";
+import { getMe } from "@/lib/me";
+import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
 
-type HouseholdMember = { id: string; userId: string; user: { id: string; name: string | null; email: string } };
+type HouseholdMember = { id: string; userId: string; role?: string; user: { id: string; name: string | null; email: string } };
+
+type SchoolItem = {
+  id: string; name: string; date: string; subject: string | null;
+  schoolKind: "HOMEWORK" | "TEST" | "OTHER" | null; completedAt: string | null;
+  assignedUser: { id: string; name: string | null; email: string } | null;
+};
 
 type Reminder = {
   id: string;
@@ -298,13 +307,25 @@ export default function DashboardPage() {
   const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
   const [plan, setPlan] = useState<{ plan: "FREE" | "TRIAL" | "PRO"; trialDaysLeft: number | null } | null>(null);
   const [familySummary, setFamilySummary] = useState<{ childId: string; childName: string; total: number; done: number; pending: number }[]>([]);
+  // 2026-09-28 (test round, row 39): upcoming tests & homework per child.
+  const [schoolItems, setSchoolItems] = useState<SchoolItem[]>([]);
+  // 2026-09-28 (row 38): don't render the adult home at all until we know
+  // this isn't a child (they're sent to their own "My week").
+  const [roleChecked, setRoleChecked] = useState(false);
+  const media = useFamilyMedia();
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
   useEffect(() => {
-    if (status === "authenticated") { fetchReminders(); fetchProfile(); fetchHousehold(); fetchFamilyData(); }
+    if (status !== "authenticated") return;
+    getMe().then((me) => {
+      if (me?.isChildProfile) { router.replace("/dashboard/family/child"); return; }
+      if (me?.preferredCurrency) setCurrency(me.preferredCurrency);
+      setRoleChecked(true);
+      fetchReminders(); fetchHousehold(); fetchFamilyData();
+    });
   }, [status]);
 
   async function fetchReminders() {
@@ -314,22 +335,6 @@ export default function DashboardPage() {
       setReminders(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }
-
-  async function fetchProfile() {
-    try {
-      const res = await fetch("/api/profile");
-      if (res.ok) {
-        const d = await res.json();
-        // Child profiles should never see the main reminder dashboard.
-        // Kick them to their own chore overview.
-        if (d.isChildProfile) {
-          router.replace("/dashboard/family/child");
-          return;
-        }
-        if (d.preferredCurrency) setCurrency(d.preferredCurrency);
-      }
-    } catch (e) { console.error(e); }
   }
 
   async function fetchHousehold() {
@@ -363,10 +368,14 @@ export default function DashboardPage() {
       if (!trialRes.ok) return;
       const trialData = await trialRes.json();
       if (trialData.trialActive || trialData.isPro) {
-        const weekRes = await fetch("/api/family/week");
+        const [weekRes, schoolRes] = await Promise.all([fetch("/api/family/week"), fetch("/api/family/chores?category=SCHOOL")]);
         if (weekRes.ok) {
           const weekData = await weekRes.json();
           setFamilySummary(weekData.summary ?? []);
+        }
+        if (schoolRes.ok) {
+          const sd = await schoolRes.json();
+          setSchoolItems(sd.chores ?? []);
         }
       }
     } catch (e) { console.error(e); }
@@ -411,7 +420,7 @@ export default function DashboardPage() {
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
 
   // Pre-compute family card display values (avoids complex JSX expressions)
-  const familyCardRows = familySummary.slice(0, 2).map(c => ({
+  const familyCardRows = familySummary.slice(0, 4).map(c => ({
     id: c.childId,
     name: c.childName,
     label: c.done + "/" + c.total,
@@ -420,7 +429,24 @@ export default function DashboardPage() {
   }));
   const pendingApprovals = familySummary.reduce((s, c) => s + c.pending, 0);
 
-  if (status === "loading" || loading) {
+  // Homework & tests for the next two weeks (plus anything overdue and not
+  // ticked off), grouped per person — tests first within a day.
+  const schoolByPerson = (() => {
+    const horizon = 14;
+    const open = schoolItems
+      .filter((i) => !i.completedAt && getDaysUntil(i.date) <= horizon && getDaysUntil(i.date) >= -7)
+      .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date) || (a.schoolKind === "TEST" ? -1 : 0) - (b.schoolKind === "TEST" ? -1 : 0));
+    const map = new Map<string, { id: string; name: string; items: SchoolItem[] }>();
+    for (const it of open) {
+      const id = it.assignedUser?.id ?? "?";
+      const name = it.assignedUser?.name?.split(" ")[0] ?? it.assignedUser?.email?.split("@")[0] ?? "Someone";
+      if (!map.has(id)) map.set(id, { id, name, items: [] });
+      map.get(id)!.items.push(it);
+    }
+    return Array.from(map.values());
+  })();
+
+  if (status === "loading" || loading || !roleChecked) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
         <div style={{ color: "var(--muted)", fontSize: 15 }}>Reminder for Simplicity is thinking…</div>
@@ -439,6 +465,14 @@ export default function DashboardPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", paddingBottom: 24, fontFamily: FONT }}>
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "32px 20px 0" }}>
+
+        {/* 2026-09-28 (test round, row 40): the family's own photo on top. */}
+        {media.header && (
+          <Link href="/dashboard/family/members" aria-label="Family photo — change it in Family members" style={{ display: "block", margin: "-12px 0 18px", borderRadius: 22, overflow: "hidden", boxShadow: "var(--shadow)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={headerUrl(media.header)} alt="" style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }} />
+          </Link>
+        )}
 
         {/* Header — 2026-09-27 UI review: short greeting + today's date
             instead of a paragraph of explanation (personas skimmed past it). */}
@@ -477,6 +511,26 @@ export default function DashboardPage() {
             <button onClick={createHousehold} disabled={creatingHousehold} style={{ background: "#fff", color: "#1C1C28", border: "none", borderRadius: 50, padding: "11px 20px", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT }}>
               {creatingHousehold ? "Creating…" : "Create my family"}
             </button>
+          </div>
+        )}
+
+        {/* 2026-09-28 (rows 40 + 44): the family at a glance — photos, and
+            adding someone is one tap from Home instead of buried in Settings. */}
+        {hasHousehold && (
+          <div className="rfs-hscroll" style={{ display: "flex", gap: 14, overflowX: "auto", margin: "0 -20px 22px", padding: "2px 20px 4px" }}>
+            {householdMembers.map((m) => {
+              const first = m.user.name?.split(" ")[0] ?? m.user.email.split("@")[0];
+              return (
+                <Link key={m.userId} href="/dashboard/family/members" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: 56 }}>
+                  <Avatar userId={m.userId} name={first} size={52} />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fg-2)", maxWidth: 60, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{first}</span>
+                </Link>
+              );
+            })}
+            <Link href="/dashboard/family/members" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: 56 }}>
+              <span style={{ width: 52, height: 52, borderRadius: "50%", border: "1.5px dashed var(--accent-border)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 500, boxSizing: "border-box" }}>+</span>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--accent)" }}>Add</span>
+            </Link>
           </div>
         )}
 
@@ -546,6 +600,50 @@ export default function DashboardPage() {
               );
             })}
           </div>
+        )}
+
+        {/* 2026-09-28 (test round, row 39): a parent sees every child's
+            upcoming tests and homework right on Home. */}
+        {schoolByPerson.length > 0 && (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+              <SectionTitle inline>Homework & tests</SectionTitle>
+              <Link href="/dashboard/school" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>All →</Link>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+              {schoolByPerson.map((p) => (
+                <Link key={p.id} href="/dashboard/school" style={{ display: "block", textDecoration: "none", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <Avatar userId={p.id} name={p.name} size={28} />
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>
+                      {p.items.filter((i) => i.schoolKind === "TEST").length > 0 && `${p.items.filter((i) => i.schoolKind === "TEST").length} test${p.items.filter((i) => i.schoolKind === "TEST").length === 1 ? "" : "s"} · `}
+                      {p.items.length} coming up
+                    </span>
+                  </div>
+                  {p.items.slice(0, 3).map((it) => {
+                    const d = getDaysUntil(it.date);
+                    const isTest = it.schoolKind === "TEST";
+                    return (
+                      <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: "1px solid var(--border-soft)" }}>
+                        <span style={{
+                          fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0,
+                          background: isTest ? "var(--tint-danger)" : "var(--tint-school)", color: isTest ? "var(--danger)" : "var(--school)",
+                        }}>{isTest ? "Test" : it.schoolKind === "HOMEWORK" ? "Homework" : "School"}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {it.subject ? `${it.subject} · ` : ""}{it.name}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0, color: d < 0 ? "var(--danger)" : d <= 1 ? "var(--warning)" : "var(--muted)" }}>
+                          {d < 0 ? "Overdue" : d === 0 ? "Today" : d === 1 ? "Tomorrow" : formatDate(it.date)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {p.items.length > 3 && <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>+{p.items.length - 3} more</div>}
+                </Link>
+              ))}
+            </div>
+          </>
         )}
 
         <AdSlot placement="home" style={{ marginBottom: 20 }} />

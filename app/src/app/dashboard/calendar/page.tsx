@@ -18,7 +18,7 @@
 // view it builds on top of.
 
 import { useSession } from "next-auth/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import { getOccurrencesInRange, dateKey, type RecurringItem } from "@/lib/recurrence";
@@ -53,6 +53,11 @@ const TRAINING_COLOR = "#D85A30";
 // /dashboard/school and /dashboard/family/child), but still shows up here
 // since everything syncs to the calendar. Indigo, matching the mockup.
 const SCHOOL_COLOR = "#3730A3";
+// 2026-09-28 (test round, row 41): tests and homework were the same indigo
+// and only told apart by a tiny emoji. A test is now its own kind with its
+// own colour (crimson — "this one matters"), its own filter chip and a 🧪
+// marker in the grid (homework gets 📝).
+const TEST_COLOR = "#B4235A";
 
 // Reminders span multiple category colors (see CATEGORY_COLOR above), so the
 // filter/legend chip for that kind uses a neutral swatch rather than any one
@@ -63,7 +68,19 @@ const KIND_META: Record<CalendarEntry["kind"], { label: string; color: string; e
   reminder: { label: "Reminders", color: REMINDER_KIND_COLOR, emoji: "🔔" },
   chore: { label: "Chores", color: CHORE_COLOR, emoji: "🧹" },
   training: { label: "Activities", color: TRAINING_COLOR, emoji: "🎯" },
-  school: { label: "School", color: SCHOOL_COLOR, emoji: "📚" },
+  homework: { label: "Homework", color: SCHOOL_COLOR, emoji: "📝" },
+  test: { label: "Tests", color: TEST_COLOR, emoji: "🧪" },
+};
+
+// The calendar's own "+" wizard still offers one School entry (the School
+// form lets you pick homework or test).
+const ADD_KINDS = ["reminder", "chore", "training", "school"] as const;
+type AddKind = (typeof ADD_KINDS)[number];
+const ADD_META: Record<AddKind, { label: string; color: string; emoji: string }> = {
+  reminder: { label: "Reminder", color: REMINDER_KIND_COLOR, emoji: "🔔" },
+  chore: { label: "Chore", color: CHORE_COLOR, emoji: "🧹" },
+  training: { label: "Activity", color: TRAINING_COLOR, emoji: "🎯" },
+  school: { label: "Homework or test", color: SCHOOL_COLOR, emoji: "📚" },
 };
 
 const RECURRENCE_LABELS: Record<string, string> = {
@@ -94,9 +111,11 @@ type CalendarEntry = {
   occDate: Date;
   id: string;
   name: string;
-  kind: "reminder" | "chore" | "training" | "school";
+  kind: "reminder" | "chore" | "training" | "homework" | "test";
   color: string;
   subtitle: string;
+  // Short label for the tiny chip inside a day cell.
+  short: string;
 };
 
 function isSameDay(a: Date, b: Date): boolean {
@@ -117,6 +136,29 @@ export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState<Date>(today);
 
+  // 2026-09-28 (test round, row 42): on a phone each day cell is ~50px wide
+  // and the event chips inside it are ~13px tall, so with two things on the
+  // same day a tap often hit the "wrong" chip (or the gap between them) and
+  // either opened the wrong item or nothing seemed to happen. On touch
+  // screens a tap anywhere in the cell now just selects the day and scrolls
+  // to that day's list below, where every item is a full-width row. Mouse
+  // users keep "click a chip to open it".
+  const [touchMode, setTouchMode] = useState(false);
+  const dayPanelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: none), (pointer: coarse), (max-width: 600px)");
+    const update = () => setTouchMode(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+  function selectDay(day: Date) {
+    setSelectedDate(day);
+    if (touchMode) {
+      requestAnimationFrame(() => dayPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
+  }
+
   // Type filter — 2026-07-28, "filtrera på de olika typerna samt ha
   // färkodning synlig". Empty set = nothing hidden = everything shown.
   const [hiddenKinds, setHiddenKinds] = useState<Set<CalendarEntry["kind"]>>(new Set());
@@ -133,7 +175,7 @@ export default function CalendarPage() {
   // screen, reached via a `date` query param so it doesn't have to be picked
   // twice.
   const [addStep, setAddStep] = useState<0 | 1 | 2>(0); // 0 = closed, 1 = pick type, 2 = pick date
-  const [addKind, setAddKind] = useState<"reminder" | "chore" | "training" | "school">("reminder");
+  const [addKind, setAddKind] = useState<AddKind>("reminder");
   const [addDate, setAddDate] = useState("");
 
   function openAddWizard() {
@@ -141,7 +183,7 @@ export default function CalendarPage() {
     setAddDate(dateKey(selectedDate));
     setAddStep(1);
   }
-  function chooseAddKind(kind: "reminder" | "chore" | "training" | "school") {
+  function chooseAddKind(kind: AddKind) {
     setAddKind(kind);
     setAddStep(2);
   }
@@ -228,6 +270,7 @@ export default function CalendarPage() {
           occDate: occ, id: r.id, name: r.name, kind: "reminder",
           color: CATEGORY_COLOR[r.category] ?? CATEGORY_COLOR.OTHER,
           subtitle: `${CATEGORY_LABELS[r.category] ?? r.category}${r.recurrence !== "ONCE" ? " · " + RECURRENCE_LABELS[r.recurrence] : ""}`,
+          short: r.name,
         });
         map.set(key, list);
       }
@@ -239,7 +282,7 @@ export default function CalendarPage() {
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: c.id, name: c.name, kind: "chore", color: CHORE_COLOR, subtitle: `Chore · ${who}` });
+        list.push({ occDate: occ, id: c.id, name: c.name, kind: "chore", color: CHORE_COLOR, subtitle: `Chore · ${who}`, short: c.name });
         map.set(key, list);
       }
     }
@@ -250,7 +293,7 @@ export default function CalendarPage() {
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: t.id, name: t.name, kind: "training", color: TRAINING_COLOR, subtitle: `Activity · ${who}` });
+        list.push({ occDate: occ, id: t.id, name: t.name, kind: "training", color: TRAINING_COLOR, subtitle: `Activity · ${who}`, short: t.name });
         map.set(key, list);
       }
     }
@@ -258,19 +301,25 @@ export default function CalendarPage() {
     for (const s of schoolItems) {
       // 2026-09-27: per-item "Show in calendar" choice.
       if (s.showInCalendar === false) continue;
-      const kindIcon = s.schoolKind === "TEST" ? "🧪 " : s.schoolKind === "HOMEWORK" ? "📝 " : "";
-      const title = `${kindIcon}${s.subject ? s.subject + ": " : ""}${s.name}${s.completedAt ? " ✓" : ""}`;
+      const isTest = s.schoolKind === "TEST";
+      const kindWord = isTest ? "Test" : s.schoolKind === "HOMEWORK" ? "Homework" : "School";
+      const title = `${isTest ? "🧪" : "📝"} ${s.subject ? s.subject + ": " : ""}${s.name}${s.completedAt ? " ✓" : ""}`;
       const occs = getOccurrencesInRange(s as RecurringItem, gridStart, gridEnd);
       const who = s.assignedUser?.name?.split(" ")[0] ?? s.assignedUser?.email?.split("@")[0] ?? "Unassigned";
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: s.id, name: title, kind: "school", color: SCHOOL_COLOR, subtitle: `School · ${who}` });
+        list.push({
+          occDate: occ, id: s.id, name: title, kind: isTest ? "test" : "homework",
+          color: isTest ? TEST_COLOR : SCHOOL_COLOR,
+          subtitle: `${kindWord} · ${who}${s.completedAt ? " · done" : ""}`,
+          short: `${isTest ? "🧪" : "📝"} ${s.subject || s.name}`,
+        });
         map.set(key, list);
       }
     }
 
-    const KIND_ORDER: Record<CalendarEntry["kind"], number> = { reminder: 0, training: 1, school: 2, chore: 3 };
+    const KIND_ORDER: Record<CalendarEntry["kind"], number> = { test: 0, reminder: 1, training: 2, homework: 3, chore: 4 };
     for (const list of Array.from(map.values())) {
       list.sort((a: CalendarEntry, b: CalendarEntry) => (a.kind === b.kind ? a.name.localeCompare(b.name) : KIND_ORDER[a.kind] - KIND_ORDER[b.kind]));
     }
@@ -319,7 +368,7 @@ export default function CalendarPage() {
     // Each kind now has its own dedicated section (2026-07-28: Training split
     // out from the Chores/Family page, matching School's existing pattern).
     if (entry.kind === "reminder") router.push(`/dashboard/${entry.id}`);
-    else if (entry.kind === "school") router.push("/dashboard/school");
+    else if (entry.kind === "homework" || entry.kind === "test") router.push("/dashboard/school");
     else if (entry.kind === "training") router.push("/dashboard/training");
     else router.push("/dashboard/family");
   }
@@ -417,7 +466,9 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={day.toISOString()}
-                    onClick={() => setSelectedDate(day)}
+                    onClick={() => selectDay(day)}
+                    role="button"
+                    aria-label={`${day.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}${entries.length ? `, ${entries.length} item${entries.length === 1 ? "" : "s"}` : ""}`}
                     style={{
                       display: "flex", flexDirection: "column", gap: 2,
                       padding: "4px 3px 5px", cursor: "pointer",
@@ -441,15 +492,16 @@ export default function CalendarPage() {
                       {shown.map((e, i) => (
                         <span
                           key={i}
-                          onClick={(ev) => { ev.stopPropagation(); setSelectedDate(day); openEntry(e); }}
+                          onClick={touchMode ? undefined : (ev) => { ev.stopPropagation(); setSelectedDate(day); openEntry(e); }}
                           style={{
+                            pointerEvents: touchMode ? "none" : "auto",
                             display: "block", fontSize: 9.5, fontWeight: 700, color: "#fff",
                             background: e.color, borderRadius: 4, padding: "1.5px 4px",
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                             opacity: inMonth ? 1 : 0.55,
                           }}
                         >
-                          {e.name}
+                          {e.short}
                         </span>
                       ))}
                       {overflow > 0 && (
@@ -464,7 +516,7 @@ export default function CalendarPage() {
             </div>
 
             {/* Selected day panel */}
-            <div style={{ marginTop: 20 }}>
+            <div ref={dayPanelRef} style={{ marginTop: 20, scrollMarginTop: 72 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)", marginBottom: 8 }}>
                 {selectedDate.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
               </div>
@@ -577,8 +629,8 @@ export default function CalendarPage() {
                 <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>What are you adding?</div>
                 <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 16 }}>Step 1 of 2 — type</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {(Object.keys(KIND_META) as (keyof typeof KIND_META)[]).map((kind) => {
-                    const meta = KIND_META[kind];
+                  {ADD_KINDS.map((kind) => {
+                    const meta = ADD_META[kind];
                     return (
                       <button
                         key={kind}
@@ -592,7 +644,7 @@ export default function CalendarPage() {
                         <span style={{ width: 34, height: 34, borderRadius: 10, background: `${meta.color}1A`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                           {meta.emoji}
                         </span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{meta.label.replace(/s$/, "")}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{meta.label}</span>
                       </button>
                     );
                   })}
@@ -602,7 +654,7 @@ export default function CalendarPage() {
             {addStep === 2 && (
               <>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>When?</div>
-                <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 16 }}>Step 2 of 2 — date · {KIND_META[addKind].label}</div>
+                <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 16 }}>Step 2 of 2 — date · {ADD_META[addKind].label}</div>
                 <input
                   type="date"
                   value={addDate}

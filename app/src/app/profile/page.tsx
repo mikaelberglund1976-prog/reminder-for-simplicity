@@ -9,6 +9,7 @@ import DeleteAccountSection from "@/components/DeleteAccountSection";
 import DeletionRequestsCard from "@/components/DeletionRequestsCard";
 import { getViewMode, setViewMode, ViewMode } from "@/lib/viewMode";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import { invalidateMe } from "@/lib/me";
 
 type HouseholdMember = {
   id: string;
@@ -137,6 +138,7 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bottomNavTabs: next }),
       });
+      invalidateMe();
     } catch (e) { console.error(e); }
     finally { setSavingBottomNav(false); }
   }

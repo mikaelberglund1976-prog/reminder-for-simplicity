@@ -211,3 +211,21 @@ html[data-theme="dark"] img.invert-on-dark { filter: invert(1) hue-rotate(180deg
 
 /* Decorative light shapes (login wave etc.) — nearly invisible on dark. */
 html[data-theme="dark"] .rfs-deco { opacity: 0.08; }
+
+/* 2026-09-28 (test round, row 47): iOS Safari gives date/time inputs an
+   intrinsic min-width and ignores width:100%, so they stuck out to the right
+   of their card on a phone (New activity, School). Strip the native
+   appearance so they size like every other input, and keep the value
+   left-aligned like the text fields around them. */
+input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value { text-align: left; }

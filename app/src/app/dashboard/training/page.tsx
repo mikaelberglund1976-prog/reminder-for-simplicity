@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import Avatar from "@/components/Avatar";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -28,11 +29,14 @@ type TrialInfo = {
   isPro: boolean;
   trialActive: boolean;
   childMembers: { id: string; name: string }[];
+  householdMembers?: { id: string; name: string; role: string }[];
 };
 
 function formatSchedule(item: TrainingItem): string {
   if (item.choreRecurrenceDays) {
-    const days = item.choreRecurrenceDays.split(",").map((n) => parseInt(n, 10)).filter((n) => !Number.isNaN(n)).sort();
+    const days = item.choreRecurrenceDays.split(",").map((n) => parseInt(n, 10)).filter((n) => !Number.isNaN(n))
+      .sort((x, y) => ((x + 6) % 7) - ((y + 6) % 7)); // Monday first
+    if (days.length === 1) return `Every ${WEEKDAY_SHORT[days[0]]}`;
     return days.map((d) => WEEKDAY_SHORT[d]).join(", ");
   }
   if (item.recurrence === "DAILY") return "Every day";
@@ -121,7 +125,9 @@ export default function TrainingPage() {
     );
   }
 
-  const children = trial.childMembers ?? [];
+  // 2026-09-28 (rows 43/46): activities can belong to anyone — show every
+  // child, plus each adult who has at least one.
+  const allMembers = trial.householdMembers ?? trial.childMembers.map((c) => ({ ...c, role: "CHILD" }));
   const byChild = new Map<string, TrainingItem[]>();
   for (const item of items) {
     const key = item.assignedUser?.id ?? "unknown";
@@ -131,12 +137,16 @@ export default function TrainingPage() {
   for (const list of Array.from(byChild.values())) {
     list.sort((a: TrainingItem, b: TrainingItem) => a.name.localeCompare(b.name));
   }
+  const children = [
+    ...allMembers.filter((m) => m.role === "CHILD"),
+    ...allMembers.filter((m) => m.role !== "CHILD" && (byChild.get(m.id)?.length ?? 0) > 0),
+  ];
 
   return (
     <Screen onBack={() => router.push("/dashboard")}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
-          Recurring activities for each child — sports, scouts, theater, music, or anything else — synced to the calendar automatically.
+          Recurring activities for anyone in the family — sports, scouts, theater, music, meetings — synced to the calendar automatically. Pick several people and it shows up for each of them.
         </div>
       </div>
 
@@ -155,7 +165,7 @@ export default function TrainingPage() {
 
       {children.length === 0 && (
         <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
-          Add a child in Chores before creating activities.
+          No activities yet. Tap <strong>Add activity</strong> above.
         </div>
       )}
 
@@ -163,7 +173,8 @@ export default function TrainingPage() {
         const list = byChild.get(child.id) ?? [];
         return (
           <div key={child.id} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+              <Avatar userId={child.id} name={child.name} size={22} />
               {child.name} · {list.length}
             </div>
             {list.length === 0 ? (

@@ -79,7 +79,11 @@ export async function GET(_req: Request, { params }: { params: { token: string }
       for (const occ of occs) {
         events.push({
           uid: `${r.id}-${occ.getFullYear()}${occ.getMonth() + 1}${occ.getDate()}`,
-          title: r.name,
+          // 2026-09-28 (row 41): make a test stand out from homework in
+          // the phone's own calendar too.
+          title: r.category === "SCHOOL"
+            ? `${r.schoolKind === "TEST" ? "🧪 Test" : r.schoolKind === "HOMEWORK" ? "📝 Homework" : "📚 School"}: ${r.subject ? r.subject + " – " : ""}${r.name}`
+            : r.name,
           date: occ,
           description: descriptionParts.join(" — ") || undefined,
         });

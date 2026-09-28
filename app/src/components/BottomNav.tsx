@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { hasNewSince } from "@/lib/listBadges";
+import { getMe } from "@/lib/me";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -41,10 +42,19 @@ const APP_TABS: Record<string, TabDef> = {
   },
   "shopping-list": { key: "shopping-list", href: "/dashboard/family/shopping-list", label: "Shopping list", icon: IcCart, match: (p) => p.startsWith("/dashboard/family/shopping-list") },
   wishlist: { key: "wishlist", href: "/dashboard/wishlist", label: "Wishlist", icon: IcGift, match: (p) => p.startsWith("/dashboard/wishlist") },
-  chores: { key: "chores", href: "/dashboard/family", label: "Chores", icon: IcChecklist, match: (p) => p.startsWith("/dashboard/family") && !p.startsWith("/dashboard/family/shopping-list") },
+  chores: { key: "chores", href: "/dashboard/family", label: "Chores", icon: IcChecklist, match: (p) => p.startsWith("/dashboard/family") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/family/members") },
   training: { key: "training", href: "/dashboard/training", label: "Activities", icon: IcTraining, match: (p) => p.startsWith("/dashboard/training") },
   school: { key: "school", href: "/dashboard/school", label: "School", icon: IcSchool, match: (p) => p.startsWith("/dashboard/school") },
 };
+
+// 2026-09-28 (row 38): a child's nav only holds their own things — their
+// week (homework, tests, chores, activities), the shared shopping list and
+// their own wishlist. No Calendar/Home tabs that just bounce them back.
+const CHILD_TABS: TabDef[] = [
+  { key: "my-week", href: "/dashboard/family/child", label: "My week", icon: IcHome, match: (p) => p.startsWith("/dashboard/family/child") || p === "/dashboard" },
+  { key: "shopping-list", href: "/dashboard/family/shopping-list", label: "Shopping list", icon: IcCart, match: (p) => p.startsWith("/dashboard/family/shopping-list") },
+  { key: "wishlist", href: "/dashboard/wishlist", label: "Wishlist", icon: IcGift, match: (p) => p.startsWith("/dashboard/wishlist") },
+];
 
 const CALENDAR_TAB: TabDef = { key: "calendar", href: "/dashboard/calendar", label: "Calendar", icon: IcCalendar, match: (p) => p.startsWith("/dashboard/calendar") };
 
@@ -57,11 +67,13 @@ export default function BottomNav() {
   const pathname = usePathname() || "/dashboard";
   const [badges, setBadges] = useState<{ shoppingList: boolean; wishlist: boolean }>({ shoppingList: false, wishlist: false });
   const [appKeys, setAppKeys] = useState<string[]>(DEFAULT_APP_TABS);
+  const [isChild, setIsChild] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/profile").then(r => (r.ok ? r.json() : null)).then((d) => {
+    getMe().then((d) => {
       if (cancelled || !d) return;
+      if (d.isChildProfile) setIsChild(true);
       const saved: string | null = d.bottomNavTabs ?? null;
       if (saved) {
         const keys = saved.split(",").filter((k: string) => APP_TABS[k]);
@@ -104,7 +116,7 @@ export default function BottomNav() {
 
   // Calendar is always first and always present — everything else is the
   // person's own pick (2026-07-28).
-  const tabs: TabDef[] = [CALENDAR_TAB, ...appKeys.map((k) => APP_TABS[k]).filter(Boolean)];
+  const tabs: TabDef[] = isChild ? CHILD_TABS : [CALENDAR_TAB, ...appKeys.map((k) => APP_TABS[k]).filter(Boolean)];
 
   return (
     // Outer element only handles fixed positioning across the full viewport —

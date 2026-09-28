@@ -4,6 +4,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Avatar from "@/components/Avatar";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -46,12 +47,17 @@ function NewBookingContent() {
   );
 
   const [name, setName] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
+  // 2026-09-28 (test round, row 46): several people can share one
+  // activity/chore — everyone picked gets it in their own calendar.
+  const [assignees, setAssignees] = useState<string[]>([]);
   const [recurrence, setRecurrence] = useState<"DAILY" | "WEEKLY" | "DAYS">("WEEKLY");
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // Mon–Fri
   // 2026-07-28: prefilled when arriving from the Calendar's "+" button
   // (type first, then date, then details).
   const [startDate, setStartDate] = useState(searchParams.get("date") ?? new Date().toISOString().split("T")[0]);
+  // 2026-09-28 (test round, row 45): "Once a week" asks which day instead of
+  // silently using the start date's weekday. Defaults to that weekday.
+  const [weeklyDay, setWeeklyDay] = useState<number>(() => new Date((searchParams.get("date") ?? new Date().toISOString().split("T")[0]) + "T12:00:00").getDay());
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [note, setNote] = useState("");
   // 2026-08-18: assignable to ANY household member, not just children — see
@@ -60,7 +66,6 @@ function NewBookingContent() {
   const [members, setMembers] = useState<Member[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [trialChildId, setTrialChildId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -77,10 +82,10 @@ function NewBookingContent() {
         const data = await res.json();
         const householdMembers: Member[] = data.householdMembers ?? [];
         setMembers(householdMembers);
-        setTrialChildId(data.trialChildId);
-        // Pre-select the trial child, else the first member
-        if (data.trialChildId) setAssignedTo(data.trialChildId);
-        else if (householdMembers.length > 0) setAssignedTo(householdMembers[0].id);
+        // Pre-select the first child if there is one, else the first member.
+        const firstChild = householdMembers.find((m) => m.role === "CHILD");
+        if (firstChild) setAssignees([firstChild.id]);
+        else if (householdMembers.length > 0) setAssignees([householdMembers[0].id]);
       }
     } catch (e) { console.error(e); }
   }
@@ -96,7 +101,7 @@ function NewBookingContent() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) { setError(isTraining ? "Name is required" : "Chore name is required"); return; }
-    if (!assignedTo) { setError("Assign to someone"); return; }
+    if (assignees.length === 0) { setError("Pick at least one person"); return; }
     if (recurrence === "DAYS" && selectedDays.length === 0) { setError("Select at least one day"); return; }
 
     setSaving(true);
@@ -105,10 +110,10 @@ function NewBookingContent() {
     const body: Record<string, unknown> = {
       name: name.trim(),
       category,
-      assignedTo,
+      assignees,
       recurrence: recurrence === "DAYS" ? "WEEKLY" : recurrence,
-      recurrenceDays: recurrence === "DAYS" ? selectedDays.sort().join(",") : null,
-      startDate: new Date(startDate).toISOString(),
+      recurrenceDays: recurrence === "DAYS" ? [...selectedDays].sort().join(",") : recurrence === "WEEKLY" ? String(weeklyDay) : null,
+      startDate: new Date(startDate + "T12:00:00").toISOString(),
       requiresApproval: isTraining ? false : requiresApproval,
       note: note.trim() || null,
     };
@@ -197,36 +202,43 @@ function NewBookingContent() {
             )}
           </div>
 
-          {/* Assigned to */}
+          {/* Assigned to — 2026-09-28: pick one or more people (row 46);
+              anyone in the family, children and adults (row 43). */}
           <div>
-            <label style={label}>Assigned to</label>
+            <label style={label}>Who? <span style={{ fontWeight: 400, color: "var(--subtle)" }}>(pick one or more)</span></label>
             {members.length === 0 ? (
               <div style={{ background: "var(--tint-warning)", borderRadius: 12, padding: 14, fontSize: 13, color: "var(--warning)" }}>
-                No family members yet. Add someone in Family first.
+                No family members yet. <a href="/dashboard/family/members" style={{ color: "var(--warning)", fontWeight: 700 }}>Add someone first →</a>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {members.map(c => {
-                  const isTrialLocked = trialChildId !== null && c.id !== trialChildId;
+                  const on = assignees.includes(c.id);
                   return (
-                    <button key={c.id} type="button"
-                      disabled={isTrialLocked}
-                      onClick={() => !isTrialLocked && setAssignedTo(c.id)}
+                    <button key={c.id} type="button" aria-pressed={on}
+                      onClick={() => setAssignees(prev => on ? prev.filter(id => id !== c.id) : [...prev, c.id])}
                       style={{
                         display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                        background: assignedTo === c.id ? "var(--tint-accent)" : isTrialLocked ? "var(--surface-2)" : "var(--surface)",
-                        border: assignedTo === c.id ? "2px solid var(--accent)" : "1.5px solid var(--border)",
-                        borderRadius: 12, cursor: isTrialLocked ? "not-allowed" : "pointer",
-                        opacity: isTrialLocked ? 0.5 : 1, fontFamily: FONT, textAlign: "left",
+                        background: on ? "var(--tint-accent)" : "var(--surface)",
+                        border: on ? "2px solid var(--accent)" : "1.5px solid var(--border)",
+                        borderRadius: 12, cursor: "pointer", fontFamily: FONT, textAlign: "left",
                       }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--ink)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
-                        {c.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{c.name}</span>
-                      {isTrialLocked && <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--subtle)" }}>Pro only</span>}
+                      <Avatar userId={c.id} name={c.name} size={32} />
+                      <span style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)", flex: 1 }}>{c.name}</span>
+                      <span style={{ fontSize: 11, color: "var(--subtle)", fontWeight: 600 }}>{c.role === "CHILD" ? "Child" : "Adult"}</span>
+                      <span style={{
+                        width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                        border: on ? "none" : "1.5px solid var(--border)", background: on ? "var(--accent-bg)" : "transparent",
+                        color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800,
+                      }}>{on ? "✓" : ""}</span>
                     </button>
                   );
                 })}
+                {assignees.length > 1 && (
+                  <div style={{ fontSize: 12, color: "var(--muted)", padding: "2px 2px 0" }}>
+                    Everyone you picked gets it in their own list and calendar.
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -248,6 +260,30 @@ function NewBookingContent() {
                 </button>
               ))}
             </div>
+
+            {recurrence === "WEEKLY" && (
+              <>
+                <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, marginBottom: 6 }}>Which day?</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {DAYS.map((d, i) => {
+                    const num = DAY_NUMS[i];
+                    const active = weeklyDay === num;
+                    return (
+                      <button key={d} type="button" onClick={() => setWeeklyDay(num)} aria-pressed={active}
+                        style={{
+                          width: 42, height: 42, borderRadius: "50%", fontSize: 12, fontWeight: 700,
+                          background: active ? "var(--accent-bg)" : "var(--surface)",
+                          color: active ? "#fff" : "var(--fg-2)",
+                          border: active ? "none" : "1.5px solid var(--border)",
+                          cursor: "pointer", fontFamily: FONT,
+                        }}>
+                        {d}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {/* Day picker for DAYS mode */}
             {recurrence === "DAYS" && (
@@ -324,11 +360,11 @@ function NewBookingContent() {
           )}
 
           {/* Save */}
-          <button type="submit" disabled={saving || !name.trim() || !assignedTo}
+          <button type="submit" disabled={saving || !name.trim() || assignees.length === 0}
             style={{
               background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50,
               padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer",
-              fontFamily: FONT, opacity: saving || !name.trim() || !assignedTo ? 0.6 : 1,
+              fontFamily: FONT, opacity: saving || !name.trim() || assignees.length === 0 ? 0.6 : 1,
             }}>
             {saving ? "Saving…" : isTraining ? "Save activity" : "Save chore"}
           </button>

@@ -73,8 +73,23 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     }
 
     const role = membership.role as HouseholdRoleStr;
-    const canDelete = list.createdBy === session.user.id || list.ownerId === session.user.id || canEditListAccess(role);
-    if (!canDelete) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+    const isMine = list.createdBy === session.user.id || list.ownerId === session.user.id;
+    // 2026-09-28 (test round, row 37): a list that's shared with other people
+    // (everyone, or chosen members) can only be deleted by an OWNER/PARENT —
+    // otherwise anyone could wipe the family's list. Your own, unshared list
+    // you can always delete.
+    const memberCount = await prisma.listMember.count({ where: { listId: list.id } });
+    const isShared = list.visibleToAll || memberCount > 0;
+    const canDelete = canEditListAccess(role) || (isMine && !(list.kind === "SHOPPING" && isShared));
+    if (!canDelete) {
+      return NextResponse.json({ error: "Only a parent can delete a list that's shared with others." }, { status: 403 });
+    }
+    if (list.kind === "SHOPPING") {
+      const count = await prisma.list.count({ where: { householdId: list.householdId, kind: "SHOPPING" } });
+      if (count <= 1) {
+        return NextResponse.json({ error: "This is your only shopping list — clear its items instead." }, { status: 400 });
+      }
+    }
 
     await prisma.list.delete({ where: { id: params.id } });
     return NextResponse.json({ success: true });

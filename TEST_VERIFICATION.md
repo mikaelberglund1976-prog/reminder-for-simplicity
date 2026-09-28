@@ -81,3 +81,18 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 ---
 
 *När en sektion är helt avbockad, flytta den till "Klart" i `TODO.md` och ta bort raderna härifrån.*
+
+## 9. Testrundan 2026-09-28 kväll – rad 36–48 i Todo-listan (LIVE, klicktestat lokalt i mobilstorlek)
+- [ ] Inköpslistan → 🏪 Store mode: bocka en vara → den hamnar under "Already in the cart" längst ned, "Undo" lägger tillbaka den. (36)
+- [ ] Inköpslistan: välj en extra lista → "Delete list" → bekräfta. Delad lista kan bara raderas av ägare/förälder; sista listan går inte att radera. (37)
+- [ ] Logga in som barn: bottenmenyn visar bara My week / Shopping list / Wishlist, ☰ visar bara egna saker; "My week" visar läxor/prov, aktiviteter och sysslor. (38)
+- [ ] Home som förälder: kortet "Homework & tests" visar varje barns kommande prov och läxor (prov i rött). (39)
+- [ ] ☰ → Family members: tryck på en bild → välj foto (eget eller barnets). "Family photo" → välj bild → syns överst på Home. (40)
+- [ ] Kalendern: prov (🧪, röd) och läxa (📝, indigo) har egna färger och egna filterchips. (41)
+- [ ] Kalendern i mobilen: tryck på en dag med två saker → dagens lista visas nedanför med stora rader. (42)
+- [ ] Chores → ny syssla till en vuxen → vuxen syns som egen flik, "Mark done" fungerar. (43)
+- [ ] Home → familjeraden → "+ Add" → lägg till barn eller vuxen. (44)
+- [ ] New activity → "Once a week" → välj dag (t.ex. Thu) → syns på torsdagar i kalendern. (45)
+- [ ] New activity → välj två personer → aktiviteten finns hos båda (Activities + kalender). (46)
+- [ ] Datumfält (New activity, School) håller sig inom kortet på iPhone. (47)
+- [ ] ☰-menyn på liten skärm: hela menyn syns och går att scrolla, hamnar ovanför bottenmenyn. (48)

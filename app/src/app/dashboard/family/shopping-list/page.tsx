@@ -47,6 +47,7 @@ type Item = {
   categoryId: string | null;
   categoryDef: { id: string; label: string; icon: string; slug: string | null } | null;
   isPurchased: boolean;
+  purchasedAt?: string | null;
   addedBy: string;
   adder: { id: string; name: string | null } | null;
   purchaser: { id: string; name: string | null } | null;
@@ -72,6 +73,9 @@ export default function ShoppingListPage() {
   const [newListName, setNewListName] = useState("");
   const [addingList, setAddingList] = useState(false);
   const [showAccessPanel, setShowAccessPanel] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deletingList, setDeletingList] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
   const [members, setMembers] = useState<ListMemberOption[]>([]);
 
   const [items, setItems] = useState<Item[]>([]);
@@ -246,6 +250,32 @@ export default function ShoppingListPage() {
     });
   }
 
+  // 2026-09-28 (test round, row 37): delete a whole list. Your own lists can
+  // always be deleted; a list shared with others only by an OWNER/PARENT
+  // (the server enforces the same rule). The last list can't be deleted —
+  // "Clear bought items" / removing items covers that.
+  async function deleteList() {
+    if (!activeListId) return;
+    setDeletingList(true);
+    setListError(null);
+    try {
+      const res = await fetch(`/api/family/lists/${activeListId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setListError(d.error ?? "Couldn't delete the list");
+        return;
+      }
+      setConfirmDelete(false);
+      setShowAccessPanel(false);
+      const remaining = lists.filter((l) => l.id !== activeListId);
+      setLists(remaining);
+      setActiveListId(remaining[0]?.id ?? null);
+      await fetchLists();
+    } finally {
+      setDeletingList(false);
+    }
+  }
+
   async function toggleVisibleToAll(value: boolean) {
     if (!activeListId) return;
     setLists((prev) => prev.map((l) => (l.id === activeListId ? { ...l, visibleToAll: value } : l)));
@@ -327,7 +357,7 @@ export default function ShoppingListPage() {
 
   async function togglePurchased(item: Item) {
     const wasPurchased = item.isPurchased;
-    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: !wasPurchased } : i)));
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: !wasPurchased, purchasedAt: !wasPurchased ? new Date().toISOString() : null } : i)));
     try {
       const res = await fetch(`/api/family/shopping-list/${item.id}`, {
         method: "PATCH",
@@ -634,7 +664,10 @@ export default function ShoppingListPage() {
 
   const activeList = lists.find((l) => l.id === activeListId);
   const pending = items.filter(i => !i.isPurchased);
-  const purchased = items.filter(i => i.isPurchased);
+  // Oldest tick first, so the item you just put in the cart lands at the bottom.
+  const purchased = items.filter(i => i.isPurchased).sort((a, b) => (a.purchasedAt ?? "").localeCompare(b.purchasedAt ?? ""));
+  const activeIsShared = !!activeList && (activeList.visibleToAll || activeList.memberIds.length > 0);
+  const canDeleteActive = !!activeList && lists.length > 1 && (canEditAccess || (activeList.isMine && !activeIsShared));
 
   const sortedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
   const groups: { key: string; label: string; icon: string; items: Item[] }[] = [
@@ -723,7 +756,33 @@ export default function ShoppingListPage() {
         >
           <IcSettings /> Manage categories
         </button>
+        {canDeleteActive && (
+          <button
+            onClick={() => { setConfirmDelete(true); setListError(null); }}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--danger)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginLeft: "auto" }}
+          >
+            <IcTrash /> Delete list
+          </button>
+        )}
       </div>
+
+      {confirmDelete && activeList && (
+        <div style={{ background: "var(--tint-danger)", border: "1px solid var(--border-danger)", borderRadius: 14, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>Delete “{activeList.name}”?</div>
+          <div style={{ fontSize: 12.5, color: "var(--fg-2)", lineHeight: 1.45, marginBottom: 12 }}>
+            The list and its {items.length} item{items.length === 1 ? "" : "s"} are removed for everyone{activeIsShared ? " it's shared with" : ""}. This can&apos;t be undone.
+          </div>
+          {listError && <div style={{ fontSize: 12.5, color: "var(--danger)", marginBottom: 10 }}>{listError}</div>}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={deleteList} disabled={deletingList} style={{ flex: 1, padding: "10px 14px", borderRadius: 50, border: "none", background: "var(--danger)", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: FONT, opacity: deletingList ? 0.6 : 1 }}>
+              {deletingList ? "Deleting…" : "Delete list"}
+            </button>
+            <button onClick={() => setConfirmDelete(false)} style={{ padding: "10px 18px", borderRadius: 50, border: "none", background: "var(--surface)", color: "var(--fg-2)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {showManage && (
         <div style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--border)", padding: "6px 14px", marginBottom: 18 }}>
@@ -1073,6 +1132,40 @@ export default function ShoppingListPage() {
                   </div>
                 </div>
               ))
+            )}
+
+            {/* 2026-09-28 (test round, row 36): ticked items used to vanish
+                from store mode, so a mis-tap in the shop couldn't be undone.
+                They now drop to the bottom — tap again to put it back. */}
+            {purchased.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--success)", marginBottom: 8 }}>✓ Already in the cart ({purchased.length})</div>
+                <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", overflow: "hidden", opacity: 0.8 }}>
+                  {purchased.map((item, i) => (
+                    <button
+                      key={item.id}
+                      onClick={() => togglePurchased(item)}
+                      aria-label={`Put ${item.name} back on the list`}
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "16px 18px",
+                        background: "none", border: "none", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)",
+                        cursor: "pointer", textAlign: "left", fontFamily: FONT,
+                      }}
+                    >
+                      <span style={{
+                        width: 28, height: 28, borderRadius: "50%", background: "#2A9D6F", color: "#fff",
+                        flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <svg width={16} height={16} viewBox="0 0 24 24" {...STR} stroke="#fff" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>
+                      </span>
+                      <span style={{ fontSize: 17, fontWeight: 600, color: "var(--subtle)", textDecoration: "line-through", flex: 1 }}>
+                        {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
+                      </span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", flexShrink: 0 }}>Undo</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>

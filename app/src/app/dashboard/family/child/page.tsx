@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import SchoolSection from "@/components/SchoolSection";
+import HamburgerMenu from "@/components/HamburgerMenu";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -14,6 +15,7 @@ function IcCheck() { return <svg width={22} height={22} viewBox="0 0 24 24" {...
 
 type Chore = {
   id: string;
+  assignedTo?: string | null;
   name: string;
   note: string | null;
   requiresApproval: boolean;
@@ -31,6 +33,9 @@ function ChildViewContent() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [childName, setChildName] = useState("My chores");
   const [access, setAccess] = useState<string>("TRIAL");
+  // 2026-09-28 (row 38): the child's start page shows their own activities
+  // too, so everything that's theirs is in one place.
+  const [activities, setActivities] = useState<{ id: string; name: string; note: string | null; recurrence: string; choreRecurrenceDays: string | null; assignedTo?: string | null }[]>([]);
 
   // Add-chore form (self-service for kids)
   const [showAdd, setShowAdd] = useState(false);
@@ -57,12 +62,21 @@ function ChildViewContent() {
         setAccess(data.access ?? "TRIAL");
         const all: Chore[] = data.chores ?? [];
 
-        // If viewing a specific child, filter; otherwise show current user's
+        // 2026-09-28: when a parent opens "Child view" for one child, only
+        // that child's chores (the old filter had a stray `|| true`, so a
+        // parent saw every chore in the family here).
         const filtered = childId
-          ? all.filter((c: Chore & { assignedTo?: string }) => (c as Record<string, unknown>).assignedTo === childId || true)
+          ? all.filter((c) => c.assignedTo === childId)
           : all;
 
         setChores(filtered);
+      }
+
+      const aRes = await fetch("/api/family/chores?category=TRAINING");
+      if (aRes.ok) {
+        const aData = await aRes.json();
+        const list = (aData.chores ?? []) as typeof activities;
+        setActivities(childId ? list.filter((a) => a.assignedTo === childId) : list);
       }
 
       // Get child name
@@ -151,12 +165,29 @@ function ChildViewContent() {
             <IcBack />
           </button>
           <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>{childName}</h1>
+          <HamburgerMenu />
         </div>
       </div>
 
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 0" }}>
         {/* 2026-09-27: homework & tests FIRST — the first thing a child sees after logging in */}
-        <SchoolSection mode="child" />
+        <SchoolSection mode="child" onlyUserId={childId && childId !== session?.user?.id ? childId : undefined} />
+
+        {activities.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#D85A30", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+              🎯 My activities · {activities.length}
+            </div>
+            <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden" }}>
+              {activities.map((a, i) => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)" }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", flex: 1, minWidth: 0 }}>{a.name}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", flexShrink: 0 }}>{scheduleText(a)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Date + progress */}
         <div style={{ background: "var(--hero-grad)", borderRadius: 20, padding: "20px 22px", marginBottom: 20 }}>
@@ -336,6 +367,17 @@ function ChildViewContent() {
       </main>
     </div>
   );
+}
+
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function scheduleText(a: { recurrence: string; choreRecurrenceDays: string | null }): string {
+  if (a.choreRecurrenceDays) {
+    return a.choreRecurrenceDays.split(",").map((n) => parseInt(n, 10)).filter((n) => !Number.isNaN(n))
+      .sort((x, y) => ((x + 6) % 7) - ((y + 6) % 7)).map((d) => WEEKDAY_SHORT[d]).join(", ");
+  }
+  if (a.recurrence === "DAILY") return "Every day";
+  if (a.recurrence === "WEEKLY") return "Weekly";
+  return "Once";
 }
 
 function ChoreCard({ chore, state, isFirst, loading, onToggle }: {

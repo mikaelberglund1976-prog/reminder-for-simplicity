@@ -47,12 +47,15 @@ export function countdown(dateStr: string): { text: string; tone: "overdue" | "s
 type Props = {
   mode: "child" | "overview";
   // overview only: who an item can be assigned to
-  members?: { id: string; name: string }[];
+  members?: { id: string; name: string; role?: string }[];
   // calendar "+" can deep-link with a date prefilled
   initialDate?: string | null;
+  // child mode opened by a parent for one child ("Child view"): only that
+  // child's items.
+  onlyUserId?: string;
 };
 
-export default function SchoolSection({ mode, members = [], initialDate }: Props) {
+export default function SchoolSection({ mode, members = [], initialDate, onlyUserId }: Props) {
   const [items, setItems] = useState<SchoolItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
@@ -81,7 +84,8 @@ export default function SchoolSection({ mode, members = [], initialDate }: Props
       if (res.ok) {
         const data = await res.json();
         setLocked(data.access === "LOCKED");
-        setItems(data.chores ?? []);
+        const all: SchoolItem[] = data.chores ?? [];
+        setItems(onlyUserId ? all.filter((i) => i.assignedUser?.id === onlyUserId) : all);
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -107,7 +111,7 @@ export default function SchoolSection({ mode, members = [], initialDate }: Props
           subject: subject.trim() || undefined,
           note: note.trim() || undefined,
           showInCalendar: inCalendar,
-          assignedTo: mode === "overview" ? assignee : undefined,
+          assignedTo: mode === "overview" ? assignee : onlyUserId,
           startDate: date ? new Date(date + "T12:00:00").toISOString() : undefined,
         }),
       });
@@ -162,8 +166,10 @@ export default function SchoolSection({ mode, members = [], initialDate }: Props
   );
 
   // Overview: group upcoming per person
-  const groups: { id: string; name: string; list: SchoolItem[] }[] = mode === "overview"
-    ? members.map(m => ({ id: m.id, name: m.name, list: upcoming.filter(i => i.assignedUser?.id === m.id) }))
+  const groups: { id: string; name: string; role?: string; list: SchoolItem[] }[] = mode === "overview"
+    ? members.map(m => ({ id: m.id, name: m.name, role: m.role, list: upcoming.filter(i => i.assignedUser?.id === m.id) }))
+        // adults without anything coming up are just noise here
+        .filter(g => g.list.length > 0 || !g.role || g.role === "CHILD")
     : [];
 
   return (

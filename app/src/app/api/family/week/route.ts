@@ -25,9 +25,12 @@ export async function GET() {
       household: {
         include: {
           familyTrial: true,
+          // 2026-09-28 (test round, row 43): chores can be given to anyone
+          // in the family, not only children — so the week view covers
+          // every member (children always, adults when they have chores).
           members: {
-            where: { role: "CHILD" },
             include: { user: { select: { id: true, name: true, email: true } } },
+            orderBy: { joinedAt: "asc" },
           },
         },
       },
@@ -44,7 +47,7 @@ export async function GET() {
   const weekStart = getWeekStart(new Date());
   const children = membership.household.members;
 
-  const summary = await Promise.all(children.map(async (child) => {
+  const all = await Promise.all(children.map(async (child) => {
     const chores = await prisma.reminder.findMany({
       where: {
         householdId: membership.householdId,
@@ -63,6 +66,7 @@ export async function GET() {
     const missed = chores.filter(c => c.completions.length === 0).length;
 
     return {
+      role: child.role,
       childId: child.userId,
       childName: child.user.name ?? child.user.email.split("@")[0],
       total,
@@ -77,6 +81,12 @@ export async function GET() {
       })),
     };
   }));
+
+  // Children first (the common case), then adults who have chores.
+  const summary = [
+    ...all.filter((m) => m.role === "CHILD"),
+    ...all.filter((m) => m.role !== "CHILD" && m.total > 0),
+  ];
 
   return NextResponse.json({ summary, weekStart, access: isPro ? "PRO" : "TRIAL" });
 }
