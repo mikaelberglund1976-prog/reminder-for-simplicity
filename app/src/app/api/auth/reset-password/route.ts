@@ -35,7 +35,9 @@ export async function POST(req: Request) {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: resetToken.userId },
-        data: { password: hashedPassword },
+        // 2026-09-27: the link was delivered to this inbox, which proves the
+        // address — count it as email verification too.
+        data: { password: hashedPassword, emailVerified: new Date() },
       }),
       prisma.passwordResetToken.update({
         where: { id: resetToken.id },

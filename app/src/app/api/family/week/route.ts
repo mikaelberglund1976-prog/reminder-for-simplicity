@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPro } from "@/lib/entitlements";
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -35,7 +36,7 @@ export async function GET() {
 
   if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
 
-  const isPro = membership.household.is_pro;
+  const isPro = hasPro(membership.household);
   const trial = membership.household.familyTrial;
   const trialActive = trial ? trial.expiresAt > new Date() : false;
   if (!isPro && !trialActive) return NextResponse.json({ summary: [], access: "LOCKED" });

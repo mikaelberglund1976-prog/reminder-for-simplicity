@@ -1,5 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.18 | **Uppdaterad:** 2026-08-02 | **Ägare:** Mikael Berglund
+**Version:** 2.19 | **Uppdaterad:** 2026-08-18 | **Ägare:** Mikael Berglund
+**Not (2026-08-18, deploy bekräftad live):** Fas A:s säkerhetsfixar och Training→Activity-namnbytet (nedan) pushade till GitHub och bekräftat deployade till produktion på Vercel (commit `29bf8e9`, deployment `dpl_3qWTb64whz1ZuTNefwK3TXnUuxUx`, state READY). Se `TODO.md` punkt 30 och `LAUNCH_CHECKLIST.md`. Kvarstår: manuell klicktestning i den skarpa appen (rate limit-låsning, gratis hushållsdelning, Activity-namnet överallt).
 **Not (2026-08-02, namnbyte + parkering bekräftad):** "Training" bytt till "Activity/Activities" i hela UI:t (4b.33, Mikaels feedback om scouter/teater), interna namn (route, enum, bottomNavTabs-nyckel) oförändrade – ingen schemaändring. "Föräldrautrymme"-modulen bekräftad parkerad (var bara en rekommendation, se `ROADMAP.md`).
 **Not (2026-08-02, produktbeslut som "utvecklingsavdelning"):** Flera länge öppna frågor avgjorda på egen hand, grundat i redan gjord konkurrens-/marknadsresearch: belöningar för Sysslor (4b.3, poäng/stjärnor), pris (§7.1, 49 kr/mån–399 kr/år), Guest-rollens hushållsgräns (4b.31, ingen begränsning), Träningskalenderns ICS-väg (`ROADMAP.md`, bekräftad). Nytt fynd: admin-godkännande av nya konton blockerar hela onboarding-upplevelsen, dokumenterat i ny sektion 4b.32 och tillagt i `LAUNCH_CHECKLIST.md` Fas A. Medvetet lämnat öppet (scope-fråga, inte UX): "Föräldrautrymme"-modulen, se `ROADMAP.md`. Fullständig sammanfattning i `TODO.md` punkt 28.
 **Not (2026-08-02, Fas A kodad):** Fyra av Fas A:s punkter kodade och klara för deploy: rate limiting/lockout på inloggning (§10, `lib/rateLimit.ts`), timing-safe `CRON_SECRET`-jämförelse, konsekvent `ADMIN_EMAIL`, och §7.2-motsägelsen löst (hushållsdelning nu gratis). Beslut fattat: ingen åldersgräns för barnprofiler, bara föräldrasamtycke (medveten avvägning mot COPPA, se `LAUNCH_CHECKLIST.md` Fas A). Fullständig status i `LAUNCH_CHECKLIST.md`.
@@ -105,6 +106,9 @@ Denna funktionalitet finns i kodbasen (Prisma-modeller `Household`, `HouseholdMe
 - Admin kan manuellt hantera medlemmar (lägga till/ta bort) via adminpanelen
 
 ### 4b.2 Barnprofiler
+
+> **Ändrat 2026-09-27 (4b.34):** barn loggar inte längre in med PIN. Förälder anger namn + e-post, barnet bekräftar och väljer lösenord via mail (eller Google).
+
 - Barn kan få en egen profil (`isChildProfile = true`) med **PIN-inloggning** istället för email/lösenord i vardagen
 - Föräldrar skapar och hanterar barnprofiler från profilsidan
 - **Kräver riktig email (beslut 2026-07-27):** varje konto ska ha en äkta email på fil, som kontots grundläggande identitet – även barn som aldrig använder den för att logga in. Föräldern skriver in valfri riktig adress vid skapandet (sin egen, ett alias som `du+barnnamn@gmail.com`, eller barnets egen). Ersätter den tidigare påhittade `child_xxx@reminder-for-simplicity.internal`-adressen. Beslutet: **ett hushåll per person** (inte multi-hushåll), men alla konton – vuxna och barn – ska ha en riktig email.
@@ -194,6 +198,9 @@ En enkel lösning på att appens smala kolumn (480px) ser gles ut på en stor da
 
 ### 4b.13 Frivillig PIN-inloggning för vuxna (byggd 2026-07-27, kväll)
 
+> **Borttaget 2026-09-27 (4b.34):** PIN-inloggning pensionerad för alla konton av säkerhetsskäl. Sektionen nedan är historik.
+
+
 Utöver barnens PIN-inloggning kan en vuxen valfritt lägga till en egen 4-siffrig PIN som ett extra, snabbare sätt att växla profil på en delad familjeenhet – utan att det ersätter det riktiga lösenordet (eller Google-inloggningen).
 
 - **Profile → Security → "PIN login":** sätt/ändra/stäng av en 4-siffrig PIN. Sparas i ett eget `User.pin`-fält, helt separat från `password` så det riktiga lösenordet aldrig påverkas.
@@ -240,6 +247,9 @@ Efter konkurrentanalysen av Best4Family (`COMPETITOR_ANALYSIS_BEST4FAMILY.md`, s
 **Kvarstår (se `TODO.md` punkt 10):** klicktesta alla fem skarpt.
 
 ### 4b.17 Kända, ej byggda gap efter Best4Family-genomgången
+
+> **Uppdatering 2026-09-27:** självbetjänings-kontoradering är nu byggd som mjuk radering med 60 dagars återställning (4b.34).
+
 
 Dokumenterat här så det inte glöms bort – dessa är medvetet **inte** byggda ännu (se `TODO.md` punkt 9/12/20 och `ROADMAP.md` för prioritering):
 - **Delete account-knappen i Profile → Security är bara en UI-shell** – "Yes, delete"-knappen har inget fungerande anrop bakom sig idag. Självbetjänings-radering är ett kvarstående P1-gap inför bred lansering.
@@ -372,6 +382,9 @@ Uppföljning på 4b.30's öppna spänning. Genomgång med Mikael delade upp "del
 
 ### 4b.32 Admin-godkännande av nya konton – UX-avvägning identifierad (2026-08-02)
 
+> **Notera 2026-09-27:** nya konton måste nu även bekräfta sin e-post (4b.34) – två steg innan första inloggning under testfasen.
+
+
 Byggd tidigare (`TODO.md` punkt 16, "vi testar och bygger nytt, vill hålla det kontrollerat") men aldrig beskriven i produktspecen – dokumenteras här som nuläge, upptäckt vid en genomgång av det faktiska onboarding-flödet (Register → första värde).
 
 - **Nuläge:** varje nytt konto (både lösenord och Google) skapas med `approved: false` och blockeras helt från att logga in tills `ADMIN_EMAIL` manuellt godkänner det i `/admin` – förutom admin-kontot självt, som auto-godkänns. Gäller alla providers (`auth.ts`s `signIn`/`authorize`), med ett specifikt felmeddelande (`PENDING_APPROVAL_MESSAGE`) istället för det generiska "fel lösenord".
@@ -385,9 +398,26 @@ Mikaels feedback: *"träning kanske e fel, activity är bättre. Man kanske har 
 - **Genomfört:** alla användarsynliga strängar bytta från "Training"/⚽ till "Activity"/"Activities"/🎯 – hamburgermeny, bottenmeny, Profile → Preferences (bottennav-val), `/features`, `/privacy`, Activities-sidan (rubrik, tomt-läge, knappar, felmeddelanden), kalenderns typfilter/legend/klick-igenom-text, formuläret för att skapa en aktivitet (rubrik, toggle-knapp, platshållartext, spara-knapp), och den utgående ICS-kalenderns kategori-etikett (syns i Google/Outlook/Apple-kalendern).
 - **Medvetet oförändrat (internt, osynligt för användaren):** `ReminderCategory.TRAINING`-enumvärdet i databasen, routen `/dashboard/training`, query-parametern `?type=training`, och `bottomNavTabs`-nyckeln `"training"`. Att byta dessa hade krävt en schemaändring (`db push`, kan inte köras i den här sandboxen, se `OPERATIONS.md` §4/§5) och riskerat att förstöra redan sparade `bottomNavTabs`-inställningar. Samma "additiv, inte destruktiv"-princip som tidigare fältbyten (4b.14, 4b.15).
 - **Aktivitetsförslagen breddade:** `TRAINING_TEMPLATES` (`dashboard/family/new/page.tsx`) innehöll redan Dans/Piano men dominerades av sport (Karate, Fotboll, Simning, Gymnastik, Ishockey, Ridning). Scouts, Theater/Drama, Choir och Chess club tillagda, och ordningen ändrad så de första sex chipsen (det enda som visas utan att skrolla) redan blandar sport och icke-sport.
-- **Verifiering:** `tsc --noEmit` rent (exit 0) efter samtliga ändringar. Ingen schemaändring, ingen `db push` krävs. Inte pushat än, se `LAUNCH_CHECKLIST.md`.
+- **Verifiering:** `tsc --noEmit` rent (exit 0) efter samtliga ändringar. Ingen schemaändring, ingen `db push` krävdes. Pushat och live i produktion sedan 2026-08-18, se `LAUNCH_CHECKLIST.md`.
 
 ---
+
+### 4b.35 Familjebegränsningar + UI (2026-08-18, commit `35fb226`, live)
+
+- Sysslor/Aktiviteter/Skola kan tilldelas alla hushållsmedlemmar, inte bara barn.
+- Önskelista för alla medlemmar med flikarna My wishlist / Family.
+- "Add child" i Family-översikten; skapa-formuläret för syssla/aktivitet utan typväxlare.
+- Inköpslistans katalog som kompakt tvåkolumnslista med fler varor; kalenderns månadsvy visar titlar i dagrutorna.
+
+Se `TODO.md` punkt 30b.
+
+### 4b.34 Konton, radering och läxor/prov (2026-09-27, kodat, ej deployat)
+
+- **Ingen PIN längre.** Alla konton loggar in med verifierad e-post + lösenord, eller Google. Förälder skapar barnkonto med namn + e-post; barnet bekräftar och väljer lösenord via mail. Ersätter 4b.13 (vuxen-PIN) och PIN-delen av 4b.2.
+- **Radering = mjuk radering, 60 dagar.** Medlem begär → familjeadmin godkänner; admin eller ensam bekräftar själv. Personen döljs ur familjen och kan inte logga in; Mikael kan återställa i `/admin` inom 60 dagar, därefter permanent borttagning. Ersätter UI-skalet i 4b.17.
+- **Läxor & prov** (utökar 4b.20): typ (läxa/prov/övrigt), ämne, avbockning, nedräkning, visas först för barnet vid inloggning, val per post om den ska synas i kalendern, mail dagen före.
+
+Detaljer: `TODO.md` punkt 31.
 
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
@@ -442,7 +472,7 @@ Mikaels feedback: *"träning kanske e fel, activity är bättre. Man kanske har 
 
 `/features` utlovade "Household sharing" som en gratis Basic-funktion. Koden sa något annat: **att bjuda in en medlem till hushållet** (`api/household/invite`), **att dela en enskild reminder med hushållet** (visibility ≠ PRIVATE, `api/reminders` POST+PATCH), och **att överlämna (handover) en reminder** (`api/reminders/[id]/handover`) krävde alla `is_pro` – ingen trial-fallback. En Basic-användare kunde alltså i praktiken inte bilda ett flerpersoners-hushåll alls, trots vad marknadsföringen lovade.
 
-**Mikael godkände rekommendationen 2026-08-02: alla tre är nu gratis.** `is_pro`-kontrollen borttagen i samtliga tre routes. Pro-gränsen ligger nu bara vid de faktiska familjefunktionerna (inköpslista, önskelista, sysslor, etc., §7.1) – matchar både marknadsföringslöftet och positioneringen "hemmets gemensamma bas" (§3). Kodat, `tsc --noEmit` rent, redo för deploy – se `LAUNCH_CHECKLIST.md`.
+**Mikael godkände rekommendationen 2026-08-02: alla tre är nu gratis.** `is_pro`-kontrollen borttagen i samtliga tre routes. Pro-gränsen ligger nu bara vid de faktiska familjefunktionerna (inköpslista, önskelista, sysslor, etc., §7.1) – matchar både marknadsföringslöftet och positioneringen "hemmets gemensamma bas" (§3). Kodat, `tsc --noEmit` rent, pushat och live i produktion sedan 2026-08-18 – se `LAUNCH_CHECKLIST.md`.
 
 ### 7.3 7-dagars gratis Pro-provperiod – redan byggd
 

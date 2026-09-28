@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendPendingApprovalEmail, sendAdminApprovalRequestEmail } from "@/lib/email";
 import { passwordSchema } from "@/lib/passwordSchema";
+import { sendVerification } from "@/lib/verification";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
 
@@ -25,7 +26,9 @@ export async function POST(req: Request) {
 
     if (existing) {
       return NextResponse.json(
-        { error: "An account with this email already exists." },
+        { error: existing.deletedAt
+            ? "This account was recently deleted. Contact us if you want it restored."
+            : "An account with this email already exists." },
         { status: 400 }
       );
     }
@@ -50,6 +53,13 @@ export async function POST(req: Request) {
       },
     });
 
+    // 2026-09-27: every new account must confirm its email before logging in.
+    // Awaited (not fire-and-forget) so a send failure is visible in logs and
+    // the user can use "Resend" on the login page.
+    await sendVerification({ email: user.email, name: user.name }).catch((e) =>
+      console.error("Verification email failed:", e)
+    );
+
     // Best-effort notification emails — don't block the response on these.
     if (!isAdmin) {
       sendPendingApprovalEmail({ to: user.email, name: user.name }).catch(console.error);
@@ -64,8 +74,9 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         message: isAdmin
-          ? "Account created!"
-          : "Account created — pending admin approval. You'll get an email once you're approved.",
+          ? "Account created! Check your inbox to confirm your email."
+          : "Account created — check your inbox to confirm your email. Your account also needs admin approval; you'll get an email once you're approved.",
+        verificationSent: true,
         userId: user.id,
         pendingApproval: !isAdmin,
       },

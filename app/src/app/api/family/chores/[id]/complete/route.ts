@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPro } from "@/lib/entitlements";
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -35,7 +36,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Not your chore" }, { status: 403 });
   }
 
-  const isPro = chore.household?.is_pro;
+  const isPro = hasPro(chore.household);
   const trial = chore.household?.familyTrial;
   const trialActive = trial ? trial.expiresAt > new Date() : false;
   if (!isPro && !trialActive) return NextResponse.json({ error: "Trial expired" }, { status: 403 });

@@ -144,6 +144,7 @@ git push -u origin main
 I MVP-läget kan du skicka från en Resend-testadress:
 - `onboarding@resend.dev` fungerar direkt utan setup
 - Om du vill ha din egen domän senare kan du lägga till det sedan
+- **⚠️ Sedan 2026-09-27 räcker inte testadressen i produktion:** `onboarding@resend.dev` levererar bara till din egen Resend-kontoadress. Appen skickar nu verifieringsmail till alla nya konton och inbjudningar till barnkonton, så verifiera en egen domän (Resend → Domains → Add Domain, lägg in DNS-posterna) och sätt `RESEND_FROM_EMAIL` till t.ex. `noreply@dindomän.se` i Vercel.
 
 ---
 

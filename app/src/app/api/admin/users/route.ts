@@ -23,6 +23,10 @@ export async function GET() {
         preferredCurrency: true,
         approved: true,
         approvedAt: true,
+        emailVerified: true,
+        isChildProfile: true,
+        deletedAt: true,
+        deletedFromHouseholdId: true,
         _count: { select: { reminders: { where: { isActive: true } } } },
         householdMembers: {
           select: {
@@ -48,7 +52,7 @@ export async function GET() {
         totalReminders,
         emailsSent30Days: emailsSent,
         lastEmailSent: lastLog?.sentAt ?? null,
-        pendingApprovals: users.filter((u) => !u.approved).length,
+        pendingApprovals: users.filter((u) => !u.approved && !u.deletedAt).length,
       },
     });
   } catch (err) {

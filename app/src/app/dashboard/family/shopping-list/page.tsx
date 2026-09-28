@@ -1,6 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import UpgradeGate from "@/components/UpgradeGate";
+import AdSlot from "@/components/AdSlot";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,7 +26,6 @@ const POLL_MS = 5000;
 function IcBack()  { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><polyline points="15 18 9 12 15 6"/></svg>; }
 function IcPlus()  { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>; }
 function IcTrash() { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>; }
-function IcLock()  { return <svg width={32} height={32} viewBox="0 0 24 24" {...STR} strokeWidth={1.5}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>; }
 function IcShare() { return <svg width={19} height={19} viewBox="0 0 24 24" {...STR}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>; }
 function IcChevron({ open }: { open: boolean }) { return <svg width={14} height={14} viewBox="0 0 24 24" {...STR} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}><polyline points="6 9 12 15 18 9"/></svg>; }
 function IcSettings() { return <svg width={14} height={14} viewBox="0 0 24 24" {...STR}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>; }
@@ -62,7 +63,7 @@ export default function ShoppingListPage() {
   const { status } = useSession();
   const router = useRouter();
 
-  const [access, setAccess] = useState<"LOADING" | "NO_HOUSEHOLD" | "LOCKED" | "PRO" | "TRIAL">("LOADING");
+  const [access, setAccess] = useState<"LOADING" | "NO_HOUSEHOLD" | "LOCKED" | "PRO" | "TRIAL" | "FREE">("LOADING");
 
   const [lists, setLists] = useState<ListInfo[]>([]);
   const [canEditAccess, setCanEditAccess] = useState(false);
@@ -625,15 +626,8 @@ export default function ShoppingListPage() {
 
   if (access === "LOCKED") {
     return (
-      <Screen title="Shopping list" onBack={() => router.push("/dashboard/family")}>
-        <div style={{ textAlign: "center", padding: "60px 24px" }}>
-          <div style={{ color: "var(--faint)", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Family features required</h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>
-            The shared shopping list is part of family responsibilities — start your free trial or upgrade to Pro to use it.
-          </p>
-          <Link href="/dashboard/family" style={btnStyle("var(--ink)")}>Go to Family →</Link>
-        </div>
+      <Screen title="Shopping list" onBack={() => router.push("/dashboard")}>
+        <UpgradeGate feature="More shopping lists" emoji="🛒" description="The free plan includes one shared shopping list. Pro gives you as many as you like — try it free for 14 days." />
       </Screen>
     );
   }
@@ -673,8 +667,8 @@ export default function ShoppingListPage() {
             {l.name}
           </button>
         ))}
-        <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed var(--accent-border)", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
-          + New list
+        <button onClick={() => (access === "FREE" ? router.push("/upgrade") : setShowNewList((v) => !v))} title={access === "FREE" ? "More lists are part of Pro" : undefined} style={{ flexShrink: 0, background: "none", border: "1.5px dashed var(--accent-border)", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
+          + New list{access === "FREE" ? " ⚡" : ""}
         </button>
       </div>
 
@@ -851,6 +845,8 @@ export default function ShoppingListPage() {
           </div>
         </>
       )}
+
+      <AdSlot placement="shopping" style={{ marginTop: 20 }} />
 
       {/* Floating "+" — same style as Reminders/Chores/Calendar. Opens the
           add sheet below (2026-07-28). */}

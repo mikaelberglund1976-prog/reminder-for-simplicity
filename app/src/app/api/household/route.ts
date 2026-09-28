@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPro, describeAccess } from "@/lib/entitlements";
 
 // POST /api/household — create a new household (user becomes OWNER)
 export async function POST(req: Request) {
@@ -79,6 +80,7 @@ export async function GET() {
               where: { usedAt: null, expiresAt: { gt: new Date() } },
               select: { id: true, email: true, createdAt: true },
             },
+            familyTrial: true,
           },
         },
       },
@@ -86,7 +88,16 @@ export async function GET() {
 
     if (!membership) return NextResponse.json({ household: null });
 
-    return NextResponse.json({ household: membership.household, role: membership.role });
+    // is_pro is reported as the *effective* Pro state (manual flag or an
+    // unexpired proUntil) so older UI that reads it keeps working; the full
+    // picture (FREE/TRIAL/PRO, days left) is in `access`.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { stripeCustomerId, stripeSubscriptionId, ...household } = membership.household;
+    return NextResponse.json({
+      household: { ...household, is_pro: hasPro(membership.household) },
+      role: membership.role,
+      access: describeAccess(membership.household),
+    });
   } catch (err) {
     console.error("Get household error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

@@ -48,8 +48,8 @@ export async function GET() {
       timezone: true,
       createdAt: true,
       isChildProfile: true,
-      pin: true,
       password: true,
+      deletionRequestedAt: true,
       bottomNavTabs: true,
     },
   });
@@ -64,8 +64,8 @@ export async function GET() {
   // populated on the session that actually came from the Google OAuth flow
   // and is missing (falsely showing "Change password") after logging in via
   // the "pin" or "credentials" provider on a Google-linked account.
-  const { pin, password, ...rest } = user;
-  return NextResponse.json({ ...rest, hasPin: !!pin, hasPassword: !!password });
+  const { password, ...rest } = user;
+  return NextResponse.json({ ...rest, hasPassword: !!password });
 }
 
 // PUT /api/profile — update user profile

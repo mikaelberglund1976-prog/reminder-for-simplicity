@@ -2,6 +2,7 @@
 
 **Syfte:** en enda, avdubblerad, omprioriterad lista över allt som återstår innan produkten är "helt klar" för bred lansering. Ersätter inte `TODO.md` (som förblir den kronologiska arbetsloggen/historiken) utan sitter ovanpå den – det här dokumentet är **den aktuella sanningen om vad som är kvar**, `TODO.md` är **hur vi kom hit**.
 **Metod:** allt `- [ ]` extraherat ur `TODO.md` (punkt 1–25), `PRODUCT_SPEC.md`, `ROADMAP.md`, `OPERATIONS.md`, `APP_STORE_READINESS.md`, dubbletter slagna ihop, omgrupperat i faser efter vad som faktiskt blockerar vad.
+**Senast synkad:** 2026-09-27 – punkt 30b (live) och 31 (kodat, ej deployat) inlagda. Pausat arbete: `ATT_GORA_PAUSAT_2026-09-27.md`.
 **Uppdatera detta dokument** när en punkt blir klar (bocka av `- [x]`) eller när prioritet ändras – det tappar sitt värde annars.
 
 ---
@@ -18,23 +19,28 @@ Ingen inbördes teknisk ordning inom fasen, men allt här bör vara klart innan 
 
 **Säkerhet (från säkerhetsgranskningen 2026-08-02, `OPERATIONS.md` §8) — kodat 2026-08-02:**
 - [x] **P0 – Rate limiting/lockout på inloggning**, lösenord och PIN. `lib/rateLimit.ts` (nytt), kopplat in i `lib/auth.ts` – 5 misslyckade försök inom 15 min låser kontot i 15 min, delat mellan lösenords- och PIN-inloggning. **Känd begränsning: in-memory (per serverless-instans), inte en delad/global spärr** – höjer kostnaden för att gissa ett känt konto rejält, men är inte en fullständig lösning. Rekommenderad uppgradering senare: Upstash Redis. `tsc --noEmit` kört rent. **Kräver `git push` + Vercel-deploy för att bli skarp**, se längst ner i denna fil.
-- [ ] **P0 – Se över hur barnprofilers email genereras** (gissbart mönster + obegränsade PIN-försök = praktisk brute-force-väg). Inte kodat än – kräver ett produktbeslut om hur email-fältet ska genereras/valideras, inte bara en teknisk fix.
+- [x] **P0 – Barnprofilers gissbara email + PIN** — **löst 2026-09-27 genom att ta bort PIN helt.** Beslut (Mikael): alla konton = verifierad e-post + lösenord, eller Google. Nya konton får verifieringsmail; barnkonton skapas av förälder med namn + e-post och barnet får en länk för att bekräfta och välja lösenord. Se `TODO.md` punkt 31.
 - [x] P1 – `CRON_SECRET`-jämförelse: bytt från `!==` till `crypto.timingSafeEqual` (`api/cron/send-reminders/route.ts`). Kodat, `tsc --noEmit` rent.
 - [x] P1 – `ADMIN_EMAIL` läser nu `process.env.ADMIN_EMAIL` i `lib/adminConfig.ts` istället för att hårdkoda. **Nyans värd att känna till:** tre av de fyra ställena som importerar detta är `"use client"`-komponenter (menyn, admin-sidan, suggestions-sidan) – utan `NEXT_PUBLIC_`-prefix bakas env-variabeln aldrig in i klientbundeln, så de faller fortfarande tillbaka på samma hårdkodade default som förut (ofarligt, eftersom den riktiga spärren alltid varit server-side). Fixen är fullt verksam för den fjärde platsen, en server-route (`api/suggestions/[id]/route.ts`). Om ni vill att en framtida env-rotation ska slå igenom även i klient-UI:t krävs en separat `NEXT_PUBLIC_ADMIN_EMAIL` – inte gjort, egen liten uppgift om ni vill ha den.
 
 **Juridik/GDPR (COPPA-deadline redan passerad, se `APP_STORE_READINESS.md` §5):**
 - [ ] Komplett, publicerad Privacy Policy (struktur klar sedan 4b.28, 7 punkter kvar: juridisk enhet, Vercel/Resend DPA-status, datalagringstid, kontaktadress m.fl.).
 - [x] **Beslutat 2026-08-02:** ingen fast åldersgräns för barnprofiler – bara föräldrasamtycke (skapande föräldern samtycker vid skapandet). Mikael valde bort förslaget om en 13-årsgräns. **Medveten avvägning, inte ett misstag:** svagare COPPA-efterlevnadsposition om appen någonsin distribueras i USA (COPPA:s skärpta 2026-regler kopplar särskilt an till en tydlig åldersgräns) – värt att ha med sig om/när ni tar det beslutet igen inför en amerikansk lansering. Ska in i Privacy Policy-texten när den skrivs.
-- [ ] Självbetjänings-"radera mitt konto permanent" – riktig backend-radering, inte bara UI-shell. **Nu även en hård Apple-blockerare** (Guideline 5.1.1(v)), inte bara ett GDPR-önskemål. Inte kodat än.
+- [x] Självbetjänings-radering – **kodat 2026-09-27** som mjuk radering: familjeadmin godkänner (admin själv/ensam = bara "Är du säker?"), personen döljs ur familjen, kan återställas av Mikael i `/admin` → Deleted i 60 dagar, rensas sedan automatiskt av cron. Se `TODO.md` punkt 31. Klicktest kvar.
 
 **Löst 2026-08-02 – motsägelse mellan marknadsföring och kod (`PRODUCT_SPEC.md` §7.2):**
 - [x] `/features` lovade gratis "household sharing", men koden krävde `is_pro` för att bjuda in hushållsmedlemmar, dela en reminder inom hushållet, och överlämna (handover) en reminder. **Mikael godkände rekommendationen: alla tre är nu gratis** – `api/household/invite`, `api/reminders` (POST+PATCH), `api/reminders/[id]/handover`. Pro-gränsen ligger nu bara vid de faktiska familjefunktionerna (inköpslista, önskelista, sysslor, m.fl. – oförändrat). `tsc --noEmit` kört rent. **Ingen schemaändring**, bara borttagen kod – redo för `git push`.
 
 **Kontosammanslagning (mindre akut, men enkelt):**
-- [ ] Bekräftelseskärm innan Google/lösenord-kontosammanslagning sker automatiskt (händer idag tyst).
+- [ ] Bekräftelseskärm innan Google/lösenord-kontosammanslagning sker automatiskt (händer idag tyst). *Notera 2026-09-27: Google-inloggning på ett befintligt konto räknas nu även som e-postverifiering (punkt 31) – sammanslagningen är fortfarande tyst.*
 
 **Nytt fynd 2026-08-02 – onboarding-genomgång (`PRODUCT_SPEC.md` 4b.32):**
 - [ ] **Stäng av eller ersätt admin-godkännande-gaten innan bred lansering.** Varje nytt konto är idag blockerat från att logga in alls tills en människa manuellt godkänt det i `/admin` – rätt för nuvarande stängda testfas (bekräftat av Mikael, inga externa användare än), men bryter helt mot "visa värde innan vi ber om något" (§9) och mot vad en ny användare/app store-granskare förväntar sig. Fanns inte som egen punkt i den ursprungliga versionen av den här listan – ett genuint gap, tillagt nu.
+
+---
+
+**Ny blockerare 2026-09-27 (följd av e-postverifieringen):**
+- [ ] **Verifiera egen avsändardomän i Resend + sätt `RESEND_FROM_EMAIL`.** Med `onboarding@resend.dev` levererar Resend bara till kontoägarens egen adress – verifierings- och inbjudningsmail till nya användare/barn kommer inte fram, och de kan då inte logga in. Var tidigare en Fas F-punkt, nu blockerande.
 
 ---
 
@@ -107,7 +113,7 @@ Från `COMPETITOR_ANALYSIS_TASKAPPS.md`/`PRODUCT_SPEC.md` 4b.30. Kan göras när
 - [ ] `npm install` lokal synk av `node_modules` (måste göras på riktig dator, inte i sandbox).
 - [ ] Error tracking (Sentry eller liknande) – skulle bland annat ha upptäckt ovanliga inloggningsmönster snabbare, se Fas A säkerhet.
 - [ ] Uptime-monitoring/alerting.
-- [ ] Verifierad egen avsändardomän för email (idag `onboarding@resend.dev`).
+- [ ] ~~Verifierad egen avsändardomän för email~~ → flyttad till Fas A 2026-09-27 (krävs nu för e-postverifiering).
 - [ ] Formell migrations-historik (`prisma migrate` istället för `db push`).
 - [ ] Backup-schema utöver Supabase standard.
 
@@ -115,21 +121,42 @@ Från `COMPETITOR_ANALYSIS_TASKAPPS.md`/`PRODUCT_SPEC.md` 4b.30. Kan göras när
 
 ## Fas G – Samlad QA-runda innan lansering
 
+**Lägg även till (2026-09-27):** punkt 30b (tilldelning till alla medlemmar, önskelista för vuxna, kalendertitlar, katalog) och punkt 31 (verifiering, barninbjudan, radering/återställning, läxor & prov) – se `TEST_VERIFICATION.md` §6–7.
+
 Stor mängd funktioner är byggda men aldrig klicktestade skarpt (utspritt över `TODO.md` punkt 7/10/11/12/13/18/20). Istället för att lista varje enskild funktion separat: kör **en enda sammanhängande QA-runda** genom hela appen innan lansering, med särskilt fokus på: School/Training/kalendersynk, anpassningsbar bottenmeny, streckkodsskanning + butiksläge, admin-godkännande end-to-end, och allt i Fas A ovan.
 
 ---
 
-## Kodändringar gjorda 2026-08-02 – redo för deploy
+## Kodändringar 2026-08-18 (commit `35fb226`) – DEPLOYAD ✅
+
+Familjebegränsningar + inköpslista/kalender-UI, se `TODO.md` punkt 30b. Live via `c1d2f92` (READY). Klicktest kvar.
+
+---
+
+## Kodändringar gjorda 2026-08-02 – DEPLOYAD 2026-08-18 ✅
 
 **Omgång 1 (säkerhet + gratis hushållsdelning):** fem filer ändrade, en ny fil (`lib/rateLimit.ts`).
 
 **Omgång 2 (Training → Activity):** elva filer ändrade, ren text-/emoji-/mallbyte, ingen logikändring.
 
-Ingen schemaändring i någon av omgångarna – ingen `db push`/`prisma generate` krävs. `tsc --noEmit` kört rent (exit 0) efter varje ändring. Ligger i din riktiga projektmapp, inte pushat än:
+Ingen schemaändring i någon av omgångarna – ingen `db push`/`prisma generate` krävdes. `tsc --noEmit` kört rent (exit 0) efter varje ändring.
 
-- `git add -A && git commit -m "security: rate limiting, timing-safe cron secret, consistent ADMIN_EMAIL, free household sharing; rename Training to Activity in UI" && git push`
-- Bekräfta grön deploy i Vercel-dashboarden som vanligt (se `OPERATIONS.md` §5 – `tsc` rent garanterar inte en grön `next build`).
-- **Klicktesta innan ni litar på det:** 5 felaktiga lösenords-/PIN-försök i rad ska låsa kontot i 15 minuter (testa på ett testkonto, inte ditt eget – låsningen är på riktigt); bjud in en medlem till ett hushåll som INTE är Pro och bekräfta att det fungerar nu; dela en reminder (visibility → Household) i ett icke-Pro-hushåll och bekräfta att den faktiskt syns för de andra; öppna Activities-sidan/menyn/kalendern och kolla att inget "Training"/⚽ syns kvar.
+**Status: live.** Commit `29bf8e9` ("security: rate limiting, timing-safe cron secret, consistent ADMIN_EMAIL, free household sharing; rename Training to Activity in UI") pushad till `master` 2026-08-18 och bekräftat deployad till produktion på Vercel (deployment `dpl_3qWTb64whz1ZuTNefwK3TXnUuxUx`, state READY).
+
+- [ ] **Klicktesta i den skarpa appen** (inte gjort ännu): 5 felaktiga lösenords-/PIN-försök i rad ska låsa kontot i 15 minuter (testa på ett testkonto, inte ditt eget – låsningen är på riktigt); bjud in en medlem till ett hushåll som INTE är Pro och bekräfta att det fungerar nu; dela en reminder (visibility → Household) i ett icke-Pro-hushåll och bekräfta att den faktiskt syns för de andra; öppna Activities-sidan/menyn/kalendern och kolla att inget "Training"/⚽ syns kvar.
+
+---
+
+## Kodändringar 2026-09-27 – INTE deployade än
+
+PIN borttaget + e-postverifiering, mjuk radering med 60 dagars återställning, läxor & prov (typ, ämne, avbockning, överst för barnet, visa i kalender, påminnelse dagen före). Se `TODO.md` punkt 31 för filer och körordning.
+
+- [ ] `npx prisma generate && npm run db:push` (från `app/`)
+- [ ] `node scripts/migrate-2026-09-retire-pin.js`
+- [ ] Verifiera Resend-domän (se Fas A) – annars når verifieringsmail inte fram
+- [ ] Commit + push via VS Code, kolla Vercel READY
+- [ ] Skicka nya inbjudningar till barnkonton (Profile → Child accounts → Resend invite)
+- [ ] Klicktesta: registrera → mail → bekräfta → logga in; skapa barn → mail → välj lösenord; radera som medlem (begäran) och som admin; återställ i `/admin`; lägg till läxa/prov, bocka av, dölj i kalender
 
 ---
 

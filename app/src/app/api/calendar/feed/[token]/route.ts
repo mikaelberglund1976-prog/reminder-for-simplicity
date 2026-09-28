@@ -49,6 +49,10 @@ export async function GET(_req: Request, { params }: { params: { token: string }
       });
     }
 
+    // 2026-09-27: school items the person chose to keep out of the calendar
+    // ("Show in calendar" off) are left out of the feed too.
+    reminders = reminders.filter((r) => !(r.category === "SCHOOL" && r.showInCalendar === false));
+
     // Feed window: a few months back (recently-passed events some calendar
     // apps still show for a beat) through a year ahead. Matches the
     // in-app calendar's own occurrence-expansion approach (lib/recurrence.ts).
@@ -68,7 +72,10 @@ export async function GET(_req: Request, { params }: { params: { token: string }
       const occs = getOccurrencesInRange(r as unknown as RecurringItem, from, to);
       const categoryLabel = CATEGORY_LABELS[r.category] ?? r.category;
       const who = ["CHORE", "TRAINING", "SCHOOL"].includes(r.category) && r.assignedUser?.name ? ` (${r.assignedUser.name})` : "";
-      const descriptionParts = [categoryLabel + who, r.note].filter(Boolean);
+      const schoolBits = r.category === "SCHOOL"
+        ? [r.schoolKind === "TEST" ? "Test" : r.schoolKind === "HOMEWORK" ? "Homework" : null, r.subject].filter(Boolean).join(" · ")
+        : "";
+      const descriptionParts = [categoryLabel + who, schoolBits, r.note].filter(Boolean);
       for (const occ of occs) {
         events.push({
           uid: `${r.id}-${occ.getFullYear()}${occ.getMonth() + 1}${occ.getDate()}`,

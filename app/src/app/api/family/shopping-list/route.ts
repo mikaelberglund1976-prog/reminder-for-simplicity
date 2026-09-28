@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPro } from "@/lib/entitlements";
 import { resolveCategoryId, rememberCategory } from "@/lib/shoppingCategories";
-import { userCanAccessList, getListMemberIds, type HouseholdRoleStr } from "@/lib/lists";
+import { userCanAccessList, getListMemberIds, freeShoppingListId, type HouseholdRoleStr } from "@/lib/lists";
 
 async function membershipAndAccess(userId: string, listId: string | null) {
   const membership = await prisma.householdMember.findFirst({
@@ -37,12 +38,15 @@ export async function GET(req: Request) {
     const { membership, list } = await membershipAndAccess(session.user.id, listId);
     if (!membership) return NextResponse.json({ items: [], access: "NO_HOUSEHOLD" });
 
-    const isPro = membership.household.is_pro;
+    const isPro = hasPro(membership.household);
     const trial = membership.household.familyTrial;
     const trialActive = trial ? trial.expiresAt > new Date() : false;
-    if (!isPro && !trialActive) return NextResponse.json({ items: [], access: "LOCKED" });
-
     if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    // Free households: only their one shared list (see lib/entitlements.ts).
+    const full = isPro || trialActive;
+    if (!full && list.id !== (await freeShoppingListId(membership.householdId))) {
+      return NextResponse.json({ items: [], access: "LOCKED" });
+    }
 
     const items = await prisma.shoppingListItem.findMany({
       where: { listId },
@@ -57,7 +61,7 @@ export async function GET(req: Request) {
       orderBy: [{ isPurchased: "asc" }, { createdAt: "desc" }],
     });
 
-    return NextResponse.json({ items, access: isPro ? "PRO" : "TRIAL" });
+    return NextResponse.json({ items, access: isPro ? "PRO" : trialActive ? "TRIAL" : "FREE" });
   } catch (err) {
     console.error("Shopping list GET error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -78,11 +82,13 @@ export async function POST(req: Request) {
     const { membership, list } = await membershipAndAccess(session.user.id, listId);
     if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
 
-    const isPro = membership.household.is_pro;
+    const isPro = hasPro(membership.household);
     const trial = membership.household.familyTrial;
     const trialActive = trial ? trial.expiresAt > new Date() : false;
-    if (!isPro && !trialActive) return NextResponse.json({ error: "Trial or Pro required" }, { status: 403 });
     if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!isPro && !trialActive && list.id !== (await freeShoppingListId(membership.householdId))) {
+      return NextResponse.json({ error: "This list needs Pro — the free plan includes one shared shopping list." }, { status: 403 });
+    }
 
     // Manual category wins and is remembered for next time; otherwise fall
     // back to household memory, then a keyword guess (see shoppingCategories.ts).

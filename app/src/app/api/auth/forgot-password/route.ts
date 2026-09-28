@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendVerificationOrSetup } from "@/lib/verification";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
 
@@ -21,7 +22,12 @@ export async function POST(req: Request) {
 
     // Only send a reset email if the account exists AND uses a password
     // (Google-only accounts have no password to reset).
-    if (user?.password) {
+    // 2026-09-27: an unconfirmed account without a password (e.g. a child
+    // whose PIN was retired) gets its setup link instead, so "Forgot
+    // password?" always gives the person a way in.
+    if (user && !user.deletedAt && !user.password && !user.emailVerified) {
+      await sendVerificationOrSetup(user).catch((err) => console.error("Setup email failed:", err));
+    } else if (user?.password && !user.deletedAt) {
       const token = await prisma.passwordResetToken.create({
         data: {
           userId: user.id,

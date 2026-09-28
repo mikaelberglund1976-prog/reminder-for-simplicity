@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendReminderEmail } from "@/lib/email";
 import { addDays, addWeeks, addMonths, addYears } from "date-fns";
+import { purgeExpiredAccounts } from "@/lib/accountDeletion";
 
 function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -16,8 +17,9 @@ export async function runReminderCron() {
   const log: string[] = [];
 
   const reminders = await prisma.reminder.findMany({
-    where: { isActive: true },
-    include: { user: true },
+    // 2026-09-27: skip reminders owned by soft-deleted accounts.
+    where: { isActive: true, user: { deletedAt: null } },
+    include: { user: true, assignedUser: true },
   });
 
   log.push(`Today: ${todayStr}`);
@@ -32,6 +34,9 @@ export async function runReminderCron() {
 
     if (!isToday) { skipped++; continue; }
 
+    // 2026-09-27: homework/tests already ticked off don't need a reminder.
+    if (reminder.category === "SCHOOL" && reminder.completedAt) { skipped++; continue; }
+
     const startOfToday = new Date(todayStr + "T00:00:00.000Z");
     const alreadySent = await prisma.reminderLog.findFirst({
       where: { reminderId: reminder.id, sentAt: { gte: startOfToday } },
@@ -44,9 +49,16 @@ export async function runReminderCron() {
     }
 
     try {
-      await sendReminderEmail({
-        to: reminder.user.email,
-        name: reminder.user.name,
+      // School items: the person it's assigned to (usually the child) gets the
+      // reminder, plus whoever created it if that's someone else (a parent).
+      const recipients: { email: string; name: string | null }[] = [{ email: reminder.user.email, name: reminder.user.name }];
+      if (reminder.category === "SCHOOL" && reminder.assignedUser && !reminder.assignedUser.deletedAt
+          && reminder.assignedUser.email !== reminder.user.email) {
+        recipients.unshift({ email: reminder.assignedUser.email, name: reminder.assignedUser.name });
+      }
+      for (const r of recipients) await sendReminderEmail({
+        to: r.email,
+        name: r.name,
         reminderName: reminder.name,
         date: reminder.date,
         amount: reminder.amount,
@@ -77,7 +89,7 @@ export async function runReminderCron() {
         }
       }
 
-      log.push(`  -> sent to ${reminder.user.email}`);
+      log.push(`  -> sent to ${recipients.map((r) => r.email).join(", ")}`);
       sent++;
     } catch (err) {
       console.error(`Failed to send reminder ${reminder.id}:`, err);
@@ -91,6 +103,15 @@ export async function runReminderCron() {
   // every week) that households wanted them to stick around as a quick
   // reference/re-add list instead of disappearing on a timer. Clearing is
   // now only ever manual, via the "Clear bought items" button.
+
+  // 2026-09-27: accounts soft-deleted more than 60 days ago are removed for real.
+  try {
+    const purged = await purgeExpiredAccounts();
+    if (purged.length) log.push(`Purged deleted accounts: ${purged.length}`);
+  } catch (err) {
+    console.error("Account purge failed:", err);
+    log.push(`Account purge ERROR: ${String(err)}`);
+  }
 
   return { success: true, sent, skipped, errors, todayStr, log };
 }

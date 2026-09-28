@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ensureDefaultList, listsVisibleTo, getListMemberIds, canEditListAccess, type ListKindStr, type HouseholdRoleStr } from "@/lib/lists";
+import { hasPro, hasFamilyAccess } from "@/lib/entitlements";
+import { ensureDefaultList, freeShoppingListId, listsVisibleTo, getListMemberIds, canEditListAccess, type ListKindStr, type HouseholdRoleStr } from "@/lib/lists";
 
 // GET /api/family/lists?kind=SHOPPING|WISHLIST
 export async function GET(req: Request) {
@@ -22,10 +23,13 @@ export async function GET(req: Request) {
     });
     if (!membership) return NextResponse.json({ lists: [], access: "NO_HOUSEHOLD" });
 
-    const isPro = membership.household.is_pro;
+    const isPro = hasPro(membership.household);
     const trial = membership.household.familyTrial;
     const trialActive = trial ? trial.expiresAt > new Date() : false;
-    if (!isPro && !trialActive) return NextResponse.json({ lists: [], access: "LOCKED" });
+    const full = isPro || trialActive;
+    // 2026-09-28: the free plan includes one shared shopping list; wishlists
+    // need Pro or the trial (lib/entitlements.ts).
+    if (!full && kind === "WISHLIST") return NextResponse.json({ lists: [], access: "LOCKED" });
 
     const role = membership.role as HouseholdRoleStr;
 
@@ -53,7 +57,11 @@ export async function GET(req: Request) {
       }
     }
 
-    const lists = await listsVisibleTo(membership.householdId, kind, session.user.id, role);
+    let lists = await listsVisibleTo(membership.householdId, kind, session.user.id, role);
+    if (!full) {
+      const freeId = await freeShoppingListId(membership.householdId);
+      lists = lists.filter((l) => l.id === freeId);
+    }
     const ownerIds = Array.from(new Set(lists.map((l) => l.ownerId).filter((v): v is string => !!v)));
     const owners = ownerIds.length
       ? await prisma.user.findMany({ where: { id: { in: ownerIds } }, select: { id: true, name: true } })
@@ -69,7 +77,7 @@ export async function GET(req: Request) {
       }))
     );
 
-    return NextResponse.json({ lists: withMembers, access: isPro ? "PRO" : "TRIAL", canEditAccess: canEditListAccess(role), role });
+    return NextResponse.json({ lists: withMembers, access: isPro ? "PRO" : trialActive ? "TRIAL" : "FREE", canEditAccess: canEditListAccess(role), role });
   } catch (err) {
     console.error("Lists GET error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -85,12 +93,22 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const membership = await prisma.householdMember.findFirst({ where: { userId: session.user.id } });
+    const membership = await prisma.householdMember.findFirst({
+      where: { userId: session.user.id },
+      include: { household: { include: { familyTrial: true } } },
+    });
     if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
     const { kind, name, ownerId } = body ?? {};
     if (kind !== "SHOPPING" && kind !== "WISHLIST") return NextResponse.json({ error: "kind must be SHOPPING or WISHLIST" }, { status: 400 });
+
+    // 2026-09-28: creating lists wasn't gated before (a free household could
+    // make any number via the API). Extra lists and all wishlists need Pro or
+    // the trial; the free plan's single shopping list is created lazily in GET.
+    if (!hasFamilyAccess(membership.household)) {
+      return NextResponse.json({ error: kind === "WISHLIST" ? "Wishlists are part of Pro." : "More than one shopping list is part of Pro.", upgrade: true }, { status: 403 });
+    }
     if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
 
     const role = membership.role as HouseholdRoleStr;

@@ -595,3 +595,124 @@ export async function sendAccountApprovedEmail({ to, name }: { to: string; name:
 </html>`,
   });
 }
+
+// ─── 2026-09-27: email verification, child account setup, deletion ─────────────
+
+function simpleEmailHtml({ icon, greeting, lines, buttonText, buttonUrl, footer }: {
+  icon: string; greeting: string; lines: string[]; buttonText?: string; buttonUrl?: string; footer?: string;
+}) {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
+    <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
+      <div style="font-size:32px;margin-bottom:6px;">${icon}</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity</div>
+    </div>
+    <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
+      <p style="margin:0 0 20px;color:#718096;font-size:15px;">${greeting}</p>
+      ${lines.map((l) => `<p style="color:#1A202C;font-size:15px;line-height:1.7;margin:0 0 14px;">${l}</p>`).join("")}
+      ${buttonUrl ? `<div style="text-align:center;margin:24px 0 8px;">
+        <a href="${buttonUrl}" style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">${buttonText}</a>
+      </div>` : ""}
+      ${footer ? `<p style="color:#A0AEC0;font-size:12px;text-align:center;margin:24px 0 0;">${footer}</p>` : ""}
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+async function sendSimple(to: string, subject: string, html: string, tag: string) {
+  const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+  if (error) {
+    console.error(`Resend error (${tag}):`, error);
+    throw new Error(error.message);
+  }
+}
+
+export async function sendVerifyEmail({ to, name, verifyUrl }: { to: string; name: string | null; verifyUrl: string }) {
+  const firstName = name?.split(" ")[0] ?? "there";
+  await sendSimple(to, "Confirm your email – Reminder for Simplicity", simpleEmailHtml({
+    icon: "✉️",
+    greeting: `Hi ${firstName},`,
+    lines: ["Please confirm that this is your email address. You can log in as soon as it's confirmed."],
+    buttonText: "Confirm email →",
+    buttonUrl: verifyUrl,
+    footer: "This link expires in 48 hours. If you didn't create an account, you can ignore this email.",
+  }), "verify email");
+}
+
+export async function sendAccountSetupEmail({ to, name, invitedBy, setupUrl }: {
+  to: string; name: string | null; invitedBy: string | null; setupUrl: string;
+}) {
+  const firstName = name?.split(" ")[0] ?? "there";
+  await sendSimple(to, `${invitedBy ?? "Your family"} created an account for ${firstName}`, simpleEmailHtml({
+    icon: "👋",
+    greeting: `Hi ${firstName},`,
+    lines: [
+      `${invitedBy ?? "Someone in your family"} has added you to your family in Reminder for Simplicity.`,
+      "Confirm your email and choose a password to log in. You can also log in with Google if this is a Google address.",
+    ],
+    buttonText: "Confirm & choose password →",
+    buttonUrl: setupUrl,
+    footer: "This link expires in 7 days.",
+  }), "account setup");
+}
+
+export async function sendDeletionRequestEmail({ to, adminName, memberName, familyUrl }: {
+  to: string; adminName: string | null; memberName: string | null; familyUrl: string;
+}) {
+  await sendSimple(to, `${memberName ?? "A family member"} wants to delete their account`, simpleEmailHtml({
+    icon: "🗑️",
+    greeting: `Hi ${adminName?.split(" ")[0] ?? "there"},`,
+    lines: [
+      `${memberName ?? "A member of your family"} has asked to delete their account. As the family admin you need to approve or decline.`,
+      "If approved, the account is hidden from the family right away and permanently deleted after 60 days.",
+    ],
+    buttonText: "Review request →",
+    buttonUrl: familyUrl,
+  }), "deletion request");
+}
+
+export async function sendAccountDeletedEmail({ to, name, purgeDate }: { to: string; name: string | null; purgeDate: Date }) {
+  await sendSimple(to, "Your account has been deleted – Reminder for Simplicity", simpleEmailHtml({
+    icon: "👋",
+    greeting: `Hi ${name?.split(" ")[0] ?? "there"},`,
+    lines: [
+      "Your account has been deleted and you can no longer log in.",
+      `Your data is kept until <strong>${format(purgeDate, "d MMMM yyyy")}</strong> and then permanently removed. If this was a mistake, reply to this email before then and we can restore it.`,
+    ],
+  }), "account deleted");
+}
+
+// ─── 2026-09-28: plans ──────────────────────────────────────────────────────
+
+export async function sendProRequestEmail({ to, familyName, requesterName, requesterEmail, adminUrl }: {
+  to: string; familyName: string | null; requesterName: string | null; requesterEmail: string; adminUrl: string;
+}) {
+  await sendSimple(to, `Pro request: ${familyName ?? requesterEmail}`, simpleEmailHtml({
+    icon: "⚡",
+    greeting: "Hi Mikael,",
+    lines: [
+      `<strong>${requesterName ?? requesterEmail}</strong> (${requesterEmail}) wants Pro for the family <strong>${familyName ?? "—"}</strong>.`,
+      "Open the family in admin and grant Pro for the number of days you want.",
+    ],
+    buttonText: "Open in admin →",
+    buttonUrl: adminUrl,
+  }), "pro request");
+}
+
+export async function sendProGrantedEmail({ to, name, until }: { to: string; name: string | null; until: Date | null }) {
+  await sendSimple(to, "Pro is on for your family – Reminder for Simplicity", simpleEmailHtml({
+    icon: "⚡",
+    greeting: `Hi ${name?.split(" ")[0] ?? "there"},`,
+    lines: [
+      until
+        ? `Pro is now active for your family until <strong>${format(until, "d MMMM yyyy")}</strong>.`
+        : "Pro is now active for your family.",
+      "Children, chores, homework & tests, wishlists, activities and more shopping lists are all unlocked.",
+    ],
+  }), "pro granted");
+}

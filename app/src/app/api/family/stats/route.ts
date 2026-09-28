@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPro } from "@/lib/entitlements";
 
 // Returns done-counts over time per child for the parent overview.
 // Counts ChoreCompletion rows whose status is DONE or APPROVED.
@@ -37,7 +38,7 @@ export async function GET() {
       return NextResponse.json({ stats: [], access: "NO_HOUSEHOLD" });
     }
 
-    const isPro = membership.household.is_pro;
+    const isPro = hasPro(membership.household);
     const trial = membership.household.familyTrial;
     const trialActive = trial ? trial.expiresAt > new Date() : false;
     if (!isPro && !trialActive) {

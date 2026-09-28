@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import AdSlot from "@/components/AdSlot";
 
 type HouseholdMember = { id: string; userId: string; user: { id: string; name: string | null; email: string } };
 
@@ -178,12 +179,12 @@ function IcCalendar() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x
 function IcBellPlus() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M12 6v5M9.5 8.5h5"/></svg>; }
 
 // Order = how often the personas reached for them in the review.
-const QUICK_ACTIONS: { label: string; href: string; Icon: () => React.ReactElement; color: string; tint: string }[] = [
+const QUICK_ACTIONS: { label: string; href: string; Icon: () => React.ReactElement; color: string; tint: string; pro?: boolean }[] = [
   { label: "New reminder",  href: "/dashboard/new",                 Icon: IcBellPlus,  color: "var(--accent)",  tint: "var(--tint-accent)" },
   { label: "Shopping list", href: "/dashboard/family/shopping-list", Icon: IcCart,      color: "var(--success)", tint: "var(--tint-success)" },
-  { label: "Homework & tests", href: "/dashboard/school",           Icon: IcSchool,    color: "var(--accent)",  tint: "var(--tint-accent)" },
-  { label: "Chores",        href: "/dashboard/family",               Icon: IcChecklist, color: "var(--warning)", tint: "var(--tint-warning)" },
-  { label: "Wishlists",     href: "/dashboard/wishlist",             Icon: IcGift,      color: "var(--danger)",  tint: "var(--tint-danger)" },
+  { label: "Homework & tests", href: "/dashboard/school",           Icon: IcSchool,    color: "var(--accent)",  tint: "var(--tint-accent)" , pro: true },
+  { label: "Chores",        href: "/dashboard/family",               Icon: IcChecklist, color: "var(--warning)", tint: "var(--tint-warning)" , pro: true },
+  { label: "Wishlists",     href: "/dashboard/wishlist",             Icon: IcGift,      color: "var(--danger)",  tint: "var(--tint-danger)" , pro: true },
   { label: "Calendar",      href: "/dashboard/calendar",             Icon: IcCalendar,  color: "var(--fg-2)",    tint: "var(--surface-3)" },
 ];
 
@@ -295,6 +296,7 @@ export default function DashboardPage() {
   const [sortBy, setSort]                = useState("date_asc");
   const [hasHousehold, setHasHousehold]  = useState(false);
   const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
+  const [plan, setPlan] = useState<{ plan: "FREE" | "TRIAL" | "PRO"; trialDaysLeft: number | null } | null>(null);
   const [familySummary, setFamilySummary] = useState<{ childId: string; childName: string; total: number; done: number; pending: number }[]>([]);
 
   useEffect(() => {
@@ -335,12 +337,24 @@ export default function DashboardPage() {
       const res = await fetch("/api/household");
       if (res.ok) {
         const d = await res.json();
+        if (d.access) setPlan(d.access);
         if (d.household) {
           setHasHousehold(true);
           setHouseholdMembers(d.household.members ?? []);
         }
       }
     } catch (e) { console.error(e); }
+  }
+
+  const [creatingHousehold, setCreatingHousehold] = useState(false);
+  async function createHousehold() {
+    setCreatingHousehold(true);
+    try {
+      const res = await fetch("/api/household", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      if (res.ok) await fetchHousehold();
+    } finally {
+      setCreatingHousehold(false);
+    }
   }
 
   async function fetchFamilyData() {
@@ -430,8 +444,20 @@ export default function DashboardPage() {
             instead of a paragraph of explanation (personas skimmed past it). */}
         <div style={{ marginBottom: 22, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 4 }}>
-              {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
+                {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+              </span>
+              {/* 2026-09-28: plan chip — always one tap from the plans page. */}
+              {plan && hasHousehold && (
+                <Link href="/upgrade" style={{
+                  fontSize: 11, fontWeight: 800, textDecoration: "none", padding: "3px 9px", borderRadius: 50,
+                  background: plan.plan === "FREE" ? "var(--surface-3)" : "var(--tint-accent)",
+                  color: plan.plan === "FREE" ? "var(--muted)" : "var(--accent)",
+                }}>
+                  {plan.plan === "PRO" ? "⚡ Pro" : plan.plan === "TRIAL" ? `⚡ Trial · ${plan.trialDaysLeft}d left` : "Free · Try Pro"}
+                </Link>
+              )}
             </div>
             <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--fg)", margin: 0, letterSpacing: "-0.6px" }}>
               Hi {firstName}
@@ -439,6 +465,20 @@ export default function DashboardPage() {
           </div>
           <HamburgerMenu />
         </div>
+
+        {/* 2026-09-28: no family yet → one clear next step instead of a
+            dozen buttons that lead to "set up your household first". */}
+        {!hasHousehold && (
+          <div style={{ background: "var(--hero-grad)", borderRadius: 20, padding: "20px 20px 18px", marginBottom: 22, color: "#fff" }}>
+            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>Set up your family</div>
+            <div style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.5, marginBottom: 14 }}>
+              Create your family to share reminders and a shopping list. Got an invite link from someone? Open it instead and you&apos;ll join their family.
+            </div>
+            <button onClick={createHousehold} disabled={creatingHousehold} style={{ background: "#fff", color: "#1C1C28", border: "none", borderRadius: 50, padding: "11px 20px", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT }}>
+              {creatingHousehold ? "Creating…" : "Create my family"}
+            </button>
+          </div>
+        )}
 
         {/* Quick actions — "What would you like to do?" row, borrowed from the
             reference app: the most common jobs one tap away, horizontally
@@ -452,8 +492,11 @@ export default function DashboardPage() {
               padding: "14px 10px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10,
               textDecoration: "none", color: "var(--fg)", boxShadow: "var(--shadow)",
             }}>
-              <span style={{ width: 40, height: 40, borderRadius: 12, background: qa.tint, color: qa.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ position: "relative", width: 40, height: 40, borderRadius: 12, background: qa.tint, color: qa.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <qa.Icon />
+                {qa.pro && plan?.plan === "FREE" && (
+                  <span style={{ position: "absolute", top: -6, right: -14, fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 6, background: "var(--accent-bg)", color: "#fff" }}>PRO</span>
+                )}
               </span>
               <span style={{ fontSize: 13, fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>{qa.label}</span>
             </Link>
@@ -504,6 +547,8 @@ export default function DashboardPage() {
             })}
           </div>
         )}
+
+        <AdSlot placement="home" style={{ marginBottom: 20 }} />
 
         {/* Overview tiles — three honest numbers. "Needs attention" used to
             count only overdue items while the list above said "4 items";
@@ -600,7 +645,8 @@ export default function DashboardPage() {
                   </div>
             )}
 
-            {/* Add reminder */}
+            {/* Add reminder (hidden when the empty state above already offers it) */}
+            {filtered.length > 0 && (
             <Link href="/dashboard/new" style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               width: "100%", background: "var(--surface)", border: "1.5px dashed var(--border)",
@@ -609,6 +655,7 @@ export default function DashboardPage() {
             }}>
               + Add reminder
             </Link>
+            )}
           </>
 
       </main>

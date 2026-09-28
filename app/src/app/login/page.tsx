@@ -11,6 +11,10 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif
 // (duplicated rather than imported — auth.ts pulls in prisma/bcrypt, which
 // can't be bundled into a client component).
 const PENDING_APPROVAL_MESSAGE = "Your account is pending admin approval.";
+// Same for these two (src/lib/verification.ts), added 2026-09-27.
+const EMAIL_NOT_VERIFIED_MESSAGE = "Please confirm your email first — check your inbox for the link.";
+const ACCOUNT_DELETED_MESSAGE = "This account has been deleted.";
+const PASS_THROUGH = [PENDING_APPROVAL_MESSAGE, EMAIL_NOT_VERIFIED_MESSAGE, ACCOUNT_DELETED_MESSAGE];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,6 +24,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [info, setInfo] = useState("");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
   // Google's signIn callback redirects here with ?error=PendingApproval when
   // a not-yet-approved account tries to sign in (see auth.ts).
@@ -28,6 +34,17 @@ export default function LoginPage() {
     if (params.get("error") === "PendingApproval") {
       setError(PENDING_APPROVAL_MESSAGE);
     }
+    if (params.get("error") === "AccountDeleted") {
+      setError(ACCOUNT_DELETED_MESSAGE);
+    }
+    if (params.get("verified") === "1") {
+      setInfo("Email confirmed — you can log in now.");
+    }
+    if (params.get("info") === "pin-retired") {
+      setInfo("PIN login has been retired. Log in with your email and password, or with Google. No password yet? Ask a parent to resend your invite, or use \"Forgot password?\".");
+    }
+    const e = params.get("email");
+    if (e) setEmail(e);
   }, []);
 
   async function handleGoogleSignIn() {
@@ -36,13 +53,22 @@ export default function LoginPage() {
     await signIn("google", { callbackUrl: "/dashboard" });
   }
 
+  async function resendVerification() {
+    setResendState("sending");
+    await fetch("/api/auth/resend-verification", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }),
+    }).catch(() => {});
+    setResendState("sent");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
     const result = await signIn("credentials", { email, password, redirect: false });
     if (result?.error) {
-      setError(result.error === PENDING_APPROVAL_MESSAGE ? PENDING_APPROVAL_MESSAGE : "Incorrect email or password.");
+      setError(PASS_THROUGH.includes(result.error) || result.error.startsWith("Too many attempts") ? result.error : "Incorrect email or password.");
+      setResendState("idle");
       setLoading(false);
     } else {
       router.push("/dashboard");
@@ -75,6 +101,27 @@ export default function LoginPage() {
             borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 20,
           }}>
             {error}
+            {error === EMAIL_NOT_VERIFIED_MESSAGE && email && (
+              <div style={{ marginTop: 8 }}>
+                {resendState === "sent" ? (
+                  <span style={{ color: "var(--success)", fontWeight: 600 }}>New link sent — check your inbox (and spam).</span>
+                ) : (
+                  <button type="button" onClick={resendVerification} disabled={resendState === "sending"}
+                    style={{ background: "none", border: "none", padding: 0, color: "var(--accent)", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: FONT }}>
+                    {resendState === "sending" ? "Sending…" : "Resend confirmation email"}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {info && !error && (
+          <div style={{
+            background: "var(--tint-success)", border: "1px solid var(--tint-success)", color: "var(--success)",
+            borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 20,
+          }}>
+            {info}
           </div>
         )}
 

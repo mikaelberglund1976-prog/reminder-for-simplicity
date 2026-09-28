@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import UpgradeGate from "@/components/UpgradeGate";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,7 +12,6 @@ const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, str
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; // Date#getDay() order — matches lib/recurrence.ts
 
 function IcBack() { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><polyline points="15 18 9 12 15 6"/></svg>; }
-function IcLock()  { return <svg width={32} height={32} viewBox="0 0 24 24" {...STR} strokeWidth={1.5}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>; }
 function IcTrash() { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>; }
 
 type TrainingItem = {
@@ -112,14 +112,11 @@ export default function TrainingPage() {
     );
   }
 
-  if (trial.status === "TRIAL_EXPIRED" && !trial.isPro) {
+  // 2026-09-28: Pro feature — gate both "never tried" and "trial ended".
+  if (!trial.isPro && !trial.trialActive) {
     return (
       <Screen onBack={() => router.push("/dashboard")}>
-        <div style={{ textAlign: "center", padding: "60px 24px" }}>
-          <div style={{ color: "var(--faint)", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Trial period ended</h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6 }}>Upgrade to Pro to keep using Activities.</p>
-        </div>
+        <UpgradeGate feature="Activities" emoji="🎯" description="Recurring activities like football, scouts or music — synced to the family calendar. Try it free for 14 days." />
       </Screen>
     );
   }

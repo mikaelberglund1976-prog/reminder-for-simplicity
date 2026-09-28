@@ -53,6 +53,10 @@ type HouseholdDetail = {
   id: string;
   name: string | null;
   is_pro: boolean;
+  proUntil?: string | null;
+  proSource?: string | null;
+  proRequestedAt?: string | null;
+  adFreeUntil?: string | null;
   createdAt: string;
   updatedAt: string;
   members: Member[];
@@ -151,14 +155,17 @@ export default function FamilyDetailPage() {
     }
   }
 
-  async function handleTogglePro() {
+  // 2026-09-28: Pro for N days / forever / off (see toggle-pro route).
+  async function handleTogglePro(body: { days?: number; forever?: boolean; off?: boolean; adFreeDays?: number }) {
     if (!household) return;
     setTogglingPro(true);
     try {
-      const res = await fetch(`/api/admin/households/${householdId}/toggle-pro`, { method: "POST" });
+      const res = await fetch(`/api/admin/households/${householdId}/toggle-pro`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
       if (!res.ok) throw new Error("Failed");
       await fetchData();
-      notify("ok", "Pro status toggled ✓");
+      notify("ok", body.adFreeDays ? `Ad-free +${body.adFreeDays} days ✓` : body.off ? "Pro removed ✓" : body.forever ? "Pro forever ✓" : `Pro +${body.days} days ✓`);
     } catch (e) {
       notify("err", e instanceof Error ? e.message : "Failed.");
     } finally {
@@ -445,11 +452,32 @@ export default function FamilyDetailPage() {
                     borderRadius: 50,
                   }}
                 >
-                  {household.is_pro ? "⚡ Pro" : "Free"}
+                  {household.is_pro ? "⚡ Pro forever" : household.proUntil && new Date(household.proUntil) > new Date() ? `⚡ Pro until ${formatDate(household.proUntil)}` : "Free"}
                 </span>
-                <button onClick={handleTogglePro} disabled={togglingPro} style={linkBtn}>
-                  {togglingPro ? "…" : household.is_pro ? "Disable Pro" : "Enable Pro"}
-                </button>
+                {household.proRequestedAt && !household.is_pro && !(household.proUntil && new Date(household.proUntil) > new Date()) && (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#ffd080" }}>Requested Pro {formatDate(household.proRequestedAt)}</span>
+                )}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10, alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: "rgba(200,220,255,0.7)" }}>Grant Pro:</span>
+                {[14, 30, 90, 365].map((d) => (
+                  <button key={d} onClick={() => handleTogglePro({ days: d })} disabled={togglingPro} style={linkBtn}>+{d} days</button>
+                ))}
+                <button
+                  onClick={() => { const v = window.prompt("Number of days of Pro to add:", "60"); const n = Number(v); if (v && n > 0) handleTogglePro({ days: n }); }}
+                  disabled={togglingPro} style={linkBtn}>Custom…</button>
+                <button onClick={() => handleTogglePro({ forever: true })} disabled={togglingPro || household.is_pro} style={linkBtn}>Forever</button>
+                {(household.is_pro || (!!household.proUntil && new Date(household.proUntil) > new Date())) && (
+                  <button onClick={() => handleTogglePro({ off: true })} disabled={togglingPro} style={{ ...linkBtn, color: "#ff8f8f" }}>Remove Pro</button>
+                )}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8, alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: "rgba(200,220,255,0.7)" }}>
+                  Ad-free{household.adFreeUntil && new Date(household.adFreeUntil) > new Date() ? ` until ${formatDate(household.adFreeUntil)}` : ""}:
+                </span>
+                {[30, 365].map((d) => (
+                  <button key={d} onClick={() => handleTogglePro({ adFreeDays: d })} disabled={togglingPro} style={linkBtn}>+{d} days</button>
+                ))}
               </div>
             </div>
 
@@ -553,7 +581,7 @@ export default function FamilyDetailPage() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {m.user.isChildProfile ? "PIN login" : m.user.email}
+                      {m.user.email}
                     </div>
                   </div>
                   <span
@@ -771,7 +799,7 @@ export default function FamilyDetailPage() {
           <SectionTitle>Danger zone</SectionTitle>
           <div style={{ color: "rgba(220,230,255,0.7)", fontSize: 13, marginBottom: 14, lineHeight: 1.5 }}>
             Deleting this family removes the household, all memberships, reminders, chores, invites, and any active
-            trial. Adult user accounts are kept. Child profiles (PIN login) are deleted with the household.
+            trial. Adult user accounts are kept. Child profiles are deleted with the household.
           </div>
           <button
             onClick={handleDeleteHousehold}

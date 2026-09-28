@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 
@@ -15,13 +14,13 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
+  const [approvalNeeded, setApprovalNeeded] = useState(false);
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
@@ -48,39 +47,31 @@ export default function RegisterPage() {
       return;
     }
 
-    // New signups need admin approval before they can log in — see
-    // /api/auth/register. Skip the auto-login attempt entirely (it would
-    // just fail) and show a confirmation screen instead.
-    if (data.pendingApproval) {
-      setPending(true);
-      setLoading(false);
-      return;
-    }
-
-    const result = await signIn("credentials", {
-      email: form.email,
-      password: form.password,
-      redirect: false,
-    });
-
-    if (result?.error) {
-      router.push("/login");
-    } else {
-      router.push("/dashboard");
-    }
+    // 2026-09-27: every new account must confirm its email before it can
+    // log in (and, during the testing phase, also be approved by an admin),
+    // so there's no auto-login here anymore — show a "check your inbox"
+    // screen instead.
+    setPending(true);
+    setApprovalNeeded(!!data.pendingApproval);
+    setLoading(false);
   }
 
   if (pending) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
         <div style={{ maxWidth: 400, width: "100%", margin: "0 auto", textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>✉️</div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--fg)", margin: "0 0 12px", letterSpacing: "-0.5px" }}>
-            Account created — pending approval
+            Check your inbox
           </h1>
-          <p style={{ fontSize: 15, color: "var(--muted)", margin: "0 0 28px", lineHeight: 1.6 }}>
-            We're in a testing phase, so every new account needs a quick admin approval before it can log in. You'll get an email at <strong>{form.email}</strong> as soon as you're approved.
+          <p style={{ fontSize: 15, color: "var(--muted)", margin: "0 0 16px", lineHeight: 1.6 }}>
+            We've sent a confirmation link to <strong>{form.email}</strong>. Click it to confirm your email address.
           </p>
+          {approvalNeeded && (
+            <p style={{ fontSize: 14, color: "var(--muted)", margin: "0 0 28px", lineHeight: 1.6 }}>
+              We're also in a testing phase, so a new account needs a quick admin approval. You'll get another email once you're approved.
+            </p>
+          )}
           <Link href="/" style={{
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             padding: "14px 28px", borderRadius: 50,

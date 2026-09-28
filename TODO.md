@@ -19,6 +19,7 @@
 **Uppdaterad igen:** 2026-07-28 – de två stora beslutspunkterna avgjorda (se 19g): multi-family blir bara datamodell-förberedelse nu (ingen växlare/UI), kontosammanslagning blir "flytta allt" med bekräftelseskärm, automatisk trigger vid Google-inloggning. Streckkodsskanning/receptimport/butiksläge (redan i ROADMAP) infogade i 19c, belöningar-för-sysslor infogat i 19d – samma sidor byggs ändå om, så ingen anledning att vänta. Dessutom byggd: `/privacy`-sidan som en strukturell scaffold (`app/src/app/privacy/page.tsx`), länkad från Register och `/features`. Varje sektion som saknar riktigt innehåll eller ett beslut är markerad med en tydlig gul "Needs a decision"-ruta i UI:t, med en samlad checklista längst ner på sidan (7 punkter: juridisk enhet, minimiålder för barnprofiler, Vercel/Resend DPA-status, datalagringstid, självbetjänings-radering, riktig kontaktadress). `tsc --noEmit` kört rent.
 **Uppdaterad igen:** 2026-07-28 – hela punkt 19 (utom rewards och inkommande ICS-import) byggd i en lång omgång efter "kör". Se ny punkt 20 nedan för en fullständig genomgång av vad som är klart, vad som medvetet skjutits upp och varför, och vad som krävs innan det fungerar i produktion.
 **Uppdaterad igen:** 2026-07-28 – du körde `prisma generate`/`db push` lokalt (klart), men nästa deploy failade i Vercel. Grundorsak hittad och fixad: `useSearchParams()` utan `<Suspense>`-gräns i `/dashboard/new` och `/dashboard/school` (Next 14:s prerender-krav, fångas inte av `tsc`). Se ny punkt 21 nedan. Redo för commit + push.
+**Uppdaterad igen:** 2026-09-27 – statusgenomgång. Två saker saknades i loggen och är nu inlagda: punkt 30b (commit `35fb226` från 2026-08-18 – familjebegränsningar + inköpslista/kalender-UI, **live i produktion** via `c1d2f92`, deployment `dpl_GTA4kuFnca2j1Wxy1ie62gv4GxTM` READY) och punkt 31 (PIN borttaget + e-postverifiering, mjuk radering 60 dagar, läxor & prov – **kodat, inte committat/deployat**). Arbetet pausat för en UI-review, se `ATT_GORA_PAUSAT_2026-09-27.md`. Alla md-filer synkade mot detta.
 **Uppdaterad igen:** 2026-08-02 – konkurrentanalys av renodlade reminder/uppgifts/vane-appar (Bring!, TickTick, Todoist, Do Habits, Structured) genomförd på begäran, fokus på användarvänlighet/onboarding, inte funktionsbredd. Inga kodändringar gjorda. Fullständig analys i `COMPETITOR_ANALYSIS_TASKAPPS.md`, kondenserad handlingslista i ny punkt 22 nedan, och `PRODUCT_SPEC.md` uppdaterad (4b.30 + två nya UX-principer i §9).
 
 ---
@@ -582,7 +583,7 @@ På begäran: "hur borde vi gå vidare, kolla alla saker vi ska göra totalt... 
 
 ## 27. Fas A kodad: rate limiting, timing-safe cron secret, ADMIN_EMAIL, gratis hushållsdelning (2026-08-02)
 
-På "ställ de frågor du behöver så att du kan köra vidare" följt av tre beslut: kör kodarbetet nu, gör hushållsdelning gratis, ingen åldersgräns för barnprofiler (bara föräldrasamtycke). Fyra av Fas A:s schema-fria punkter kodade i en omgång. `tsc --noEmit` kört rent efter varje ändring. Ingen schemaändring – ingen `db push` krävs. **Inte pushat än**, se `LAUNCH_CHECKLIST.md` för deploy-kommandot och vad som bör klicktestas först.
+På "ställ de frågor du behöver så att du kan köra vidare" följt av tre beslut: kör kodarbetet nu, gör hushållsdelning gratis, ingen åldersgräns för barnprofiler (bara föräldrasamtycke). Fyra av Fas A:s schema-fria punkter kodade i en omgång. `tsc --noEmit` kört rent efter varje ändring. Ingen schemaändring – ingen `db push` krävdes. **Pushat och deployat 2026-08-18**, se punkt 29 och `LAUNCH_CHECKLIST.md` för status och kvarvarande klicktester.
 
 - [x] **Rate limiting/lockout på inloggning.** Ny fil `lib/rateLimit.ts` – in-memory räknare, 5 misslyckade försök inom 15 minuter låser kontot i 15 minuter, delat mellan lösenords- och PIN-providern (samma nyckel: `login:${email}`). Kopplat in i `lib/auth.ts`s båda `authorize()`-funktioner. **Känd begränsning, dokumenterad i koden och i `OPERATIONS.md` §8:** in-memory är per serverless-instans, inte en global spärr – riktig lösning kräver en delad store (Upstash Redis) längre fram.
 - [x] **`CRON_SECRET`-jämförelse:** `api/cron/send-reminders/route.ts` byggd om till `crypto.timingSafeEqual` med explicit längdkontroll istället för `!==`.
@@ -594,8 +595,9 @@ På "ställ de frågor du behöver så att du kan köra vidare" följt av tre be
 - Ingen åldersgräns för barnprofiler – bara föräldrasamtycke vid skapandet. Mikael valde bort 13-årsförslaget. Medveten avvägning mot COPPA (svagare position om appen någonsin når amerikanska app stores) – ska in i Privacy Policy-texten när den skrivs.
 - Ingen extern lansering än, men säkerhet prioriteras ändå högt ("jätteviktigt trots att vi inte har användare ännu, vi måste lägga mycket på säkra data").
 
-**Kräver innan skarpt:**
-- [ ] `git add -A && git commit -m "security: rate limiting, timing-safe cron secret, consistent ADMIN_EMAIL; free household sharing" && git push`, bekräfta grön deploy i Vercel.
+**Deploy bekräftad:** commit `29bf8e9` pushad till `master` och deployad till produktion på Vercel 2026-08-18 (deployment `dpl_3qWTb64whz1ZuTNefwK3TXnUuxUx`, state READY).
+
+**Kvar innan ni litar helt på det:**
 - [ ] Klicktesta: 5 fel lösenords-/PIN-försök → kontot låst 15 min (testkonto, inte eget); bjud in till ett icke-Pro-hushåll; dela en reminder i ett icke-Pro-hushåll.
 
 ## 28. Produktbeslut fattade av "utvecklingsavdelningen" (2026-08-02)
@@ -622,6 +624,58 @@ På feedback: *"träning kanske e fel, activity är bättre. Man kanske har scou
 
 **Medvetet oförändrat:** interna namn (`ReminderCategory.TRAINING`, routen `/dashboard/training`, `?type=training`, `bottomNavTabs`-nyckeln `"training"`) – att byta dessa kräver en schemaändring/riskerar sparade inställningar, samma "additiv inte destruktiv"-princip som tidigare (4b.14/4b.15). Osynligt för användaren.
 
-`tsc --noEmit` kört rent (exit 0). Ingen schemaändring, ingen `db push` krävs. **Inte pushat än** – ligger i samma commit-kö som punkt 27:s säkerhetsfixar, se `LAUNCH_CHECKLIST.md` för deploy-kommandot och vad som bör klicktestas.
+`tsc --noEmit` kört rent (exit 0). Ingen schemaändring, ingen `db push` krävdes.
 
-**Nästa steg:** `git add -A && git commit -m "fix: wrap useSearchParams in Suspense on /dashboard/new and /dashboard/school" && git push`, sedan kolla Vercel-dashboarden för grönt.
+**Pushat och deployat 2026-08-18** i samma commit som punkt 27:s säkerhetsfixar (`29bf8e9`), bekräftat READY i produktion på Vercel via MCP (`dpl_3qWTb64whz1ZuTNefwK3TXnUuxUx`). Kvar: klicktesta i skarpa appen att inget "Training"/⚽ syns kvar i menyn, Activities-sidan eller kalendern – se `LAUNCH_CHECKLIST.md`.
+
+## 30. Första riktiga deploy via VS Code – bekräftad live (2026-08-18)
+
+Mikael saknade VS Code på sin Mac (aldrig installerat, bekräftat via `ls /Applications`), installerade det, öppnade rätt mapp (`Reminder for simplicity`, inte `app`-undermappen – `.git` ligger i toppmappen), loggade in på GitHub via VS Codes inbyggda OAuth-flöde (lösenordsinloggning över HTTPS stöds inte längre av GitHub) och committade/pushade punkt 27+29:s ändringar via Source Control-panelen (Cmd+Shift+G).
+
+**Bekräftat via `git log`/`git fetch` och Vercel MCP:** commit `29bf8e9` ligger på `origin/master`, arbetsträdet är rent, och Vercel-deploymenten är `READY` i produktion.
+
+**Sidofynd, oundersökt:** `git fetch` visade en ny branch `dev` på GitHub-remoten. Ursprung okänt (inte skapad av Claude i den här sessionen) – troligen en Vercel-integration eller GitHub-standardfunktion, men inte bekräftat. Ingen brådska, men värt att kolla vid tillfälle.
+
+## 30b. Familjebegränsningar + inköpslista/kalender-UI (2026-08-18, commit `35fb226`) – LIVE
+
+Gjordes direkt i VS Code samma kväll som punkt 30, men loggades aldrig här. Pushad och deployad (`35fb226` + tom commit `c1d2f92` "trigger deploy"), bekräftad READY i produktion 2026-09-27 via Vercel MCP (`dpl_GTA4kuFnca2j1Wxy1ie62gv4GxTM`).
+
+- [x] Sysslor/Aktiviteter/Skola kan tilldelas **vilken hushållsmedlem som helst**, inte bara barn (väljare i frontend + rollkontroll i backend, `MEMBER` räknas som vuxen i `api/family/chores`).
+- [x] Önskelista: alla hushållsmedlemmar kan ha en egen (inte bara `CHILD`); nya flikar **My wishlist / Family** så vuxna också har självbetjäning.
+- [x] Family-sidan: "Add child" finns i huvudöversikten, inte bara i onboarding.
+- [x] Nytt syssla/aktivitet-formulär: Chore/Activity-växlaren borttagen – varje ingång skapar bara sin egen typ.
+- [x] Inköpslistans katalog ("Browse"): kompakt tvåkolumnslista istället för pill-bubblor, fler vanliga varor per kategori.
+- [x] Kalenderns månadsvy visar händelsernas titlar i dagrutorna (Outlook-stil) istället för bara färgprickar.
+- [ ] Klicktesta ovanstående skarpt (ingår i Fas G-rundan i `LAUNCH_CHECKLIST.md`).
+- Obs: "Add child" på Family-sidan skickade bara namn + PIN och hade därför slutat fungera efter att e-post blev obligatoriskt (4j) – rättat i punkt 31.
+
+## 31. PIN bort + e-postverifiering, mjuk radering (60 dagar), läxor & prov (2026-09-27)
+
+Beslut från Mikael samma dag: *"Barnprofiler ska inte ha bara pin, för osäkert när vi växer. Alla konton behöver epost, för att skapa epost skickas en verifiering."* / *"Radera kontot ska gå till admin för familj för godkännande, om det är samma person bara bekräftelse... ligga kvar i 60 dagar... jag ska kunna återställa."* / läxor & prov ska synas för barnen direkt vid inloggning och *"i kalendervy om man väljer det"*. `tsc --noEmit` rent (exit 0). **Kräver `db push` + migreringsscript + Resend-domän – se `LAUNCH_CHECKLIST.md`.**
+
+**Inloggning / verifiering**
+- [x] `pin`-providern borttagen ur `lib/auth.ts`. Inloggning kontrollerar i ordning: raderad → e-post ej verifierad → ej admin-godkänd. Google-inloggning räknas som verifiering. JWT-sessioner kontrolleras var 5:e min mot `deletedAt`.
+- [x] `lib/verification.ts` (nytt): tokens i NextAuth-tabellen `VerificationToken`, bara SHA-256-hash lagras. `/api/auth/verify-email` (kolla/bekräfta, sätter lösenord för förälderskapade konton), `/api/auth/resend-verification` (generiskt svar, rate-limitat), sida `/verify-email`.
+- [x] Registrering skickar verifieringsmail, ingen auto-inloggning; login-sidan visar "Resend confirmation email". Glömt lösenord skickar setup-länk till obekräftade konton utan lösenord; återställt lösenord räknas som verifiering.
+- [x] Barnkonton: förälder anger namn + e-post (Profile → Child accounts och Family-sidan) → barnet får "bekräfta & välj lösenord"-mail. "Resend invite" per barn (`/api/family/child-profiles/[id]/invite`). Byte av barnets e-post nollställer verifieringen.
+- [x] Pensionerat: `/api/profile/pin`, publika `/api/family/children`, PIN-switchern `/family?h=` (redirectar nu till login med förklaring). Flyttade till `_to_delete/retired-pin-2026-09-27/` (ignoreras av git). Adults PIN-sektion i Profile borttagen. Privacy-texten uppdaterad.
+- [x] `scripts/migrate-2026-09-retire-pin.js`: markerar befintliga vuxna som verifierade, rensar alla PIN, nollställer barnens PIN-lösenord och listar barn som behöver inbjudan.
+
+**Mjuk radering**
+- [x] Schema: `User.deletionRequestedAt/deletedAt/deletedById/deletedFromHouseholdId/deletedRole`. Logik i `lib/accountDeletion.ts`.
+- [x] Medlem → begäran till familjeadmin (OWNER, fallback PARENT) med mail; kan avbrytas. Admin/ensam → "Är du säker?". Sista vuxna med barn kvar blockeras med förklaring. Om admin lämnar och annan vuxen finns blir den admin.
+- [x] Radering tar bort `HouseholdMember`-raden (döljs överallt) och sparar var personen var. Mail till personen med slutdatum.
+- [x] Familjeadmin: kort "Account deletion requests" i Profile och Family, samt "Delete" per barnkonto.
+- [x] `/admin` → ny flik **Deleted** med dagar kvar, **Restore** (tillbaka till familjen om den finns) och **Delete now**.
+- [x] Cron rensar konton äldre än 60 dagar; före radering flyttas delade listor/varor/önskningar/delade påminnelser till kvarvarande familjemedlem.
+- Känd begränsning: saker som tilldelats den raderade personen (t.ex. barnets önskelista) syns fortfarande för familjen under de 60 dagarna – bara personen själv är dold.
+
+**Läxor & prov**
+- [x] Schema: `Reminder.schoolKind` (HOMEWORK/TEST/OTHER), `subject`, `completedAt`, `showInCalendar` (default på).
+- [x] Ny delad komponent `components/SchoolSection.tsx` i barnvyn (**överst**, före sysslorna) och på `/dashboard/school` (per person): typval, ämne med förslag, datum, nedräkning ("Tomorrow", "In 3 days", försenat i rött), bocka av, "Done"-lista, 📅-knapp per rad för visa/dölj i kalendern.
+- [x] `/api/family/school/[id]` PATCH (klar / kalender) + DELETE (förälder kan ta bort barnets och tvärtom).
+- [x] Kalendern och ICS-flödet respekterar `showInCalendar`, visar typ-ikon + ämne.
+- [x] E-postpåminnelse dagen före till den uppgiften gäller (+ skaparen om annan), hoppas över om avbockad.
+- Obs: School är fortfarande Pro/trial-låst (oförändrat) – utan trial ser barnet bara en låst ruta. Kan vara därför det kändes som att funktionen saknades.
+
+**Status 2026-09-27:** kodat och `tsc --noEmit`-verifierat, **inte committat**. Pausat för Mikaels UI-review – se `ATT_GORA_PAUSAT_2026-09-27.md` för körordning och varning om att inte pusha till `master` innan `db push`. Punkt 6 "Tekniska skulder": ny `db push` + `node scripts/migrate-2026-09-retire-pin.js` krävs för denna punkt.

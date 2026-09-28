@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { hasPro } from "@/lib/entitlements";
+import { sendAccountSetup } from "@/lib/verification";
 
 const ADULT_ROLES = ["OWNER", "PARENT", "ADULT"];
 
-// POST /api/family/child-profiles -- parent creates a child profile (name + PIN)
+// POST /api/family/child-profiles -- parent creates a child profile (name + email)
+// 2026-09-27: no more PIN. The child gets an email to confirm the address and
+// choose a password (or they can sign in with Google if it's a Google address).
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,18 +19,14 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}));
     const name: string | undefined = body?.name;
-    const pin: string | undefined = body?.pin;
     const emailInput: string | undefined = body?.email;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Name required" }, { status: 400 });
     }
-    if (!pin || pin.length !== 4 || !/^[0-9]{4}$/.test(pin)) {
-      return NextResponse.json({ error: "PIN must be 4 digits" }, { status: 400 });
-    }
     const email = emailInput?.trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: "A valid email is required — every account needs one, even if the child mostly logs in with their PIN." }, { status: 400 });
+      return NextResponse.json({ error: "A valid email is required — the child gets a link there to confirm it and choose a password." }, { status: 400 });
     }
 
     const membership = await prisma.householdMember.findFirst({
@@ -45,43 +44,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Only adults can add children." }, { status: 403 });
     }
 
-    // Trial / Pro gating: free households without a trial can't add a child
-    const isPro = membership.household.is_pro;
+    // Trial / Pro gating (2026-09-28): child profiles are a Pro feature.
+    // During the 14-day trial or with Pro there's no limit on children.
+    const isPro = hasPro(membership.household);
     const trial = membership.household.familyTrial;
-    if (!isPro) {
-      const existing = await prisma.householdMember.count({
-        where: { householdId: membership.householdId, role: "CHILD" },
-      });
-      if (existing >= 1 && !trial) {
-        return NextResponse.json(
-          { error: "Start a trial first to add a child profile." },
-          { status: 403 }
-        );
-      }
-      if (existing >= 1 && trial) {
-        return NextResponse.json(
-          { error: "Trial supports 1 child. Upgrade to Pro for more." },
-          { status: 403 }
-        );
-      }
+    const trialActive = !!trial && trial.expiresAt > new Date();
+    if (!isPro && !trialActive) {
+      return NextResponse.json(
+        { error: trial ? "Your trial has ended — upgrade to Pro to add children." : "Child accounts are part of Pro. Start the free 14-day trial to add your children.", upgrade: true },
+        { status: 403 }
+      );
     }
 
-    // Create the child user. Every account needs a real email now — see
-    // TODO.md 4j (2026-07-27): a parent supplies it (their own address, an
-    // alias like "parent+childname@gmail.com", or the child's own email if
-    // they have one). The child still logs in day-to-day via PIN, not this
-    // email — it exists so the account is a real, ownable identity (e.g. if
-    // the child later wants to switch to full email+password login), not so
-    // it becomes another login step for a kid.
-    const pinHash = await bcrypt.hash(pin, 10);
-
+    // Create the child user without a password; it's set by the child via the
+    // setup link (see lib/verification.ts), which also confirms the email.
     let createdUser;
     try {
       createdUser = await prisma.user.create({
         data: {
           email,
           name: name.trim(),
-          password: pinHash,
           isChildProfile: true,
         },
       });
@@ -118,8 +100,18 @@ export async function POST(req: Request) {
       );
     }
 
+    const parent = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } });
+    let setupSent = true;
+    try {
+      await sendAccountSetup({ email: createdUser.email, name: createdUser.name }, parent?.name ?? null);
+    } catch (err) {
+      console.error("Child profile: setup email failed", err);
+      setupSent = false;
+    }
+
     return NextResponse.json(
       {
+        setupSent,
         id: createdUser.id,
         name: createdUser.name,
         email: createdUser.email,
@@ -154,7 +146,7 @@ export async function GET() {
               where: { role: "CHILD" },
               include: {
                 user: {
-                  select: { id: true, name: true, email: true, isChildProfile: true },
+                  select: { id: true, name: true, email: true, isChildProfile: true, emailVerified: true },
                 },
               },
             },
@@ -170,6 +162,8 @@ export async function GET() {
       .map((m) => ({
         id: m.userId,
         name: m.user.name,
+        email: m.user.email,
+        emailVerified: !!m.user.emailVerified,
         householdId: membership.householdId,
       }));
 

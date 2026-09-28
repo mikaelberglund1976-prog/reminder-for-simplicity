@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { sendAccountSetup } from "@/lib/verification";
 
 const ADULT_ROLES = ["OWNER", "PARENT", "ADULT"];
 
 // PATCH /api/family/child-profiles/[id] — edit an existing child profile's
-// name/email/PIN. Added 2026-07-28: the create flow (POST on the parent
+// name/email (PIN removed 2026-09-27). Added 2026-07-28: the create flow (POST on the parent
 // route) was the only way to set these fields — there was no way to fix a
 // typo'd email, change the PIN, or rename a child afterwards. A child's PIN
 // is stored in `password` (their only credential, see schema comment on
@@ -34,9 +34,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     const body = await req.json().catch(() => ({}));
-    const { name, email: emailInput, pin } = body ?? {};
+    const { name, email: emailInput } = body ?? {};
 
-    const data: { name?: string; email?: string; password?: string } = {};
+    // 2026-09-27: PIN removed. Changing the email resets verification and
+    // sends a new setup link to the new address.
+    const data: { name?: string; email?: string; emailVerified?: null } = {};
 
     if (name !== undefined) {
       if (!name?.trim()) return NextResponse.json({ error: "Name can't be empty" }, { status: 400 });
@@ -48,12 +50,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return NextResponse.json({ error: "Enter a valid email" }, { status: 400 });
       }
-      data.email = email;
-    }
-
-    if (pin !== undefined && pin !== "") {
-      if (!/^[0-9]{4}$/.test(pin)) return NextResponse.json({ error: "PIN must be 4 digits" }, { status: 400 });
-      data.password = await bcrypt.hash(pin, 10);
+      const current = await prisma.user.findUnique({ where: { id: childId }, select: { email: true } });
+      if (current?.email !== email) {
+        data.email = email;
+        data.emailVerified = null;
+      }
     }
 
     if (Object.keys(data).length === 0) {
@@ -69,6 +70,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         return NextResponse.json({ error: "That email is already used by another account." }, { status: 409 });
       }
       throw err;
+    }
+
+    if (data.email) {
+      const parent = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } });
+      await sendAccountSetup({ email: updated.email, name: updated.name }, parent?.name ?? null).catch(console.error);
     }
 
     return NextResponse.json({ id: updated.id, name: updated.name, email: updated.email });

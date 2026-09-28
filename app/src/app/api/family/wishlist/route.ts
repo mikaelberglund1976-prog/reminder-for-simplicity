@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPro } from "@/lib/entitlements";
 import { userCanAccessList, getListMemberIds, type HouseholdRoleStr } from "@/lib/lists";
 
 // Fields a child is allowed to see about their OWN wishlist items.
@@ -61,7 +62,7 @@ export async function GET(req: Request) {
     const { membership, list } = await membershipAndAccess(session.user.id, listId);
     if (!membership) return NextResponse.json({ access: "NO_HOUSEHOLD" });
 
-    const isPro = membership.household.is_pro;
+    const isPro = hasPro(membership.household);
     const trial = membership.household.familyTrial;
     const trialActive = trial ? trial.expiresAt > new Date() : false;
     if (!isPro && !trialActive) return NextResponse.json({ access: "LOCKED" });
@@ -104,7 +105,7 @@ export async function POST(req: Request) {
     const { membership, list } = await membershipAndAccess(session.user.id, listId);
     if (!membership) return NextResponse.json({ error: "No household" }, { status: 400 });
 
-    const isPro = membership.household.is_pro;
+    const isPro = hasPro(membership.household);
     const trial = membership.household.familyTrial;
     const trialActive = trial ? trial.expiresAt > new Date() : false;
     if (!isPro && !trialActive) return NextResponse.json({ error: "Trial or Pro required" }, { status: 403 });

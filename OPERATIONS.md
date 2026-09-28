@@ -64,7 +64,7 @@ Det finns ingen roll-nivå inom admin – man antingen är `ADMIN_EMAIL` eller i
 | Lokal utveckling | `app/.env.local` | Se `SETUP_GUIDE.md`. Innehåller riktiga Supabase/Resend-nycklar – committa aldrig denna fil. |
 | Produktion | Vercel → Project Settings → Environment Variables | Samma nycklar som `.env.local`, satta separat i Vercel |
 | Databas | Supabase (PostgreSQL), både pooled (`DATABASE_URL`) och direct (`DIRECT_URL`) connection | Direct krävs av Prisma för `db push`/migrations |
-| Email | Resend | `RESEND_FROM_EMAIL` är idag `onboarding@resend.dev` (Resends testadress) – byt till en verifierad egen domän innan skarp lansering, annars hamnar mail lättare i skräppost |
+| Email | Resend | `RESEND_FROM_EMAIL` är idag `onboarding@resend.dev` (Resends testadress). **Blockerande sedan 2026-09-27:** testadressen levererar bara till Resend-kontoägarens egen adress, men e-postverifiering och barninbjudningar (`TODO.md` 31) måste nå alla användare. Verifiera egen domän i Resend och sätt `RESEND_FROM_EMAIL` i Vercel innan punkt 31 deployas. |
 
 Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och Vercels environment variables, redeploya.
 
@@ -81,6 +81,9 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 - **Känd fälla: `tsc --noEmit` räcker inte för att lita på en grön deploy.** Två gånger nu (2026-07-28, se `TODO.md` punkt 13 och punkt 21) har kod som passerade `tsc --noEmit` rent ändå failat i Vercels `next build` – typkontroll fångar inte allt `next build`s prerender-steg kräver. Konkret exempel: en klient-komponent som anropar `useSearchParams()` utan att sitta i en `<Suspense>`-gräns är typkorrekt men kraschar prerenderingen av just den sidan. Efter varje push: kolla faktiskt Vercel-dashboarden för grönt, lita inte på att `tsc` var tyst.
 - **Databasändringar:** körs INTE automatiskt vid deploy. Efter en schema-ändring: kör `npx prisma db push` manuellt (eller sätt upp en riktig migration-strategi längre fram – idag används `db push`, inte `prisma migrate`, vilket är enklare men ger ingen migrationshistorik)
 - **Backfill-scripts (tillagt 2026-07-28):** vissa schemaändringar lämnar gamla fält på plats (deprecated, oanvända av koden) istället för att ta bort dem direkt, just för att kunna köra en enkel additiv `db push` utan risk för dataförlust. Ett separat script flyttar sedan över data till de nya fälten. Körordning efter en `db push`: `node scripts/backfill-shopping-categories.js` (kategorier → `ShoppingCategoryDef`), sedan `node scripts/backfill-lists.js` (inköps-/önskelistor → `List`). Båda är idempotenta (säkra att köra flera gånger) och måste köras lokalt – Cowork-sandboxen som skrev migreringskoden kan varken nå Supabase-databasen (DNS/nätverksblockering) eller ladda ner Prisma-motorn (`binaries.prisma.sh` blockerad), så den kan inte köra dem själv.
+- **Migreringsscript 2026-09-27:** efter `db push` för punkt 31 – kör `node scripts/migrate-2026-09-retire-pin.js` (från `app/`). Markerar befintliga vuxna som e-postverifierade (så ingen låses ute), rensar all PIN, nollställer barnens PIN-lösenord och listar barn som behöver ny inbjudan. Idempotent.
+- **Schemalagt jobb (cron, 08:00 UTC):** skickar påminnelser och – sedan 2026-09-27 – rensar konton som varit mjukt raderade i mer än 60 dagar (`lib/accountDeletion.ts` → `purgeExpiredAccounts`). Delade listor/varor/påminnelser flyttas först till en kvarvarande familjemedlem.
+- **Återställa ett raderat konto:** `/admin` → fliken **Deleted** → **Restore** (inom 60 dagar). Personen läggs tillbaka i sin familj om den finns kvar, annars får hen ett nytt eget hushåll. **Delete now** raderar permanent direkt.
 - **Rollback:** Vercel → Deployments → "Promote to Production" på en tidigare deploy. Databasändringar rullas INTE tillbaka automatiskt av detta – om en deploy innehöll en destruktiv schemaändring krävs manuell databas-rollback.
 
 ---
@@ -106,7 +109,7 @@ Dessa är kända luckor, inte akuta – men bör tas i tur och ordning i takt me
 - Ingen verifierad egen avsändardomän för email (leveranssäkerhet)
 - Ingen formell migrations-historik (Prisma `db push` istället för `migrate`)
 - Inget backup-schema utöver Supabase's standardbackuper
-- **Ingen rate limiting/lockout på inloggning** – se §8 nedan, det allvarligaste fyndet i säkerhetsgranskningen 2026-08-02.
+- ~~Ingen rate limiting/lockout på inloggning~~ – **åtgärdat och live i produktion sedan 2026-08-18**, se §8 nedan.
 
 ---
 
@@ -114,10 +117,14 @@ Dessa är kända luckor, inte akuta – men bör tas i tur och ordning i takt me
 
 Genomförd på Mikaels begäran ("vi har mycket användaruppgifter, viktigt att ingen kommer åt den") – en konkret kodgenomgång (inte bara dokumentation) av autentisering, auktorisering, adminpanelen, publika token-endpoints, barn-dataskydd, hemlighetshantering och injektion/XSS. Se `PRODUCT_SPEC.md` §10 för hur detta speglas i de icke-funktionella kraven, och punkt 24 i `TODO.md` för handlingslistan.
 
+**Deploy-status (2026-08-18):** samtliga fixar nedan är pushade och bekräftat live i produktion på Vercel (commit `29bf8e9`), inte bara skrivna i koden. Se `TODO.md` punkt 30.
+
 **Kritiskt fynd – ÅTGÄRDAT 2026-08-02:**
 - **Ingen rate limiting/lockout på inloggning – varken lösenord eller PIN.** Inget `middleware.ts`, ingen throttling, ingen CAPTCHA. PIN-inloggningen (`auth.ts`, pin-providern) är extra känslig: bara 4 siffror (10 000 kombinationer), och barnprofilers email genereras ofta enligt ett gissbart mönster (t.ex. `förälder+barnnamn@gmail.com`, se `family/child-profiles/route.ts`). Eftersom PIN-inloggning bygger på att känna till email, är kombinationen "gissbar email + obegränsade PIN-försök" den mest konkreta risken i appen idag.
   - **Fix:** `lib/rateLimit.ts` (nytt), kopplat in i båda providrarna i `lib/auth.ts` – 5 misslyckade försök inom 15 minuter låser kontot (delat mellan lösenord/PIN) i 15 minuter. **Kvarstår ändå, medvetet inte löst av detta:** det gissbara email-mönstret för barnprofiler – det är ett produktbeslut, inte en teknisk fix, se `LAUNCH_CHECKLIST.md` Fas A.
   - **Känd begränsning i fixen:** in-memory, per serverless-instans – inte en delad/global spärr mellan Vercels instanser. Höjer kostnaden för att bruteforcea ett känt konto rejält, men är inte vattentätt. Uppgradera till en delad store (Upstash Redis rekommenderas, gratis-tier finns) om detta ska vara en fullständig lösning.
+
+**Uppföljning 2026-09-27 – PIN pensionerad (kodat, ej deployat, `TODO.md` 31):** det kvarstående gissbara-email-problemet löses genom att ta bort PIN helt. Alla konton loggar in med verifierad e-post + lösenord (bcrypt cost 12) eller Google. Verifierings-/inbjudningstokens lagras bara som SHA-256-hash (`lib/verification.ts`). Den publika endpointen `/api/family/children` (listade namn + e-post för ett hushålls-id utan inloggning) är borttagen. JWT-sessioner kontrolleras var 5:e minut mot `deletedAt` så ett raderat konto tappar åtkomst även med en giltig session.
 
 **Viktiga fynd – ÅTGÄRDADE 2026-08-02:**
 - `CRON_SECRET`-jämförelsen i `/api/cron/send-reminders/route.ts` använde `!==` (icke-konstant-tid) istället för `crypto.timingSafeEqual`. **Fixat** – konstant-tidsjämförelse med explicit längdkontroll.
@@ -135,4 +142,4 @@ Genomförd på Mikaels begäran ("vi har mycket användaruppgifter, viktigt att 
 
 ---
 
-*Detta dokument beskriver nuläget (2026-08-02, uppdaterat med säkerhetsgranskningen i §8). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, sätter upp en verifierad email-domän, eller åtgärdar fynden i §8.*
+*Detta dokument beskriver nuläget (2026-09-27: PIN pensionerad, e-postverifiering, mjuk radering + återställning, Resend-domän nu blockerande – ej deployat än; tidigare 2026-08-02 säkerhetsgranskningen i §8). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, sätter upp en verifierad email-domän, eller åtgärdar fynden i §8.*

@@ -65,10 +65,10 @@ export default function PrivacyPage() {
 
         <Section title="2. What personal data we collect">
           <ul style={listStyle}>
-            <li><b>Account data:</b> name, email address, phone (optional), preferred currency, timezone, and either a hashed password or a hashed PIN.</li>
+            <li><b>Account data:</b> name, email address, phone (optional), preferred currency, timezone, and a hashed password (or a Google sign-in link). Every account's email address is confirmed via a verification link.</li>
             <li><b>If you sign in with Google:</b> your name, email, and profile picture as provided by Google.</li>
             <li><b>Content you create:</b> reminders, chores, shopping list and wishlist items, school and activity entries, calendar sync tokens, and suggestions/votes you post.</li>
-            <li><b>Child profiles:</b> a name, a hashed PIN, and a real email address (yours, an alias, or the child's own) — set up and managed by an approved adult in the household.</li>
+            <li><b>Child profiles:</b> a name, a confirmed email address (the child's own, or an adult's alias) and a hashed password the child chooses — set up by an adult in the household, who consents on the child's behalf.</li>
           </ul>
         </Section>
 
@@ -148,8 +148,15 @@ export default function PrivacyPage() {
 
         <Section title="9. Cookies & tracking">
           <p>
-            We use only strictly necessary cookies (keeping you signed in). We don't currently use any
+            We use only strictly necessary cookies (keeping you signed in). We don't use any
             analytics or advertising trackers.
+          </p>
+          <p>
+            <strong>Sponsored cards.</strong> Adults on the free plan may see one clearly labelled
+            &ldquo;Sponsored&rdquo; card. These ads are chosen by us, not by an ad network, and are never
+            based on your data or behaviour. We only count how many times each ad is shown and clicked, in
+            total — nothing about you is shared with the advertiser. Children never see ads, and families
+            on Pro, the trial or an ad-free plan see none.
           </p>
           <TodoBox>
             Keep this true, or update this section, if any analytics tool is ever added.
@@ -158,7 +165,7 @@ export default function PrivacyPage() {
 
         <Section title="10. Security">
           <p>
-            Passwords and PINs are stored hashed, never in plain text. Data in transit is encrypted (HTTPS).
+            Passwords are stored hashed, never in plain text. Data in transit is encrypted (HTTPS).
           </p>
         </Section>
 

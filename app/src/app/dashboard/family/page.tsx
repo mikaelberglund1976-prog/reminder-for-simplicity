@@ -1,10 +1,12 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import UpgradeGate from "@/components/UpgradeGate";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import DeletionRequestsCard from "@/components/DeletionRequestsCard";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -12,7 +14,6 @@ const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, str
 function IcBack()  { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><polyline points="15 18 9 12 15 6"/></svg>; }
 function IcPlus()  { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>; }
 function IcCheck() { return <svg width={18} height={18} viewBox="0 0 24 24" {...STR}><polyline points="20 6 9 17 4 12"/></svg>; }
-function IcLock()  { return <svg width={32} height={32} viewBox="0 0 24 24" {...STR} strokeWidth={1.5}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>; }
 
 type ChildSummary = {
   childId: string;
@@ -54,13 +55,13 @@ export default function FamilyPage() {
   const [stats, setStats] = useState<ChildStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChild, setSelectedChild] = useState<string>("");
-  const [starting, setStarting] = useState(false);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [showAddChild, setShowAddChild] = useState(false);
   const [newChildName, setNewChildName] = useState("");
-  const [newChildPin, setNewChildPin] = useState("");
-  const [newChildPinConfirm, setNewChildPinConfirm] = useState("");
+  // 2026-09-27: child accounts use email + password now (PIN retired).
+  const [newChildEmail, setNewChildEmail] = useState("");
+  const [childInviteSentTo, setChildInviteSentTo] = useState<string | null>(null);
   const [addChildError, setAddChildError] = useState("");
   const [addingChild, setAddingChild] = useState(false);
 
@@ -114,21 +115,21 @@ export default function FamilyPage() {
 
   async function createChildProfile() {
     if (!newChildName.trim()) { setAddChildError("Enter a name"); return; }
-    if (!/^[0-9]{4}$/.test(newChildPin)) { setAddChildError("PIN must be exactly 4 digits"); return; }
-    if (newChildPin !== newChildPinConfirm) { setAddChildError("PINs do not match"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newChildEmail.trim())) { setAddChildError("Enter a valid email address"); return; }
     setAddingChild(true);
     setAddChildError("");
     try {
       const res = await fetch("/api/family/child-profiles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newChildName.trim(), pin: newChildPin }),
+        body: JSON.stringify({ name: newChildName.trim(), email: newChildEmail.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
         if (data.householdId) setHouseholdId(data.householdId);
         setShowAddChild(false);
-        setNewChildName(""); setNewChildPin(""); setNewChildPinConfirm("");
+        setChildInviteSentTo(newChildEmail.trim());
+        setNewChildName(""); setNewChildEmail("");
         await fetchTrial();
       } else {
         setAddChildError(data.error ?? "Something went wrong");
@@ -140,26 +141,10 @@ export default function FamilyPage() {
   function resetAddChildForm() {
     setShowAddChild(false);
     setNewChildName("");
-    setNewChildPin("");
-    setNewChildPinConfirm("");
+    setNewChildEmail("");
     setAddChildError("");
   }
 
-  async function startTrial() {
-    if (!selectedChild) return;
-    setStarting(true);
-    try {
-      const res = await fetch("/api/family/trial", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childId: selectedChild }),
-      });
-      if (res.ok) {
-        await fetchTrial();
-      }
-    } catch (e) { console.error(e); }
-    finally { setStarting(false); }
-  }
 
   async function handleApprove(choreId: string, childId: string, action: "approve" | "reopen") {
     setApprovingId(choreId);
@@ -224,132 +209,26 @@ export default function FamilyPage() {
     );
   }
 
-  // ── Trial expired + not Pro ────────────────────────────────────
-  if (trial?.status === "TRIAL_EXPIRED" && !trial.isPro) {
+  // ── Free (never tried, or trial ended) ───────────────────────
+  // 2026-09-28: chores/child accounts are Pro. One shared gate for "start the
+  // 14-day trial" / "trial ended — upgrade" (components/UpgradeGate.tsx).
+  if ((trial?.status === "NO_TRIAL" || trial?.status === "TRIAL_EXPIRED") && !trial.isPro) {
     return (
-      <Screen title="Family responsibilities" onBack={() => router.push("/dashboard")}>
-        <div style={{ textAlign: "center", padding: "60px 24px" }}>
-          <div style={{ color: "var(--faint)", marginBottom: 20, display: "flex", justifyContent: "center" }}><IcLock /></div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Trial period ended</h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 8 }}>
-            Your 7-day free trial has ended. Upgrade to Pro to continue using family responsibilities.
-          </p>
-          <p style={{ fontSize: 13, color: "var(--subtle)", marginBottom: 28 }}>Your chores and history are still saved.</p>
-          <button style={btnStyle("var(--ink)")}>Upgrade to Pro →</button>
-          <div style={{ marginTop: 12 }}>
+      <Screen title="Chores" onBack={() => router.push("/dashboard")}>
+        <UpgradeGate
+          feature="Chores"
+          emoji="🧹"
+          description="Add your children, give them chores they tick off themselves, and approve them when they're done. Try everything free for 14 days — no card needed."
+          onUnlocked={() => { setTrial(null); fetchTrial(); }}
+        />
+        {trial.status === "TRIAL_EXPIRED" && (
+          <div style={{ textAlign: "center" }}>
             <button onClick={() => router.push("/dashboard/family/child")}
               style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>
               View history (read only)
             </button>
           </div>
-        </div>
-      </Screen>
-    );
-  }
-
-  // ── No trial yet: activation screen ──────────────────────────
-  if (trial?.status === "NO_TRIAL") {
-    const children = trial.childMembers ?? [];
-    return (
-      <Screen title="Family responsibilities" onBack={() => router.push("/dashboard")}>
-        <div style={{ padding: "32px 0 0" }}>
-          {/* Hero */}
-          <div style={{ background: "var(--hero-grad)", borderRadius: 20, padding: "28px 24px", marginBottom: 24, textAlign: "center" }}>
-            <div style={{ fontSize: 42, marginBottom: 12 }}>👨‍👩‍👧</div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: "0 0 10px", lineHeight: 1.2 }}>
-              Less nagging.<br/>More structure.
-            </h2>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, margin: "0 0 20px" }}>
-              Try family responsibilities free for 7 days. Add 1 child, create recurring chores, and get a clear weekly overview without the reminders.
-            </p>
-            <div style={{ display: "inline-flex", background: "rgba(91,156,245,0.2)", borderRadius: 50, padding: "6px 16px", fontSize: 13, fontWeight: 700, color: "#7BB8FF" }}>
-              1 child · 7 days · Free
-            </div>
-          </div>
-
-          {/* What is included */}
-          <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", padding: "20px", marginBottom: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 14 }}>What is included in the trial</div>
-            {[
-              ["✅", "Create recurring chores for 1 child"],
-              ["✅", "Child marks tasks done themselves"],
-              ["✅", "Weekly overview for parents"],
-              ["✅", "Optional adult approval per chore"],
-            ].map(([icon, text]) => (
-              <div key={text} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
-                <span style={{ fontSize: 15 }}>{icon}</span>
-                <span style={{ fontSize: 13, color: "var(--fg-2)", lineHeight: 1.4 }}>{text}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Step 1: Add / pick a child */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--fg)", marginBottom: 12, letterSpacing: "0.02em" }}>
-              Step 1 — Add your child
-            </div>
-
-            {/* Create new profile (PIN-based) */}
-            {!showAddChild ? (
-              <button onClick={() => setShowAddChild(true)}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: 14,
-                  padding: "16px 18px", borderRadius: 14, cursor: "pointer", fontFamily: FONT,
-                  background: "var(--tint-accent)", border: "2px solid var(--accent)",
-                  marginBottom: children.length > 0 ? 10 : 0,
-                  textAlign: "left",
-                }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--accent-bg)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
-                  <IcPlus />
-                </div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--accent-strong)" }}>Create child profile</div>
-                  <div style={{ fontSize: 12, color: "#4B6EA8", marginTop: 2 }}>Name + 4-digit PIN — no email needed</div>
-                </div>
-              </button>
-            ) : (
-              <AddChildForm
-                name={newChildName} setName={setNewChildName}
-                pin={newChildPin} setPin={setNewChildPin}
-                pinConfirm={newChildPinConfirm} setPinConfirm={setNewChildPinConfirm}
-                error={addChildError} loading={addingChild}
-                onSave={createChildProfile}
-                onCancel={resetAddChildForm}
-              />
-            )}
-
-            {/* Existing children */}
-            {children.length > 0 && !showAddChild && (
-              <div>
-                <div style={{ fontSize: 12, color: "var(--subtle)", fontWeight: 600, textAlign: "center", margin: "10px 0" }}>or select existing</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {children.map(c => (
-                    <button key={c.id} onClick={() => setSelectedChild(c.id)}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-                        background: selectedChild === c.id ? "var(--tint-accent)" : "var(--surface)",
-                        border: selectedChild === c.id ? "2px solid var(--accent)" : "1.5px solid var(--border)",
-                        borderRadius: 14, cursor: "pointer", textAlign: "left", fontFamily: FONT,
-                      }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--ink)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                        {c.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: "var(--fg)" }}>{c.name}</span>
-                      {selectedChild === c.id && <div style={{ marginLeft: "auto", color: "var(--accent)" }}><IcCheck /></div>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {children.length > 0 && !showAddChild && (
-            <button onClick={startTrial} disabled={!selectedChild || starting}
-              style={{ ...btnStyle("var(--ink)"), width: "100%", opacity: !selectedChild || starting ? 0.6 : 1 }}>
-              {starting ? "Starting…" : "Start free 7-day trial →"}
-            </button>
-          )}
-        </div>
+        )}
       </Screen>
     );
   }
@@ -363,14 +242,14 @@ export default function FamilyPage() {
     <Screen title="Family" onBack={() => router.push("/dashboard")}>
       {/* Trial banner */}
       {trial?.trialActive && !trial.isPro && (
-        <div style={{ background: "var(--tint-warning)", border: "1px solid #FDE68A", borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ background: "var(--tint-warning)", border: "1px solid var(--tint-warning)", borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--warning)" }}>Free trial active</div>
             <div style={{ fontSize: 12, color: "var(--warning)", marginTop: 2 }}>{trial.daysLeft} day{trial.daysLeft !== 1 ? "s" : ""} remaining</div>
           </div>
-          <button style={{ background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+          <Link href="/upgrade" style={{ background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT, textDecoration: "none" }}>
             Upgrade
-          </button>
+          </Link>
         </div>
       )}
 
@@ -399,7 +278,13 @@ export default function FamilyPage() {
           (School's "add a child" link pointed back here with no way to
           actually do it). Reuses the same showAddChild/AddChildForm/
           createChildProfile already built for onboarding. */}
+      <DeletionRequestsCard />
       <div style={{ marginBottom: 16 }}>
+        {childInviteSentTo && !showAddChild && (
+          <div style={{ fontSize: 13, color: "var(--success)", background: "var(--tint-success)", border: "1px solid var(--tint-success)", borderRadius: 10, padding: "8px 12px", marginBottom: 8, fontWeight: 600 }}>
+            ✓ Invite sent to {childInviteSentTo}
+          </div>
+        )}
         {!showAddChild ? (
           <button onClick={() => setShowAddChild(true)} style={{
             display: "flex", alignItems: "center", gap: 8, width: "100%",
@@ -412,8 +297,7 @@ export default function FamilyPage() {
         ) : (
           <AddChildForm
             name={newChildName} setName={setNewChildName}
-            pin={newChildPin} setPin={setNewChildPin}
-            pinConfirm={newChildPinConfirm} setPinConfirm={setNewChildPinConfirm}
+            email={newChildEmail} setEmail={setNewChildEmail}
             error={addChildError} loading={addingChild}
             onSave={createChildProfile}
             onCancel={resetAddChildForm}
@@ -569,22 +453,20 @@ export default function FamilyPage() {
 type AddChildFormProps = {
   name: string;
   setName: (v: string) => void;
-  pin: string;
-  setPin: (v: string) => void;
-  pinConfirm: string;
-  setPinConfirm: (v: string) => void;
+  email: string;
+  setEmail: (v: string) => void;
   error: string;
   loading: boolean;
   onSave: () => void;
   onCancel: () => void;
 };
 
-function AddChildForm({ name, setName, pin, setPin, pinConfirm, setPinConfirm, error, loading, onSave, onCancel }: AddChildFormProps) {
+function AddChildForm({ name, setName, email, setEmail, error, loading, onSave, onCancel }: AddChildFormProps) {
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1.5px solid var(--border)", padding: "20px", marginTop: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
       <div style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>Add child profile</div>
       <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 18, lineHeight: 1.4 }}>
-        Your child logs in by tapping their name and entering a 4-digit PIN — no email needed.
+        We email your child a link to confirm the address and choose a password. Use their own email, or an alias of yours like you+emma@gmail.com.
       </div>
 
       <div style={{ marginBottom: 14 }}>
@@ -598,29 +480,15 @@ function AddChildForm({ name, setName, pin, setPin, pinConfirm, setPinConfirm, e
         />
       </div>
 
-      <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>4-digit PIN</label>
-        <input
-          value={pin}
-          onChange={e => setPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
-          placeholder="1 2 3 4"
-          inputMode="numeric"
-          type="password"
-          autoComplete="new-password"
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid var(--border)", fontSize: 22, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const, letterSpacing: "0.4em" }}
-        />
-      </div>
-
       <div style={{ marginBottom: 18 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Confirm PIN</label>
+        <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Email</label>
         <input
-          value={pinConfirm}
-          onChange={e => setPinConfirm(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
-          placeholder="1 2 3 4"
-          inputMode="numeric"
-          type="password"
-          autoComplete="new-password"
-          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid var(--border)", fontSize: 22, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const, letterSpacing: "0.4em" }}
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="emma@example.com"
+          type="email"
+          autoComplete="off"
+          style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
         />
       </div>
 
@@ -635,7 +503,7 @@ function AddChildForm({ name, setName, pin, setPin, pinConfirm, setPinConfirm, e
           onClick={onSave}
           disabled={loading}
           style={{ flex: 1, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "13px", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", fontFamily: FONT, opacity: loading ? 0.6 : 1 }}>
-          {loading ? "Saving…" : "Save child"}
+          {loading ? "Sending…" : "Add & send invite"}
         </button>
         <button
           onClick={onCancel}

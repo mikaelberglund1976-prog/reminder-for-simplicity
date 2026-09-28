@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPro } from "@/lib/entitlements";
 
 // 2026-08-18: MEMBER included too — a chore/activity/school item can be
 // created by any household member, not just an OWNER/PARENT/ADULT (Mikael:
@@ -54,7 +55,7 @@ export async function GET(req: Request) {
     if (!membership) return NextResponse.json({ chores: [], access: "NO_HOUSEHOLD" });
 
     const { household } = membership;
-    const isPro = household.is_pro;
+    const isPro = hasPro(household);
     const trial = household.familyTrial;
     const now = new Date();
     const trialActive = trial ? trial.expiresAt > now : false;
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Not allowed" }, { status: 403 });
     }
 
-    const isPro = membership.household.is_pro;
+    const isPro = hasPro(membership.household);
     const trial = membership.household.familyTrial;
     const now = new Date();
     const trialActive = trial ? trial.expiresAt > now : false;
@@ -119,7 +120,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { name, assignedTo, recurrence, recurrenceDays, startDate, requiresApproval, note, category: rawCategory } = body ?? {};
+    const { name, assignedTo, recurrence, recurrenceDays, startDate, requiresApproval, note, category: rawCategory, schoolKind: rawSchoolKind, subject, showInCalendar } = body ?? {};
     const category: BookingCategory = BOOKING_CATEGORIES.includes(rawCategory) ? rawCategory : "CHORE";
 
     if (!name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 400 });
@@ -138,6 +139,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Trial only supports 1 child" }, { status: 403 });
     }
 
+    // 2026-09-27: School items are one-off (a test/homework has a date, it
+    // doesn't repeat) with a type + subject, and get an email the day before.
+    const isSchool = category === "SCHOOL";
+    const schoolKind = isSchool
+      ? (["HOMEWORK", "TEST", "OTHER"].includes(rawSchoolKind) ? rawSchoolKind : "HOMEWORK")
+      : null;
+
     const chore = await prisma.reminder.create({
       data: {
         name: name.trim(),
@@ -145,7 +153,7 @@ export async function POST(req: Request) {
         userId: session.user.id,
         householdId: membership.householdId,
         assignedTo: finalAssignedTo,
-        recurrence: recurrence ?? "WEEKLY",
+        recurrence: isSchool ? "ONCE" : (recurrence ?? "WEEKLY"),
         choreRecurrenceDays: recurrenceDays ?? null,
         date: startDate ? new Date(startDate) : new Date(),
         visibility: "HOUSEHOLD",
@@ -157,6 +165,14 @@ export async function POST(req: Request) {
         // doesn't need a parent to sign off on it.
         requiresApproval: category === "CHORE" ? (isChild ? true : !!requiresApproval) : false,
         note: note ?? null,
+        ...(isSchool
+          ? {
+              schoolKind,
+              subject: typeof subject === "string" && subject.trim() ? subject.trim().slice(0, 60) : null,
+              showInCalendar: showInCalendar !== false,
+              reminderDaysBefore: 1,
+            }
+          : {}),
       },
       include: { assignedUser: { select: { id: true, name: true } } },
     });

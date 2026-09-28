@@ -31,6 +31,8 @@ type HouseholdAdmin = {
   id: string;
   name: string | null;
   is_pro: boolean;
+  proUntil?: string | null;
+  proRequestedAt?: string | null;
   createdAt: string;
   members: HouseholdMemberInfo[];
   invites: HouseholdInvite[];
@@ -43,6 +45,10 @@ type UserLite = {
   createdAt: string;
   approved: boolean;
   approvedAt: string | null;
+  emailVerified?: string | null;
+  isChildProfile?: boolean;
+  deletedAt?: string | null;
+  deletedFromHouseholdId?: string | null;
   _count: { reminders: number };
   householdMembers: { household: { id: string } }[];
 };
@@ -63,7 +69,8 @@ export default function AdminPage() {
   const [cronLog, setCronLog] = useState<string[] | null>(null);
   const [testingEmail, setTestingEmail] = useState(false);
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<"families" | "users" | "pending">("families");
+  const [tab, setTab] = useState<"families" | "users" | "pending" | "deleted">("families");
+  const [restoring, setRestoring] = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
 
   useEffect(() => {
@@ -161,6 +168,29 @@ export default function AdminPage() {
     }
   }
 
+  // 2026-09-27: soft-deleted accounts (60-day restore window)
+  async function handleDeletedAction(userId: string, email: string, action: "restore" | "purge") {
+    if (action === "purge" && !confirm(`Permanently delete ${email} now? This cannot be undone.`)) return;
+    setRestoring(userId);
+    try {
+      const res = await fetch(`/api/admin/deleted-users/${userId}`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      if (action === "restore") {
+        setUsers((u) => u.map((x) => (x.id === userId ? { ...x, deletedAt: null } : x)));
+        notify("ok", `${email} restored. Reload to see them back in their family.`);
+      } else {
+        setUsers((u) => u.filter((x) => x.id !== userId));
+        notify("ok", `${email} permanently deleted.`);
+      }
+    } catch {
+      notify("err", action === "restore" ? "Failed to restore." : "Failed to delete.");
+    } finally {
+      setRestoring(null);
+    }
+  }
+
   async function handleDeleteUser(userId: string, email: string) {
     if (!confirm(`Delete user ${email} and all their data? Cannot be undone.`)) return;
     try {
@@ -235,7 +265,7 @@ export default function AdminPage() {
           u.email.toLowerCase().includes(q)
       )
     : users;
-  const usersWithoutHousehold = usersFiltered.filter((u) => u.householdMembers.length === 0);
+  const usersWithoutHousehold = usersFiltered.filter((u) => u.householdMembers.length === 0 && !u.deletedAt);
 
   return (
     <div style={{ minHeight: "100vh", background: bg, position: "relative", overflow: "hidden" }}>
@@ -494,11 +524,16 @@ export default function AdminPage() {
                 Families ({households.length})
               </TabButton>
               <TabButton active={tab === "users"} onClick={() => setTab("users")}>
-                Users without family ({users.filter((u) => u.householdMembers.length === 0).length})
+                Users without family ({users.filter((u) => u.householdMembers.length === 0 && !u.deletedAt).length})
               </TabButton>
-              <TabButton active={tab === "pending"} onClick={() => setTab("pending")} warn={users.filter((u) => !u.approved).length > 0}>
-                Pending approval ({users.filter((u) => !u.approved).length})
+              <TabButton active={tab === "pending"} onClick={() => setTab("pending")} warn={users.filter((u) => !u.approved && !u.deletedAt).length > 0}>
+                Pending approval ({users.filter((u) => !u.approved && !u.deletedAt).length})
               </TabButton>
+              <TabButton active={tab === "deleted"} onClick={() => setTab("deleted")}>
+                Deleted ({users.filter((u) => u.deletedAt).length})
+              </TabButton>
+              {/* 2026-09-28: ads have their own page */}
+              <Link href="/admin/ads" style={{ alignSelf: "center", fontSize: 13, fontWeight: 700, color: "#7BB8FF", textDecoration: "none", padding: "8px 6px" }}>Ads →</Link>
             </div>
             <input
               type="search"
@@ -522,9 +557,15 @@ export default function AdminPage() {
 
           {tab === "families" ? (
             <FamilyTable families={familiesFiltered} formatDate={formatDate} timeAgo={timeAgo} />
+          ) : tab === "deleted" ? (
+            <DeletedUsersTable
+              users={usersFiltered.filter((u) => u.deletedAt)}
+              busy={restoring}
+              onAction={handleDeletedAction}
+            />
           ) : tab === "pending" ? (
             <PendingApprovalTable
-              users={usersFiltered.filter((u) => !u.approved)}
+              users={usersFiltered.filter((u) => !u.approved && !u.deletedAt)}
               formatDate={formatDate}
               timeAgo={timeAgo}
               approving={approving}
@@ -569,6 +610,55 @@ function TabButton({
     >
       {children}
     </button>
+  );
+}
+
+// ── Deleted accounts (2026-09-27) ─────────────────────────────────
+
+function DeletedUsersTable({ users, busy, onAction }: {
+  users: UserLite[];
+  busy: string | null;
+  onAction: (id: string, email: string, action: "restore" | "purge") => void;
+}) {
+  if (users.length === 0) {
+    return (
+      <div style={{ padding: "48px 24px", textAlign: "center", color: "rgba(160,185,255,0.5)", fontSize: 14 }}>
+        No deleted accounts. Deleted accounts stay here for 60 days and can be restored.
+      </div>
+    );
+  }
+  return (
+    <div>
+      {users.map((u, i) => {
+        const deleted = new Date(u.deletedAt as string);
+        const purge = new Date(deleted.getTime() + 60 * 86400000);
+        const daysLeft = Math.max(0, Math.ceil((purge.getTime() - Date.now()) / 86400000));
+        return (
+          <div key={u.id} style={{
+            display: "grid", gridTemplateColumns: "1.4fr 1.6fr 1.4fr 220px", gap: 12, alignItems: "center",
+            padding: "14px 22px", borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.07)",
+          }}>
+            <span style={{ fontWeight: 600, color: "#fff", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {u.name ?? "No name"}{u.isChildProfile ? " (child)" : ""}
+            </span>
+            <span style={{ color: "rgba(175,200,255,0.65)", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</span>
+            <span style={{ fontSize: 13, color: daysLeft <= 7 ? "#F5C563" : "rgba(175,200,255,0.75)" }}>
+              Deleted {deleted.toLocaleDateString("sv-SE")} · removed in {daysLeft} day{daysLeft === 1 ? "" : "s"}
+            </span>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => onAction(u.id, u.email, "restore")} disabled={busy === u.id} style={{
+                background: "rgba(56,178,120,0.2)", border: "1px solid rgba(56,178,120,0.5)", color: "#7EE2B0",
+                fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+              }}>{busy === u.id ? "…" : "Restore"}</button>
+              <button onClick={() => onAction(u.id, u.email, "purge")} disabled={busy === u.id} style={{
+                background: "transparent", border: "1px solid rgba(217,79,79,0.5)", color: "#FF9A9A",
+                fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+              }}>Delete now</button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -813,16 +903,16 @@ function FamilyTable({
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 4,
-                  background: fam.is_pro ? "rgba(74,127,220,0.2)" : "rgba(255,255,255,0.05)",
-                  border: `1px solid ${fam.is_pro ? "rgba(74,127,220,0.4)" : "rgba(255,255,255,0.12)"}`,
-                  color: fam.is_pro ? "#7BB8FF" : "rgba(200,220,255,0.7)",
+                  background: isProFam(fam) ? "rgba(74,127,220,0.2)" : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${isProFam(fam) ? "rgba(74,127,220,0.4)" : "rgba(255,255,255,0.12)"}`,
+                  color: isProFam(fam) ? "#7BB8FF" : "rgba(200,220,255,0.7)",
                   fontSize: 11,
                   fontWeight: 700,
                   padding: "3px 9px",
                   borderRadius: 50,
                 }}
               >
-                {fam.is_pro ? "⚡ Pro" : "Free"}
+                {isProFam(fam) ? "⚡ Pro" : fam.proRequestedAt ? "Free · wants Pro" : "Free"}
               </span>
             </span>
             <span style={{ color: "rgba(175,200,255,0.6)", fontSize: 12 }}>
@@ -957,4 +1047,9 @@ function UserTable({
       ))}
     </div>
   );
+}
+
+// 2026-09-28: Pro = manual forever flag or an unexpired proUntil.
+function isProFam(f: { is_pro: boolean; proUntil?: string | null }) {
+  return f.is_pro || (!!f.proUntil && new Date(f.proUntil) > new Date());
 }

@@ -83,6 +83,11 @@ type Chore = {
   recurrence: "ONCE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
   choreRecurrenceDays: string | null;
   assignedUser: { id: string; name: string | null; email: string } | null;
+  // School-only (2026-09-27)
+  schoolKind?: "HOMEWORK" | "TEST" | "OTHER" | null;
+  subject?: string | null;
+  completedAt?: string | null;
+  showInCalendar?: boolean;
 };
 
 type CalendarEntry = {
@@ -251,12 +256,16 @@ export default function CalendarPage() {
     }
 
     for (const s of schoolItems) {
+      // 2026-09-27: per-item "Show in calendar" choice.
+      if (s.showInCalendar === false) continue;
+      const kindIcon = s.schoolKind === "TEST" ? "🧪 " : s.schoolKind === "HOMEWORK" ? "📝 " : "";
+      const title = `${kindIcon}${s.subject ? s.subject + ": " : ""}${s.name}${s.completedAt ? " ✓" : ""}`;
       const occs = getOccurrencesInRange(s as RecurringItem, gridStart, gridEnd);
       const who = s.assignedUser?.name?.split(" ")[0] ?? s.assignedUser?.email?.split("@")[0] ?? "Unassigned";
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: s.id, name: s.name, kind: "school", color: SCHOOL_COLOR, subtitle: `School · ${who}` });
+        list.push({ occDate: occ, id: s.id, name: title, kind: "school", color: SCHOOL_COLOR, subtitle: `School · ${who}` });
         map.set(key, list);
       }
     }

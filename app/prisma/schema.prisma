@@ -62,6 +62,23 @@ model User {
   // users don't need a backfill.
   bottomNavTabs     String?
 
+  // 2026-09-27: soft delete with a 60-day restore window (Mikael: "ska ligga
+  // kvar i 60 dagar om någon hör av sig så ska jag kunna återställa det").
+  //   deletionRequestedAt — a household member asked to delete their account
+  //     and is waiting for the family admin (OWNER) to approve. Account still
+  //     works normally until approved; the request can be cancelled.
+  //   deletedAt — account is soft-deleted: login blocked, removed from the
+  //     household (HouseholdMember row deleted so it disappears from every
+  //     family view without touching each query), listed in /admin with a
+  //     Restore button. lib/cron.ts purges it for real 60 days after this.
+  //   deletedFromHouseholdId / deletedRole — where to put the person back on
+  //     restore. deletedById — who approved/performed the deletion.
+  deletionRequestedAt    DateTime?
+  deletedAt              DateTime?
+  deletedById            String?
+  deletedFromHouseholdId String?
+  deletedRole            HouseholdRole?
+
   reminders         Reminder[]
   accounts          Account[]
   sessions          Session[]
@@ -343,6 +360,15 @@ model Reminder {
   requiresApproval    Boolean          @default(false)
   choreRecurrenceDays String?          // e.g. "1,2,3,4,5" = Mon–Fri; null = uses recurrence field
 
+  // 2026-09-27: School (homework/tests) tracking. Only used when
+  // category = SCHOOL. completedAt = the child ticked it off. showInCalendar
+  // lets the person choose whether an item shows up in the calendar view and
+  // the outbound ICS feed (default on).
+  schoolKind          SchoolKind?
+  subject             String?
+  completedAt         DateTime?
+  showInCalendar      Boolean          @default(true)
+
   user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   household           Household?       @relation(fields: [householdId], references: [id])
   assignedUser        User?            @relation("AssignedReminders", fields: [assignedTo], references: [id], onDelete: SetNull)
@@ -375,7 +401,7 @@ model FamilyTrial {
   householdId String    @unique
   startedAt   DateTime  @default(now())
   expiresAt   DateTime
-  childId     String    // userId of the 1 trial child
+  childId     String?   // legacy: trials used to be limited to 1 child (7 days). Since 2026-09-28 a trial is 14 days for the whole family.
   createdBy   String    // userId of the adult who started it
 
   household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
@@ -445,6 +471,21 @@ model Household {
   // feature. Null/absent means sharing is off. Anyone with the token can
   // view and edit the list, no login required; rotate to revoke access.
   shoppingListShareToken String? @unique
+
+  // 2026-09-28: plans & billing prep. is_pro stays as the manual "Pro
+  // forever" flag (existing Pro families keep it). New Pro time is granted
+  // until a date: by the admin for N days today (proSource "admin"), by
+  // Stripe later (proSource "stripe", plan e.g. "pro_monthly"). See
+  // lib/entitlements.ts — the only place that decides FREE / TRIAL / PRO.
+  proUntil             DateTime?
+  plan                 String?
+  proSource            String?
+  proRequestedAt       DateTime?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  // 2026-09-28: "buy yourself free" from ads without full Pro (future cheaper
+  // add-on). Pro and the trial are always ad-free anyway.
+  adFreeUntil          DateTime?
 
   members     HouseholdMember[]
   reminders   Reminder[]
@@ -524,6 +565,12 @@ enum ReminderCategory {
   OTHER
 }
 
+enum SchoolKind {
+  HOMEWORK
+  TEST
+  OTHER
+}
+
 enum Recurrence {
   ONCE
   DAILY
@@ -573,4 +620,28 @@ enum WishlistStatus {
   WANTED
   RESERVED
   PURCHASED
+}
+
+// 2026-09-28: our own sponsor/ad slots (no third-party ad network, no
+// tracking). Shown only to adults in FREE households — never to children,
+// never on Pro/trial/ad-free. Managed in /admin/ads; impressions and clicks
+// are counted so ads can be sold and reported on.
+model Ad {
+  id          String    @id @default(cuid())
+  title       String
+  body        String?
+  imageUrl    String?
+  url         String
+  ctaLabel    String?
+  advertiser  String?
+  placement   String    @default("any") // "home" | "shopping" | "calendar" | "any"
+  active      Boolean   @default(true)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  impressions Int       @default(0)
+  clicks      Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("ads")
 }

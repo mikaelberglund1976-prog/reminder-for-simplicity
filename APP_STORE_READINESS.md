@@ -46,7 +46,7 @@ De två plattformarna är **inte symmetriska**. Android/Google Play är en rimli
 **Rekommenderad väg:** ett hybrid-ramverk som **Capacitor** (bygger på samma React/Next-kod men ger riktig åtkomst till native-API:er) – kombinerat med minst någon genuin native-funktion för att inte klassas som repackaged website: riktiga push-notiser (idag bara email-påminnelser, se §4.6 i `PRODUCT_SPEC.md`), native kamera för streckkodsskanning (idag webbläsarens `BarcodeDetector`, som redan är känt att **inte fungera i Safari/iOS**, se 4b.27 – att lösa det med en native kamera-plugin löser alltså två problem samtidigt), eventuellt en hemskärmswidget. Detta är ett riktigt utvecklingsprojekt, inte en paketering.
 
 **Två krav som blockerar inlämning oavsett teknisk väg:**
-- [ ] **Kontoradering (Guideline 5.1.1(v)).** Obligatoriskt sedan 2022: appar med kontoskapande måste låta användaren initiera *permanent* radering i appen, inte bara inaktivering. **"Delete account"-knappen i Profile → Security är idag bara en UI-shell** (känt sedan `PRODUCT_SPEC.md` 4b.17) – måste vara en fungerande backend-radering innan appen kan lämnas in. Detta är alltså inte längre "bara" ett GDPR-önskemål, det är en hård Apple-blockerare.
+- [x] *(Kodat 2026-09-27, ej deployat: användaren initierar radering i appen, kontot spärras direkt och raderas permanent efter 60 dagar – `TODO.md` 31. Apple accepterar en kort fördröjning före permanent radering om den kommuniceras, vilket UI:t gör.)* **Kontoradering (Guideline 5.1.1(v)).** Obligatoriskt sedan 2022: appar med kontoskapande måste låta användaren initiera *permanent* radering i appen, inte bara inaktivering. **"Delete account"-knappen i Profile → Security är idag bara en UI-shell** (känt sedan `PRODUCT_SPEC.md` 4b.17) – måste vara en fungerande backend-radering innan appen kan lämnas in. Detta är alltså inte längre "bara" ett GDPR-önskemål, det är en hård Apple-blockerare.
 - [ ] **Riktig Privacy Policy** klar och länkad (samma gap som Google Play ovan).
 
 **Betalning – viktigt beslut innan Stripe byggs (Fas 3):**
@@ -59,7 +59,7 @@ De två plattformarna är **inte symmetriska**. Android/Google Play är en rimli
 
 ## 5. Barns data – COPPA, oavsett app store-kategori
 
-Appen är inte en "kids-app" (föräldrar administrerar barnprofiler, barn marknadsförs inte till direkt) – bedömning: troligen inte Apples Kids Category eller Googles Designed for Families. **Men** eftersom ni ändå *vetande* samlar in barns personuppgifter (namn, email, PIN för barnprofiler) gäller amerikansk COPPA om appen finns tillgänglig i USA, oavsett kategori.
+Appen är inte en "kids-app" (föräldrar administrerar barnprofiler, barn marknadsförs inte till direkt) – bedömning: troligen inte Apples Kids Category eller Googles Designed for Families. **Men** eftersom ni ändå *vetande* samlar in barns personuppgifter (namn, email och – sedan 2026-09-27 – ett lösenord barnet själv väljer; PIN borttaget) gäller amerikansk COPPA om appen finns tillgänglig i USA, oavsett kategori.
 
 - COPPA:s uppdaterade regler (2025 års ändringar) trädde i kraft med efterlevnadsdeadline **22 april 2026** – redan passerad. Striktare krav på verifierat föräldrasamtycke och datalagringstid.
 - Ni har redan ett öppet, obeslutat gap kring **minimiålder för barnprofiler och vem som samtycker** (`PRODUCT_SPEC.md` 4b.17, `TODO.md` punkt 9) – det här var tidigare "bör lösas innan bred lansering", men blir nu direkt kopplat till **app store-godkännande**, inte bara en policy-formalitet.

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPro, describeAccess, TRIAL_DAYS } from "@/lib/entitlements";
 
 const ADULT_ROLES = ["OWNER", "PARENT", "ADULT"];
 
@@ -26,7 +27,7 @@ export async function GET() {
   if (!membership) return NextResponse.json({ status: "NO_HOUSEHOLD" });
 
   const { household } = membership;
-  const isPro = household.is_pro;
+  const isPro = hasPro(household);
   const trial = household.familyTrial;
 
   const now = new Date();
@@ -39,6 +40,7 @@ export async function GET() {
 
   return NextResponse.json({
     status: isPro ? "PRO" : trialActive ? "TRIAL" : trialExpired ? "TRIAL_EXPIRED" : "NO_TRIAL",
+    access: describeAccess(household, now),
     isPro,
     trialActive,
     trialExpired: !trialActive && trialExpired,
@@ -74,16 +76,14 @@ export async function POST(req: Request) {
   if (!ADULT_ROLES.includes(membership.role)) return NextResponse.json({ error: "Adults only" }, { status: 403 });
   if (membership.household.familyTrial) return NextResponse.json({ error: "Trial already used" }, { status: 400 });
 
-  const { childId } = await req.json();
-  if (!childId) return NextResponse.json({ error: "childId required" }, { status: 400 });
-
-  const childMember = await prisma.householdMember.findFirst({
-    where: { householdId: membership.householdId, userId: childId, role: "CHILD" },
-  });
-  if (!childMember) return NextResponse.json({ error: "Child not found in household" }, { status: 404 });
+  // 2026-09-28: 14 days for the whole family (no longer "1 child, 7 days").
+  // childId is still accepted from older clients but no longer required.
+  if (hasPro(membership.household)) return NextResponse.json({ error: "Already Pro" }, { status: 400 });
+  const body = await req.json().catch(() => ({}));
+  const childId = typeof body?.childId === "string" ? body.childId : null;
 
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
 
   const trial = await prisma.familyTrial.create({
     data: {
@@ -94,5 +94,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json({ trial, daysLeft: 7 });
+  return NextResponse.json({ trial, daysLeft: TRIAL_DAYS });
 }

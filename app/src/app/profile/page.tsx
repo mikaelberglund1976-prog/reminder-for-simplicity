@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PhoneInput from "@/components/PhoneInput";
+import DeleteAccountSection from "@/components/DeleteAccountSection";
+import DeletionRequestsCard from "@/components/DeletionRequestsCard";
 import { getViewMode, setViewMode, ViewMode } from "@/lib/viewMode";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 
@@ -63,7 +65,6 @@ type Profile = {
   timezone: string;
   createdAt: string;
   isChildProfile?: boolean;
-  hasPin?: boolean;
   hasPassword?: boolean;
 };
 
@@ -83,8 +84,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [household, setHousehold] = useState<HouseholdData | null>(null);
+  const [access, setAccess] = useState<{ plan: "FREE" | "TRIAL" | "PRO"; proForever: boolean; proUntil: string | null; trialDaysLeft: number | null; canStartTrial: boolean; proRequested: boolean } | null>(null);
   const [householdRole, setHouseholdRole] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("ADULT");
@@ -95,12 +96,12 @@ export default function ProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [newHouseholdName, setNewHouseholdName] = useState("");
   const [renamingHousehold, setRenamingHousehold] = useState(false);
-  const [pinChildren, setPinChildren] = useState<{ id: string; name: string; email?: string }[]>([]);
+  const [pinChildren, setPinChildren] = useState<{ id: string; name: string; email?: string; emailVerified?: boolean }[]>([]);
+  const [inviteSentTo, setInviteSentTo] = useState<string | null>(null);
+  const [resendingChild, setResendingChild] = useState<string | null>(null);
   const [editingChildId, setEditingChildId] = useState<string | null>(null);
   const [editChildName, setEditChildName] = useState("");
   const [editChildEmail, setEditChildEmail] = useState("");
-  const [editChildPin, setEditChildPin] = useState("");
-  const [editChildPinConfirm, setEditChildPinConfirm] = useState("");
   const [editChildError, setEditChildError] = useState("");
   const [savingChildEdit, setSavingChildEdit] = useState(false);
   const [viewMode, setViewModeLocal] = useState<ViewMode>("mobile");
@@ -142,25 +143,15 @@ export default function ProfilePage() {
   const [showAddPinChild, setShowAddPinChild] = useState(false);
   const [pinChildName, setPinChildName] = useState("");
   const [pinChildEmail, setPinChildEmail] = useState("");
-  const [pinChildPin, setPinChildPin] = useState("");
-  const [pinChildPinConfirm, setPinChildPinConfirm] = useState("");
   const [pinChildError, setPinChildError] = useState("");
   const [addingPinChild, setAddingPinChild] = useState(false);
-  const [pinChildCopied, setPinChildCopied] = useState(false);
-  const [myPin, setMyPin] = useState("");
-  const [myPinConfirm, setMyPinConfirm] = useState("");
-  const [hasPin, setHasPin] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState("");
   const [broadcasting, setBroadcasting] = useState(false);
   const [broadcastMsg, setBroadcastMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
-  const [showSetPin, setShowSetPin] = useState(false);
-  const [pinSaving, setPinSaving] = useState(false);
-  const [pinError, setPinError] = useState("");
   const [calendarFeedUrl, setCalendarFeedUrl] = useState<string | null>(null);
   const [calendarFeedLoading, setCalendarFeedLoading] = useState(false);
   const [calendarFeedCopied, setCalendarFeedCopied] = useState(false);
-  const [pinSuccess, setPinSuccess] = useState("");
   const [phoneValid, setPhoneValid] = useState(true);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
@@ -174,7 +165,6 @@ export default function ProfilePage() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
-        setHasPin(!!data.hasPin);
         if (data.bottomNavTabs) {
           const keys: string[] = data.bottomNavTabs.split(",").filter((k: string) => BOTTOM_NAV_APP_OPTIONS.some(o => o.key === k));
           if (keys.length >= 3) setBottomNavApps(keys);
@@ -198,6 +188,7 @@ export default function ProfilePage() {
         const data = await res.json();
         setHousehold(data.household);
         setHouseholdRole(data.role ?? null);
+        setAccess(data.access ?? null);
         if (data.household?.id) fetchPinChildren(data.household.id);
       }
     } catch (e) { console.error(e); }
@@ -205,10 +196,13 @@ export default function ProfilePage() {
 
   async function fetchPinChildren(hid: string) {
     try {
-      const res = await fetch(`/api/family/children?h=${hid}`);
+      // 2026-09-27: authenticated endpoint (the old public PIN-switcher
+      // endpoint /api/family/children was retired with PIN login).
+      void hid;
+      const res = await fetch(`/api/family/child-profiles`);
       if (res.ok) {
         const data = await res.json();
-        setPinChildren(data.children ?? []);
+        setPinChildren(Array.isArray(data) ? data : []);
       }
     } catch (e) { console.error(e); }
   }
@@ -216,19 +210,18 @@ export default function ProfilePage() {
   async function createPinChild() {
     if (!pinChildName.trim()) { setPinChildError("Enter a name"); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pinChildEmail.trim())) { setPinChildError("Enter a valid email — your own address, an alias like you+childname@gmail.com, or the child's own if they have one"); return; }
-    if (!/^[0-9]{4}$/.test(pinChildPin)) { setPinChildError("PIN must be exactly 4 digits"); return; }
-    if (pinChildPin !== pinChildPinConfirm) { setPinChildError("PINs do not match"); return; }
     setAddingPinChild(true); setPinChildError("");
     try {
       const res = await fetch("/api/family/child-profiles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: pinChildName.trim(), email: pinChildEmail.trim(), pin: pinChildPin }),
+        body: JSON.stringify({ name: pinChildName.trim(), email: pinChildEmail.trim() }),
       });
       let data: { error?: string } = {};
       try { data = await res.json(); } catch { data = { error: `Server error ${res.status}` }; }
       if (res.ok) {
-        setPinChildName(""); setPinChildEmail(""); setPinChildPin(""); setPinChildPinConfirm("");
+        setInviteSentTo(pinChildEmail.trim());
+        setPinChildName(""); setPinChildEmail("");
         setShowAddPinChild(false);
         if (household?.id) fetchPinChildren(household.id);
       } else {
@@ -238,27 +231,43 @@ export default function ProfilePage() {
     finally { setAddingPinChild(false); }
   }
 
+  // 2026-09-27: family admin deletes a child account (soft delete, restorable 60 days)
+  async function deleteChild(id: string, name: string) {
+    if (!confirm(`Delete ${name}'s account? They'll be removed from the family and can't log in. The data is kept 60 days and can be restored on request.`)) return;
+    setResendingChild(id);
+    try {
+      const res = await fetch(`/api/household/deletion-requests/${id}`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete" }),
+      });
+      if (res.ok) setPinChildren(prev => prev.filter(c => c.id !== id));
+    } finally { setResendingChild(null); }
+  }
+
+  async function resendChildInvite(id: string, email?: string) {
+    setResendingChild(id);
+    try {
+      const res = await fetch(`/api/family/child-profiles/${id}/invite`, { method: "POST" });
+      if (res.ok) setInviteSentTo(email ?? "their email");
+    } finally { setResendingChild(null); }
+  }
+
   function startEditChild(c: { id: string; name: string; email?: string }) {
     setEditingChildId(c.id);
     setEditChildName(c.name);
     setEditChildEmail(c.email ?? "");
-    setEditChildPin(""); setEditChildPinConfirm(""); setEditChildError("");
+    setEditChildError("");
   }
 
   async function saveChildEdit() {
     if (!editingChildId) return;
     if (!editChildName.trim()) { setEditChildError("Enter a name"); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editChildEmail.trim())) { setEditChildError("Enter a valid email"); return; }
-    if (editChildPin || editChildPinConfirm) {
-      if (!/^[0-9]{4}$/.test(editChildPin)) { setEditChildError("PIN must be exactly 4 digits"); return; }
-      if (editChildPin !== editChildPinConfirm) { setEditChildError("PINs do not match"); return; }
-    }
     setSavingChildEdit(true); setEditChildError("");
     try {
       const res = await fetch(`/api/family/child-profiles/${editingChildId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editChildName.trim(), email: editChildEmail.trim(), pin: editChildPin || undefined }),
+        body: JSON.stringify({ name: editChildName.trim(), email: editChildEmail.trim() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setEditChildError(data.error ?? `Error ${res.status}`); return; }
@@ -269,36 +278,6 @@ export default function ProfilePage() {
     } finally {
       setSavingChildEdit(false);
     }
-  }
-
-  async function saveMyPin() {
-    if (!/^[0-9]{4}$/.test(myPin)) { setPinError("PIN must be exactly 4 digits"); return; }
-    if (myPin !== myPinConfirm) { setPinError("PINs do not match"); return; }
-    setPinSaving(true); setPinError(""); setPinSuccess("");
-    try {
-      const res = await fetch("/api/profile/pin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: myPin }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setHasPin(true); setShowSetPin(false); setMyPin(""); setMyPinConfirm("");
-        setPinSuccess("PIN saved!");
-        setTimeout(() => setPinSuccess(""), 3000);
-      } else {
-        setPinError(data.error ?? "Something went wrong");
-      }
-    } catch { setPinError("Network error"); }
-    finally { setPinSaving(false); }
-  }
-
-  async function removeMyPin() {
-    setPinSaving(true); setPinError("");
-    try {
-      const res = await fetch("/api/profile/pin", { method: "DELETE" });
-      if (res.ok) { setHasPin(false); setMyPin(""); setMyPinConfirm(""); }
-    } finally { setPinSaving(false); }
   }
 
   async function handleInvite(e: React.FormEvent) {
@@ -766,7 +745,7 @@ export default function ProfilePage() {
                         <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {m.user.name ?? m.user.email}
                         </div>
-                        <div style={{ fontSize: 12, color: "var(--muted)" }}>{m.role === "OWNER" ? "Owner" : "Member"}</div>
+                        <div style={{ fontSize: 12, color: "var(--muted)" }}>{m.role === "OWNER" ? "Owner" : m.role === "CHILD" ? "Child" : m.role === "PARENT" ? "Parent" : "Adult"}</div>
                       </div>
                       {householdRole === "OWNER" && m.role !== "OWNER" && (
                         <button
@@ -895,11 +874,12 @@ export default function ProfilePage() {
                   </div>
                 ) : null}
 
-                {/* Child profiles with PIN */}
+                {/* Child accounts — email + password (PIN retired 2026-09-27) */}
                 {householdRole === "OWNER" && (
                   <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--border-soft)" }}>
+                    <DeletionRequestsCard />
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)" }}>Child profiles (PIN login)</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)" }}>Child accounts</div>
                       {!showAddPinChild && (
                         <button type="button" onClick={() => setShowAddPinChild(true)}
                           style={{ background: "var(--tint-accent)", border: "none", borderRadius: 50, padding: "6px 14px", fontSize: 12, fontWeight: 700, color: "var(--accent-strong)", cursor: "pointer", fontFamily: FONT }}>
@@ -908,8 +888,13 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 12, lineHeight: 1.5 }}>
-                      Children log in day-to-day with a 4-digit PIN. Every account still needs an email on file — use your own, an alias like you+childname@gmail.com, or theirs if they have one.
+                      Each child gets their own login. We email them a link to confirm the address and choose a password (or they can use Google if it's a Google address).
                     </div>
+                    {inviteSentTo && (
+                      <div style={{ fontSize: 13, color: "var(--success)", background: "var(--tint-success)", border: "1px solid var(--tint-success)", borderRadius: 8, padding: "8px 12px", marginBottom: 12, fontWeight: 600 }}>
+                        ✓ Invite sent to {inviteSentTo}
+                      </div>
+                    )}
 
                     {pinChildren.length > 0 && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
@@ -922,10 +907,23 @@ export default function ProfilePage() {
                               <div style={{ minWidth: 0, flex: 1 }}>
                                 <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{c.name}</div>
                                 {c.email && <div style={{ fontSize: 11, color: "var(--subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.email}</div>}
+                                {c.emailVerified === false && (
+                                  <div style={{ fontSize: 11, color: "var(--warning)", fontWeight: 600, marginTop: 2 }}>
+                                    Not confirmed yet ·{" "}
+                                    <button type="button" onClick={() => resendChildInvite(c.id, c.email)} disabled={resendingChild === c.id}
+                                      style={{ background: "none", border: "none", padding: 0, color: "var(--accent)", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+                                      {resendingChild === c.id ? "Sending…" : "Resend invite"}
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                               <button type="button" onClick={() => editingChildId === c.id ? setEditingChildId(null) : startEditChild(c)}
                                 style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT, flexShrink: 0 }}>
                                 {editingChildId === c.id ? "Cancel" : "Edit"}
+                              </button>
+                              <button type="button" onClick={() => deleteChild(c.id, c.name)} disabled={resendingChild === c.id}
+                                style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT, flexShrink: 0 }}>
+                                Delete
                               </button>
                             </div>
 
@@ -939,18 +937,6 @@ export default function ProfilePage() {
                                   <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Email</label>
                                   <input value={editChildEmail} onChange={e => setEditChildEmail(e.target.value)} type="email" autoComplete="off" style={inputStyle} />
                                 </div>
-                                <div style={{ marginBottom: 12 }}>
-                                  <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>New PIN <span style={{ fontWeight: 400, color: "var(--subtle)" }}>(leave blank to keep current)</span></label>
-                                  <input value={editChildPin} onChange={e => setEditChildPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
-                                    style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
-                                </div>
-                                {editChildPin && (
-                                  <div style={{ marginBottom: 12 }}>
-                                    <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Confirm new PIN</label>
-                                    <input value={editChildPinConfirm} onChange={e => setEditChildPinConfirm(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
-                                      style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
-                                  </div>
-                                )}
                                 {editChildError && (
                                   <div style={{ fontSize: 13, color: "var(--danger)", background: "var(--tint-danger)", border: "1px solid var(--border-danger)", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>{editChildError}</div>
                                 )}
@@ -981,25 +967,15 @@ export default function ProfilePage() {
                           <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Email</label>
                           <input value={pinChildEmail} onChange={e => setPinChildEmail(e.target.value)} placeholder="you+emma@gmail.com" type="email" autoComplete="off" style={inputStyle} />
                         </div>
-                        <div style={{ marginBottom: 12 }}>
-                          <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>4-digit PIN</label>
-                          <input value={pinChildPin} onChange={e => setPinChildPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
-                            style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
-                        </div>
-                        <div style={{ marginBottom: 12 }}>
-                          <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Confirm PIN</label>
-                          <input value={pinChildPinConfirm} onChange={e => setPinChildPinConfirm(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
-                            style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
-                        </div>
                         {pinChildError && (
                           <div style={{ fontSize: 13, color: "var(--danger)", background: "var(--tint-danger)", border: "1px solid var(--border-danger)", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>{pinChildError}</div>
                         )}
                         <div style={{ display: "flex", gap: 8 }}>
                           <button type="button" onClick={createPinChild} disabled={addingPinChild}
                             style={{ flex: 1, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "12px", fontSize: 14, fontWeight: 700, cursor: addingPinChild ? "not-allowed" : "pointer", fontFamily: FONT, opacity: addingPinChild ? 0.6 : 1 }}>
-                            {addingPinChild ? "Saving…" : "Save child"}
+                            {addingPinChild ? "Sending…" : "Add & send invite"}
                           </button>
-                          <button type="button" onClick={() => { setShowAddPinChild(false); setPinChildName(""); setPinChildEmail(""); setPinChildPin(""); setPinChildPinConfirm(""); setPinChildError(""); }}
+                          <button type="button" onClick={() => { setShowAddPinChild(false); setPinChildName(""); setPinChildEmail(""); setPinChildError(""); }}
                             style={{ padding: "12px 20px", borderRadius: 50, background: "var(--surface-3)", border: "none", fontSize: 13, fontWeight: 700, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}>
                             Cancel
                           </button>
@@ -1007,16 +983,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {household?.id && (
-                      <button type="button" onClick={() => {
-                        navigator.clipboard.writeText(window.location.origin + "/family?h=" + household.id);
-                        setPinChildCopied(true);
-                        setTimeout(() => setPinChildCopied(false), 2000);
-                      }}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 8, background: pinChildCopied ? "var(--tint-success)" : "var(--tint-accent)", color: pinChildCopied ? "var(--success)" : "#1A3A6E", border: "none", borderRadius: 50, padding: "9px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-                        {pinChildCopied ? "✓ Copied!" : "Copy family PIN login link"}
-                      </button>
-                    )}
                   </div>
                 )}
 
@@ -1046,34 +1012,28 @@ export default function ProfilePage() {
             )}
           </Card>
 
-          {/* ── Subscription ── */}
-          <Card title="Subscription">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 16, borderBottom: "1px solid var(--border-soft)" }}>
+          {/* ── Plan ── (2026-09-28: driven by lib/entitlements via /api/household) */}
+          {household && (
+          <Card title="Plan">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 2 }}>Current plan</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--fg)" }}>
-                  {household?.is_pro ? (
-                    <>Pro <span style={{ fontSize: 14, color: "var(--accent)", fontWeight: 500 }}>(Active)</span></>
-                  ) : (
-                    <>Basic <span style={{ fontSize: 14, color: "var(--muted)", fontWeight: 500 }}>(Free)</span></>
-                  )}
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)" }}>
+                  {access?.plan === "PRO" ? "⚡ Pro" : access?.plan === "TRIAL" ? "⚡ Pro trial" : "Free"}
+                </div>
+                <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3, lineHeight: 1.5 }}>
+                  {access?.plan === "PRO"
+                    ? (access.proForever ? "No end date." : access.proUntil ? `Until ${new Date(access.proUntil).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.` : "")
+                    : access?.plan === "TRIAL"
+                      ? `${access.trialDaysLeft} day${access.trialDaysLeft === 1 ? "" : "s"} left of the free trial.`
+                      : access?.proRequested ? "Pro requested — we'll email you." : access?.canStartTrial ? "Try Pro free for 14 days." : "Reminders and one shared shopping list."}
                 </div>
               </div>
-              <span style={{ background: household?.is_pro ? "linear-gradient(135deg,var(--tint-accent),var(--tint-accent))" : "var(--tint-accent)", color: household?.is_pro ? "var(--violet)" : "var(--accent)", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 50, border: household?.is_pro ? "1.5px solid var(--accent-border)" : "none" }}>
-                {household?.is_pro ? "⚡ Pro" : "Active"}
-              </span>
+              <Link href="/upgrade" style={{ flexShrink: 0, background: access?.plan === "PRO" ? "var(--surface-3)" : "var(--accent-bg)", color: access?.plan === "PRO" ? "var(--fg)" : "#fff", borderRadius: 50, padding: "10px 16px", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+                {access?.plan === "PRO" ? "See plan" : "See plans"}
+              </Link>
             </div>
-            {!household?.is_pro && (
-              <div style={{ paddingTop: 16 }}>
-                <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14, lineHeight: 1.5 }}>
-                  Unlock family sharing, handovers, safety net and more with Pro.
-                </div>
-                <div style={{ background: "linear-gradient(135deg,var(--tint-accent),var(--tint-accent))", borderRadius: 12, padding: 14, fontSize: 13, color: "var(--violet)", fontWeight: 600, textAlign: "center" }}>
-                  ⚡ Pro is enabled by your admin during the evaluation period
-                </div>
-              </div>
-            )}
           </Card>
+          )}
 
           {/* ── Security ── */}
           <Card title="Security">
@@ -1104,68 +1064,6 @@ export default function ProfilePage() {
               </button>
             )}
 
-            {/* Optional PIN login — lets an adult switch profiles quickly on a
-                shared family device without re-typing their password. Doesn't
-                touch or weaken the real email+password login above. */}
-            {!profile?.isChildProfile && (
-              <div style={{ marginTop: 12, paddingTop: 14, borderTop: "1px solid var(--border-soft)" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 4 }}>PIN login</div>
-                <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 10, lineHeight: 1.5 }}>
-                  Optional — add a 4-digit PIN to switch to your account quickly on a shared family device, on top of your normal email + password login.
-                </div>
-
-                {pinSuccess && (
-                  <div style={{ fontSize: 13, color: "var(--success)", background: "var(--tint-success)", border: "1px solid var(--tint-success)", borderRadius: 8, padding: "8px 12px", marginBottom: 10, fontWeight: 600 }}>{pinSuccess}</div>
-                )}
-
-                {!showSetPin ? (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 13, color: hasPin ? "var(--fg)" : "var(--subtle)", fontWeight: 600 }}>
-                      {hasPin ? "PIN login is on" : "No PIN set"}
-                    </span>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button type="button" onClick={() => setShowSetPin(true)}
-                        style={{ background: "var(--tint-accent)", border: "none", borderRadius: 50, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: "var(--accent-strong)", cursor: "pointer", fontFamily: FONT }}>
-                        {hasPin ? "Change PIN" : "Set a PIN"}
-                      </button>
-                      {hasPin && (
-                        <button type="button" onClick={removeMyPin} disabled={pinSaving}
-                          style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 12, fontWeight: 700, cursor: pinSaving ? "not-allowed" : "pointer", fontFamily: FONT }}>
-                          Turn off
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ background: "var(--surface-2)", borderRadius: 14, border: "1.5px solid var(--border)", padding: 16 }}>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>4-digit PIN</label>
-                      <input value={myPin} onChange={e => setMyPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
-                        style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
-                    </div>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Confirm PIN</label>
-                      <input value={myPinConfirm} onChange={e => setMyPinConfirm(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="1234" inputMode="numeric" type="password" autoComplete="new-password"
-                        style={{ ...inputStyle, fontSize: 22, letterSpacing: "0.4em" }} />
-                    </div>
-                    {pinError && (
-                      <div style={{ fontSize: 13, color: "var(--danger)", background: "var(--tint-danger)", border: "1px solid var(--border-danger)", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>{pinError}</div>
-                    )}
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button type="button" onClick={saveMyPin} disabled={pinSaving}
-                        style={{ flex: 1, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "12px", fontSize: 14, fontWeight: 700, cursor: pinSaving ? "not-allowed" : "pointer", fontFamily: FONT, opacity: pinSaving ? 0.6 : 1 }}>
-                        {pinSaving ? "Saving…" : "Save PIN"}
-                      </button>
-                      <button type="button" onClick={() => { setShowSetPin(false); setMyPin(""); setMyPinConfirm(""); setPinError(""); }}
-                        style={{ padding: "12px 20px", borderRadius: 50, background: "var(--surface-3)", border: "none", fontSize: 13, fontWeight: 700, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}>
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Data export — GDPR portability right. Downloads a JSON file with
                 everything tied to this account (reminders, shopping/wishlist
                 items you added, household membership). See
@@ -1186,49 +1084,8 @@ export default function ProfilePage() {
               Export my data
             </a>
 
-            <div style={{ marginTop: 12 }}>
-              {showDeleteConfirm ? (
-                <div style={{ background: "var(--tint-danger)", border: "1px solid var(--border-danger)", borderRadius: 14, padding: 16 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--danger)", marginBottom: 8 }}>
-                    Delete account?
-                  </div>
-                  <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>
-                    All your reminders will be permanently deleted. This cannot be undone.
-                  </div>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button
-                      type="button"
-                      onClick={() => setShowDeleteConfirm(false)}
-                      style={{ flex: 1, padding: "11px", background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "var(--muted)", cursor: "pointer", fontFamily: FONT }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      style={{ flex: 1, padding: "11px", background: "#D94F4F", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer", fontFamily: FONT }}
-                    >
-                      Yes, delete
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  style={{
-                    width: "100%", padding: "13px 16px", background: "var(--tint-danger)",
-                    border: "1.5px solid var(--border-danger)", borderRadius: 14, fontSize: 14,
-                    fontWeight: 600, color: "var(--danger)", cursor: "pointer",
-                    textAlign: "left", fontFamily: FONT, display: "flex", alignItems: "center", gap: 10,
-                  }}
-                >
-                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#D94F4F" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                  </svg>
-                  Delete account
-                </button>
-              )}
-            </div>
+            {/* 2026-09-27: real soft delete with family-admin approval + 60-day restore window */}
+            <DeleteAccountSection />
           </Card>
 
           {/* Save + Sign out */}

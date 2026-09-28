@@ -80,7 +80,12 @@ export async function ensureDefaultList(opts: {
 // isn't meaningful) — actually just by createdAt asc so lists appear in the
 // order they were made.
 export async function listsVisibleTo(householdId: string, kind: ListKindStr, userId: string, role: HouseholdRoleStr): Promise<ListRow[]> {
-  const all = await prisma.list.findMany({ where: { householdId, kind }, orderBy: { createdAt: "asc" } });
+  // 2026-09-28: a deleted person's own lists (e.g. their wishlist) are hidden
+  // with the account for the 60-day restore window, and come back on restore.
+  const all = await prisma.list.findMany({
+    where: { householdId, kind, OR: [{ ownerId: null }, { owner: { deletedAt: null } }] },
+    orderBy: { createdAt: "asc" },
+  });
   if (canEditListAccess(role)) return all; // adults see everything for oversight
   const results: ListRow[] = [];
   for (const list of all) {
@@ -92,4 +97,17 @@ export async function listsVisibleTo(householdId: string, kind: ListKindStr, use
     if (memberIds.includes(userId)) results.push(list);
   }
   return results;
+}
+
+// 2026-09-28: a FREE household gets exactly one shared shopping list — the
+// oldest one. Extra lists (and wishlists) need Pro or the trial; see
+// lib/entitlements.ts. Lists created during a trial stay in the database
+// after it ends, they're just read-locked until the family upgrades.
+export async function freeShoppingListId(householdId: string): Promise<string | null> {
+  const first = await prisma.list.findFirst({
+    where: { householdId, kind: "SHOPPING" },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  return first?.id ?? null;
 }

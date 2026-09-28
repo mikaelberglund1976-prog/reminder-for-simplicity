@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import SchoolSection from "@/components/SchoolSection";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -17,13 +18,6 @@ type Chore = {
   note: string | null;
   requiresApproval: boolean;
   completions: { id: string; status: string }[];
-};
-
-type SchoolItem = {
-  id: string;
-  name: string;
-  note: string | null;
-  date: string;
 };
 
 function ChildViewContent() {
@@ -45,23 +39,13 @@ function ChildViewContent() {
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
 
-  // School — own section, own self-service add form (tests/homework)
-  const [schoolItems, setSchoolItems] = useState<SchoolItem[]>([]);
-  const [schoolLoading, setSchoolLoading] = useState(true);
-  const [showAddSchool, setShowAddSchool] = useState(false);
-  const [newSchoolName, setNewSchoolName] = useState("");
-  const [newSchoolNote, setNewSchoolNote] = useState("");
-  const [newSchoolDate, setNewSchoolDate] = useState("");
-  const [addingSchool, setAddingSchool] = useState(false);
-  const [addSchoolError, setAddSchoolError] = useState<string | null>(null);
-  const [deletingSchool, setDeletingSchool] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
   useEffect(() => {
-    if (status === "authenticated") { fetchChores(); fetchSchool(); }
+    if (status === "authenticated") { fetchChores(); }
   }, [status, childId]);
 
   async function fetchChores() {
@@ -127,65 +111,6 @@ function ChildViewContent() {
     }
   }
 
-  async function fetchSchool() {
-    setSchoolLoading(true);
-    try {
-      // Server already restricts children to their own items (see isChild
-      // check in /api/family/chores GET) — a child only ever gets back
-      // school items assigned to them, regardless of who else is in the household.
-      const res = await fetch("/api/family/chores?category=SCHOOL");
-      if (res.ok) {
-        const data = await res.json();
-        setSchoolItems(data.chores ?? []);
-      }
-    } catch (e) { console.error(e); }
-    finally { setSchoolLoading(false); }
-  }
-
-  async function handleAddSchool(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newSchoolName.trim()) return;
-    setAddingSchool(true);
-    setAddSchoolError(null);
-    try {
-      const res = await fetch("/api/family/chores", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          category: "SCHOOL",
-          name: newSchoolName.trim(),
-          note: newSchoolNote.trim() || undefined,
-          recurrence: "ONCE",
-          startDate: newSchoolDate ? new Date(newSchoolDate).toISOString() : undefined,
-        }),
-      });
-      if (res.ok) {
-        setNewSchoolName("");
-        setNewSchoolNote("");
-        setNewSchoolDate("");
-        setShowAddSchool(false);
-        await fetchSchool();
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setAddSchoolError(data?.error ?? "Could not add");
-      }
-    } catch (err) {
-      console.error(err);
-      setAddSchoolError("Something went wrong");
-    } finally {
-      setAddingSchool(false);
-    }
-  }
-
-  async function handleDeleteSchool(id: string) {
-    setDeletingSchool(id);
-    try {
-      const res = await fetch(`/api/reminders/${id}`, { method: "DELETE" });
-      if (res.ok) await fetchSchool();
-    } catch (e) { console.error(e); }
-    finally { setDeletingSchool(null); }
-  }
-
   async function toggleChore(choreId: string) {
     setToggling(choreId);
     try {
@@ -230,6 +155,9 @@ function ChildViewContent() {
       </div>
 
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 0" }}>
+        {/* 2026-09-27: homework & tests FIRST — the first thing a child sees after logging in */}
+        <SchoolSection mode="child" />
+
         {/* Date + progress */}
         <div style={{ background: "var(--hero-grad)", borderRadius: 20, padding: "20px 22px", marginBottom: 20 }}>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", fontWeight: 600, marginBottom: 4 }}>
@@ -258,157 +186,6 @@ function ChildViewContent() {
           </div>
         )}
 
-        {/* School — own section (tests/homework), separate from chores */}
-        {access !== "LOCKED" && (
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--school)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-              📚 School {schoolItems.length > 0 && `· ${schoolItems.length}`}
-            </div>
-
-            {schoolItems.length > 0 && (
-              <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)", marginBottom: 10 }}>
-                {[...schoolItems]
-                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                  .map((item, i) => (
-                    <div key={item.id} style={{
-                      display: "flex", alignItems: "center", gap: 14, padding: "14px 18px",
-                      borderTop: i === 0 ? "none" : "1px solid var(--border-soft)",
-                    }}>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: 10, background: "var(--tint-accent)",
-                        color: "var(--school)", display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 15, fontWeight: 800, flexShrink: 0,
-                      }}>
-                        {new Date(item.date).getDate()}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", lineHeight: 1.3 }}>{item.name}</div>
-                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                          {new Date(item.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
-                          {item.note ? ` · ${item.note}` : ""}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteSchool(item.id)}
-                        disabled={deletingSchool === item.id}
-                        style={{
-                          background: "none", border: "none", color: "var(--faint)", fontSize: 18,
-                          cursor: deletingSchool === item.id ? "wait" : "pointer", padding: 6, lineHeight: 1,
-                        }}
-                        aria-label="Remove"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-              </div>
-            )}
-
-            {!showAddSchool ? (
-              <button
-                onClick={() => { setShowAddSchool(true); setAddSchoolError(null); }}
-                style={{
-                  width: "100%", padding: "14px 16px", borderRadius: 14,
-                  background: "var(--surface)", border: "1.5px dashed var(--accent-border)", color: "var(--school)",
-                  fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                }}
-              >
-                <span style={{ fontSize: 18, lineHeight: 1 }}>+</span>
-                Add a test or homework
-              </button>
-            ) : (
-              <form onSubmit={handleAddSchool} style={{
-                background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)",
-                padding: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.04)",
-              }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>
-                  New school item
-                </div>
-                <input
-                  type="text"
-                  placeholder="e.g. Maths test"
-                  value={newSchoolName}
-                  onChange={(e) => setNewSchoolName(e.target.value)}
-                  disabled={addingSchool}
-                  autoFocus
-                  style={{
-                    width: "100%", padding: "12px 14px", borderRadius: 12,
-                    background: "var(--background)", border: "1.5px solid var(--border)",
-                    fontSize: 14, color: "var(--fg)", outline: "none",
-                    fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
-                  }}
-                />
-                <input
-                  type="date"
-                  value={newSchoolDate}
-                  onChange={(e) => setNewSchoolDate(e.target.value)}
-                  disabled={addingSchool}
-                  style={{
-                    width: "100%", padding: "12px 14px", borderRadius: 12,
-                    background: "var(--background)", border: "1.5px solid var(--border)",
-                    fontSize: 14, color: "var(--fg)", outline: "none",
-                    fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Note (optional)"
-                  value={newSchoolNote}
-                  onChange={(e) => setNewSchoolNote(e.target.value)}
-                  disabled={addingSchool}
-                  style={{
-                    width: "100%", padding: "12px 14px", borderRadius: 12,
-                    background: "var(--background)", border: "1.5px solid var(--border)",
-                    fontSize: 14, color: "var(--fg)", outline: "none",
-                    fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
-                  }}
-                />
-                {addSchoolError && (
-                  <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{addSchoolError}</div>
-                )}
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => { setShowAddSchool(false); setNewSchoolName(""); setNewSchoolNote(""); setNewSchoolDate(""); setAddSchoolError(null); }}
-                    disabled={addingSchool}
-                    style={{
-                      flex: 1, padding: "12px 14px", borderRadius: 12,
-                      background: "var(--background)", border: "1.5px solid var(--border)",
-                      color: "var(--fg-2)", fontSize: 14, fontWeight: 700,
-                      cursor: addingSchool ? "not-allowed" : "pointer", fontFamily: FONT,
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={addingSchool || !newSchoolName.trim()}
-                    style={{
-                      flex: 1, padding: "12px 14px", borderRadius: 12,
-                      background: !newSchoolName.trim() || addingSchool ? "var(--faint)" : "var(--school-bg)",
-                      border: "none", color: "#fff", fontSize: 14, fontWeight: 700,
-                      cursor: addingSchool || !newSchoolName.trim() ? "not-allowed" : "pointer",
-                      fontFamily: FONT,
-                    }}
-                  >
-                    {addingSchool ? "Adding…" : "Add"}
-                  </button>
-                </div>
-                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 10, textAlign: "center" }}>
-                  This syncs to the family calendar automatically.
-                </div>
-              </form>
-            )}
-
-            {!schoolLoading && schoolItems.length === 0 && !showAddSchool && (
-              <div style={{ fontSize: 12, color: "var(--subtle)", marginTop: 8, textAlign: "center" }}>
-                No tests or homework logged yet.
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Add chore — self-service for kids */}
         {access !== "LOCKED" && (
           <div style={{ marginBottom: 16 }}>
@@ -417,7 +194,7 @@ function ChildViewContent() {
                 onClick={() => { setShowAdd(true); setAddError(null); }}
                 style={{
                   width: "100%", padding: "14px 16px", borderRadius: 14,
-                  background: "var(--surface)", border: "1.5px dashed var(--border)", color: "#3B4B7A",
+                  background: "var(--surface)", border: "1.5px dashed var(--border)", color: "var(--accent-strong)",
                   fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}

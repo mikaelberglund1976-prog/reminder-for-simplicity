@@ -56,6 +56,7 @@ Kalender-/typfärger (tillagda 2026-07-28, se BRAND.md 4b nedan):
 Chores:        #0E9F8E  (teal)
 Training:      #D85A30  (koral)
 School:        #3730A3  (indigo)
+  Läxa/prov-typer (2026-09-27, SchoolSection): Läxa #3730A3 på #EEF0FC · Prov #B42318 på #FDECEA · Övrigt #4B5563 på #F1F1EE
 Reminders:     #5A6080  (neutral blågrå, för att inte konkurrera med accentfärgen)
 ```
 

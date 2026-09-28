@@ -40,7 +40,7 @@ const STATUS_LABEL: Record<Status, string> = { OPEN: "Open", PLANNED: "Planned",
 const STATUS_COLOR: Record<Status, { bg: string; color: string }> = {
   OPEN: { bg: "var(--tint-accent)", color: "var(--violet)" },
   PLANNED: { bg: "var(--tint-warning)", color: "var(--warning)" },
-  IN_PROGRESS: { bg: "var(--tint-accent)", color: "#2560C4" },
+  IN_PROGRESS: { bg: "var(--tint-accent)", color: "var(--accent)" },
   DONE: { bg: "var(--tint-success)", color: "var(--success)" },
   DECLINED: { bg: "var(--surface-3)", color: "var(--subtle)" },
 };
