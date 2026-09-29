@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPro } from "@/lib/entitlements";
 import { sendAccountSetup } from "@/lib/verification";
+import { sendHouseholdInviteEmail } from "@/lib/email";
 
 const ADULT_ROLES = ["OWNER", "PARENT", "ADULT"];
 
@@ -54,6 +55,57 @@ export async function POST(req: Request) {
         { error: trial ? "Your trial has ended — upgrade to Pro to add children." : "Child accounts are part of Pro. Start the free 14-day trial to add your children.", upgrade: true },
         { status: 403 }
       );
+    }
+
+    // 2026-09-29: the child may already have an account (signed up
+    // themselves, or tapped "Continue with Google" before a parent added
+    // them). Instead of failing with "email already used", invite that
+    // account into the family as a child — it joins, and becomes a child
+    // account, the next time they sign in (lib/invites.ts).
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      include: { householdMembers: { include: { household: { include: { _count: { select: { members: true } } } } } } },
+    });
+    if (existingUser) {
+      if (existingUser.deletedAt) {
+        return NextResponse.json({ error: "That email belongs to a deleted account. Contact support to restore it." }, { status: 409 });
+      }
+      if (existingUser.householdMembers.some((m) => m.householdId === membership.householdId)) {
+        return NextResponse.json({ error: "That person is already in your family." }, { status: 409 });
+      }
+      // Don't pull someone out of a family they share with other people.
+      if (existingUser.householdMembers.some((m) => m.household._count.members > 1)) {
+        return NextResponse.json({ error: "That email already belongs to someone in another family. Ask them to leave it first." }, { status: 409 });
+      }
+      await prisma.householdInvite.deleteMany({ where: { email, householdId: membership.householdId, usedAt: null } });
+      const invite = await prisma.householdInvite.create({
+        data: {
+          householdId: membership.householdId,
+          email,
+          role: "CHILD",
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+      if (!existingUser.name && name.trim()) {
+        await prisma.user.update({ where: { id: existingUser.id }, data: { name: name.trim() } });
+      }
+      const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const parentUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, email: true } });
+      let inviteSent = true;
+      try {
+        await sendHouseholdInviteEmail({
+          to: email,
+          fromName: parentUser?.name ?? parentUser?.email ?? "Your parent",
+          householdName: membership.household.name ?? "your family",
+          joinUrl: `${APP_URL}/join-household?token=${invite.token}`,
+          expiresText: "7 days",
+          asChild: true,
+        });
+      } catch (err) {
+        console.error("Child profile: invite email failed", err);
+        inviteSent = false;
+      }
+      return NextResponse.json({ existingAccount: true, inviteSent, email, householdId: membership.householdId }, { status: 201 });
     }
 
     // Create the child user without a password; it's set by the child via the

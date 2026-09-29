@@ -96,3 +96,9 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] New activity → välj två personer → aktiviteten finns hos båda (Activities + kalender). (46)
 - [ ] Datumfält (New activity, School) håller sig inom kortet på iPhone. (47)
 - [ ] ☰-menyn på liten skärm: hela menyn syns och går att scrolla, hamnar ovanför bottenmenyn. (48)
+
+## 10. Barn med eget konto / Google (2026-09-29, LIVE)
+- [ ] Barnet skapar själv ett konto (e-post eller Google) → förälder: ☰ → Family members → "A child" med samma e-post → "already has an account, so we sent an invite".
+- [ ] Barnet loggar in (lösenord eller "Continue with Google") → hamnar direkt i familjen som barn (My week), ingen väntan på admin-godkännande.
+- [ ] Förälder lägger till ett barn med Gmail-adress som inte har konto → barnet trycker "Continue with Google" på login → inne som barn utan att välja lösenord.
+- [ ] Inbjuden vuxen som registrerar sig med e-post behöver inte adminens godkännande.

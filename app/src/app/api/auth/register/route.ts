@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { sendPendingApprovalEmail, sendAdminApprovalRequestEmail } from "@/lib/email";
 import { passwordSchema } from "@/lib/passwordSchema";
 import { sendVerification } from "@/lib/verification";
+import { findPendingInvite } from "@/lib/invites";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
 
@@ -43,13 +44,17 @@ export async function POST(req: Request) {
     // retroactively locked out); this is the one place that overrides it
     // for a fresh signup.
     const isAdmin = data.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    // 2026-09-29: someone a family has invited (child or adult) doesn't need
+    // admin approval — they join that family at their first sign-in.
+    const invited = !!(await findPendingInvite(data.email));
+    const preApproved = isAdmin || invited;
     const user = await prisma.user.create({
       data: {
         name: data.name,
         email: data.email.toLowerCase(),
         password: hashedPassword,
-        approved: isAdmin,
-        approvedAt: isAdmin ? new Date() : null,
+        approved: preApproved,
+        approvedAt: preApproved ? new Date() : null,
       },
     });
 
@@ -61,7 +66,7 @@ export async function POST(req: Request) {
     );
 
     // Best-effort notification emails — don't block the response on these.
-    if (!isAdmin) {
+    if (!preApproved) {
       sendPendingApprovalEmail({ to: user.email, name: user.name }).catch(console.error);
       sendAdminApprovalRequestEmail({
         adminEmail: ADMIN_EMAIL,
@@ -73,12 +78,14 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       {
-        message: isAdmin
-          ? "Account created! Check your inbox to confirm your email."
+        message: preApproved
+          ? invited
+            ? "Account created! Confirm your email, then log in — you'll join your family automatically."
+            : "Account created! Check your inbox to confirm your email."
           : "Account created — check your inbox to confirm your email. Your account also needs admin approval; you'll get an email once you're approved.",
         verificationSent: true,
         userId: user.id,
-        pendingApproval: !isAdmin,
+        pendingApproval: !preApproved,
       },
       { status: 201 }
     );

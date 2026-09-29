@@ -101,6 +101,13 @@ export default function RegisterPage() {
           <p style={{ fontSize: 14, color: "var(--muted)", margin: "6px 0 0" }}>Free. Takes 30 seconds.</p>
         </div>
 
+        {/* 2026-09-29: families are joined by invite only (no searching for
+            a family) — say so before a child or partner makes a separate one. */}
+        <div style={{ background: "var(--tint-accent)", borderRadius: 14, padding: "12px 14px", marginBottom: 18, fontSize: 13, lineHeight: 1.5, color: "var(--fg-2)" }}>
+          <strong style={{ color: "var(--fg)" }}>Joining your family?</strong> Ask a parent to add you under ☰ → Family members with your email.
+          Then just log in here with that email — or with Google — and you land in your family.
+        </div>
+
         {/* Google */}
         <button
           type="button"

@@ -105,7 +105,9 @@ export default function FamilyMembersPage() {
         return;
       }
       setFlash(addKind === "child"
-        ? `✓ ${name.trim()} is added — we emailed ${em} a link to choose a password.`
+        ? d.existingAccount
+          ? `✓ ${em} already has an account, so we sent an invite. Next time ${name.trim() || "they"} log in — with password or Google — they join your family as a child.`
+          : `✓ ${name.trim()} is added — we emailed ${em} a link to choose a password. With a Gmail address they can also just tap “Continue with Google”.`
         : `✓ Invite sent to ${em}. They join as soon as they open the link.`);
       setAddKind(null);
       await load();
@@ -295,7 +297,7 @@ export default function FamilyMembersPage() {
                         )}
                         <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, marginBottom: 12 }}>
                           {addKind === "child"
-                            ? "We email a link to confirm the address and choose a password. Children only see their own homework, chores, activities and wishlist."
+                            ? "We email a link to confirm the address and choose a password — or, with a Google address, they just tap “Continue with Google”. Already made an account themselves? Use that email and they join at their next login. Children only see their own homework, chores, activities and wishlist."
                             : "We email an invite link. They join your family when they open it and sign in."}
                         </div>
                         {error && (

@@ -154,8 +154,8 @@ export async function sendReminderEmail({
 // ─── Household invite email ───────────────────────────────────────────────────
 
 export async function sendHouseholdInviteEmail({
-  to, fromName, householdName, joinUrl,
-}: { to: string; fromName: string; householdName: string; joinUrl: string }) {
+  to, fromName, householdName, joinUrl, expiresText = "48 hours", asChild = false,
+}: { to: string; fromName: string; householdName: string; joinUrl: string; expiresText?: string; asChild?: boolean }) {
   const { error } = await resend.emails.send({
     from: FROM,
     to,
@@ -174,14 +174,16 @@ export async function sendHouseholdInviteEmail({
       <strong style="color:#1A202C;">${fromName}</strong> has invited you to join <strong style="color:#1A202C;">${householdName}</strong> on Reminder for Simplicity.
     </p>
     <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 28px;">
-      Share reminders, assign tasks and make sure nothing falls between the cracks.
+      ${asChild
+        ? "Open the link and log in with your account (or tap “Continue with Google”) — you’ll see your homework, tests, chores, activities and wishlist in the family."
+        : "Share reminders, assign tasks and make sure nothing falls between the cracks."}
     </p>
     <div style="text-align:center;">
       <a href="${joinUrl}" style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
         Accept invitation →
       </a>
     </div>
-    <p style="color:#A0AEC0;font-size:12px;text-align:center;margin:24px 0 0;">This invite expires in 48 hours.</p>
+    <p style="color:#A0AEC0;font-size:12px;text-align:center;margin:24px 0 0;">This invite expires in ${expiresText}.</p>
   </div>
 </div>
 </body></html>`,

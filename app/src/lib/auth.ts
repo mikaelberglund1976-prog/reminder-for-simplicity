@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { sendAdminApprovalRequestEmail } from "@/lib/email";
 import { checkRateLimit, recordFailedAttempt, clearRateLimit } from "@/lib/rateLimit";
 import { EMAIL_NOT_VERIFIED_MESSAGE, ACCOUNT_DELETED_MESSAGE } from "@/lib/verification";
+import { autoJoinPendingInvite, findPendingInvite } from "@/lib/invites";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
 
@@ -76,7 +77,11 @@ providers.push(
         throw new Error(EMAIL_NOT_VERIFIED_MESSAGE);
       }
       if (!user.approved) {
-        throw new Error(PENDING_APPROVAL_MESSAGE);
+        // 2026-09-29: someone a family has invited (e.g. a child who signed
+        // up before the parent added them) doesn't wait for admin approval —
+        // the jwt callback joins them to the family right after this.
+        const invite = await findPendingInvite(user.email);
+        if (!invite) throw new Error(PENDING_APPROVAL_MESSAGE);
       }
 
       return {
@@ -155,6 +160,14 @@ export const authOptions: NextAuthOptions = {
               role: "OWNER",
             },
           });
+        }
+
+        // 2026-09-29: invited by a family (a parent added this Google address
+        // as their child, or invited an adult) → join now, no admin approval
+        // needed. Covers both a brand-new Google account and one that was
+        // waiting for approval.
+        if (await autoJoinPendingInvite(dbUser.id, dbUser.email)) {
+          dbUser = await prisma.user.findUniqueOrThrow({ where: { id: dbUser.id } });
         }
 
         // Block sign-in for accounts that haven't been approved yet. This
@@ -249,40 +262,3 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
-
-// ─── Helper: auto-join a household via a pending invite ─────────────────────
-async function autoJoinPendingInvite(userId: string, email: string) {
-  try {
-    const invite = await prisma.householdInvite.findFirst({
-      where: {
-        email,
-        usedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    if (!invite) return;
-
-    // Remove from any existing household
-    await prisma.householdMember.deleteMany({ where: { userId } });
-
-    // Join the invited household
-    await prisma.householdMember.create({
-      data: {
-        householdId: invite.householdId,
-        userId,
-        role: invite.role ?? "MEMBER",
-      },
-    });
-
-    // Mark the invite as used
-    await prisma.householdInvite.update({
-      where: { id: invite.id },
-      data: { usedAt: new Date() },
-    });
-  } catch (err) {
-    // Log but don't crash the login
-    console.error("Auto-join invite error:", err);
-  }
-}

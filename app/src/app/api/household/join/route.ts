@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { joinHouseholdWithInvite } from "@/lib/invites";
 
 // POST /api/household/join — join a household via invite token
 export async function POST(req: Request) {
@@ -21,33 +22,14 @@ export async function POST(req: Request) {
     if (invite.usedAt) return NextResponse.json({ error: "This invite has already been used" }, { status: 400 });
     if (invite.expiresAt < new Date()) return NextResponse.json({ error: "This invite has expired" }, { status: 400 });
 
-    // Check if already a member of any household
-    const existingMembership = await prisma.householdMember.findFirst({
-      where: { userId: session.user.id },
+    const already = await prisma.householdMember.findFirst({
+      where: { userId: session.user.id, householdId: invite.householdId },
     });
+    if (already) return NextResponse.json({ error: "You are already in this household" }, { status: 400 });
 
-    if (existingMembership) {
-      if (existingMembership.householdId === invite.householdId) {
-        return NextResponse.json({ error: "You are already in this household" }, { status: 400 });
-      }
-      // Remove from old household first
-      await prisma.householdMember.delete({ where: { id: existingMembership.id } });
-    }
-
-    // Add to new household with the role specified in the invite
-    await prisma.householdMember.create({
-      data: {
-        householdId: invite.householdId,
-        userId: session.user.id,
-        role: invite.role ?? "MEMBER",
-      },
-    });
-
-    // Mark invite as used
-    await prisma.householdInvite.update({
-      where: { token },
-      data: { usedAt: new Date() },
-    });
+    // 2026-09-29: shared join (lib/invites.ts) — a CHILD invite also turns
+    // the account into a child account.
+    await joinHouseholdWithInvite(session.user.id, invite);
 
     return NextResponse.json({ success: true, householdName: invite.household.name });
   } catch (err) {
