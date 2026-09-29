@@ -184,3 +184,10 @@ Accent (text): #8E9CFF  (ljusare indigo – samma varumärke)
 Accent (knapp):#5468E0  (vit text ovanpå)
 Framgång:      #4FD69C · Varning: #F5B056 · Fel: #FF7B7B
 ```
+
+## 7. Bilder, avatarer och färgkoder (tillagt 2026-09-29)
+
+- **Avatarer:** personens foto om det finns (rund, `object-fit: cover`), annars förbokstav i vitt på en färg som är stabil per person: `#4A5FD5`, `#C4367A`, `#1E7D52`, `#D85A30`, `#6A44CC`, `#0E9F8E`, `#B45309`, `#3730A3` (`components/Avatar.tsx`).
+- **Familjefoto:** överst på Home, 150 px högt, rundade hörn (22 px), beskärs med `cover`.
+- **Tjänstelogotyper** (Netflix, Spotify …) visas som initialer i tjänstens egen färg – vi hämtar inga logotyper från externa tjänster (GDPR, se `GDPR.md`).
+- **Kalenderns typfärger:** påminnelse `#5A6080` (kategorifärg per post), syssla `#0E9F8E`, aktivitet `#D85A30`, läxa `#3730A3` 📝, prov `#B4235A` 🧪.

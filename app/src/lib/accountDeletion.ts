@@ -8,6 +8,7 @@
 //  - After 60 days it's removed for real (lib/cron.ts → purgeExpiredAccounts).
 import { prisma } from "@/lib/prisma";
 import { sendAccountDeletedEmail, sendDeletionRequestEmail } from "@/lib/email";
+import { deleteImage } from "@/lib/media";
 
 export const RESTORE_WINDOW_DAYS = 60;
 const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -165,6 +166,8 @@ export async function purgeAccount(userId: string) {
     }
   }
   await prisma.user.delete({ where: { id: userId } });
+  // 2026-09-29 (GDPR): the profile picture goes with the account.
+  await deleteImage("avatar", userId).catch((err) => console.error("Avatar purge failed:", err));
 }
 
 export async function purgeExpiredAccounts() {

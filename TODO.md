@@ -3,6 +3,7 @@
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
+**Uppdaterad igen:** 2026-09-29 – punkt 33 (mobiltestets fynd rad 36–48, live), 34 (barn med eget konto/Google, live) och 35 (GDPR-genomgång + åtgärder, live, ny fil `GDPR.md`). Alla md-filer synkade mot nuläget.
 **Uppdaterad:** 2026-07-27 (kväll) – hamburgermeny + admin-åtkomst byggd, alla md-filer (PRODUCT_SPEC, ROADMAP, BRAND, OPERATIONS, TODO) synkade mot nuläget. Sektionerna nedan är nu i kronologisk ordning (döpte om 4d0→4e osv, som tidigare låg fel i ordning).
 **Uppdaterad igen:** 2026-07-27 (sen kväll) – punkt 16 klar: delningslänk, kategori-katalog/Recent-chips och PIN-inloggning klicktestade på skarpa `www.assistiq.se` (commit `1ad791d`). Se 4i/4j nedan för detaljer och en liten kosmetisk bugg som hittades under testet.
 **Uppdaterad igen:** 2026-07-27 (natt) – git-auto-deploy till Vercel löst (se punkt 5): Disconnect/Connect av Git-integrationen i Vercel-dashboarden löste webhook-problemet. `git push` till `master` räcker nu för att deploya, ingen manuell `vercel --prod` behövs längre.
@@ -708,3 +709,53 @@ Allt nedan är deployat till produktion (Vercel READY, commit `17db285` + städc
 - [ ] Barnvyn för yngre barn (Leo, 8 år): större ikoner/bilder på sysslor.
 - [ ] Admin- och publika delade listsidan har fått mörkt läge automatiskt men är inte finputsade.
 - [ ] `/features` (marknadsföringssidan) bör uppdateras med nya Free/Pro-gränsen och 14 dagars provperiod.
+
+---
+
+## 33. Mikaels mobiltest 2026-09-28 – rad 36–48 åtgärdade – LIVE ✅ (commit `5313ef6`)
+
+Fynden stod i den gemensamma lanseringslistan (Claude Docs, rad 36–48) och är satta till "Klar" där. Detaljer: `RELEASE_2026-09-28b.md`. Klicktest: `TEST_VERIFICATION.md` §9.
+
+- [x] 36 Butiksläge: bockade varor längst ned med Undo · 37 Radera lista (delad lista bara ägare/förälder, sista listan skyddad)
+- [x] 38 Startsida per roll (barn → My week, egen bottenmeny och ☰; "Child view"-buggen som visade allas sysslor fixad) · 39 Prov/läxor per barn på Home
+- [x] 40 Profilbilder + familjefoto (ny tabell `media_images`, skapas automatiskt; bilder komprimeras i webbläsaren)
+- [x] 41 Prov vs läxa i kalendern (egna färger/filter, även ICS) · 42 Tryck på dag i mobilen → dagens lista
+- [x] 43 Sysslor/aktiviteter för vuxna, vuxna kan "Mark done" · 44 Ny sida Family members · 45 Dagväljare "Once a week" · 46 Flera personer per aktivitet (en kopia per person)
+- [x] 47 Datumfält på iOS · 48 ☰-menyn i portal, scrollbar
+
+**Beslut (Claude, produkt/UX):** en kopia per person vid flera personer; vuxens bock = klar direkt; barn ser inte Calendar/Home-flikarna.
+
+**Arbetssätt som fungerade:** lokal kopia med Prisma 6 + `queryCompiler` + `@prisma/adapter-pg` (ingen motor behöver laddas ner) mot lokal Postgres, testfamilj Lindqvist, Playwright i 390 px. Push via VS Code "Sync" på Macen (molnsandlådan har ingen GitHub-behörighet).
+
+## 34. Barn med eget konto / Google – LIVE ✅ (commit `59d4e40`)
+
+- [x] Man kan inte söka upp en familj (medvetet). Förälder lägger till barnet med e-post under Family members.
+- [x] Finns kontot redan (barnet registrerade sig själv eller loggade in med Google): inbjudan skickas i stället för "email already used"; vid nästa inloggning blir kontot barnkonto i familjen (`lib/invites.ts`, används av `/api/household/join`, `lib/auth.ts`, `/api/auth/register`).
+- [x] Inbjudna (barn och vuxna) slipper admin-godkännandet.
+- [x] Registreringssidan förklarar hur man går med i en familj.
+- [ ] Klicktest med riktig Google-inloggning (`TEST_VERIFICATION.md` §10).
+
+## 35. GDPR-genomgång + åtgärder (2026-09-29) – LIVE ✅
+
+Genomgången finns i Claude Docs ("GDPR-genomgång: Reminder for Simplicity"); registerförteckning och incidentrutin i `GDPR.md`; ändringarna i `RELEASE_2026-09-29.md`.
+
+**Klart (kod):**
+- [x] Vercel-funktioner i Frankfurt (`fra1`)
+- [x] Profilbild raderas med kontot; daglig rensning av bilder utan ägare
+- [x] Komplett dataexport (tilldelade saker, avbockningar, idéer, röster, bild)
+- [x] Googles tokens sparas inte; gamla nollställs av cron
+- [x] Clearbit-logotyper borttagna (initialer)
+- [x] Vårdnadshavarens bekräftelse (kryssruta + `parental_consents` + "Confirm as guardian")
+- [x] Barnversion av integritetstexten i My week
+- [x] `/privacy` publicerad och länkad; 13 år för eget konto på registreringssidan
+
+**Kvar (Mikael):**
+- [ ] Bolag som personuppgiftsansvarig → `/privacy` §1
+- [ ] DPA hos Supabase, Vercel, Resend
+- [ ] Supabase backup-tid → `/privacy` §5
+- [ ] `RESEND_FROM_EMAIL` på assistiq.se
+- [ ] Tvåstegsverifiering på admin-Google, Vercel, Supabase, GitHub
+- [ ] Juristläsning av `/privacy`
+- [ ] Bekräfta befintliga barn som vårdnadshavare (Family members → "Confirm as guardian")
+- [ ] Skicka ny inbjudan till barnkontot som hade PIN (sedan 28/9)
+

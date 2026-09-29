@@ -98,3 +98,21 @@ export function imageResponseHeaders(mime: string, length: number): HeadersInit 
     "X-Content-Type-Options": "nosniff",
   };
 }
+
+/**
+ * 2026-09-29 (GDPR): photos must not outlive their owner. Removes avatars of
+ * users that no longer exist and headers of households that are gone (a
+ * household can be deleted from /admin, or cleaned up after an invite).
+ * Called daily from lib/cron.ts; account purge also removes the avatar
+ * directly.
+ */
+export async function purgeOrphanMedia(): Promise<number> {
+  await ensureMediaTable();
+  const a = await prisma.$executeRawUnsafe(
+    `DELETE FROM "media_images" m WHERE m."kind" = 'avatar' AND NOT EXISTS (SELECT 1 FROM "users" u WHERE u."id" = m."ownerId")`
+  );
+  const h = await prisma.$executeRawUnsafe(
+    `DELETE FROM "media_images" m WHERE m."kind" = 'header' AND NOT EXISTS (SELECT 1 FROM "households" x WHERE x."id" = m."ownerId")`
+  );
+  return a + h;
+}

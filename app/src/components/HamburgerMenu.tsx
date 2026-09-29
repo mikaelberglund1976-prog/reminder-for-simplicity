@@ -92,6 +92,7 @@ export default function HamburgerMenu() {
           <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label="Shopping list" onClick={close} />
           <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label="My wishlist" onClick={close} />
           <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={close} />
+          <MenuLink href="/privacy" icon={<IcShield />} label="Privacy" onClick={close} />
         </>
       ) : (
         <>
@@ -105,6 +106,7 @@ export default function HamburgerMenu() {
           <MenuLink href="/dashboard/family/members" icon={<IcUsers />} label="Family members" onClick={close} />
           <MenuLink href="/dashboard/suggestions" icon={<IcBulb />} label="Ideas & voting" onClick={close} />
           <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={close} />
+          <MenuLink href="/privacy" icon={<IcShield />} label="Privacy" onClick={close} />
           {isAdmin && (
             <MenuLink href="/admin" icon={<IcShield />} label="Admin" onClick={close} />
           )}

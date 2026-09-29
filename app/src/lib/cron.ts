@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { sendReminderEmail } from "@/lib/email";
 import { addDays, addWeeks, addMonths, addYears } from "date-fns";
 import { purgeExpiredAccounts } from "@/lib/accountDeletion";
+import { purgeOrphanMedia } from "@/lib/media";
 
 function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -111,6 +112,21 @@ export async function runReminderCron() {
   } catch (err) {
     console.error("Account purge failed:", err);
     log.push(`Account purge ERROR: ${String(err)}`);
+  }
+
+  // 2026-09-29 (GDPR): photos whose person/family is gone are removed, and
+  // Google sign-in tokens (never used after login) are not kept.
+  try {
+    const removed = await purgeOrphanMedia();
+    if (removed) log.push(`Removed orphaned photos: ${removed}`);
+    const cleared = await prisma.account.updateMany({
+      where: { OR: [{ access_token: { not: null } }, { id_token: { not: null } }, { refresh_token: { not: null } }] },
+      data: { access_token: null, id_token: null, refresh_token: null },
+    });
+    if (cleared.count) log.push(`Cleared stored OAuth tokens: ${cleared.count}`);
+  } catch (err) {
+    console.error("GDPR cleanup failed:", err);
+    log.push(`GDPR cleanup ERROR: ${String(err)}`);
   }
 
   return { success: true, sent, skipped, errors, todayStr, log };

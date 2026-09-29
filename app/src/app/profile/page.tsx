@@ -209,30 +209,6 @@ export default function ProfilePage() {
     } catch (e) { console.error(e); }
   }
 
-  async function createPinChild() {
-    if (!pinChildName.trim()) { setPinChildError("Enter a name"); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pinChildEmail.trim())) { setPinChildError("Enter a valid email — your own address, an alias like you+childname@gmail.com, or the child's own if they have one"); return; }
-    setAddingPinChild(true); setPinChildError("");
-    try {
-      const res = await fetch("/api/family/child-profiles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: pinChildName.trim(), email: pinChildEmail.trim() }),
-      });
-      let data: { error?: string } = {};
-      try { data = await res.json(); } catch { data = { error: `Server error ${res.status}` }; }
-      if (res.ok) {
-        setInviteSentTo(pinChildEmail.trim());
-        setPinChildName(""); setPinChildEmail("");
-        setShowAddPinChild(false);
-        if (household?.id) fetchPinChildren(household.id);
-      } else {
-        setPinChildError(data.error ?? `Error ${res.status}`);
-      }
-    } catch (e) { setPinChildError("Could not reach server: " + String(e)); }
-    finally { setAddingPinChild(false); }
-  }
-
   // 2026-09-27: family admin deletes a child account (soft delete, restorable 60 days)
   async function deleteChild(id: string, name: string) {
     if (!confirm(`Delete ${name}'s account? They'll be removed from the family and can't log in. The data is kept 60 days and can be restored on request.`)) return;
@@ -882,12 +858,12 @@ export default function ProfilePage() {
                     <DeletionRequestsCard />
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)" }}>Child accounts</div>
-                      {!showAddPinChild && (
-                        <button type="button" onClick={() => setShowAddPinChild(true)}
-                          style={{ background: "var(--tint-accent)", border: "none", borderRadius: 50, padding: "6px 14px", fontSize: 12, fontWeight: 700, color: "var(--accent-strong)", cursor: "pointer", fontFamily: FONT }}>
-                          + Add child
-                        </button>
-                      )}
+                      {/* 2026-09-29: one place to add children (with the guardian
+                          confirmation) — Family members. */}
+                      <Link href="/dashboard/family/members"
+                        style={{ background: "var(--tint-accent)", border: "none", borderRadius: 50, padding: "6px 14px", fontSize: 12, fontWeight: 700, color: "var(--accent-strong)", textDecoration: "none", fontFamily: FONT }}>
+                        + Add child
+                      </Link>
                     </div>
                     <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 12, lineHeight: 1.5 }}>
                       Each child gets their own login. We email them a link to confirm the address and choose a password (or they can use Google if it's a Google address).
@@ -956,32 +932,6 @@ export default function ProfilePage() {
                             )}
                           </div>
                         ))}
-                      </div>
-                    )}
-
-                    {showAddPinChild && (
-                      <div style={{ background: "var(--surface-2)", borderRadius: 14, border: "1.5px solid var(--border)", padding: 16, marginBottom: 12 }}>
-                        <div style={{ marginBottom: 12 }}>
-                          <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Name</label>
-                          <input value={pinChildName} onChange={e => setPinChildName(e.target.value)} placeholder="e.g. Emma" autoComplete="off" style={inputStyle} />
-                        </div>
-                        <div style={{ marginBottom: 12 }}>
-                          <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>Email</label>
-                          <input value={pinChildEmail} onChange={e => setPinChildEmail(e.target.value)} placeholder="you+emma@gmail.com" type="email" autoComplete="off" style={inputStyle} />
-                        </div>
-                        {pinChildError && (
-                          <div style={{ fontSize: 13, color: "var(--danger)", background: "var(--tint-danger)", border: "1px solid var(--border-danger)", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>{pinChildError}</div>
-                        )}
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button type="button" onClick={createPinChild} disabled={addingPinChild}
-                            style={{ flex: 1, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "12px", fontSize: 14, fontWeight: 700, cursor: addingPinChild ? "not-allowed" : "pointer", fontFamily: FONT, opacity: addingPinChild ? 0.6 : 1 }}>
-                            {addingPinChild ? "Sending…" : "Add & send invite"}
-                          </button>
-                          <button type="button" onClick={() => { setShowAddPinChild(false); setPinChildName(""); setPinChildEmail(""); setPinChildError(""); }}
-                            style={{ padding: "12px 20px", borderRadius: 50, background: "var(--surface-3)", border: "none", fontSize: 13, fontWeight: 700, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}>
-                            Cancel
-                          </button>
-                        </div>
                       </div>
                     )}
 
@@ -1085,6 +1035,9 @@ export default function ProfilePage() {
               </svg>
               Export my data
             </a>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8, lineHeight: 1.5 }}>
+              How we handle your family&apos;s data: <Link href="/privacy" style={{ color: "var(--accent)", fontWeight: 700 }}>privacy notice</Link>.
+            </div>
 
             {/* 2026-09-27: real soft delete with family-admin approval + 60-day restore window */}
             <DeleteAccountSection />

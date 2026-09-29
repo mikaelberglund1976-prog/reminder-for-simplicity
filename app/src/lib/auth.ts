@@ -205,11 +205,9 @@ export const authOptions: NextAuthOptions = {
               type: account.type,
               provider: account.provider,
               providerAccountId: account.providerAccountId,
-              access_token: account.access_token,
-              expires_at: account.expires_at,
-              token_type: account.token_type,
-              scope: account.scope,
-              id_token: account.id_token,
+              // 2026-09-29 (GDPR, data minimisation): Google's access/id
+              // tokens are never used after sign-in, so they aren't stored.
+              // lib/cron.ts clears any stored earlier.
             },
           });
         }

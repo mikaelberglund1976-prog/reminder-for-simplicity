@@ -1,5 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.20 | **Uppdaterad:** 2026-09-28 | **Ägare:** Mikael Berglund
+**Version:** 2.21 | **Uppdaterad:** 2026-09-29 | **Ägare:** Mikael Berglund
+**Not (2026-09-29, live):** 4b.36 (mobiltestets fynd), 4b.37 (barn med eget konto/Google) och 4b.38 (GDPR) tillagda; 4b.28 och §10 uppdaterade – integritetsmeddelandet är publicerat. Se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`.
 **Not (2026-09-28, live):** §7.4 tillagd – ny Free/Pro-gräns, 14 dagars provperiod, Pro-förfrågan/admin-beviljning, förberedd betalning och reklam. Ersätter delar av §7.1 och hela §7.3 (7-dagars trial). Se `RELEASE_2026-09-28.md`.
 **Not (2026-08-18, deploy bekräftad live):** Fas A:s säkerhetsfixar och Training→Activity-namnbytet (nedan) pushade till GitHub och bekräftat deployade till produktion på Vercel (commit `29bf8e9`, deployment `dpl_3qWTb64whz1ZuTNefwK3TXnUuxUx`, state READY). Se `TODO.md` punkt 30 och `LAUNCH_CHECKLIST.md`. Kvarstår: manuell klicktestning i den skarpa appen (rate limit-låsning, gratis hushållsdelning, Activity-namnet överallt).
 **Not (2026-08-02, namnbyte + parkering bekräftad):** "Training" bytt till "Activity/Activities" i hela UI:t (4b.33, Mikaels feedback om scouter/teater), interna namn (route, enum, bottomNavTabs-nyckel) oförändrade – ingen schemaändring. "Föräldrautrymme"-modulen bekräftad parkerad (var bara en rekommendation, se `ROADMAP.md`).
@@ -332,6 +333,8 @@ Del av en större UX-genomgång (se `TODO.md` punkt 19/20). Tre separata önskem
 
 ### 4b.28 Privacy Policy-sida – strukturell scaffold (byggd 2026-07-28)
 
+> **Ersatt 2026-09-29:** sidan är nu ett publicerat integritetsmeddelande (version 2026-09-29), se 4b.38. Texten nedan är historik.
+
 - Ny sida `/privacy` (`app/src/app/privacy/page.tsx`), länkad från Register och `/features`. Tolv sektioner enligt GDPR-relevant standardstruktur (vilka vi är, vad vi samlar in, varför, barn/samtycke, var data lagras, underleverantörer, lagringstid, dina rättigheter, cookies, säkerhet, ändringar, kontakt).
 - **Bara struktur, inte innehåll:** allt som redan går att skriva är ifyllt (t.ex. Supabase-region `eu-central-1`/Frankfurt, den redan byggda dataexporten). Allt som kräver ett beslut eller en riktig uppgift är markerat med en gul "Needs a decision"-ruta direkt i UI:t, plus en samlad checklista längst ner på sidan: juridisk enhet (namn/org.nr/adress), minimiålder för barnprofiler + samtycke (öppet beslut, se `TODO.md` Körordning steg 3), Vercels/Resends DPA-status, datalagringstid efter kontoradering, självbetjänings-radering (inte byggd), riktig kontaktadress.
 - **Inte en publicerad policy** – ska inte behandlas som juridiskt gällande text förrän checklistan är tom och en människa (helst med juridisk input) läst igenom slutresultatet.
@@ -412,13 +415,33 @@ Mikaels feedback: *"träning kanske e fel, activity är bättre. Man kanske har 
 
 Se `TODO.md` punkt 30b.
 
-### 4b.34 Konton, radering och läxor/prov (2026-09-27, kodat, ej deployat)
+### 4b.34 Konton, radering och läxor/prov (2026-09-27, live sedan 2026-09-28)
 
 - **Ingen PIN längre.** Alla konton loggar in med verifierad e-post + lösenord, eller Google. Förälder skapar barnkonto med namn + e-post; barnet bekräftar och väljer lösenord via mail. Ersätter 4b.13 (vuxen-PIN) och PIN-delen av 4b.2.
 - **Radering = mjuk radering, 60 dagar.** Medlem begär → familjeadmin godkänner; admin eller ensam bekräftar själv. Personen döljs ur familjen och kan inte logga in; Mikael kan återställa i `/admin` inom 60 dagar, därefter permanent borttagning. Ersätter UI-skalet i 4b.17.
 - **Läxor & prov** (utökar 4b.20): typ (läxa/prov/övrigt), ämne, avbockning, nedräkning, visas först för barnet vid inloggning, val per post om den ska synas i kalendern, mail dagen före.
 
 Detaljer: `TODO.md` punkt 31.
+
+### 4b.36 Mobiltestets fynd (2026-09-28 kväll, live)
+
+- **Roller på startsidan:** barn skickas direkt till "My week" (läxor/prov, aktiviteter, sysslor) med egen bottenmeny (My week / Shopping list / Wishlist) och egen ☰-meny. Föräldrar ser kortet "Homework & tests" per barn på Home, prov i rött.
+- **Familjen:** ny sida ☰ → Family members – alla medlemmar med bild, lägg till barn eller bjud in vuxen, familjefoto. Familjerad med avatarer och "+ Add" på Home. Sysslor och aktiviteter kan tilldelas alla, vuxna syns som egna flikar och kan "Mark done".
+- **Aktiviteter:** "Once a week" har dagväljare; flera personer per aktivitet ger en kopia per person (egen kalender/ICS, tas bort per person).
+- **Bilder:** profilbild per person (egen; förälder för barn) och familjefoto överst på Home. Komprimeras i webbläsaren (avatar 320×320 JPEG, foto ≤1400 px), lagras i `media_images`, visas bara för familjen.
+- **Inköpslistan:** i butiksläget hamnar bockade varor längst ned med Undo; listor kan raderas (delad lista bara av ägare/förälder, sista listan skyddad).
+- **Kalendern:** prov (🧪, crimson) och läxa (📝, indigo) är egna typer med egna filter; på pekskärm väljer ett tryck dagen och visar dagens lista.
+
+### 4b.37 Barn med eget konto / Google (2026-09-29, live)
+
+- Man söker inte upp en familj – en förälder lägger till barnet med e-post. Har e-posten redan ett konto skickas en inbjudan; vid nästa inloggning (lösenord eller Google) flyttas kontot in som barnkonto. Inbjudna slipper admin-godkännandet. Logik i `lib/invites.ts`.
+
+### 4b.38 GDPR (2026-09-29, live)
+
+- Integritetsmeddelandet publicerat på `/privacy` (version 2026-09-29); länkat från registrering, Settings och ☰-menyn. Personuppgiftsansvarig: Mikael Berglund tills bolaget finns.
+- Vårdnadshavarens bekräftelse krävs när ett barn läggs till och sparas i `parental_consents` (vem, när, version). Barnversion av texten i My week. Egen registrering kräver 13 år (barnprofiler som föräldern skapar har ingen åldersgräns – beslut 2026-08-02).
+- Data i EU: Vercel-funktioner i `fra1`, databasen i Frankfurt. Inga Clearbit-anrop; Googles tokens sparas inte.
+- Export och radering omfattar allt, inklusive bilder. Registerförteckning och incidentrutin: `GDPR.md`.
 
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
@@ -575,6 +598,12 @@ Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar me
 **ListMember** *(tillagd 2026-07-28)*
 `id, listId, userId` – uttryckliga medlemmar för en lista där `visibleToAll = false`. Unikt per listId+userId.
 
+**MediaImage** *(tillagd 2026-09-28, tabell `media_images`, skapas av appen)*
+`id, kind ("avatar" | "header"), ownerId (user- eller household-id), mime, data (bytea), updatedAt` – profilbilder och familjefoto, unikt per kind+ownerId. Rensas när ägaren är borta (cron).
+
+**ParentalConsent** *(tillagd 2026-09-29, tabell `parental_consents`, skapas av appen)*
+`id, childId, householdId, givenById, version, createdAt` – vårdnadshavarens bekräftelse för ett barnkonto; senaste raden gäller.
+
 **WishlistItem** *(tillagd 2026-07-27, uppdaterad 2026-07-28)*
 `id, householdId, childId, listId, addedBy, name, url?, price?, currency?, imageUrl?, note?, status (WANTED/RESERVED/PURCHASED), reservedBy?, reservedAt?, purchasedBy?, purchasedAt?` – vara på ett barns namngivna önskelista (`List`, kind WISHLIST, kan vara flera per barn sedan 4b.15), se 4b.9. **Viktigt:** `status`-fältet och relaterade fält exponeras aldrig till det ägande barnet via API:et – se 4b.9.
 
@@ -602,8 +631,8 @@ Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar me
 
 ## 10. Icke-funktionella krav
 
-- **GDPR-kompatibel** – Integritetspolicy (struktur klar, innehåll ej klart, se 4b.28), rätt att radera data (policy-löfte finns, självbetjänings-knapp är fortfarande bara en UI-shell, se 4b.17), unsubscribe-länk
-- **Säkerhet** – Bcrypt för lösenord (cost 12) och PIN (cost 10), JWT-sessions via NextAuth, HTTPS always, hemligheter korrekt hanterade (inga läckta nycklar i repo). **Verifierat genom en konkret kodgranskning 2026-08-02** (`OPERATIONS.md` §8): auktorisering/IDOR-kontroller och adminpanelens åtkomstspärr är konsekvent implementerade, publika delningstokens är ogissbara och roterbara. **Rate limiting/lockout på inloggning byggd 2026-08-02** (`lib/rateLimit.ts`, 5 försök/15 min, delat mellan lösenord och PIN) – känd begränsning: in-memory per serverless-instans, inte en fullt delad spärr, se `OPERATIONS.md` §8. Kvarstår: barnprofilers gissbara email-mönster, se `LAUNCH_CHECKLIST.md` Fas A.
+- **GDPR-kompatibel** – integritetsmeddelande publicerat (4b.38), självbetjäning för export och radering (4b.34, 4b.38), vårdnadshavarens bekräftelse för barn, data i EU, registerförteckning och incidentrutin i `GDPR.md`. Kvar: bolag som ansvarig, DPA-avtal, juristläsning. Unsubscribe-länk i mejl.
+- **Säkerhet** – Bcrypt för lösenord (cost 12) och PIN (cost 10), JWT-sessions via NextAuth, HTTPS always, hemligheter korrekt hanterade (inga läckta nycklar i repo). **Verifierat genom en konkret kodgranskning 2026-08-02** (`OPERATIONS.md` §8): auktorisering/IDOR-kontroller och adminpanelens åtkomstspärr är konsekvent implementerade, publika delningstokens är ogissbara och roterbara. **Rate limiting/lockout på inloggning byggd 2026-08-02** (`lib/rateLimit.ts`, 5 försök/15 min, delat mellan lösenord och PIN) – känd begränsning: in-memory per serverless-instans, inte en fullt delad spärr, se `OPERATIONS.md` §8. PIN är borttagen sedan 2026-09-28, så barnprofilers gissbara e-post-mönster är inte längre ett problem.
 - **Prestanda** – Dashboard laddar < 1 sekund
 - **Tillgänglighet** – Fungerar utan JavaScript disabled (grundläggande)
 

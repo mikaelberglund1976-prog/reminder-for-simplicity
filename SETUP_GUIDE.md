@@ -1,5 +1,8 @@
 # Steg-för-steg: Från noll till live app
 
+> **Tillägg 2026-09-29:** inga nya miljövariabler. Serverfunktionerna körs i Frankfurt (`"regions": ["fra1"]` i `app/vercel.json`). Två nya tabeller (`media_images`, `parental_consents`) skapas av appen själv första gången de används – ingen `db push`. `ADMIN_EMAIL` visas som kontaktadress på `/privacy`.
+> **Testa lokalt utan att ladda ner Prisma-motorn** (om `binaries.prisma.sh` är blockerad): kopiera `app/` till en testmapp, installera `prisma@6 @prisma/client@6 @prisma/adapter-pg pg` där, lägg till `previewFeatures = ["queryCompiler", "driverAdapters"]` och `engineType = "client"` i generatorn och använd `PrismaPg`-adaptern i `lib/prisma.ts`. Committa aldrig de ändringarna – produktionen kör Prisma 5.
+
 > **Tillägg 2026-09-28:** inga nya miljövariabler behövs för planer/reklam. `RESEND_FROM_EMAIL` måste vara en adress på en verifierad domän (assistiq.se) – annars når bekräftelse- och inbjudningsmail inte fram. Admin-adressen styrs av `ADMIN_EMAIL`. Hur databasändringar görs i produktion: `OPERATIONS.md` §5b.
 **För dig utan teknisk bakgrund – inga förkunskaper krävs**
 

@@ -1,12 +1,12 @@
 # Test & Verifiering – öppna punkter
-**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-09-27 (§6 = 2026-08-18-ändringarna, live; §7 = punkt 31, kräver deploy först. PIN-rader i §2–3 är inaktuella – PIN pensionerad). Inget av nedan är klicktestat i produktion.
+**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-09-29 – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
 
 Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader utan `[x]` betyder "inte verifierat".
 
 ---
 
-## 0. Kalendervy (2026-07-28, commit `0a3032e`) — **ny, kräver push först**
-- [ ] `git push` – denna commit ligger bara lokalt i sandboxen, precis som tidigare (ingen GitHub-auth där). Kolla Vercel efter push att den blir grön.
+## 0. Kalendervy (2026-07-28, commit `0a3032e`) — live
+- [x] `git push` – gjort, kalendern har varit live sedan juli.
 - [ ] Fjärde fliken "Calendar" syns i bottenmenyn, bredvid Reminders/Shopping list/Wishlist.
 - [ ] Månadsgriden visar rätt prickar på rätt dagar för en vanlig engångs-reminder (t.ex. ett abonnemangsdatum).
 - [ ] En WEEKLY/MONTHLY/YEARLY-återkommande reminder visar flera prickar (en per förekomst) när du bläddrar framåt/bakåt en månad.
@@ -102,3 +102,14 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Barnet loggar in (lösenord eller "Continue with Google") → hamnar direkt i familjen som barn (My week), ingen väntan på admin-godkännande.
 - [ ] Förälder lägger till ett barn med Gmail-adress som inte har konto → barnet trycker "Continue with Google" på login → inne som barn utan att välja lösenord.
 - [ ] Inbjuden vuxen som registrerar sig med e-post behöver inte adminens godkännande.
+
+## 11. GDPR-åtgärder (2026-09-29, LIVE) – se `RELEASE_2026-09-29.md`, `GDPR.md`
+- [ ] `/privacy` öppnas utan inloggning, visar version 2026-09-29 och rätt kontaktadress. Länk finns i ☰-menyn, Settings (under Export my data) och på registreringssidan.
+- [ ] Family members → "A child": utan kryss i vårdnadshavarrutan kommer ett felmeddelande; med kryss läggs barnet till och raden visar "Guardian confirmed".
+- [ ] Ett barn som fanns före 29/9 visar "Confirm as guardian" → tryck → blir "Guardian confirmed".
+- [ ] Settings → "+ Add child" leder till Family members.
+- [ ] Settings → Export my data: filen innehåller `itemsAssignedToYouByOthers`, `choresYouTickedOff`, `profilePicture`.
+- [ ] Home: tjänstelogotyper visas som initialer (inga bilder från clearbit.com).
+- [ ] Logga in som barn → My week → "What does the app save about me?" öppnas och länkar till `/privacy`.
+- [ ] Vercel → Project → Settings → Functions: region Frankfurt (fra1).
+- [ ] Efter nästa cron-körning (08:00 UTC): loggen visar inga "GDPR cleanup ERROR".

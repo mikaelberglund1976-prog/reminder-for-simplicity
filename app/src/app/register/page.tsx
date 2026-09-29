@@ -106,6 +106,9 @@ export default function RegisterPage() {
         <div style={{ background: "var(--tint-accent)", borderRadius: 14, padding: "12px 14px", marginBottom: 18, fontSize: 13, lineHeight: 1.5, color: "var(--fg-2)" }}>
           <strong style={{ color: "var(--fg)" }}>Joining your family?</strong> Ask a parent to add you under ☰ → Family members with your email.
           Then just log in here with that email — or with Google — and you land in your family.
+          <div style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
+            You must be 13 or older to create your own account; younger children are added by a parent. How we handle data: <Link href="/privacy" style={{ color: "var(--accent)", fontWeight: 700 }}>privacy notice</Link>.
+          </div>
         </div>
 
         {/* Google */}

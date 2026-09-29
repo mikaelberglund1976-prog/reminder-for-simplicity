@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { hasPro } from "@/lib/entitlements";
 import { sendAccountSetup } from "@/lib/verification";
 import { sendHouseholdInviteEmail } from "@/lib/email";
+import { recordConsent } from "@/lib/consent";
 
 const ADULT_ROLES = ["OWNER", "PARENT", "ADULT"];
 
@@ -28,6 +29,12 @@ export async function POST(req: Request) {
     const email = emailInput?.trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "A valid email is required — the child gets a link there to confirm it and choose a password." }, { status: 400 });
+    }
+
+    // 2026-09-29 (GDPR, launch list row 18): the adult confirms they're the
+    // child's parent/guardian and accept the privacy notice for the child.
+    if (body?.guardianConsent !== true) {
+      return NextResponse.json({ error: "Please confirm that you're the child's parent or guardian." }, { status: 400 });
     }
 
     const membership = await prisma.householdMember.findFirst({
@@ -105,6 +112,7 @@ export async function POST(req: Request) {
         console.error("Child profile: invite email failed", err);
         inviteSent = false;
       }
+      await recordConsent(existingUser.id, membership.householdId, session.user.id).catch((e) => console.error("Consent record failed:", e));
       return NextResponse.json({ existingAccount: true, inviteSent, email, householdId: membership.householdId }, { status: 201 });
     }
 
@@ -151,6 +159,8 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    await recordConsent(createdUser.id, membership.householdId, session.user.id).catch((e) => console.error("Consent record failed:", e));
 
     const parent = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } });
     let setupSent = true;

@@ -13,6 +13,8 @@ De två plattformarna är **inte symmetriska**. Android/Google Play är en rimli
 
 ---
 
+> **Tillägg 2026-09-29:** integritetsmeddelandet är publicerat på `/privacy` (version 2026-09-29) och kontoradering finns sedan 28/9 – de två plattformsoberoende blockerarna i §5 är lösta. Kvar före inlämning: bolag som personuppgiftsansvarig (byts in på `/privacy`), och butikernas datadeklarationer (Apple "App Privacy", Google "Data safety") – underlaget finns i registerförteckningen i `GDPR.md` §2. Vårdnadshavarens bekräftelse för barn sparas sedan 29/9.
+
 > **Tillägg 2026-09-28:** appen har nu planer (Free/Pro), en 14 dagars provperiod och egen reklam för gratis-vuxna (aldrig barn). Två saker att tänka på vid store-lansering: (1) Pro som köps *inne i* en iOS-app kräver normalt Apples In-App Purchase (utanför EU:s undantag) – därför är betalningen förberedd med `proSource` så att "apple"/"google" kan läggas till bredvid "stripe"; (2) en app med reklam måste deklarera det i butikerna, och en app i familje-/barnkategorin har hårdare reklamregler – vår reklam visas bara för vuxna och utan spårning, vilket underlättar.
 
 ## 2. Nuläget i vår kodbas (bättre grund än väntat)
@@ -34,7 +36,7 @@ De två plattformarna är **inte symmetriska**. Android/Google Play är en rimli
 - [ ] Kör en Lighthouse PWA-audit och verifiera poäng ≥80 (inte kört ännu, okänt nuläge).
 - [ ] Bygg APK/AAB med Bubblewrap/PWABuilder, sätt upp Play Console.
 - [ ] Fyll i **Data Safety-formuläret** ärligt – ni samlar in email, namn, ev. betaldata (när Stripe byggs), och **barns personuppgifter** (barnprofiler). Måste disclosure:as oavsett om appen räknas som "riktad till barn" eller inte.
-- [ ] Riktig Privacy Policy måste vara klar och länkad (idag bara struktur, se `PRODUCT_SPEC.md` 4b.28 – 7 punkter kvar).
+- [x] Privacy Policy klar och länkad – `/privacy`, publicerad 2026-09-29 (byt in bolaget när det finns).
 - [ ] Avgift: **$25, engångs registrering** (ingen årsavgift).
 
 **Families-policy:** appen riktar sig till föräldrar som administrerar hushållet, inte till barn direkt – bedömning: troligen **inte** "Designed for Families"-krav. Men Data Safety-formuläret måste ändå deklarera att barns uppgifter samlas in.
@@ -49,7 +51,7 @@ De två plattformarna är **inte symmetriska**. Android/Google Play är en rimli
 
 **Två krav som blockerar inlämning oavsett teknisk väg:**
 - [x] *(Kodat 2026-09-27, ej deployat: användaren initierar radering i appen, kontot spärras direkt och raderas permanent efter 60 dagar – `TODO.md` 31. Apple accepterar en kort fördröjning före permanent radering om den kommuniceras, vilket UI:t gör.)* **Kontoradering (Guideline 5.1.1(v)).** Obligatoriskt sedan 2022: appar med kontoskapande måste låta användaren initiera *permanent* radering i appen, inte bara inaktivering. **"Delete account"-knappen i Profile → Security är idag bara en UI-shell** (känt sedan `PRODUCT_SPEC.md` 4b.17) – måste vara en fungerande backend-radering innan appen kan lämnas in. Detta är alltså inte längre "bara" ett GDPR-önskemål, det är en hård Apple-blockerare.
-- [ ] **Riktig Privacy Policy** klar och länkad (samma gap som Google Play ovan).
+- [x] **Privacy Policy** klar och länkad (`/privacy`, 2026-09-29).
 
 **Betalning – viktigt beslut innan Stripe byggs (Fas 3):**
 - Om Pro-prenumerationen ska säljas *i appen* utanför EU krävs Apples egen In-App Purchase (15–30% avgift) för digitala prenumerationer – Stripe direkt är inte tillåtet där.

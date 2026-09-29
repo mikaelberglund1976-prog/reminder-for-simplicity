@@ -16,7 +16,11 @@
   4. Skickar email via Resend (`sendReminderEmail` i `app/src/lib/email.ts`)
   5. Skriver en `ReminderLog`-rad + uppdaterar `lastSentAt`
   6. Om reminder är återkommande (DAILY/WEEKLY/MONTHLY/YEARLY): räknar ut och sparar nästa datum
-- Returnerar `{ sent, skipped, errors, log }` – synligt i Vercels function-loggar.
+  7. Rensar konton som varit mjukt raderade i mer än 60 dagar (inkl. profilbilden)
+  8. *(2026-09-29, GDPR)* Tar bort bilder vars person/familj inte finns kvar (`purgeOrphanMedia`) och nollställer sparade Google-tokens
+- Returnerar `{ sent, skipped, errors, log }` – synligt i Vercels function-loggar. Rader som börjar med "GDPR cleanup ERROR" eller "Account purge ERROR" ska inte förekomma.
+
+**Region (2026-09-29):** `app/vercel.json` har `"regions": ["fra1"]` – serverfunktionerna körs i Frankfurt, samma region som Supabase (eu-central-1). Personuppgifter lämnar inte EU vid vanliga sidladdningar, och databasanropen blir snabbare.
 
 **Manuell körning (för felsökning eller om cron missades)**
 - `/admin` → adminpanelen har en knapp som anropar `POST /api/admin/trigger-cron`
@@ -70,7 +74,8 @@ Det finns ingen roll-nivå inom admin – man antingen är `ADMIN_EMAIL` eller i
 | Lokal utveckling | `app/.env.local` | Se `SETUP_GUIDE.md`. Innehåller riktiga Supabase/Resend-nycklar – committa aldrig denna fil. |
 | Produktion | Vercel → Project Settings → Environment Variables | Samma nycklar som `.env.local`, satta separat i Vercel |
 | Databas | Supabase (PostgreSQL), både pooled (`DATABASE_URL`) och direct (`DIRECT_URL`) connection | Direct krävs av Prisma för `db push`/migrations |
-| Email | Resend | `RESEND_FROM_EMAIL` är idag `onboarding@resend.dev` (Resends testadress). **Blockerande sedan 2026-09-27:** testadressen levererar bara till Resend-kontoägarens egen adress, men e-postverifiering och barninbjudningar (`TODO.md` 31) måste nå alla användare. Verifiera egen domän i Resend och sätt `RESEND_FROM_EMAIL` i Vercel innan punkt 31 deployas. |
+| Email | Resend | DNS för assistiq.se (DKIM, SPF, MX på send.) finns sedan 2026-09-28. Kontrollera att `RESEND_FROM_EMAIL` i Vercel är en adress på assistiq.se – `onboarding@resend.dev` levererar bara till Resend-kontoägaren, och då når verifierings- och inbjudningsmail inte fram. |
+| Admin/kontakt | `ADMIN_EMAIL` | Gatar `/admin` och visas som kontaktadress på `/privacy` (sedan 2026-09-29). |
 
 Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och Vercels environment variables, redeploya.
 
@@ -81,6 +86,7 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 > ✅ **Löst 2026-07-27 (natt):** automatisk deploy vid `git push` fungerar igen. Problemet var att Vercels GitHub-integration hade tappat webhooken (visade "ansluten" men triggade inget) – ett känt, återkommande Vercel-fel. Fixat genom en riktig **Disconnect** + ny **Connect Git Repository** i Vercel-dashboarden (Project Settings → Git). Bekräftat: en vanlig `git push` triggade en ny production-deployment automatiskt.
 
 - **Trigger (nuläge, normalfallet):** push till `master` på GitHub *(inte `main` – repots default branch heter `master`)*. Vercel deployar automatiskt via GitHub-integrationen.
+- **Hur Claude deployar (sedan 2026-09-28):** Claudes molnmiljö har ingen GitHub-behörighet och Cowork-VM:en på Macen har inga git-uppgifter. Claude gör ändringarna i en molnkopia, testar och bygger där, lägger över en patch till projektmappen, committar i VM:en och klickar sedan **Sync** i VS Code på Macen (klick-behörighet via datoranvändning) – det är Macens git som pushar. Git i VM:en behöver radera-behörighet för sina låsfiler (`.git/*.lock`) under sessionen; ofarliga `tmp_obj_*`-filer kan bli kvar i `.git/objects`.
 - **Trigger (manuell nödlösning, om webhooken skulle tappas igen):** `npx vercel --prod` från `app/`-mappen (kräver `npx vercel login` + `npx vercel link` en gång per dator, kopplat till projektet `reminder-for-simplicity` i teamet `mikaelberglund1976-progs-projects`).
 - **Om auto-deploy tystnar igen:** gör om samma Disconnect/Connect-steg i Vercel-dashboarden först – det är den kända fixen för detta specifika Vercel-fel.
 - **Build:** `prisma generate && next build` (se `package.json`), oavsett trigger-metod.
@@ -94,6 +100,12 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 
 ---
 
+### 5a. Tabeller som skapar sig själva (sedan 2026-09-28)
+Nya, rent additiva tabeller skapas av appen vid första användning med `CREATE TABLE IF NOT EXISTS` – ingen `db push` och ingen tillfällig migreringsväg behövs:
+- `media_images` (profilbilder och familjefoto) – `app/src/lib/media.ts`
+- `parental_consents` (vårdnadshavarens bekräftelse) – `app/src/lib/consent.ts`
+Mönstret passar bara nya tabeller. Nya kolumner i befintliga tabeller görs fortfarande enligt 5b.
+
 ### 5b. Databasändringar i produktion (lärdom 2026-09-28)
 Varken Claudes molnmiljö eller Cowork-VM:en på Macen når Supabase direkt (port 5432), så `npm run db:push` kan bara köras från din egen terminal. Alternativet som användes 28/9 och fungerade utan avbrott:
 1. Deploya en tillfällig route som kör idempotent SQL (`ADD COLUMN IF NOT EXISTS` osv.), skyddad med en engångstoken (bara SHA-256 i koden).
@@ -101,7 +113,10 @@ Varken Claudes molnmiljö eller Cowork-VM:en på Macen når Supabase direkt (por
 3. Deploya den nya koden. 4. Ta bort routen i en städcommit.
 Håll ändringarna additiva (nya kolumner/tabeller, NOT NULL tas bort, aldrig tvärtom) så att gammal och ny kod fungerar under övergången.
 
-## 6. Incidenter (lightweight – ingen formell process idag)
+## 6. Incidenter
+
+> **2026-09-29:** en riktig incidentrutin för personuppgiftsincidenter (anmälan till IMY inom 72 h) finns nu i `GDPR.md` §6. Texten nedan gäller tekniska driftproblem.
+
 
 Om något är trasigt i produktion:
 1. Kolla Vercel function-loggar för den drabbade routen (särskilt `/api/cron/send-reminders` för mailproblem)
@@ -155,4 +170,4 @@ Genomförd på Mikaels begäran ("vi har mycket användaruppgifter, viktigt att 
 
 ---
 
-*Detta dokument beskriver nuläget (2026-09-27: PIN pensionerad, e-postverifiering, mjuk radering + återställning, Resend-domän nu blockerande – ej deployat än; tidigare 2026-08-02 säkerhetsgranskningen i §8). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, sätter upp en verifierad email-domän, eller åtgärdar fynden i §8.*
+*Detta dokument beskriver nuläget (2026-09-29: region fra1, självskapande tabeller, GDPR-rensning i cron, deploy via VS Code Sync; 2026-09-28: punkt 31 live; 2026-08-02: säkerhetsgranskningen i §8). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, sätter upp en verifierad email-domän, eller åtgärdar fynden i §8.*

@@ -364,6 +364,19 @@ function ChildViewContent() {
             </div>
           </div>
         )}
+        {/* 2026-09-29 (GDPR, launch list row 15): what the app keeps about
+            a child, in words a child understands. */}
+        <details style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 16px", margin: "24px 0 0", fontSize: 13.5, color: "var(--fg-2)", lineHeight: 1.55 }}>
+          <summary style={{ fontWeight: 700, color: "var(--fg)", cursor: "pointer" }}>🔒 What does the app save about me?</summary>
+          <ul style={{ margin: "10px 0 4px", paddingLeft: 18 }}>
+            <li>Your name, your email and your password (locked so nobody can read it).</li>
+            <li>Your homework, tests, chores, activities, wishlist — and your photo if someone adds one.</li>
+            <li>The grown-ups in your family can see it. Other kids and other families can&apos;t.</li>
+            <li>We never sell it and you never see ads.</li>
+            <li>If you want something removed, ask a parent — they can change or delete it.</li>
+          </ul>
+          <a href="/privacy" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>The long version for grown-ups →</a>
+        </details>
       </main>
     </div>
   );

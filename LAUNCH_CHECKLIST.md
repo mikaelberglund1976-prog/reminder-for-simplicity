@@ -2,7 +2,8 @@
 
 **Syfte:** en enda, avdubblerad, omprioriterad lista över allt som återstår innan produkten är "helt klar" för bred lansering. Ersätter inte `TODO.md` (som förblir den kronologiska arbetsloggen/historiken) utan sitter ovanpå den – det här dokumentet är **den aktuella sanningen om vad som är kvar**, `TODO.md` är **hur vi kom hit**.
 **Metod:** allt `- [ ]` extraherat ur `TODO.md` (punkt 1–25), `PRODUCT_SPEC.md`, `ROADMAP.md`, `OPERATIONS.md`, `APP_STORE_READINESS.md`, dubbletter slagna ihop, omgrupperat i faser efter vad som faktiskt blockerar vad.
-**Senast synkad:** 2026-09-28 – punkt 31 + UI-review + planer/reklam LIVE (se `RELEASE_2026-09-28.md`, `TODO.md` punkt 32). `ATT_GORA_PAUSAT_2026-09-27.md` är avklarad.
+**Senast synkad:** 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
+**Obs:** den gemensamma lanseringslistan för alla Assistiq-appar (namn, bolag, webb, GDPR, betalning) finns i Claude Docs ("Genomlysning: Assistiq inför kommersiell lansering", fliken Todo-lista). Den här filen är appens egen tekniska checklista.
 **Uppdatera detta dokument** när en punkt blir klar (bocka av `- [x]`) eller när prioritet ändras – det tappar sitt värde annars.
 
 ---
@@ -24,7 +25,16 @@ Ingen inbördes teknisk ordning inom fasen, men allt här bör vara klart innan 
 - [x] P1 – `ADMIN_EMAIL` läser nu `process.env.ADMIN_EMAIL` i `lib/adminConfig.ts` istället för att hårdkoda. **Nyans värd att känna till:** tre av de fyra ställena som importerar detta är `"use client"`-komponenter (menyn, admin-sidan, suggestions-sidan) – utan `NEXT_PUBLIC_`-prefix bakas env-variabeln aldrig in i klientbundeln, så de faller fortfarande tillbaka på samma hårdkodade default som förut (ofarligt, eftersom den riktiga spärren alltid varit server-side). Fixen är fullt verksam för den fjärde platsen, en server-route (`api/suggestions/[id]/route.ts`). Om ni vill att en framtida env-rotation ska slå igenom även i klient-UI:t krävs en separat `NEXT_PUBLIC_ADMIN_EMAIL` – inte gjort, egen liten uppgift om ni vill ha den.
 
 **Juridik/GDPR (COPPA-deadline redan passerad, se `APP_STORE_READINESS.md` §5):**
-- [ ] Komplett, publicerad Privacy Policy (struktur klar sedan 4b.28, 7 punkter kvar: juridisk enhet, Vercel/Resend DPA-status, datalagringstid, kontaktadress m.fl.).
+- [x] **Privacy Policy publicerad 2026-09-29** på `/privacy` (version 2026-09-29), länkad från registrering, Settings och ☰-menyn. Personuppgiftsansvarig = Mikael Berglund tills bolaget finns; kontakt = `ADMIN_EMAIL`. Se `GDPR.md`.
+- [ ] Byt till bolaget som personuppgiftsansvarig på `/privacy` när det är registrerat (lanseringslistan rad 9–11) och höj `CONSENT_VERSION`.
+- [ ] Godkänn biträdesavtal (DPA) hos Supabase, Vercel och Resend och spara kopiorna (`GDPR.md` §5).
+- [ ] Kontrollera Supabase backup-tid och skriv in den i `/privacy` §5 och `GDPR.md`.
+- [ ] Juristläsning av `/privacy` före bred lansering.
+- [x] **Vårdnadshavarens bekräftelse för barn** (2026-09-29): kryssruta när barn läggs till, sparas i `parental_consents`; "Confirm as guardian" för befintliga barn. Barnversion av integritetstexten i My week.
+- [x] **Data i EU** (2026-09-29): Vercel-funktioner i `fra1`; Clearbit-anrop borttagna; Googles tokens sparas inte.
+- [x] **Export och radering kompletta** (2026-09-29): exporten har läxor/sysslor/aktiviteter/bild; bilder rensas med kontot/familjen.
+- [x] Registerförteckning och incidentrutin skrivna – `GDPR.md` §2 och §6.
+- [x] *Tillägg 2026-09-29:* registreringssidan säger nu att man måste vara 13 för att skapa ett **eget** konto (yngre läggs till av förälder). Påverkar inte beslutet nedan om barnprofiler – ta bort raden i `register/page.tsx` om du inte vill ha den.
 - [x] **Beslutat 2026-08-02:** ingen fast åldersgräns för barnprofiler – bara föräldrasamtycke (skapande föräldern samtycker vid skapandet). Mikael valde bort förslaget om en 13-årsgräns. **Medveten avvägning, inte ett misstag:** svagare COPPA-efterlevnadsposition om appen någonsin distribueras i USA (COPPA:s skärpta 2026-regler kopplar särskilt an till en tydlig åldersgräns) – värt att ha med sig om/när ni tar det beslutet igen inför en amerikansk lansering. Ska in i Privacy Policy-texten när den skrivs.
 - [x] Självbetjänings-radering – **kodat 2026-09-27** som mjuk radering: familjeadmin godkänner (admin själv/ensam = bara "Är du säker?"), personen döljs ur familjen, kan återställas av Mikael i `/admin` → Deleted i 60 dagar, rensas sedan automatiskt av cron. Se `TODO.md` punkt 31. Klicktest kvar.
 
@@ -35,6 +45,7 @@ Ingen inbördes teknisk ordning inom fasen, men allt här bör vara klart innan 
 - [ ] Bekräftelseskärm innan Google/lösenord-kontosammanslagning sker automatiskt (händer idag tyst). *Notera 2026-09-27: Google-inloggning på ett befintligt konto räknas nu även som e-postverifiering (punkt 31) – sammanslagningen är fortfarande tyst.*
 
 **Nytt fynd 2026-08-02 – onboarding-genomgång (`PRODUCT_SPEC.md` 4b.32):**
+- [ ] *Delvis 2026-09-29:* inbjudna personer (barn och vuxna) slipper redan gaten. Kvar: självregistrerade.
 - [ ] **Stäng av eller ersätt admin-godkännande-gaten innan bred lansering.** Varje nytt konto är idag blockerat från att logga in alls tills en människa manuellt godkänt det i `/admin` – rätt för nuvarande stängda testfas (bekräftat av Mikael, inga externa användare än), men bryter helt mot "visa värde innan vi ber om något" (§9) och mot vad en ny användare/app store-granskare förväntar sig. Fanns inte som egen punkt i den ursprungliga versionen av den här listan – ett genuint gap, tillagt nu.
 
 ---
@@ -159,6 +170,16 @@ PIN borttaget + e-postverifiering, mjuk radering med 60 dagars återställning, 
 - [x] Commit + push via VS Code, kolla Vercel READY
 - [ ] Skicka nya inbjudningar till barnkonton (Profile → Child accounts → Resend invite)
 - [ ] Klicktesta: registrera → mail → bekräfta → logga in; skapa barn → mail → välj lösenord; radera som medlem (begäran) och som admin; återställ i `/admin`; lägg till läxa/prov, bocka av, dölj i kalender
+
+---
+
+## Kodändringar 2026-09-28 kväll + 2026-09-29 – DEPLOYADE ✅
+
+- `5313ef6` – mobiltestets fynd rad 36–48 (butiksläge, radera lista, startsida per roll, prov/läxor på Home, bilder, kalender, sysslor/aktiviteter för alla, Family members, dagväljare, flera personer, datumfält, ☰-menyn). `RELEASE_2026-09-28b.md`.
+- `59d4e40` – barn med eget konto/Google kan gå med i familjen; inbjudna slipper admin-godkännande. `RELEASE_2026-09-28b.md` (tillägg).
+- GDPR-releasen 2026-09-29 – `RELEASE_2026-09-29.md`.
+- Nya tabeller `media_images` och `parental_consents` skapas automatiskt av appen – ingen `db push` behövdes.
+- [ ] Klicktesta: `TEST_VERIFICATION.md` §9–§11.
 
 ---
 

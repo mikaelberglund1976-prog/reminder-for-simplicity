@@ -1,6 +1,6 @@
 # Att göra – pausat arbete (2026-09-27)
 
-> ✅ **AVKLARAT 2026-09-28.** Allt nedan är live. Se `RELEASE_2026-09-28.md` och `TODO.md` punkt 32. Enda kvarvarande steget för Mikael: skicka ny inbjudan till barnkontot (Profile → Child accounts → Resend invite). Öppna frågorna är besvarade: Läxor & prov = Pro; saker tilldelade en raderad person blir "Unassigned" direkt.
+> ✅ **AVKLARAT 2026-09-28.** (Läge 29/9: senare arbete i `RELEASE_2026-09-28b.md` och `RELEASE_2026-09-29.md`.) Allt nedan är live. Se `RELEASE_2026-09-28.md` och `TODO.md` punkt 32. Enda kvarvarande steget för Mikael: skicka ny inbjudan till barnkontot (Profile → Child accounts → Resend invite). Öppna frågorna är besvarade: Läxor & prov = Pro; saker tilldelade en raderad person blir "Unassigned" direkt.
 
 Kodat men **inte committat, inte deployat**. Pausat för att Mikael först gör en review av gränssnittet.
 Detaljer: `TODO.md` punkt 31 · Checklista: `LAUNCH_CHECKLIST.md`.

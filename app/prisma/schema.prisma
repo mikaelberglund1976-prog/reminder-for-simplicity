@@ -665,3 +665,20 @@ model MediaImage {
   @@unique([kind, ownerId])
   @@map("media_images")
 }
+
+// 2026-09-29 (GDPR review / launch list row 18): a parent or guardian's
+// confirmation that a child's account and data (incl. photos) may be kept,
+// per the privacy notice version they saw. One row per confirmation; the
+// latest counts. Created on first use by lib/consent.ts (CREATE TABLE IF NOT
+// EXISTS) — no manual migration step.
+model ParentalConsent {
+  id          String   @id @default(cuid())
+  childId     String
+  householdId String
+  givenById   String
+  version     String
+  createdAt   DateTime @default(now())
+
+  @@index([childId])
+  @@map("parental_consents")
+}

@@ -147,24 +147,19 @@ function formatDate(dateStr: string) {
   });
 }
 
+// 2026-09-29 (GDPR review): logos used to be loaded from logo.clearbit.com
+// straight from the browser, which sent every visitor's IP address (and which
+// subscriptions they have) to a US third party. Brand colour + initials now,
+// nothing leaves the app.
 function ServiceLogo({ name }: { name: string }) {
-  const [imgError, setImgError] = useState(false);
-  const { color, domain } = getBrandInfo(name);
+  const { color } = getBrandInfo(name);
   const initials = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <div style={{
       width: 44, height: 44, borderRadius: 14, overflow: "hidden", flexShrink: 0,
-      background: (!domain || imgError) ? color.bg : "var(--surface-3)",
-      display: "flex", alignItems: "center", justifyContent: "center",
+      background: color.bg, display: "flex", alignItems: "center", justifyContent: "center",
     }}>
-      {domain && !imgError ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={`https://logo.clearbit.com/${domain}`} alt={name} width={44} height={44}
-          onError={() => setImgError(true)}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      ) : (
-        <span style={{ color: color.text, fontWeight: 700, fontSize: 15 }}>{initials}</span>
-      )}
+      <span style={{ color: color.text, fontWeight: 700, fontSize: 15 }}>{initials}</span>
     </div>
   );
 }

@@ -1,233 +1,152 @@
-"use client";
 import Link from "next/link";
+import { ADMIN_EMAIL } from "@/lib/adminConfig";
+import { CONSENT_VERSION } from "@/lib/consent-version";
 
-// Scaffold only — structure + what a GDPR-facing privacy policy needs to
-// cover, built 2026-07-28 per direct request ("förbered policy sidan med de
-// delar som behöver fyllas, sen kan vi bestämma innehåll"). Every section
-// with a <TodoBox> is an open decision or a piece of real information that
-// hasn't been decided/confirmed yet — see TODO.md Körordning (punkt 12,
-// steg 3-4) for the two decisions that block parts of this (minimum age for
-// child profiles, retention period). Nothing here should be treated as a
-// legally reviewed policy until the TodoBoxes are gone and a human (ideally
-// with legal input) has read the final copy.
+// 2026-09-29: the privacy notice, published (replaces the 2026-07-28
+// scaffold). Written from the GDPR review in the project ("GDPR-genomgång:
+// Reminder for Simplicity") and the code as it runs. Two facts are still
+// pending and are stated honestly on the page rather than invented: the
+// company that will take over as controller, and signed processor agreements.
+// Keep CONSENT_VERSION (lib/consent-version.ts) in step when the text changes
+// in substance — guardian confirmations record which version they saw.
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
-const LAST_UPDATED = "Draft — not yet published";
+
+export const metadata = { title: "Privacy notice – Reminder for Simplicity" };
+
+function H({ children }: { children: React.ReactNode }) {
+  return <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: "32px 0 10px", letterSpacing: "-0.2px" }}>{children}</h2>;
+}
+function P({ children }: { children: React.ReactNode }) {
+  return <p style={{ fontSize: 15, color: "var(--fg-2)", lineHeight: 1.65, margin: "0 0 12px" }}>{children}</p>;
+}
+function UL({ items }: { items: React.ReactNode[] }) {
+  return (
+    <ul style={{ margin: "0 0 12px", paddingLeft: 20, color: "var(--fg-2)", fontSize: 15, lineHeight: 1.65 }}>
+      {items.map((it, i) => <li key={i} style={{ marginBottom: 6 }}>{it}</li>)}
+    </ul>
+  );
+}
+
+const cell: React.CSSProperties = { padding: "9px 10px", borderTop: "1px solid var(--border)", verticalAlign: "top", fontSize: 13.5, color: "var(--fg-2)", lineHeight: 1.5 };
+const head: React.CSSProperties = { ...cell, fontWeight: 800, color: "var(--fg)", borderTop: "none", background: "var(--surface-2)" };
 
 export default function PrivacyPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, overflowX: "hidden" }}>
-
-      {/* Header — same pattern as /features */}
       <header style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        maxWidth: "var(--content-max-width)", margin: "0 auto", width: "100%",
-        padding: "24px 24px 0", boxSizing: "border-box",
+        maxWidth: 760, margin: "0 auto", width: "100%", padding: "24px 20px 0", boxSizing: "border-box",
       }}>
         <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
           <div style={{ width: 32, height: 32, borderRadius: 10, background: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔔</div>
           <span style={{ fontWeight: 700, fontSize: 16, color: "var(--fg)" }}>Reminder for Simplicity</span>
         </Link>
-        <Link href="/login" style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-          Log in
-        </Link>
+        <Link href="/login" style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>Log in</Link>
       </header>
 
-      {/* Draft banner — remove once content is finalized */}
-      <div style={{ maxWidth: "var(--content-max-width)", margin: "20px auto 0", padding: "0 24px", boxSizing: "border-box" }}>
-        <div style={{
-          background: "var(--tint-warning)", border: "1px solid #FDE68A", borderRadius: 14,
-          padding: "12px 16px", fontSize: 13, color: "var(--warning)", lineHeight: 1.5,
-        }}>
-          🚧 <strong>This page is a structural draft, not a published policy.</strong> Every yellow box below marks something that needs a real decision or a real piece of information before this can go live — see the list at the bottom for a single consolidated view.
+      <main style={{ maxWidth: 760, margin: "0 auto", padding: "28px 20px 80px", boxSizing: "border-box" }}>
+        <h1 style={{ fontSize: 30, fontWeight: 800, color: "var(--fg)", margin: "0 0 6px", letterSpacing: "-0.6px" }}>Privacy notice</h1>
+        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>Version {CONSENT_VERSION} · applies to the app at this address</div>
+
+        <div style={{ background: "var(--tint-accent)", borderRadius: 16, padding: "14px 16px", marginBottom: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", marginBottom: 6 }}>The short version</div>
+          <UL items={[
+            "We keep what you and your family put in the app — reminders, lists, homework, chores, activities, wishlists and photos — so the app can show it to your family and remind you.",
+            "Only people in your family see your family's things. Children only see their own things and the shared shopping list.",
+            "We never sell your data and never use it for ad targeting. Free adults may see our own simple ads; children and Pro families never do.",
+            "You can download everything (Settings → Export my data) and delete your account at any time.",
+          ]} />
         </div>
-      </div>
 
-      {/* Hero */}
-      <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", width: "100%", padding: "28px 24px 0", boxSizing: "border-box" }}>
-        <h1 style={{ fontSize: "clamp(26px, 6vw, 34px)", fontWeight: 800, color: "var(--fg)", lineHeight: 1.2, letterSpacing: "-0.5px", margin: "0 0 8px" }}>
-          Privacy Policy
-        </h1>
-        <p style={{ fontSize: 13, color: "var(--subtle)", margin: "0 0 32px" }}>
-          Last updated: {LAST_UPDATED}
-        </p>
+        <H>1. Who is responsible</H>
+        <P>
+          Reminder for Simplicity is run by Mikael Berglund, Sweden, who is the data controller for the personal data in the app.
+          When the service moves into a registered company, its name, organisation number and address will be listed here and you will be told in the app.
+        </P>
+        <P>Contact for anything about your data: <a href={`mailto:${ADMIN_EMAIL}`} style={{ color: "var(--accent)", fontWeight: 700 }}>{ADMIN_EMAIL}</a>. We answer requests within one month.</P>
 
-        <Section title="1. Who we are">
-          <p>
-            Reminder for Simplicity ("we", "us") provides a shared reminders, shopping list, wishlist,
-            chores, school, and activities app for families.
-          </p>
-          <TodoBox>
-            Legal entity name, organisationsnummer (or equivalent), and registered address — needed here
-            as the formal "data controller" identity before this page can be published.
-          </TodoBox>
-        </Section>
+        <H>2. What we keep and why</H>
+        <div style={{ overflowX: "auto", border: "1px solid var(--border)", borderRadius: 14, background: "var(--surface)", marginBottom: 12 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+            <thead>
+              <tr><th style={head}>What</th><th style={head}>Why</th><th style={head}>Legal basis (GDPR art. 6)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style={cell}>Name, email, optional phone, time zone, currency; a hashed password or a Google sign-in link</td><td style={cell}>Your account and logging in</td><td style={cell}>Contract</td></tr>
+              <tr><td style={cell}>Your family and each person&apos;s role</td><td style={cell}>Sharing lists and the calendar with the right people</td><td style={cell}>Contract</td></tr>
+              <tr><td style={cell}>Reminders (with amounts and categories you choose), shopping lists, wishlists, chores, activities, homework and tests</td><td style={cell}>Showing them, and emailing you reminders you asked for</td><td style={cell}>Contract</td></tr>
+              <tr><td style={cell}>Profile pictures and a family photo</td><td style={cell}>Showing who is who — only if you add them</td><td style={cell}>Consent (remove any time)</td></tr>
+              <tr><td style={cell}>Confirmed email, admin approval of new accounts, deletion requests</td><td style={cell}>Keeping accounts secure</td><td style={cell}>Legitimate interest</td></tr>
+              <tr><td style={cell}>Ideas &amp; votes</td><td style={cell}>The shared ideas board — your name is shown to other users</td><td style={cell}>Legitimate interest</td></tr>
+              <tr><td style={cell}>Ad impressions and clicks, as totals only</td><td style={cell}>Reporting to advertisers, no profiles about you</td><td style={cell}>Legitimate interest</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <P>
+          We don&apos;t ask for your age, address or ID number. If you write health-related things (for example a doctor&apos;s appointment in the &quot;Health&quot; category), that is your choice; we only store and show it to the people you share it with.
+        </P>
 
-        <Section title="2. What personal data we collect">
-          <ul style={listStyle}>
-            <li><b>Account data:</b> name, email address, phone (optional), preferred currency, timezone, and a hashed password (or a Google sign-in link). Every account's email address is confirmed via a verification link.</li>
-            <li><b>If you sign in with Google:</b> your name, email, and profile picture as provided by Google.</li>
-            <li><b>Content you create:</b> reminders, chores, shopping list and wishlist items, school and activity entries, calendar sync tokens, and suggestions/votes you post.</li>
-            <li><b>Child profiles:</b> a name, a confirmed email address (the child's own, or an adult's alias) and a hashed password the child chooses — set up by an adult in the household, who consents on the child's behalf.</li>
-          </ul>
-        </Section>
+        <H>3. Children</H>
+        <P>
+          A child&apos;s account is always added by a parent or guardian in the family, who confirms that they are the child&apos;s guardian and accepts this notice on the child&apos;s behalf.
+          The family&apos;s agreement with us is the legal basis; we don&apos;t ask children for their own consent.
+          You must be at least 13 to create an account on your own; younger children are added by a parent.
+        </P>
+        <UL items={[
+          "Children see only their own homework, tests, chores, activities and wishlist, plus the family shopping list.",
+          "Adults in the family can see what a child has, and a parent can delete a child's account.",
+          "Children never see ads.",
+          "A child's photo is only shown inside the family.",
+        ]} />
 
-        <Section title="3. Why we process it">
-          <ul style={listStyle}>
-            <li><b>To provide the service</b> you signed up for (performance of a contract) — storing and showing your reminders, lists, and household data.</li>
-            <li><b>Legitimate interest</b> — sending the email reminders you asked for, keeping accounts secure (e.g. the admin approval gate for new signups).</li>
-          </ul>
-          <TodoBox>
-            Confirm we send no marketing/promotional email today (only transactional: reminders, invites,
-            password reset, approval notices). If that ever changes, this section needs a consent-based
-            legal basis added.
-          </TodoBox>
-        </Section>
+        <H>4. Who helps us run the app</H>
+        <P>These companies process data for us under their data processing terms. Nothing is shared with anyone else unless the law requires it.</P>
+        <UL items={[
+          <><b>Supabase</b> — database, stored in Frankfurt, Germany (EU).</>,
+          <><b>Vercel</b> — hosting; the app runs in Frankfurt (EU). Vercel is a US company.</>,
+          <><b>Resend</b> — sends our emails; US company. Transfers outside the EU rely on the EU–US Data Privacy Framework or the EU standard contractual clauses.</>,
+          <><b>Google</b> — only if you choose &quot;Continue with Google&quot;. We keep your Google account id, not your Google password or tokens.</>,
+          <><b>Open Food Facts</b> (France) — only when you scan a barcode, your browser looks the code up there.</>,
+        ]} />
 
-        <Section title="4. Children's data & parental consent">
-          <p>
-            Child profiles are created by an already-approved adult in the household, not by the child
-            directly. A real email address is required at creation (see auth changes, 2026-07-27).
-          </p>
-          <TodoBox>
-            <b>Open decision, not yet made</b> (see <code>TODO.md</code> Körordning, steg 3): a declared
-            minimum age for child profiles, and confirmation of who is treated as giving consent — the
-            inviting parent, or a separate consent step. This section can't be finalized until that's
-            decided.
-          </TodoBox>
-        </Section>
+        <H>5. How long we keep it</H>
+        <UL items={[
+          "As long as you have an account.",
+          "When an account is deleted it is hidden at once and kept for 60 days in case you change your mind — then it is removed for good, including your profile picture.",
+          "Things you created for the family (for example shared reminders) stay with the family; things only about you go with your account.",
+          "Backups at our database provider can hold deleted data for a short time before they are overwritten.",
+          "Invitations expire after 48 hours (adults) or 7 days (children).",
+        ]} />
 
-        <Section title="5. Where your data is stored">
-          <p>
-            Our database (Supabase) is hosted in the <b>eu-central-1</b> region (Frankfurt, Germany) —
-            inside the EU.
-          </p>
-          <TodoBox>
-            Confirm the hosting/processing region used by Vercel (our application host) and whether it
-            offers EU data residency or an equivalent commitment — Vercel is a US-headquartered company.
-          </TodoBox>
-        </Section>
+        <H>6. Your rights</H>
+        <UL items={[
+          <><b>See and download</b> your data: Settings → Export my data.</>,
+          <><b>Correct</b> it: change your details in Settings.</>,
+          <><b>Delete</b> it: Settings → Delete account (a family admin approves, or you confirm yourself if you are the admin).</>,
+          <><b>Withdraw consent</b> for photos: Family members → Remove photo.</>,
+          <><b>Object or restrict</b> processing, or ask anything else: email us (section 1).</>,
+          <><b>Complain</b> to the Swedish Authority for Privacy Protection (IMY), <a href="https://www.imy.se" style={{ color: "var(--accent)" }}>imy.se</a>.</>,
+        ]} />
+        <P>For children, the parent or guardian uses these rights on the child&apos;s behalf.</P>
 
-        <Section title="6. Who else processes data on our behalf">
-          <ul style={listStyle}>
-            <li><b>Supabase</b> — database hosting (EU region, see above).</li>
-            <li><b>Vercel</b> — application hosting.</li>
-            <li><b>Resend</b> — transactional email delivery.</li>
-            <li><b>Google</b> — only if you choose to sign in with Google or subscribe to our outgoing calendar feed from a Google Calendar.</li>
-          </ul>
-          <TodoBox>
-            Confirm the data processing agreement (DPA) / EU-US Data Privacy Framework status for Vercel
-            and Resend (both US companies). Also: the current outgoing email sender address
-            (<code>onboarding@resend.dev</code>) is a Resend test domain — needs a real domain before
-            this page (or the product) is presented to real users, independent of the privacy question.
-          </TodoBox>
-        </Section>
+        <H>7. Security</H>
+        <P>
+          Everything goes over HTTPS. Passwords are stored as bcrypt hashes and links in our emails as one-way hashes. Access is checked on the server for every request.
+          One thing works without logging in, on purpose: your personal calendar subscription link — anyone who has that link can read your calendar, so keep it to yourself. You can get a new link (which stops the old one) in Settings.
+          If a data breach puts you at risk, we tell the authority within 72 hours and tell you without delay.
+        </P>
 
-        <Section title="7. How long we keep your data">
-          <TodoBox>
-            <b>Open decision, not yet made</b> (see <code>TODO.md</code> Körordning, steg 4): a retention
-            period after account deletion. Self-service "delete my account" isn't built yet either — until
-            it is, deletion has to be requested manually.
-          </TodoBox>
-        </Section>
+        <H>8. Cookies</H>
+        <P>We only use the cookies needed to keep you logged in. No tracking or advertising cookies. Your theme and view choices are saved in your own browser.</P>
 
-        <Section title="8. Your rights">
-          <ul style={listStyle}>
-            <li><b>Access & export</b> — already available: Profile → "Export your data" downloads everything as JSON.</li>
-            <li><b>Correct</b> — edit your own name, email, phone, etc. directly in Profile.</li>
-            <li><b>Delete</b> — <TodoInline>not self-service yet; contact us (see section 10) until it is.</TodoInline></li>
-            <li><b>Object / restrict processing</b> — <TodoInline>describe the process once decided.</TodoInline></li>
-            <li>
-              <b>Complain to a supervisory authority</b> — in Sweden, the{" "}
-              <a href="https://www.imy.se" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>
-                Swedish Authority for Privacy Protection (IMY)
-              </a>.
-            </li>
-          </ul>
-        </Section>
+        <H>9. Changes</H>
+        <P>When this notice changes in a way that matters, we show it in the app and update the version at the top.</P>
 
-        <Section title="9. Cookies & tracking">
-          <p>
-            We use only strictly necessary cookies (keeping you signed in). We don't use any
-            analytics or advertising trackers.
-          </p>
-          <p>
-            <strong>Sponsored cards.</strong> Adults on the free plan may see one clearly labelled
-            &ldquo;Sponsored&rdquo; card. These ads are chosen by us, not by an ad network, and are never
-            based on your data or behaviour. We only count how many times each ad is shown and clicked, in
-            total — nothing about you is shared with the advertiser. Children never see ads, and families
-            on Pro, the trial or an ad-free plan see none.
-          </p>
-          <TodoBox>
-            Keep this true, or update this section, if any analytics tool is ever added.
-          </TodoBox>
-        </Section>
-
-        <Section title="10. Security">
-          <p>
-            Passwords are stored hashed, never in plain text. Data in transit is encrypted (HTTPS).
-          </p>
-        </Section>
-
-        <Section title="11. Changes to this policy">
-          <p>
-            We'll update the date at the top of this page whenever it changes.
-          </p>
-          <TodoBox>
-            Decide how users are notified of material changes — email, an in-app banner, or neither for minor edits.
-          </TodoBox>
-        </Section>
-
-        <Section title="12. Contact">
-          <TodoBox>
-            A real contact email/address for privacy questions — not a test address.
-          </TodoBox>
-        </Section>
-
-        {/* Consolidated checklist */}
-        <div style={{ margin: "36px 0 56px" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)", margin: "0 0 12px" }}>
-            Everything that needs a decision or real content before this can be published
-          </h2>
-          <ol style={{ ...listStyle, paddingLeft: 20 }}>
-            <li>Legal entity name, org number, registered address (§1)</li>
-            <li>Minimum age for child profiles + who gives consent (§4) — open Körordning item</li>
-            <li>Vercel's data residency / DPA status (§5, §6)</li>
-            <li>Resend's DPA status + a real sending domain (§6)</li>
-            <li>Data retention period after account deletion (§7)</li>
-            <li>Self-service account deletion — not built yet (§8)</li>
-            <li>Real contact email/address (§12)</li>
-          </ol>
+        <div style={{ marginTop: 32, fontSize: 13, color: "var(--muted)" }}>
+          <Link href="/" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>← Back</Link>
         </div>
       </main>
     </div>
   );
-}
-
-const listStyle: React.CSSProperties = { margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 };
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section style={{ marginBottom: 28 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>{title}</h2>
-      <div style={{ fontSize: 14, color: "var(--fg-2)", lineHeight: 1.65, display: "flex", flexDirection: "column", gap: 10 }}>
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function TodoBox({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      background: "var(--tint-warning)", border: "1px dashed #FDE68A", borderRadius: 10,
-      padding: "10px 14px", fontSize: 13, color: "var(--warning)", lineHeight: 1.55,
-    }}>
-      <b>Needs a decision / real content:</b> {children}
-    </div>
-  );
-}
-
-function TodoInline({ children }: { children: React.ReactNode }) {
-  return <span style={{ color: "var(--warning)", fontStyle: "italic" }}>[{children}]</span>;
 }

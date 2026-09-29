@@ -1,6 +1,7 @@
 # Konkurrentanalys – Best4Family (best4family.com/dashboard/)
 
 **Datum:** 2026-07-28
+**Status 2026-09-29:** privacy-lärdomarna i §5 är genomförda i vår egen app – publicerat integritetsmeddelande (`/privacy`), vårdnadshavarens bekräftelse för barn, export och radering. Se `GDPR.md`. Resten av analysen är en ögonblicksbild från juli.
 **Metod:** Granskat live, inloggat gränssnitt (dashboard, alla 18 moduler, inställningar, familjehantering, samt hela den publika Privacy Policy-sidan) via webbläsare. Inga ändringar gjorda i vår kodbas – detta är ren research inför prioritering.
 **Syfte:** (1) bedöma deras design/tillgänglighet, (2) kartlägga funktioner de har som vi saknar, (3) djupanalysera deras privacy-sektion som förlaga för vår egen, (4) jämföra funktioner vi redan har och hitta förbättringar. Målet är **inte** att kopiera – vi ska ta lärdom, men behålla vår egen enkelhet som differentiator.
 

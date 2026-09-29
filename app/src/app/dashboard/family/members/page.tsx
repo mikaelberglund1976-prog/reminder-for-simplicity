@@ -43,6 +43,11 @@ export default function FamilyMembersPage() {
   const [error, setError] = useState<string | null>(null);
   const [needsUpgrade, setNeedsUpgrade] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  // 2026-09-29 (GDPR, launch list row 18): guardian confirmation.
+  const [guardianOk, setGuardianOk] = useState(false);
+  const [consents, setConsents] = useState<Record<string, { at: string; byName: string | null }>>({});
+  const [canConsent, setCanConsent] = useState(false);
+  const [consentBusy, setConsentBusy] = useState<string | null>(null);
 
   const [photoBusy, setPhotoBusy] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -60,7 +65,12 @@ export default function FamilyMembersPage() {
 
   async function load() {
     try {
-      const [hRes, tRes] = await Promise.all([fetch("/api/household"), fetch("/api/family/trial")]);
+      const [hRes, tRes, cRes] = await Promise.all([fetch("/api/household"), fetch("/api/family/trial"), fetch("/api/family/consent")]);
+      if (cRes.ok) {
+        const c = await cRes.json();
+        setConsents(c.consents ?? {});
+        setCanConsent(!!c.canConsent);
+      }
       if (hRes.ok) {
         const d = await hRes.json();
         setHasHousehold(!!d.household);
@@ -85,7 +95,7 @@ export default function FamilyMembersPage() {
   }
 
   function openAdd(kind: "child" | "adult") {
-    setAddKind(kind); setName(""); setEmail(""); setError(null); setNeedsUpgrade(false); setFlash(null);
+    setAddKind(kind); setName(""); setEmail(""); setError(null); setNeedsUpgrade(false); setFlash(null); setGuardianOk(false);
   }
 
   async function submitAdd(e: React.FormEvent) {
@@ -93,10 +103,11 @@ export default function FamilyMembersPage() {
     const em = email.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setError("Enter a valid email address"); return; }
     if (addKind === "child" && !name.trim()) { setError("Enter a name"); return; }
+    if (addKind === "child" && !guardianOk) { setError("Tick the box to confirm you're the child's parent or guardian"); return; }
     setBusy(true); setError(null); setNeedsUpgrade(false);
     try {
       const res = addKind === "child"
-        ? await fetch("/api/family/child-profiles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim(), email: em }) })
+        ? await fetch("/api/family/child-profiles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim(), email: em, guardianConsent: guardianOk }) })
         : await fetch("/api/household/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, role: adultRole }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -113,6 +124,16 @@ export default function FamilyMembersPage() {
       await load();
     } catch { setError("Network error"); }
     finally { setBusy(false); }
+  }
+
+  // Children added before 2026-09-29 have no recorded confirmation yet.
+  async function confirmConsent(childId: string) {
+    if (!window.confirm("Confirm that you're this child's parent or guardian and agree that their account and data are kept as described in the privacy notice?")) return;
+    setConsentBusy(childId);
+    try {
+      const res = await fetch("/api/family/consent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ childId }) });
+      if (res.ok) setConsents((c) => ({ ...c, [childId]: { at: new Date().toISOString(), byName: null } }));
+    } finally { setConsentBusy(null); }
   }
 
   function pickAvatar(userId: string) {
@@ -221,7 +242,18 @@ export default function FamilyMembersPage() {
                       <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {display}{m.userId === session?.user?.id ? <span style={{ color: "var(--subtle)", fontWeight: 600 }}> (you)</span> : null}
                       </div>
-                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>{ROLE_LABEL[m.role] ?? m.role}</div>
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>
+                        {ROLE_LABEL[m.role] ?? m.role}
+                        {m.role === "CHILD" && consents[m.userId] && <span> · Guardian confirmed</span>}
+                        {m.role === "CHILD" && !consents[m.userId] && canConsent && (
+                          <>
+                            {" · "}
+                            <button onClick={() => confirmConsent(m.userId)} disabled={consentBusy === m.userId} style={{ background: "none", border: "none", padding: 0, color: "var(--warning)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+                              {consentBusy === m.userId ? "Saving…" : "Confirm as guardian"}
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                     {canPhoto && hasPhoto && (
                       <button onClick={() => removeAvatar(m.userId)} style={{ background: "none", border: "none", color: "var(--subtle)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
@@ -294,6 +326,12 @@ export default function FamilyMembersPage() {
                               }}>{l}</button>
                             ))}
                           </div>
+                        )}
+                        {addKind === "child" && (
+                          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, color: "var(--fg)", lineHeight: 1.45, marginBottom: 12, cursor: "pointer" }}>
+                            <input type="checkbox" checked={guardianOk} onChange={(e) => setGuardianOk(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1, flexShrink: 0, accentColor: "var(--accent)" }} />
+                            <span>I&apos;m the child&apos;s parent or guardian, and I agree that the child&apos;s account and what the family adds for them (homework, chores, activities, wishlist, photo) are kept as described in the <Link href="/privacy" target="_blank" style={{ color: "var(--accent)", fontWeight: 700 }}>privacy notice</Link>.</span>
+                          </label>
                         )}
                         <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, marginBottom: 12 }}>
                           {addKind === "child"
