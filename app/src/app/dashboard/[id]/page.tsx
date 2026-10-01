@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -431,9 +432,7 @@ export default function ReminderDetailPage() {
                     .map(m => (
                       <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: selectedHandoverUser === m.userId ? "var(--tint-accent)" : "var(--surface)", border: `1.5px solid ${selectedHandoverUser === m.userId ? "var(--accent)" : "var(--border)"}`, borderRadius: 12, cursor: "pointer" }}>
                         <input type="radio" name="handoverUser" value={m.userId} checked={selectedHandoverUser === m.userId} onChange={() => setSelectedHandoverUser(m.userId)} style={{ accentColor: "var(--accent)" }} />
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--tint-accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>
-                          {(m.user.name ?? m.user.email)[0].toUpperCase()}
-                        </div>
+                        <Avatar userId={m.userId} name={m.user.name ?? m.user.email} size={32} />
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{m.user.name ?? m.user.email}</div>
                           <div style={{ fontSize: 12, color: "var(--muted)" }}>{m.user.email}</div>

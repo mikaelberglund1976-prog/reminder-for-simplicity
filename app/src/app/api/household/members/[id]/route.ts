@@ -24,8 +24,17 @@ export async function DELETE(
       where: { userId: session.user.id, householdId: targetMembership.householdId },
     });
 
-    if (!requesterMembership || requesterMembership.role !== "OWNER") {
-      return NextResponse.json({ error: "Only household owners can remove members" }, { status: 403 });
+    // 2026-10-01: the family admin — OWNER, or a PARENT when there is no
+    // OWNER (same rule as /api/household/deletion-requests).
+    const ownerCount = requesterMembership
+      ? await prisma.householdMember.count({ where: { householdId: targetMembership.householdId, role: "OWNER" } })
+      : 0;
+    const isAdmin = !!requesterMembership && (requesterMembership.role === "OWNER" || (ownerCount === 0 && requesterMembership.role === "PARENT"));
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Only the family admin can remove members" }, { status: 403 });
+    }
+    if (targetMembership.userId === session.user.id) {
+      return NextResponse.json({ error: "You can't remove yourself here" }, { status: 400 });
     }
 
     if (targetMembership.role === "OWNER") {

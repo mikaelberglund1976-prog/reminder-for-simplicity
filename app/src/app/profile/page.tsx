@@ -9,6 +9,8 @@ import DeleteAccountSection from "@/components/DeleteAccountSection";
 import DeletionRequestsCard from "@/components/DeletionRequestsCard";
 import { getViewMode, setViewMode, ViewMode } from "@/lib/viewMode";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import Avatar from "@/components/Avatar";
+import AvatarPicker from "@/components/AvatarPicker";
 import { invalidateMe } from "@/lib/me";
 
 type HouseholdMember = {
@@ -416,14 +418,10 @@ export default function ProfilePage() {
 
         {/* Avatar + name */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: "50%",
-            background: "var(--accent-bg)", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 22, color: "#fff", fontWeight: 700, flexShrink: 0,
-            boxShadow: "0 2px 8px rgba(91,156,245,0.35)",
-          }}>
-            {form.firstName ? form.firstName[0].toUpperCase() : (session?.user?.name?.[0] ?? "?")}
-          </div>
+          {/* 2026-10-01: the real photo (same as everywhere else), tap to change it. */}
+          {session?.user?.id ? (
+            <AvatarPicker userId={session.user.id} name={form.firstName || session.user.name} size={60} showRemove />
+          ) : null}
           <div>
             <div style={{ fontSize: 20, fontWeight: 700, color: "var(--fg)", letterSpacing: "-0.4px" }}>
               {[form.firstName, form.lastName].filter(Boolean).join(" ") || session?.user?.name || "My Profile"}
@@ -716,9 +714,7 @@ export default function ProfilePage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {household.members.map((m) => (
                     <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--tint-accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "var(--accent)", flexShrink: 0 }}>
-                        {(m.user.name ?? m.user.email)[0].toUpperCase()}
-                      </div>
+                      <Avatar userId={m.user.id} name={m.user.name ?? m.user.email} size={36} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {m.user.name ?? m.user.email}
@@ -879,9 +875,7 @@ export default function ProfilePage() {
                         {pinChildren.map(c => (
                           <div key={c.id}>
                             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "var(--surface-2)", borderRadius: 12, border: "1.5px solid var(--border)" }}>
-                              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--ink)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
-                                {c.name.charAt(0).toUpperCase()}
-                              </div>
+                              <Avatar userId={c.id} name={c.name} size={32} />
                               <div style={{ minWidth: 0, flex: 1 }}>
                                 <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{c.name}</div>
                                 {c.email && <div style={{ fontSize: 11, color: "var(--subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.email}</div>}

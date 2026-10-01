@@ -54,6 +54,9 @@ export default function FamilyMembersPage() {
   const avatarInput = useRef<HTMLInputElement>(null);
   const headerInput = useRef<HTMLInputElement>(null);
   const [avatarTarget, setAvatarTarget] = useState<string | null>(null);
+  // 2026-10-01 (phone test): remove people right here, not only deep in Settings.
+  const [removeBusy, setRemoveBusy] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -136,6 +139,29 @@ export default function FamilyMembersPage() {
     } finally { setConsentBusy(null); }
   }
 
+  // A child account only exists for this family, so "remove" deletes the
+  // account (soft delete — restorable for 60 days, same as Settings). An
+  // adult keeps their own account and is just taken out of the family.
+  async function removeMember(m: Member) {
+    const display = m.user.name ?? m.user.email.split("@")[0];
+    const isChild = m.role === "CHILD";
+    const text = isChild
+      ? `Delete ${display}'s account?\n\n${display} is removed from the family and can't log in any more. Homework, chores and activities assigned to ${display} stay, without an owner. The account is kept 60 days and can be restored on request.`
+      : `Remove ${display} from the family?\n\n${display} keeps their own account but no longer sees the family's lists, chores or shared reminders.`;
+    if (!window.confirm(text)) return;
+    setRemoveBusy(m.userId); setRemoveError(null); setFlash(null);
+    try {
+      const res = isChild
+        ? await fetch(`/api/household/deletion-requests/${encodeURIComponent(m.userId)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete" }) })
+        : await fetch(`/api/household/members/${encodeURIComponent(m.id)}`, { method: "DELETE" });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setRemoveError(d.error ?? "Couldn't remove them"); return; }
+      setFlash(isChild ? `✓ ${display}'s account is deleted. It can be restored within 60 days.` : `✓ ${display} is no longer in the family.`);
+      await load();
+    } catch { setRemoveError("Network error"); }
+    finally { setRemoveBusy(null); }
+  }
+
   function pickAvatar(userId: string) {
     setAvatarTarget(userId);
     setPhotoError(null);
@@ -175,6 +201,8 @@ export default function FamilyMembersPage() {
   }
 
   const isOwner = myRole === "OWNER";
+  // Family admin = OWNER, or a PARENT when the family has no OWNER (same rule as the API).
+  const isFamilyAdmin = isOwner || (myRole === "PARENT" && !members.some((x) => x.role === "OWNER"));
   const isAdult = !!myRole && ["OWNER", "PARENT", "ADULT"].includes(myRole);
   const sorted = [...members].sort((a, b) => (a.role === "CHILD" ? 1 : 0) - (b.role === "CHILD" ? 1 : 0));
 
@@ -209,6 +237,11 @@ export default function FamilyMembersPage() {
             {flash && (
               <div style={{ fontSize: 13, color: "var(--success)", background: "var(--tint-success)", borderRadius: 12, padding: "10px 12px", marginBottom: 14, fontWeight: 600, lineHeight: 1.4 }}>
                 {flash}
+              </div>
+            )}
+            {removeError && (
+              <div style={{ fontSize: 13, color: "var(--danger)", background: "var(--tint-danger)", borderRadius: 12, padding: "10px 12px", marginBottom: 14, fontWeight: 600 }}>
+                {removeError}
               </div>
             )}
             {photoError && (
@@ -255,11 +288,21 @@ export default function FamilyMembersPage() {
                         )}
                       </div>
                     </div>
-                    {canPhoto && hasPhoto && (
-                      <button onClick={() => removeAvatar(m.userId)} style={{ background: "none", border: "none", color: "var(--subtle)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-                        Remove photo
-                      </button>
-                    )}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                      {canPhoto && hasPhoto && (
+                        <button onClick={() => removeAvatar(m.userId)} style={{ background: "none", border: "none", padding: 0, color: "var(--subtle)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+                          Remove photo
+                        </button>
+                      )}
+                      {isFamilyAdmin && m.role !== "OWNER" && m.userId !== session?.user?.id && (
+                        <button onClick={() => removeMember(m)} disabled={removeBusy === m.userId} style={{
+                          background: "var(--tint-danger)", border: "none", borderRadius: 50, padding: "6px 12px",
+                          color: "var(--danger)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT, opacity: removeBusy === m.userId ? 0.6 : 1,
+                        }}>
+                          {removeBusy === m.userId ? "Removing…" : m.role === "CHILD" ? "Delete" : "Remove"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -274,7 +317,7 @@ export default function FamilyMembersPage() {
               ))}
             </div>
             <div style={{ fontSize: 12, color: "var(--muted)", margin: "0 4px 22px", lineHeight: 1.45 }}>
-              Tap a picture to add a photo — yours, or your children&apos;s. Roles and removing people are in <Link href="/profile" style={{ color: "var(--accent)", fontWeight: 700 }}>Settings</Link>.
+              Tap a picture to add a photo — yours, or your children&apos;s.{isFamilyAdmin ? " Delete removes a child's account (restorable for 60 days); Remove takes an adult out of the family." : ""}
             </div>
 
             {/* Add someone */}

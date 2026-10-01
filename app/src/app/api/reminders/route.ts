@@ -41,6 +41,9 @@ export async function GET() {
         category: { notIn: ["CHORE", "TRAINING", "SCHOOL"] as never },
         OR: [
           { userId: session.user.id },
+          // 2026-10-01: something assigned to me is shared with me, whatever
+          // its visibility (a child sees what a parent put on them).
+          { householdId: membership.householdId, assignedTo: session.user.id },
           {
             householdId: membership.householdId,
             visibility: { in: visibleLevels as ("HOUSEHOLD" | "PARENTS")[] },
