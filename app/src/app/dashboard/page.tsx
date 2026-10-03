@@ -424,13 +424,13 @@ export default function DashboardPage() {
   }));
   const pendingApprovals = familySummary.reduce((s, c) => s + c.pending, 0);
 
-  // Homework & tests for the next two weeks (plus anything overdue and not
-  // ticked off), grouped per person — tests first within a day.
+  // 2026-10-03 (Mikael): Home only shows each child's nearest tests (next
+  // three weeks) — homework and everything else lives on the School page.
   const schoolByPerson = (() => {
-    const horizon = 14;
+    const horizon = 21;
     const open = schoolItems
-      .filter((i) => !i.completedAt && getDaysUntil(i.date) <= horizon && getDaysUntil(i.date) >= -7)
-      .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date) || (a.schoolKind === "TEST" ? -1 : 0) - (b.schoolKind === "TEST" ? -1 : 0));
+      .filter((i) => i.schoolKind === "TEST" && !i.completedAt && getDaysUntil(i.date) >= 0 && getDaysUntil(i.date) <= horizon)
+      .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date));
     const map = new Map<string, { id: string; name: string; items: SchoolItem[] }>();
     for (const it of open) {
       const id = it.assignedUser?.id ?? "?";
@@ -602,7 +602,7 @@ export default function DashboardPage() {
         {schoolByPerson.length > 0 && (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-              <SectionTitle inline>Homework & tests</SectionTitle>
+              <SectionTitle inline>Upcoming tests</SectionTitle>
               <Link href="/dashboard/school" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>All →</Link>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
@@ -612,11 +612,10 @@ export default function DashboardPage() {
                     <Avatar userId={p.id} name={p.name} size={28} />
                     <span style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>
-                      {p.items.filter((i) => i.schoolKind === "TEST").length > 0 && `${p.items.filter((i) => i.schoolKind === "TEST").length} test${p.items.filter((i) => i.schoolKind === "TEST").length === 1 ? "" : "s"} · `}
-                      {p.items.length} coming up
+                      {p.items.length} test{p.items.length === 1 ? "" : "s"}
                     </span>
                   </div>
-                  {p.items.slice(0, 3).map((it) => {
+                  {p.items.slice(0, 2).map((it) => {
                     const d = getDaysUntil(it.date);
                     const isTest = it.schoolKind === "TEST";
                     return (
@@ -634,7 +633,7 @@ export default function DashboardPage() {
                       </div>
                     );
                   })}
-                  {p.items.length > 3 && <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>+{p.items.length - 3} more</div>}
+                  {p.items.length > 2 && <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>+{p.items.length - 2} more on School</div>}
                 </Link>
               ))}
             </div>
