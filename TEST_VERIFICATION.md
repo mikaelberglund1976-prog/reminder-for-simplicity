@@ -127,4 +127,5 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Byt urval i SchoolSoft (t.ex. Schema av) → Remove imported → Sync now.
 - [ ] Disconnect (OK = ta bort importerade / Avbryt = behåll).
 - [ ] Efter nästa cron (08:00 UTC): loggen visar "SchoolSoft feeds: … synced".
+- [ ] **View as:** Family members → "👁 View as" på ett barn → röd list högst upp, barnets Home. "Switch…" → annat barn. "Back to me" → tillbaka på Family members som admin. Knappen syns inte för andra vuxna.
 

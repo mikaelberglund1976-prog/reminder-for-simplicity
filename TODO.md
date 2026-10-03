@@ -780,3 +780,7 @@ Se `RELEASE_2026-10-03.md`. Ersätter den gamla "inkommande ICS-import"-punkten 
 - [ ] Testa mot riktig SchoolSoft-länk; skicka en ICS-fil om prov/läxa-gissningen blir fel
 - [ ] Senare: samma import för idrottsklubbar (Activities) – andra domäner än schoolsoft.se kräver en vitlista
 
+## 38. Admin "View as" (impersonation) – LIVE ✅ (2026-10-03)
+Se `RELEASE_2026-10-03.md` §4. Family members → "👁 View as" (bara admin, bara egen familj), röd list med Switch/Back to me, 2 h max, loggas.
+- [ ] Senare, om det behövs för support: View as även för andra familjer från `/admin` (kräver beslut – integritet)
+

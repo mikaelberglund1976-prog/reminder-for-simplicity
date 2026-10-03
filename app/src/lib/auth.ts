@@ -8,6 +8,7 @@ import { sendAdminApprovalRequestEmail } from "@/lib/email";
 import { checkRateLimit, recordFailedAttempt, clearRateLimit } from "@/lib/rateLimit";
 import { EMAIL_NOT_VERIFIED_MESSAGE, ACCOUNT_DELETED_MESSAGE } from "@/lib/verification";
 import { autoJoinPendingInvite, findPendingInvite } from "@/lib/invites";
+import { endImpersonation, IMPERSONATION_MAX_MS, startImpersonation } from "@/lib/impersonation";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
 
@@ -222,7 +223,19 @@ export const authOptions: NextAuthOptions = {
     },
 
     // ─── jwt: build the JWT token ─────────────────────────────────────────────
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
+      // 2026-10-03: admin "view as" (impersonation) for testing — see
+      // lib/impersonation.ts. Only the real admin can start it, only for
+      // people in the admin's own family, and it ends by itself after 2 h.
+      if (trigger === "update" && session && typeof session === "object") {
+        const req = session as { impersonate?: unknown; stopImpersonating?: unknown };
+        if (req.stopImpersonating) return endImpersonation(token);
+        if (typeof req.impersonate === "string") return startImpersonation(token, req.impersonate);
+      }
+      if (token.realId && (!token.impAt || Date.now() - (token.impAt as number) > IMPERSONATION_MAX_MS)) {
+        endImpersonation(token);
+      }
+
       // 2026-09-27: a JWT session outlives the account being soft-deleted, so
       // re-check every 5 minutes and drop the user id if the account is gone
       // (every API route treats a missing session.user.id as logged out).
@@ -255,6 +268,13 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        if (token.realId) {
+          // While viewing as someone, the whole app sees that person.
+          session.user.email = (token.email as string) ?? session.user.email;
+          session.user.name = (token.name as string | null) ?? null;
+          session.user.image = null;
+          session.impersonator = { name: (token.realName as string | null) ?? null, email: token.realEmail as string, until: (token.impAt as number) + IMPERSONATION_MAX_MS };
+        }
       }
       return session;
     },

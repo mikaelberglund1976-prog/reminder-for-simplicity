@@ -68,6 +68,9 @@ Det finns ingen roll-nivå inom admin – man antingen är `ADMIN_EMAIL` eller i
 - **Annonser:** `/admin/ads` (länk "Ads →" i `/admin`). Skapa/ändra/pausa/radera; se visningar, klick och CTR. Bara http(s)-länkar godkänns. Klick går via `/api/ads/[id]/click` som räknar och skickar vidare.
 - **Radering:** `/admin` → Deleted: Restore eller Delete now. Automatisk permanent radering efter 60 dagar sker i cron.
 
+### 3c. View as (impersonation, 2026-10-03)
+Admin kan se appen som en person i sin egen familj: Family members → "👁 View as". Röd list högst upp med Switch/Back to me; slutar själv efter 2 h. Loggas som `[impersonation] start/stop` i Vercels funktionsloggar. Logik: `app/src/lib/impersonation.ts`.
+
 ## 4. Miljöer & secrets
 
 | Miljö | Var | Kommentar |

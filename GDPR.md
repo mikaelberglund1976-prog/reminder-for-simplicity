@@ -31,7 +31,7 @@ Gemensamt för alla rader: lagras i Supabase (eu-central-1, Frankfurt); appens s
 | 8 | Säkerhet | Verifierad e-post, admingodkännande, radering, spärr vid felaktiga inloggningar | Alla | Tidpunkter, status, vem som godkände | Berättigat intresse (6.1 f) | Supabase, Vercel | Som #1; inloggningsspärr i minnet 15 min |
 | 9 | Idétavlan | Förslag och röster | Inloggade | Titel, text, namn, röster | Berättigat intresse | Supabase, Vercel | Som #1 |
 | 10 | Egen reklam | Visa och rapportera annonser | Gratis-vuxna (inga personuppgifter sparas) | Bara totalsiffror visningar/klick | Berättigat intresse | Supabase | Så länge annonsen finns |
-| 11 | Administration | Support, beviljning av Pro, återställning | Alla | Allt ovan, läsbart för admin i `/admin` | Berättigat intresse / avtal | – | – |
+| 11 | Administration (inkl. "View as" i egen familj sedan 2026-10-03, loggas) | Support, beviljning av Pro, återställning | Alla | Allt ovan, läsbart för admin i `/admin` | Berättigat intresse / avtal | – | – |
 
 **Inte behandlat:** personnummer, adress, ålder, betalkortsuppgifter (kommer via Stripe senare → ny rad), spårning/analys, tredjepartsreklam.
 

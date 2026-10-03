@@ -459,6 +459,10 @@ Detaljer: `TODO.md` punkt 31.
 - Bara vuxna hanterar kopplingen; länken lämnar aldrig servern; bara `*.schoolsoft.se` hämtas.
 - Importerade poster mejlar bara barnet dagen före.
 
+### 4b.41 Admin "View as" (2026-10-03, live)
+
+- Admin kan se appen som en person i sin egen familj (Family members → "👁 View as"), byta person i den röda listen och gå tillbaka. Max 2 h, loggas. `lib/impersonation.ts`.
+
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
 - [ ] **WhatsApp-påminnelser** – Alternativ kanal till email, högre öppningsgrad

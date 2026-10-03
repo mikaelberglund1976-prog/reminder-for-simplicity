@@ -5,6 +5,8 @@
 // deep in Settings. Also where family photos are set (row 40): a photo per
 // person and the family photo shown at the top of Home.
 import { useSession } from "next-auth/react";
+import { viewAs } from "@/components/ImpersonationBar";
+import { ADMIN_EMAIL } from "@/lib/adminConfig";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,7 +26,10 @@ type Invite = { id: string; email: string; createdAt: string };
 const ROLE_LABEL: Record<string, string> = { OWNER: "Owner", PARENT: "Parent", ADULT: "Adult", CHILD: "Child", MEMBER: "Member" };
 
 export default function FamilyMembersPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
+  // 2026-10-03: admin "View as" for testing (lib/impersonation.ts).
+  const isAdmin = !session?.impersonator && session?.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const [viewBusy, setViewBusy] = useState<string | null>(null);
   const router = useRouter();
   const media = useFamilyMedia();
 
@@ -292,6 +297,15 @@ export default function FamilyMembersPage() {
                       {canPhoto && hasPhoto && (
                         <button onClick={() => removeAvatar(m.userId)} style={{ background: "none", border: "none", padding: 0, color: "var(--subtle)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
                           Remove photo
+                        </button>
+                      )}
+                      {isAdmin && m.userId !== session?.user?.id && (
+                        <button onClick={async () => { setViewBusy(m.userId); if (!(await viewAs(update, m.userId))) { setViewBusy(null); setRemoveError("Couldn't switch to that person"); } }}
+                          disabled={viewBusy === m.userId} style={{
+                          background: "var(--tint-accent)", border: "none", borderRadius: 50, padding: "6px 12px",
+                          color: "var(--accent-strong)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT, opacity: viewBusy === m.userId ? 0.6 : 1,
+                        }}>
+                          {viewBusy === m.userId ? "Opening…" : "👁 View as"}
                         </button>
                       )}
                       {isFamilyAdmin && m.role !== "OWNER" && m.userId !== session?.user?.id && (

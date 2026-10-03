@@ -112,6 +112,7 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] Home alltid först i menyn nere, Calendar valbar
 - [x] Vuxnas Home: bara närmaste proven per barn; allt annat på School
 - [x] SchoolSoft-import per barn: vuxen kopplar, daglig synk, isär från manuella, "Remove imported", justerbara poster (`RELEASE_2026-10-03.md`)
+- [x] Admin "View as" en person i egen familj (för att testa barnvyn)
 - [ ] **Nästa:** testa mot riktig SchoolSoft; samma import för idrottsklubbar (Activities)
 
 ## USP:ar och prioritet inför användartester (2026-07-28)

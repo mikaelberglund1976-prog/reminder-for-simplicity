@@ -189,7 +189,8 @@ PIN borttaget + e-postverifiering, mjuk radering med 60 dagars återställning, 
 - `a7b278d` – Home alltid först i menyn nere, Calendar valbar.
 - `5e4aef3` – vuxnas Home visar bara barnens närmaste prov.
 - SchoolSoft-import per barn – `RELEASE_2026-10-03.md`. Nya tabeller `school_feeds`, `school_imports` skapas automatiskt.
-- [ ] Klicktesta: `TEST_VERIFICATION.md` §12 (inkl. riktig SchoolSoft-länk).
+- Admin "View as" (impersonation) i egen familj – `RELEASE_2026-10-03.md` §4.
+- [ ] Klicktesta: `TEST_VERIFICATION.md` §12 (inkl. riktig SchoolSoft-länk och View as).
 
 ## Vad som redan är klart och inte behöver oroa er (för sammanhanget)
 
