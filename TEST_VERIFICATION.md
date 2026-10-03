@@ -113,3 +113,18 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Logga in som barn → My week → "What does the app save about me?" öppnas och länkar till `/privacy`.
 - [ ] Vercel → Project → Settings → Functions: region Frankfurt (fra1).
 - [ ] Efter nästa cron-körning (08:00 UTC): loggen visar inga "GDPR cleanup ERROR".
+
+## 12. Barnets startsida + SchoolSoft (2026-10-01–03, LIVE) – se `RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`
+- [ ] Family members som familjeadmin: **Delete** på ett testbarn → borta, kan inte logga in; återställ från `/admin`. **Remove** på en vuxen → ut ur familjen, kontot finns kvar.
+- [ ] Logga in som barn: "Hi <namn>" med bilden, familjebilden, tre rutor, läxor & prov först, sysslor kompakt. Byt bild från startsidan → syns hos föräldern också.
+- [ ] Settings visar den riktiga bilden (inte en bokstav).
+- [ ] Menyn nere: Home längst till vänster för vuxna och barn. Settings → välj appar: Calendar går att välja bort/till.
+- [ ] Vuxnas Home: "Upcoming tests" visar bara prov, max två per barn.
+- [ ] School → SchoolSoft → Connect på ett barn → klistra in länken → "Connected. Synced: N new". Posterna märks "SchoolSoft" och syns hos barnet.
+- [ ] Är prov/läxa rätt gissat? Tryck på en post → ändra typ → Save → "Sync now" (efter 10 min) skriver inte över.
+- [ ] Ta bort (×) en importerad post som vuxen → "Sync now" → kommer inte tillbaka. Som barn finns inget × på importerade.
+- [ ] Lägg till en egen läxa → **Remove imported** → bara SchoolSoft-posterna försvinner, den egna ligger kvar → "Sync now" hämtar igen.
+- [ ] Byt urval i SchoolSoft (t.ex. Schema av) → Remove imported → Sync now.
+- [ ] Disconnect (OK = ta bort importerade / Avbryt = behåll).
+- [ ] Efter nästa cron (08:00 UTC): loggen visar "SchoolSoft feeds: … synced".
+

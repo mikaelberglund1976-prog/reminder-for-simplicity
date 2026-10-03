@@ -3,6 +3,7 @@ import { sendReminderEmail } from "@/lib/email";
 import { addDays, addWeeks, addMonths, addYears } from "date-fns";
 import { purgeExpiredAccounts } from "@/lib/accountDeletion";
 import { purgeOrphanMedia } from "@/lib/media";
+import { importedIds, syncAllFeeds } from "@/lib/schoolFeeds";
 
 function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -17,11 +18,25 @@ export async function runReminderCron() {
   let errors = 0;
   const log: string[] = [];
 
+  // 2026-10-03: SchoolSoft links, once a day — before the reminders below so a
+  // test that just appeared still gets its day-before email.
+  try {
+    const feeds = await syncAllFeeds();
+    if (feeds.synced || feeds.failed) log.push(`SchoolSoft feeds: ${feeds.synced} synced, ${feeds.failed} failed`);
+  } catch (err) {
+    console.error("SchoolSoft sync failed:", err);
+    log.push(`SchoolSoft sync ERROR: ${String(err)}`);
+  }
+
   const reminders = await prisma.reminder.findMany({
     // 2026-09-27: skip reminders owned by soft-deleted accounts.
     where: { isActive: true, user: { deletedAt: null } },
     include: { user: true, assignedUser: true },
   });
+
+  // Imported SchoolSoft items email only the child — otherwise the parent who
+  // connected the link would get one email per homework for every child.
+  const imported = await importedIds(reminders.filter((r) => r.category === "SCHOOL").map((r) => r.id));
 
   log.push(`Today: ${todayStr}`);
   log.push(`Active reminders: ${reminders.length}`);
@@ -52,9 +67,9 @@ export async function runReminderCron() {
     try {
       // School items: the person it's assigned to (usually the child) gets the
       // reminder, plus whoever created it if that's someone else (a parent).
-      const recipients: { email: string; name: string | null }[] = [{ email: reminder.user.email, name: reminder.user.name }];
+      const recipients: { email: string; name: string | null }[] = imported.has(reminder.id) ? [] : [{ email: reminder.user.email, name: reminder.user.name }];
       if (reminder.category === "SCHOOL" && reminder.assignedUser && !reminder.assignedUser.deletedAt
-          && reminder.assignedUser.email !== reminder.user.email) {
+          && (imported.has(reminder.id) || reminder.assignedUser.email !== reminder.user.email)) {
         recipients.unshift({ email: reminder.assignedUser.email, name: reminder.assignedUser.name });
       }
       for (const r of recipients) await sendReminderEmail({

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPro } from "@/lib/entitlements";
+import { importedIds } from "@/lib/schoolFeeds";
 
 // 2026-08-18: MEMBER included too — a chore/activity/school item can be
 // created by any household member, not just an OWNER/PARENT/ADULT (Mikael:
@@ -84,6 +85,11 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "asc" },
     });
 
+    // 2026-10-03: mark items that came from SchoolSoft.
+    if (category === "SCHOOL") {
+      const imp = await importedIds(chores.map((c) => c.id));
+      return NextResponse.json({ chores: chores.map((c) => ({ ...c, imported: imp.has(c.id) })), weekStart, access: isPro ? "PRO" : "TRIAL" });
+    }
     return NextResponse.json({ chores, weekStart, access: isPro ? "PRO" : "TRIAL" });
   } catch (err) {
     console.error("Chore GET error:", err);

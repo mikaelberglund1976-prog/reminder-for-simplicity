@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import SchoolSection from "@/components/SchoolSection";
+import SchoolSoftCard from "@/components/SchoolSoftCard";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -115,6 +116,8 @@ function SchoolPageInner() {
       <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 20 }}>
         Upcoming homework and tests for the whole family. Tick them off when done, and choose per item whether it shows in the calendar. Children see theirs first thing when they log in.
       </div>
+      {/* 2026-10-03: SchoolSoft import per child (adults only — the card hides itself otherwise). */}
+      <SchoolSoftCard />
       {members.length === 0 ? (
         <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
           Add someone in Family before creating school items.

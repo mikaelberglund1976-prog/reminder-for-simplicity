@@ -2,7 +2,7 @@
 
 **Syfte:** en enda, avdubblerad, omprioriterad lista över allt som återstår innan produkten är "helt klar" för bred lansering. Ersätter inte `TODO.md` (som förblir den kronologiska arbetsloggen/historiken) utan sitter ovanpå den – det här dokumentet är **den aktuella sanningen om vad som är kvar**, `TODO.md` är **hur vi kom hit**.
 **Metod:** allt `- [ ]` extraherat ur `TODO.md` (punkt 1–25), `PRODUCT_SPEC.md`, `ROADMAP.md`, `OPERATIONS.md`, `APP_STORE_READINESS.md`, dubbletter slagna ihop, omgrupperat i faser efter vad som faktiskt blockerar vad.
-**Senast synkad:** 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
+**Senast synkad:** 2026-10-03 – barnets startsida, radera medlemmar, Home först, SchoolSoft-import LIVE (`RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`, `TODO.md` punkt 36–37). Före det: 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
 **Obs:** den gemensamma lanseringslistan för alla Assistiq-appar (namn, bolag, webb, GDPR, betalning) finns i Claude Docs ("Genomlysning: Assistiq inför kommersiell lansering", fliken Todo-lista). Den här filen är appens egen tekniska checklista.
 **Uppdatera detta dokument** när en punkt blir klar (bocka av `- [x]`) eller när prioritet ändras – det tappar sitt värde annars.
 
@@ -182,6 +182,14 @@ PIN borttaget + e-postverifiering, mjuk radering med 60 dagars återställning, 
 - [ ] Klicktesta: `TEST_VERIFICATION.md` §9–§11.
 
 ---
+
+## Kodändringar 2026-10-01 – 2026-10-03 – DEPLOYADE ✅
+
+- `7d00537` – barnets startsida som översikt, ta bort familjemedlemmar, samma bild överallt. `RELEASE_2026-10-01.md`.
+- `a7b278d` – Home alltid först i menyn nere, Calendar valbar.
+- `5e4aef3` – vuxnas Home visar bara barnens närmaste prov.
+- SchoolSoft-import per barn – `RELEASE_2026-10-03.md`. Nya tabeller `school_feeds`, `school_imports` skapas automatiskt.
+- [ ] Klicktesta: `TEST_VERIFICATION.md` §12 (inkl. riktig SchoolSoft-länk).
 
 ## Vad som redan är klart och inte behöver oroa er (för sammanhanget)
 

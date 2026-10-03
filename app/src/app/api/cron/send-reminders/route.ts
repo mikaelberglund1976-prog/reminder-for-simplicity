@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { runReminderCron } from "@/lib/cron";
 
+// 2026-10-03: the daily run now also fetches SchoolSoft links.
+export const maxDuration = 60;
+
 // Constant-time comparison (2026-08-02, security review — see OPERATIONS.md
 // §8). The previous `!==` check leaked a timing signal proportional to how
 // many leading characters matched, which in theory lets an attacker recover

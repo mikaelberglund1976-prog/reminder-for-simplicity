@@ -76,6 +76,7 @@ export default function PrivacyPage() {
               <tr><td style={cell}>Name, email, optional phone, time zone, currency; a hashed password or a Google sign-in link</td><td style={cell}>Your account and logging in</td><td style={cell}>Contract</td></tr>
               <tr><td style={cell}>Your family and each person&apos;s role</td><td style={cell}>Sharing lists and the calendar with the right people</td><td style={cell}>Contract</td></tr>
               <tr><td style={cell}>Reminders (with amounts and categories you choose), shopping lists, wishlists, chores, activities, homework and tests</td><td style={cell}>Showing them, and emailing you reminders you asked for</td><td style={cell}>Contract</td></tr>
+              <tr><td style={cell}>A child&apos;s SchoolSoft calendar link, and the homework, tests and school events fetched from it once a day</td><td style={cell}>Showing the child&apos;s school items in the app — only if an adult connects it</td><td style={cell}>Contract (disconnect any time)</td></tr>
               <tr><td style={cell}>Profile pictures and a family photo</td><td style={cell}>Showing who is who — only if you add them</td><td style={cell}>Consent (remove any time)</td></tr>
               <tr><td style={cell}>Confirmed email, admin approval of new accounts, deletion requests</td><td style={cell}>Keeping accounts secure</td><td style={cell}>Legitimate interest</td></tr>
               <tr><td style={cell}>Ideas &amp; votes</td><td style={cell}>The shared ideas board — your name is shown to other users</td><td style={cell}>Legitimate interest</td></tr>
@@ -98,6 +99,7 @@ export default function PrivacyPage() {
           "Adults in the family can see what a child has, and a parent can delete a child's account.",
           "Children never see ads.",
           "A child's photo is only shown inside the family.",
+          "If an adult connects a child's SchoolSoft calendar, the link is kept on our server only — nobody in the family, including the child, can see it. Only adults can connect, change or remove it.",
         ]} />
 
         <H>4. Who helps us run the app</H>

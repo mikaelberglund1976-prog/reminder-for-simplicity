@@ -168,6 +168,9 @@ export async function purgeAccount(userId: string) {
   await prisma.user.delete({ where: { id: userId } });
   // 2026-09-29 (GDPR): the profile picture goes with the account.
   await deleteImage("avatar", userId).catch((err) => console.error("Avatar purge failed:", err));
+  // 2026-10-03: a child's SchoolSoft link and import bookkeeping go too.
+  await prisma.$executeRaw`DELETE FROM "school_feeds" WHERE "childId" = ${userId}`.catch(() => 0);
+  await prisma.$executeRaw`DELETE FROM "school_imports" WHERE "childId" = ${userId}`.catch(() => 0);
 }
 
 export async function purgeExpiredAccounts() {

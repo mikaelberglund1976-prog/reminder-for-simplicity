@@ -107,6 +107,13 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] GDPR: `/privacy` publicerad, Vercel i Frankfurt, vårdnadshavarens bekräftelse, komplett export, bilder raderas med kontot, inga Clearbit-anrop, inga sparade Google-tokens, barnversion av integritetstexten
 - [ ] **Nästa (Mikael):** bolag som personuppgiftsansvarig, DPA-avtal, juristläsning (`GDPR.md` §5) – sedan Stripe och betaltest med några familjer
 
+## Fas 1.8 – Barnets översikt och SchoolSoft (1–3 okt 2026, LIVE)
+- [x] Barnets startsida som översikt, ta bort familjemedlemmar, samma bild överallt (`RELEASE_2026-10-01.md`)
+- [x] Home alltid först i menyn nere, Calendar valbar
+- [x] Vuxnas Home: bara närmaste proven per barn; allt annat på School
+- [x] SchoolSoft-import per barn: vuxen kopplar, daglig synk, isär från manuella, "Remove imported", justerbara poster (`RELEASE_2026-10-03.md`)
+- [ ] **Nästa:** testa mot riktig SchoolSoft; samma import för idrottsklubbar (Activities)
+
 ## USP:ar och prioritet inför användartester (2026-07-28)
 
 Sammanställt efter konkurrentanalysen av Best4Family (`COMPETITOR_ANALYSIS_BEST4FAMILY.md`) och en bredare EU-marknadsundersökning (`MARKET_RESEARCH_EU.md`). Syfte: samla **vad som redan är en verklig USP**, och **vad som är billigt att stärka innan betaanvändarna kommer**, på ett ställe.
@@ -149,7 +156,7 @@ Mikael bekräftade ICS-riktningen och lade till två saker: (1) vill också synk
 - [x] **School-kategori byggd, sedan korrigerad till egen sektion** – första versionen lät School gå genom det vanliga Reminders-flödet, men Mikael rättade direkt: *"NEj school borde vara ett eget avsnitt. Missuppfattning."* Reverterat ur Reminders-flödet igen, School är nu en egen sektion på samma sätt som Training: `GET/POST /api/family/chores?category=SCHOOL` (samma endpoint/behörighetsmodell), egen barn-självbetjäningsyta i `family/child/page.tsx` (barn ser **bara sina egna** School-items, via samma `isChild`-filter som redan skyddade Chores/Training), och en ny föräldra-översiktssida `/dashboard/school` grupperad per barn, länkad från hamburgermenyn. Se `PRODUCT_SPEC.md` 4b.19/4b.20.
 - [x] **Utgående ICS-kalendersynk byggd** – ett personligt, hemligt kalenderflöde (`User.calendarFeedToken`) som Mikael prenumererar på från sin egen Google/Outlook/Apple-kalender ("Lägg till kalender > Från URL"). Gratis, ingen inloggning mot Google/Microsoft, samma förtroendemodell som delningslänkarna för inköps-/önskelistor. UI i Profile → "Calendar sync". Täcker nu Reminders + Chore + Training + School (alla `visibility: HOUSEHOLD`). Se `PRODUCT_SPEC.md` 4b.19.
 - [x] **Deployat och verifierat i Vercel** (2026-07-28) – `prisma generate`/`db push` körda lokalt, kod pushad, Mikael bekräftade att det ser ok ut i Vercel.
-- [ ] **Inte byggt än:** inkommande prenumeration på en klubbs/skolans externa .ics-länk per barn (kräver server-side hämtning av en extern URL pga CORS, en ny modell, och periodisk uppdatering) — nästa steg, egen omgång.
+- [x] ~~Inte byggt än: inkommande prenumeration på skolans .ics-länk per barn~~ **byggt 2026-10-03 för SchoolSoft** (se Fas 1.8). Klubbar/Activities kvar.
 - [ ] **Klicktesta i produktion, ännu inte gjort:** skapa en Training-bokning och se den dyka upp i kalendern (koral prick), lägg till ett School-item både som förälder (`/dashboard/school`) och som barn (Family → child view → School-sektionen) och verifiera att ett barn bara ser sina egna, hämta kalenderlänken i Profile och prenumerera på den från en riktig Google/Outlook-kalender.
 
 ---

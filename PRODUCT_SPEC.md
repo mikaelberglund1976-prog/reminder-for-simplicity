@@ -443,6 +443,22 @@ Detaljer: `TODO.md` punkt 31.
 - Data i EU: Vercel-funktioner i `fra1`, databasen i Frankfurt. Inga Clearbit-anrop; Googles tokens sparas inte.
 - Export och radering omfattar allt, inklusive bilder. Registerförteckning och incidentrutin: `GDPR.md`.
 
+### 4b.39 Barnets översikt, radera medlemmar, Home först (2026-10-01–03, live)
+
+- Barnets startsida (`/dashboard/family/child`, fliken "Home"): hälsning med egen bild (tryck för att byta), familjebilden, tre rutor (School / Chores left / Today), sedan läxor & prov → aktiviteter (dagens först) → sysslor kompakt → "Coming up" (påminnelser delade med alla eller tilldelade barnet). Barnet ser bara sitt eget + det som delas med dem (filtreras i API:erna).
+- Family members: familjeadmin kan **Delete** barn (mjukradering, 60 dagar) och **Remove** vuxna.
+- En person ser likadan ut för alla: samma `Avatar` överallt; `AvatarPicker` låter vem som helst byta sin egen bild.
+- Menyn nere: **Home alltid först**, sedan 3–4 valfria appar (Calendar är ett av valen). `lib/navTabs.ts`.
+- Vuxnas Home visar bara barnens närmaste prov (tre veckor framåt, två per barn); läxor och resten på School.
+
+### 4b.40 SchoolSoft-import per barn (2026-10-03, live)
+
+- En vuxen kopplar barnets SchoolSoft-prenumerationslänk (ICS) på School-sidan och väljer barn. Appen visar vad man ska välja i SchoolSoft (på: Uppgifter, Planeringar, Kalenderhändelser; av: Schema).
+- Synk en gång per dag i cron + "Sync now". Läser VEVENT/VTODO, gissar prov/läxa/annat och ämne från svenska ord.
+- Importerade poster är vanliga skolposter, märkta "SchoolSoft", kopplade via `school_imports` (UID, edited, hidden). "Remove imported" tar bara bort dem. Ändrade poster skrivs inte över; borttagna kommer inte tillbaka.
+- Bara vuxna hanterar kopplingen; länken lämnar aldrig servern; bara `*.schoolsoft.se` hämtas.
+- Importerade poster mejlar bara barnet dagen före.
+
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
 - [ ] **WhatsApp-påminnelser** – Alternativ kanal till email, högre öppningsgrad

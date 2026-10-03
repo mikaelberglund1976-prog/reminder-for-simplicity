@@ -3,6 +3,7 @@
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
+**Uppdaterad igen:** 2026-10-03 – punkt 36 (barnets startsida, ta bort familjemedlemmar, samma bild överallt, Home först i menyn) och 37 (SchoolSoft-import per barn, bara prov på vuxnas Home) – live. Alla md-filer synkade.
 **Uppdaterad igen:** 2026-09-29 – punkt 33 (mobiltestets fynd rad 36–48, live), 34 (barn med eget konto/Google, live) och 35 (GDPR-genomgång + åtgärder, live, ny fil `GDPR.md`). Alla md-filer synkade mot nuläget.
 **Uppdaterad:** 2026-07-27 (kväll) – hamburgermeny + admin-åtkomst byggd, alla md-filer (PRODUCT_SPEC, ROADMAP, BRAND, OPERATIONS, TODO) synkade mot nuläget. Sektionerna nedan är nu i kronologisk ordning (döpte om 4d0→4e osv, som tidigare låg fel i ordning).
 **Uppdaterad igen:** 2026-07-27 (sen kväll) – punkt 16 klar: delningslänk, kategori-katalog/Recent-chips och PIN-inloggning klicktestade på skarpa `www.assistiq.se` (commit `1ad791d`). Se 4i/4j nedan för detaljer och en liten kosmetisk bugg som hittades under testet.
@@ -758,4 +759,24 @@ Genomgången finns i Claude Docs ("GDPR-genomgång: Reminder for Simplicity"); r
 - [ ] Juristläsning av `/privacy`
 - [ ] Bekräfta befintliga barn som vårdnadshavare (Family members → "Confirm as guardian")
 - [ ] Skicka ny inbjudan till barnkontot som hade PIN (sedan 28/9)
+
+## 36. Mobiltest med barnkonto 2026-10-01 – LIVE ✅ (commits `7d00537`, `a7b278d`, `5e4aef3`)
+Se `RELEASE_2026-10-01.md`.
+- [x] Ta bort personer direkt på Family members (Delete barn = mjukradering 60 dagar, Remove vuxen = ut ur familjen)
+- [x] Barnets startsida som översikt: hälsning + egen bild, familjebild, tre rutor, läxor & prov först, aktiviteter, kompakta sysslor, "Coming up"
+- [x] Påminnelse tilldelad någon syns alltid för den personen
+- [x] Samma riktiga profilbild överallt; alla (även barn) kan byta sin egen
+- [x] Home alltid längst till vänster i menyn nere; Calendar valbar (gamla val konverteras, `lib/navTabs.ts`)
+- [x] Vuxnas Home visar bara barnens närmaste prov ("Upcoming tests")
+
+## 37. SchoolSoft-import per barn – LIVE ✅ (2026-10-03)
+Se `RELEASE_2026-10-03.md`. Ersätter den gamla "inkommande ICS-import"-punkten (18, 19h, 20) för skolan.
+- [x] Vuxen kopplar länk per barn på School; guide om vad man väljer i SchoolSoft
+- [x] Synk en gång per dag (cron) + "Sync now"
+- [x] Importerade poster isär från manuella (`school_imports`), märkta "SchoolSoft"
+- [x] "Remove imported" per barn; manuella ligger kvar
+- [x] Justera typ/ämne/namn/datum; ändrade skrivs inte över, borttagna kommer inte tillbaka
+- [x] Bara vuxna hanterar; barn kan inte ta bort importerade
+- [ ] Testa mot riktig SchoolSoft-länk; skicka en ICS-fil om prov/läxa-gissningen blir fel
+- [ ] Senare: samma import för idrottsklubbar (Activities) – andra domäner än schoolsoft.se kräver en vitlista
 

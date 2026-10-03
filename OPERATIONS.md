@@ -17,6 +17,7 @@
   5. Skriver en `ReminderLog`-rad + uppdaterar `lastSentAt`
   6. Om reminder är återkommande (DAILY/WEEKLY/MONTHLY/YEARLY): räknar ut och sparar nästa datum
   7. Rensar konton som varit mjukt raderade i mer än 60 dagar (inkl. profilbilden)
+  0. *(2026-10-03, körs först)* Hämtar SchoolSoft-länkar som inte synkats senaste ~20 h (`syncAllFeeds` i `lib/schoolFeeds.ts`). Loggrad "SchoolSoft feeds: X synced, Y failed"; "SchoolSoft sync ERROR" ska inte förekomma. Fel per barn syns också för föräldern på School-sidan. Endpointen har `maxDuration = 60`.
   8. *(2026-09-29, GDPR)* Tar bort bilder vars person/familj inte finns kvar (`purgeOrphanMedia`) och nollställer sparade Google-tokens
 - Returnerar `{ sent, skipped, errors, log }` – synligt i Vercels function-loggar. Rader som börjar med "GDPR cleanup ERROR" eller "Account purge ERROR" ska inte förekomma.
 
@@ -104,6 +105,7 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 Nya, rent additiva tabeller skapas av appen vid första användning med `CREATE TABLE IF NOT EXISTS` – ingen `db push` och ingen tillfällig migreringsväg behövs:
 - `media_images` (profilbilder och familjefoto) – `app/src/lib/media.ts`
 - `parental_consents` (vårdnadshavarens bekräftelse) – `app/src/lib/consent.ts`
+- `school_feeds` och `school_imports` (SchoolSoft-import, 2026-10-03) – `app/src/lib/schoolFeeds.ts`
 Mönstret passar bara nya tabeller. Nya kolumner i befintliga tabeller görs fortfarande enligt 5b.
 
 ### 5b. Databasändringar i produktion (lärdom 2026-09-28)
