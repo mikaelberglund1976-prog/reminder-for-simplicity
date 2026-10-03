@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { hasNewSince } from "@/lib/listBadges";
 import { getMe } from "@/lib/me";
+import { DEFAULT_NAV_APPS, parseNavTabs } from "@/lib/navTabs";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -29,17 +30,19 @@ type TabDef = {
 };
 
 // Every app that CAN appear in the bottom nav, keyed the same way as
-// User.bottomNavTabs (see /api/profile). Calendar isn't in this list — it's
+// User.bottomNavTabs (see /api/profile, lib/navTabs.ts). Home is not in this list —
 // handled separately below since it's always present and always first
-// (2026-07-28 direct decision: "Calendar den enda man inte kan röra").
-const APP_TABS: Record<string, TabDef> = {
-  reminders: {
-    key: "reminders", href: "/dashboard", label: "Home", icon: IcHome,
+// (2026-10-03: Home replaced Calendar as the fixed first tab).
+const HOME_TAB: TabDef = {
+    key: "home", href: "/dashboard", label: "Home", icon: IcHome,
     // Anything under /dashboard that isn't one of the other apps counts as
     // "Reminders" — covers the root list plus create/edit reminder screens.
     match: (p) => p.startsWith("/dashboard") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/wishlist")
       && !p.startsWith("/dashboard/calendar") && !p.startsWith("/dashboard/family") && !p.startsWith("/dashboard/training") && !p.startsWith("/dashboard/school"),
-  },
+  };
+
+const APP_TABS: Record<string, TabDef> = {
+  calendar: { key: "calendar", href: "/dashboard/calendar", label: "Calendar", icon: IcCalendar, match: (p) => p.startsWith("/dashboard/calendar") },
   "shopping-list": { key: "shopping-list", href: "/dashboard/family/shopping-list", label: "Shopping list", icon: IcCart, match: (p) => p.startsWith("/dashboard/family/shopping-list") },
   wishlist: { key: "wishlist", href: "/dashboard/wishlist", label: "Wishlist", icon: IcGift, match: (p) => p.startsWith("/dashboard/wishlist") },
   chores: { key: "chores", href: "/dashboard/family", label: "Chores", icon: IcChecklist, match: (p) => p.startsWith("/dashboard/family") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/family/members") },
@@ -51,17 +54,16 @@ const APP_TABS: Record<string, TabDef> = {
 // week (homework, tests, chores, activities), the shared shopping list and
 // their own wishlist. No Calendar/Home tabs that just bounce them back.
 const CHILD_TABS: TabDef[] = [
-  { key: "my-week", href: "/dashboard/family/child", label: "My week", icon: IcHome, match: (p) => p.startsWith("/dashboard/family/child") || p === "/dashboard" },
+  { key: "my-week", href: "/dashboard/family/child", label: "Home", icon: IcHome, match: (p) => p.startsWith("/dashboard/family/child") || p === "/dashboard" },
   { key: "shopping-list", href: "/dashboard/family/shopping-list", label: "Shopping list", icon: IcCart, match: (p) => p.startsWith("/dashboard/family/shopping-list") },
   { key: "wishlist", href: "/dashboard/wishlist", label: "Wishlist", icon: IcGift, match: (p) => p.startsWith("/dashboard/wishlist") },
 ];
 
-const CALENDAR_TAB: TabDef = { key: "calendar", href: "/dashboard/calendar", label: "Calendar", icon: IcCalendar, match: (p) => p.startsWith("/dashboard/calendar") };
 
 // Default, used whenever a person hasn't picked their own set yet
 // (User.bottomNavTabs is null) — matches the agreed default: "Calendar,
 // Reminder, Shopping list, School".
-const DEFAULT_APP_TABS = ["reminders", "shopping-list", "school"];
+const DEFAULT_APP_TABS: string[] = [...DEFAULT_NAV_APPS];
 
 export default function BottomNav() {
   const pathname = usePathname() || "/dashboard";
@@ -74,11 +76,7 @@ export default function BottomNav() {
     getMe().then((d) => {
       if (cancelled || !d) return;
       if (d.isChildProfile) setIsChild(true);
-      const saved: string | null = d.bottomNavTabs ?? null;
-      if (saved) {
-        const keys = saved.split(",").filter((k: string) => APP_TABS[k]);
-        if (keys.length >= 3) setAppKeys(keys);
-      }
+      setAppKeys(parseNavTabs(d.bottomNavTabs ?? null));
     }).catch(() => { /* keep default on error */ });
     return () => { cancelled = true; };
   }, []);
@@ -116,7 +114,8 @@ export default function BottomNav() {
 
   // Calendar is always first and always present — everything else is the
   // person's own pick (2026-07-28).
-  const tabs: TabDef[] = isChild ? CHILD_TABS : [CALENDAR_TAB, ...appKeys.map((k) => APP_TABS[k]).filter(Boolean)];
+  // 2026-10-03: Home is always first (leftmost); the rest is the person's pick.
+  const tabs: TabDef[] = isChild ? CHILD_TABS : [HOME_TAB, ...appKeys.map((k) => APP_TABS[k]).filter(Boolean)];
 
   return (
     // Outer element only handles fixed positioning across the full viewport —

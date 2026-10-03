@@ -88,7 +88,7 @@ export default function HamburgerMenu() {
     >
       {isChild ? (
         <>
-          <MenuLink href="/dashboard/family/child" icon={<IcHome />} label="My week" onClick={close} />
+          <MenuLink href="/dashboard/family/child" icon={<IcHome />} label="Home" onClick={close} />
           <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label="Shopping list" onClick={close} />
           <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label="My wishlist" onClick={close} />
           <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={close} />

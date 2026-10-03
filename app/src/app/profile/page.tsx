@@ -12,6 +12,7 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
 import Avatar from "@/components/Avatar";
 import AvatarPicker from "@/components/AvatarPicker";
 import { invalidateMe } from "@/lib/me";
+import { DEFAULT_NAV_APPS, parseNavTabs } from "@/lib/navTabs";
 
 type HouseholdMember = {
   id: string;
@@ -49,15 +50,17 @@ const REMINDER_TIMES = [
 // kunna säga vilka av apparna som ska ligga i bannern". Calendar isn't in
 // this list: it's always shown and can't be turned off (see BottomNav.tsx).
 // Keep this in sync with BOTTOM_NAV_APPS in /api/profile/route.ts.
+// 2026-10-03: Home is now the fixed first tab, Calendar is one of the
+// choices (lib/navTabs.ts handles old saved values).
 const BOTTOM_NAV_APP_OPTIONS = [
-  { key: "reminders", label: "Home", emoji: "🏠" },
+  { key: "calendar", label: "Calendar", emoji: "📅" },
   { key: "shopping-list", label: "Shopping list", emoji: "🛒" },
   { key: "wishlist", label: "Wishlist", emoji: "🎁" },
   { key: "chores", label: "Chores", emoji: "🧹" },
   { key: "training", label: "Activities", emoji: "🎯" },
   { key: "school", label: "School", emoji: "📚" },
 ];
-const DEFAULT_BOTTOM_NAV_APPS = ["reminders", "shopping-list", "school"];
+const DEFAULT_BOTTOM_NAV_APPS: string[] = [...DEFAULT_NAV_APPS];
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -170,8 +173,7 @@ export default function ProfilePage() {
         const data = await res.json();
         setProfile(data);
         if (data.bottomNavTabs) {
-          const keys: string[] = data.bottomNavTabs.split(",").filter((k: string) => BOTTOM_NAV_APP_OPTIONS.some(o => o.key === k));
-          if (keys.length >= 3) setBottomNavApps(keys);
+          setBottomNavApps(parseNavTabs(data.bottomNavTabs));
         }
         setForm({
           firstName: (data.name || "").split(" ")[0],
@@ -583,7 +585,7 @@ export default function ProfilePage() {
                   );
                 })}
               </div>
-              <Hint>Calendar always shows first and can’t be removed. Pick {bottomNavApps.length < 4 ? "one more (" : ""}3 or 4 others{bottomNavApps.length < 4 ? ")" : ""} — everything else is always reachable from the ☰ menu.</Hint>
+              <Hint>Home always shows first. Pick {bottomNavApps.length < 4 ? "one more (" : ""}3 or 4 others{bottomNavApps.length < 4 ? ")" : ""} — everything else is always reachable from the ☰ menu.</Hint>
             </Field>
           </Card>
 

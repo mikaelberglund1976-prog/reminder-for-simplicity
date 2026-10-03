@@ -1,3 +1,4 @@
+import { NAV_APPS, serializeNavTabs } from "@/lib/navTabs";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
@@ -18,7 +19,8 @@ const phoneSchema = z
 // Fixed set of apps a user can put in their bottom nav — Calendar is
 // deliberately excluded here, it's always shown and can't be removed (see
 // components/BottomNav.tsx).
-const BOTTOM_NAV_APPS = ["reminders", "shopping-list", "wishlist", "chores", "training", "school"] as const;
+// 2026-10-03: Home is fixed first; Calendar is pickable. See lib/navTabs.ts.
+const BOTTOM_NAV_APPS = NAV_APPS;
 
 const profileSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -95,7 +97,7 @@ export async function PUT(req: Request) {
       data.phone = parsed.phone === "" ? null : parsed.phone;
     }
     if (parsed.bottomNavTabs !== undefined) {
-      data.bottomNavTabs = parsed.bottomNavTabs.join(",");
+      data.bottomNavTabs = serializeNavTabs(parsed.bottomNavTabs);
     }
 
     const updated = await prisma.user.update({
