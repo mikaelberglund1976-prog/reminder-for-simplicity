@@ -1,5 +1,5 @@
 # Test & Verifiering – öppna punkter
-**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-09-29 – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
+**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-10-04 (§13 = mobiltestets fynd 4 okt) – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
 
 Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader utan `[x]` betyder "inte verifierat".
 
@@ -129,3 +129,19 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Efter nästa cron (08:00 UTC): loggen visar "SchoolSoft feeds: … synced".
 - [ ] **View as:** Family members → "👁 View as" på ett barn → röd list högst upp, barnets Home. "Switch…" → annat barn. "Back to me" → tillbaka på Family members som admin. Knappen syns inte för andra vuxna.
 
+
+## 13. Mobiltestets fynd 4 okt (2026-10-04) – se `RELEASE_2026-10-04.md`
+- [ ] Home → Coming up: tryck på ett kort → detaljsidan öppnas, Edit och Delete fungerar (även för en post som någon annan i familjen lagt upp).
+- [ ] Som barn: öppna en delad påminnelse → syns, men ingen Edit/Delete ("Shared with you…").
+- [ ] En månadsprenumeration med startdatum i april visar nästa datum (t.ex. 16 okt) på Home, i listan, på detaljsidan ("Next: …") och i kalendern. Inte "Overdue".
+- [ ] Rutan Overdue räknar bara engångsposter som passerat.
+- [ ] Efter nästa cron (08:00 UTC): loggen visar "rolled forward …" för gamla återkommande poster, inga fel.
+- [ ] Settings → Bottom nav som vuxen: första (grå) knappen heter **Home**, Calendar finns bland valen, ingen dubblett.
+- [ ] Som barn utan eget val: menyn nere är **Home, Calendar, School, Activities**. Settings visar samma val; Chores finns inte bland barnets val.
+- [ ] Som barn: byt t.ex. Activities mot Wishlist → menyn nere ändras.
+- [ ] Som barn: Calendar visar barnets egna saker + delade, ingen +-knapp, tryck på en syssla → barnets Home.
+- [ ] Home utan sysslor: ingen "Chores this week". Med en syssla för ett barn: bara det barnet visas.
+- [ ] Home utan påminnelser: varken Coming up, siffrorna eller All reminders visas.
+- [ ] Fler än 5 påminnelser: "See all (N)" fäller ut, "Show fewer" fäller ihop.
+- [ ] Utloggad: startsidan har "Log in" uppe och nere. "See how it works" visar nya sidan. Free/Pro-tabellen = `/upgrade` inne i appen.
+- [ ] Ljust och mörkt läge på `/` och `/features` i mobilen.
