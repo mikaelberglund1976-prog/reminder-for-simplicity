@@ -4,7 +4,6 @@ import { PLAN_ROWS, PRO_PRICE, type PlanRow } from "@/lib/plans";
 import { TRIAL_DAYS } from "@/lib/entitlements";
 import { useM } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/messages";
-import LanguageToggle from "@/components/LanguageToggle";
 
 // 2026-10-04 (Mikael, phone test item 9): "See how it works" rewritten to
 // match the app as it is now — child accounts with their own week, homework
@@ -36,7 +35,6 @@ export default function FeaturesPage() {
           <span style={{ fontWeight: 700, fontSize: 15, color: "var(--fg)" }}>Reminder for Simplicity</span>
         </Link>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-          <LanguageToggle />
           <Link href="/login" style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)", textDecoration: "none", padding: "8px 14px", border: "1.5px solid var(--accent-border)", borderRadius: 50 }}>
             {m.landing.logIn}
           </Link>

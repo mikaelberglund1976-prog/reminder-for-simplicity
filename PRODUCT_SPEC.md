@@ -476,7 +476,7 @@ Detaljer: `TODO.md` punkt 31.
 - **Publika sidor:** startsidan har "Log in"; `/features` ("See how it works") omskriven efter appen som den är nu. Free/Pro och pris kommer från `lib/plans.ts` (samma som `/upgrade`).
 
 ### 4b.43 Svenska + flerspråksstöd (2026-10-04, live)
-Hela appen (utom admin) och alla familjemejl på svenska och engelska. Språket väljs per familj av familjens admin (Family members → Language, eller Settings → Preferences). Ny familj ärver grundarens språk; publika sidor har språkknapp (cookie `rfs_lang`). Arkitektur i `lib/i18n/` – nytt språk = config + kopia av `messages/en` + privacy-text. Se `RELEASE_2026-10-04b.md`.
+Hela appen (utom admin) och alla familjemejl på svenska och engelska. Språket väljs per familj av familjens admin (Family members → Language, eller Settings → Preferences). Ny familj ärver grundarens språk; startsidan och /features följer webbläsarens språk och säger att appen finns på svenska (ingen väljare där); login/register har språkknapp (cookie `rfs_lang`). Arkitektur i `lib/i18n/` – nytt språk = config + kopia av `messages/en` + privacy-text. Se `RELEASE_2026-10-04b.md`.
 
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 

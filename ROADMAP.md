@@ -129,7 +129,7 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 
 ## Fas 1.10 – Svenska + flerspråksstöd (2026-10-04 kväll, LIVE)
 - [x] Hela appen (utom admin), familjemejl, felmeddelanden och `/privacy` på svenska och engelska (`lib/i18n/`)
-- [x] Språk per familj, ändras av familjens admin (Family members / Settings); ny familj ärver grundarens språk; språkknapp på publika sidor
+- [x] Språk per familj, ändras av familjens admin (Family members / Settings); ny familj ärver grundarens språk; startsidan säger att appen finns på svenska (ingen väljare där)
 - [ ] Klicktest (`TEST_VERIFICATION.md` §14) och juristläsning av svenska `/privacy`
 - [ ] **Senare:** fler språk (norska, danska, finska, tyska) – recept i `RELEASE_2026-10-04b.md`; butikstexter i App Store/Google Play per språk
 

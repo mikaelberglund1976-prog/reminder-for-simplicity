@@ -157,6 +157,7 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Ett felmeddelande (t.ex. fel lösenord vid inloggning) visas på svenska.
 - [ ] Mejl: skicka en inbjudan / glömt lösenord → mejlet på svenska.
 - [ ] `/privacy` på svenska när språket är svenska.
-- [ ] Utloggad: språkknappen uppe till höger på start, login och register byter språk och minns valet.
+- [ ] Utloggad: startsidan har ingen språkknapp men raden "Finns på svenska och engelska – välj språk i Inställningar" (svensk webbläsare) / "Also available in Swedish…" (engelsk).
+- [ ] Utloggad: språkknappen på login och register byter språk och minns valet.
 - [ ] Byt tillbaka till English → allt på engelska igen.
 

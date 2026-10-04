@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { PRO_PRICE } from "@/lib/plans";
 import { useM } from "@/lib/i18n/client";
-import LanguageToggle from "@/components/LanguageToggle";
 
 // 2026-10-04 (Mikael, phone test item 9): a clear "Log in" (there was only
 // "Get started"), copy and pills that match the app as it is now (kids'
@@ -31,7 +30,6 @@ export default function Home() {
           <span style={{ fontWeight: 700, fontSize: 14.5, color: "var(--fg)" }}>Reminder for Simplicity</span>
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-          <LanguageToggle />
           <Link href="/login" style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)", textDecoration: "none", padding: "8px 16px", border: "1.5px solid var(--accent-border)", borderRadius: 50 }}>
             {t.logIn}
           </Link>
@@ -258,6 +256,9 @@ export default function Home() {
         <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "10px auto 0", lineHeight: 1.5, maxWidth: 360 }}>
           {t.freeLine(m.plans.priceText(PRO_PRICE.month, PRO_PRICE.year))}{" "}
           <Link href="/features#plans" style={{ color: "var(--muted)", textDecoration: "underline" }}>{t.compare}</Link>
+        </p>
+        <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "8px auto 0", lineHeight: 1.5, maxWidth: 360 }}>
+          🌐 {t.languages}
         </p>
       </div>
 

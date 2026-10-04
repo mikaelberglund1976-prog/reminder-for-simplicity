@@ -19,6 +19,7 @@ export const landing = {
   seeHow: "See how it works →",
   freeLine: (price: string) => `Free: reminders, calendar and a shared shopping list. Pro adds the kids — ${price}, 14 days free first.`,
   compare: "Compare",
+  languages: "Also available in Swedish — pick the language in Settings.",
   features: {
     titleA: "How it ",
     titleB: "works",

@@ -19,6 +19,7 @@ export const landing: Messages["landing"] = {
   getStarted: "Kom igång gratis",
   seeHow: "Så fungerar det →",
   freeLine: (price) => `Gratis: påminnelser, kalender och en delad inköpslista. Pro lägger till barnen – ${price}, först 14 dagar gratis.`,
+  languages: "Finns på svenska och engelska – välj språk i Inställningar.",
   compare: "Jämför",
   features: {
     titleA: "Så ",
