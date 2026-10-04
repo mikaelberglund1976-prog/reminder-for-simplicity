@@ -196,6 +196,12 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
     ? members.map(m => ({ id: m.id, name: m.name, role: m.role, list: upcoming.filter(i => i.assignedUser?.id === m.id) }))
         // adults without anything coming up are just noise here
         .filter(g => g.list.length > 0 || !g.role || g.role === "CHILD")
+        // 2026-10-04: items for no one / someone who left the family were invisible.
+        .concat((() => {
+          const ids = new Set(members.map(m => m.id));
+          const list = upcoming.filter(i => !i.assignedUser?.id || !ids.has(i.assignedUser.id));
+          return list.length ? [{ id: "__orphans", name: "Not in the family", role: "ORPHAN", list }] : [];
+        })())
     : [];
 
   return (

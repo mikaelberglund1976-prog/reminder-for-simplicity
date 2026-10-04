@@ -141,6 +141,14 @@ export default function TrainingPage() {
     ...allMembers.filter((m) => m.role === "CHILD"),
     ...allMembers.filter((m) => m.role !== "CHILD" && (byChild.get(m.id)?.length ?? 0) > 0),
   ];
+  // 2026-10-04: activities for no one (or someone who left the family) were
+  // never listed, so they couldn't be removed.
+  const memberIds = new Set(allMembers.map((m) => m.id));
+  const orphanList = items.filter((i) => !i.assignedUser?.id || !memberIds.has(i.assignedUser.id)).sort((a, b) => a.name.localeCompare(b.name));
+  if (orphanList.length > 0) {
+    byChild.set("__orphans", orphanList);
+    children.push({ id: "__orphans", name: "Not assigned to anyone in the family", role: "ORPHAN" } as (typeof children)[number]);
+  }
 
   return (
     <Screen onBack={() => router.push("/dashboard")}>
@@ -174,7 +182,7 @@ export default function TrainingPage() {
         return (
           <div key={child.id} style={{ marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-              <Avatar userId={child.id} name={child.name} size={22} />
+              {child.id !== "__orphans" && <Avatar userId={child.id} name={child.name} size={22} />}
               {child.name} · {list.length}
             </div>
             {list.length === 0 ? (

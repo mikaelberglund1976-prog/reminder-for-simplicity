@@ -12,10 +12,21 @@ const HIDDEN_CATEGORIES = ["CHORE", "TRAINING", "SCHOOL"];
 
 export async function findReminderFor(userId: string, id: string) {
   const reminder = await prisma.reminder.findFirst({ where: { id, isActive: true } });
-  if (!reminder || HIDDEN_CATEGORIES.includes(reminder.category as string)) {
-    return reminder && reminder.userId === userId ? { reminder, canEdit: true } : null;
-  }
+  if (!reminder) return null;
   if (reminder.userId === userId) return { reminder, canEdit: true };
+
+  // 2026-10-04: chores and activities (deleted through DELETE
+  // /api/reminders/[id]) — any adult in the family may remove them, not only
+  // the one who created them. Otherwise an item created by someone who later
+  // left, or assigned to a child who was removed, could never be deleted.
+  if (HIDDEN_CATEGORIES.includes(reminder.category as string)) {
+    if (!reminder.householdId) return null;
+    const m = await prisma.householdMember.findFirst({ where: { userId, householdId: reminder.householdId } });
+    if (!m) return null;
+    const adult = ADULT_ROLES.includes(m.role as string);
+    if (adult) return { reminder, canEdit: true };
+    return reminder.assignedTo === userId ? { reminder, canEdit: false } : null;
+  }
   if (!reminder.householdId) return null;
 
   const membership = await prisma.householdMember.findFirst({

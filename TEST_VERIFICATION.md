@@ -145,3 +145,4 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Fler än 5 påminnelser: "See all (N)" fäller ut, "Show fewer" fäller ihop.
 - [ ] Utloggad: startsidan har "Log in" uppe och nere. "See how it works" visar nya sidan. Free/Pro-tabellen = `/upgrade` inne i appen.
 - [ ] Ljust och mörkt läge på `/` och `/features` i mobilen.
+- [ ] Chores: × på en syssla → bekräfta → borta. Sysslor/aktiviteter/läxor utan person (eller för någon som lämnat familjen) syns under "Not assigned to anyone in the family" och kan tas bort.

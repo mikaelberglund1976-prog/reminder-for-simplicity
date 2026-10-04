@@ -88,5 +88,17 @@ export async function GET() {
     ...all.filter((m) => m.role !== "CHILD" && m.total > 0),
   ];
 
-  return NextResponse.json({ summary, weekStart, access: isPro ? "PRO" : "TRIAL" });
+  // 2026-10-04: chores assigned to nobody, or to someone no longer in the
+  // family, didn't show up anywhere and so couldn't be removed.
+  const memberIds = children.map((c) => c.userId);
+  const orphans = await prisma.reminder.findMany({
+    where: {
+      householdId: membership.householdId, category: "CHORE", isActive: true,
+      OR: [{ assignedTo: null }, { assignedTo: { notIn: memberIds } }],
+    },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+
+  return NextResponse.json({ summary, orphans, weekStart, access: isPro ? "PRO" : "TRIAL" });
 }

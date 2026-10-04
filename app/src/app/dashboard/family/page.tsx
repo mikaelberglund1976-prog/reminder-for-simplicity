@@ -57,6 +57,20 @@ export default function FamilyPage() {
   const [loading, setLoading] = useState(true);
   const [selectedChild, setSelectedChild] = useState<string>("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  // 2026-10-04: chores could not be removed at all, and chores belonging to
+  // nobody (or someone who left the family) were invisible.
+  const [orphans, setOrphans] = useState<{ id: string; name: string }[]>([]);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  async function removeChore(id: string, name: string) {
+    if (!window.confirm(`Remove "${name}"?`)) return;
+    setRemovingId(id);
+    try {
+      const res = await fetch(`/api/reminders/${id}`, { method: "DELETE" });
+      if (res.ok) await fetchSummary();
+    } catch (e) { console.error(e); }
+    finally { setRemovingId(null); }
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -93,6 +107,7 @@ export default function FamilyPage() {
       if (res.ok) {
         const data = await res.json();
         setSummary(data.summary ?? []);
+        setOrphans(data.orphans ?? []);
       }
     } catch (e) { console.error(e); }
   }
@@ -329,6 +344,8 @@ export default function FamilyPage() {
                       </button>
                     </div>
                   )}
+                  <button onClick={() => removeChore(chore.id, chore.name)} disabled={removingId === chore.id} aria-label="Remove chore"
+                    style={{ background: "none", border: "none", color: "var(--faint)", fontSize: 18, cursor: "pointer", padding: 4, lineHeight: 1 }}>×</button>
                 </div>
               </div>
             );
@@ -340,6 +357,20 @@ export default function FamilyPage() {
               <Link href="/dashboard/family/new" style={{ color: "var(--accent)", fontWeight: 600 }}>Add one →</Link>
             </div>
           )}
+        </div>
+      )}
+
+      {orphans.length > 0 && (
+        <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: "16px 20px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 2 }}>Not assigned to anyone in the family</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>No one or someone who has left. Remove them or add a new chore for the right person.</div>
+          {orphans.map((c, i) => (
+            <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)" }}>
+              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{c.name}</span>
+              <button onClick={() => removeChore(c.id, c.name)} disabled={removingId === c.id} aria-label="Remove chore"
+                style={{ background: "none", border: "none", color: "var(--faint)", fontSize: 18, cursor: "pointer", padding: 4, lineHeight: 1 }}>×</button>
+            </div>
+          ))}
         </div>
       )}
 
