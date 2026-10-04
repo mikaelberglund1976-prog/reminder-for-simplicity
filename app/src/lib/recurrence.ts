@@ -117,3 +117,28 @@ export function getOccurrencesInRange(item: RecurringItem, rangeStart: Date, ran
 
 /** `YYYY-MM-DD` key in local time — safe to use as a map key / cell lookup, avoids UTC-shift bugs from `toISOString()`. */
 export const dateKey = dateKeyLocal;
+
+/**
+ * 2026-10-04 (phone test, item 5): the next occurrence on or after `from`
+ * (default: today). A recurring reminder whose stored `date` is in the past
+ * (e.g. created with a start date months ago) used to show "Overdue · 16 Apr"
+ * on Home while the calendar showed 16 Oct. Everything outside the calendar
+ * now uses this instead of the raw `date`. A ONCE item keeps its own date, so
+ * it can still be overdue.
+ */
+export function nextOccurrence(item: RecurringItem, from: Date = new Date()): Date {
+  const start = atMidnight(new Date(item.date));
+  if (item.recurrence === "ONCE" || Number.isNaN(start.getTime())) return start;
+  const f = atMidnight(from);
+  if (start >= f) return start;
+  const horizon = new Date(f);
+  horizon.setDate(horizon.getDate() + 400);
+  return getOccurrencesInRange(item, f, horizon)[0] ?? start;
+}
+
+/** Same object with `date` replaced by its next occurrence (ISO). The stored start date is kept as `startDate`. */
+export function withNextDate<T extends { date: string; recurrence: string; choreRecurrenceDays?: string | null }>(item: T): T & { startDate: string } {
+  const next = nextOccurrence(item as unknown as RecurringItem);
+  const same = atMidnight(new Date(item.date)).getTime() === next.getTime();
+  return { ...item, startDate: item.date, date: same ? item.date : next.toISOString() };
+}

@@ -9,6 +9,21 @@ function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
+/** Does a reminder starting on `start` with `recurrence` fall on the UTC day `dayStr` (YYYY-MM-DD)? */
+function occursOn(start: Date, recurrence: string, dayStr: string): boolean {
+  const target = new Date(dayStr + "T23:59:59.999Z");
+  if (start > target) return false;
+  for (let n = 0; n < 4000; n++) {
+    const d = recurrence === "DAILY" ? addDays(start, n)
+      : recurrence === "WEEKLY" ? addWeeks(start, n)
+      : recurrence === "MONTHLY" ? addMonths(start, n)
+      : addYears(start, n);
+    if (d > target) return false;
+    if (toDateStr(d) === dayStr) return true;
+  }
+  return false;
+}
+
 export async function runReminderCron() {
   const now = new Date();
   const todayStr = toDateStr(now);
@@ -41,10 +56,39 @@ export async function runReminderCron() {
   log.push(`Today: ${todayStr}`);
   log.push(`Active reminders: ${reminders.length}`);
 
+  // 2026-10-04 (phone test, item 5): a recurring reminder whose date is
+  // already in the past (created with an old start date, or a missed run)
+  // never matched "sendOn === today" again, so it stopped emailing and Home
+  // showed it as overdue for ever. Roll it forward to its next occurrence.
+  const todayStart = new Date(todayStr + "T00:00:00.000Z");
+  for (const reminder of reminders) {
+    if (reminder.recurrence === "ONCE" || ["CHORE", "TRAINING", "SCHOOL"].includes(reminder.category as string)) continue;
+    const start = new Date(reminder.date);
+    if (start >= todayStart) continue;
+    let next = start;
+    for (let n = 1; n < 4000 && next < todayStart; n++) {
+      next = reminder.recurrence === "DAILY" ? addDays(start, n)
+        : reminder.recurrence === "WEEKLY" ? addWeeks(start, n)
+        : reminder.recurrence === "MONTHLY" ? addMonths(start, n)
+        : addYears(start, n);
+    }
+    if (next >= todayStart) {
+      await prisma.reminder.update({ where: { id: reminder.id }, data: { date: next } });
+      log.push(`[${reminder.name}] rolled forward ${toDateStr(start)} -> ${toDateStr(next)}`);
+      reminder.date = next;
+    }
+  }
+
   for (const reminder of reminders) {
     const sendDate = addDays(new Date(reminder.date), -reminder.reminderDaysBefore);
     const sendDateStr = toDateStr(sendDate);
-    const isToday = sendDateStr === todayStr;
+    const isFamilyItem = ["CHORE", "TRAINING", "SCHOOL"].includes(reminder.category as string);
+    // 2026-10-04: a recurring reminder matches when the occurrence
+    // `daysBefore` days from now is one of its dates (the stored date is now
+    // only rolled forward once it has passed, see above).
+    const isToday = isFamilyItem || reminder.recurrence === "ONCE"
+      ? sendDateStr === todayStr
+      : occursOn(new Date(reminder.date), reminder.recurrence, toDateStr(addDays(todayStart, reminder.reminderDaysBefore)));
 
     log.push(`[${reminder.name}] date=${toDateStr(new Date(reminder.date))} daysBefore=${reminder.reminderDaysBefore} sendOn=${sendDateStr} match=${isToday}`);
 
@@ -76,7 +120,7 @@ export async function runReminderCron() {
         to: r.email,
         name: r.name,
         reminderName: reminder.name,
-        date: reminder.date,
+        date: isFamilyItem || reminder.recurrence === "ONCE" ? reminder.date : addDays(todayStart, reminder.reminderDaysBefore),
         amount: reminder.amount,
         currency: reminder.currency,
         note: reminder.note,
@@ -93,7 +137,11 @@ export async function runReminderCron() {
         data: { lastSentAt: now },
       });
 
-      if (reminder.recurrence !== "ONCE") {
+      // 2026-10-04: reminders no longer jump one period ahead right after the
+      // email (that made "due in 3 days" vanish from Home and the calendar);
+      // the roll-forward above moves them once the date has passed. Chores,
+      // activities and school items keep the old behaviour.
+      if (isFamilyItem && reminder.recurrence !== "ONCE") {
         const map: Record<string, Date> = {
           DAILY:   addDays(new Date(reminder.date), 1),
           WEEKLY:  addWeeks(new Date(reminder.date), 1),

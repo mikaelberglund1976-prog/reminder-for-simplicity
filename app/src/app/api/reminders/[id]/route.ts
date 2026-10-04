@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { findReminderFor } from "@/lib/reminderAccess";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -26,19 +27,12 @@ export async function GET(
     return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
   }
 
-  const reminder = await prisma.reminder.findFirst({
-    where: {
-      id: params.id,
-      userId: session.user.id,
-      isActive: true,
-    },
-  });
-
-  if (!reminder) {
+  const found = await findReminderFor(session.user.id, params.id);
+  if (!found) {
     return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
   }
 
-  return NextResponse.json(reminder);
+  return NextResponse.json({ ...found.reminder, canEdit: found.canEdit });
 }
 
 // DELETE /api/reminders/[id] – Ta bort en reminder (soft delete)
@@ -51,11 +45,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
   }
 
-  const existing = await prisma.reminder.findFirst({
-    where: { id: params.id, userId: session.user.id },
-  });
+  const found = await findReminderFor(session.user.id, params.id);
 
-  if (!existing) {
+  if (!found || !found.canEdit) {
     return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
   }
 
@@ -77,11 +69,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
   }
 
-  const existing = await prisma.reminder.findFirst({
-    where: { id: params.id, userId: session.user.id, isActive: true },
-  });
+  const found = await findReminderFor(session.user.id, params.id);
 
-  if (!existing) {
+  if (!found || !found.canEdit) {
     return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
   }
 

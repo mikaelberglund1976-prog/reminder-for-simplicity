@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import { withNextDate } from "@/lib/recurrence";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -107,6 +108,7 @@ type Reminder = {
   handoverState: string;
   handoverTo: string | null;
   urgencyLevel: string;
+  canEdit?: boolean;
 };
 
 function formatDate(dateStr: string) {
@@ -179,6 +181,7 @@ export default function ReminderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   // Household & handover state
   const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
@@ -248,9 +251,11 @@ export default function ReminderDetailPage() {
     try {
       const res = await fetch("/api/reminders/" + id);
       if (!res.ok) throw new Error("Not found");
-      setReminder(await res.json());
+      // 2026-10-04: recurring reminders show their next date (same as Home + calendar).
+      setReminder(withNextDate(await res.json()));
     } catch {
-      router.push("/dashboard");
+      // Used to bounce straight back to Home, which looked like "nothing happens".
+      setNotFound(true);
     } finally {
       setLoading(false);
     }
@@ -275,7 +280,19 @@ export default function ReminderDetailPage() {
     );
   }
 
-  if (!reminder) return null;
+  if (!reminder) {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, padding: "24px 20px" }}>
+        <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--accent)", fontSize: 14, fontWeight: 600, textDecoration: "none", marginBottom: 20 }}>
+          <IcBack /> Back
+        </Link>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: 20, color: "var(--muted)", fontSize: 14 }}>
+          {notFound ? "This reminder has been removed or isn't shared with you." : "Couldn't load this reminder."}
+        </div>
+      </div>
+    );
+  }
+  const canEdit = reminder.canEdit !== false;
 
   const daysUntil = Math.ceil(
     (new Date(reminder.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
@@ -345,7 +362,7 @@ export default function ReminderDetailPage() {
           {/* Date row — no icon, just label: value */}
           <div style={{ borderTop: "1px solid var(--border-soft)", padding: "15px 0 0" }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)" }}>
-              Date: {formatDate(reminder.date)}
+              {reminder.recurrence !== "ONCE" ? "Next: " : "Date: "}{formatDate(reminder.date)}
             </span>
           </div>
 
@@ -465,6 +482,7 @@ export default function ReminderDetailPage() {
           </div>
         )}
 
+        {canEdit ? (<>
         {/* Edit button */}
         <Link href={"/dashboard/" + reminder.id + "/edit"} style={{
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -529,6 +547,9 @@ export default function ReminderDetailPage() {
               </button>
             </div>
           </div>
+        )}
+        </>) : (
+          <div style={{ fontSize: 13, color: "var(--muted)", textAlign: "center", padding: "8px 0" }}>Shared with you — only a parent or the person who added it can change it.</div>
         )}
 
       </main>

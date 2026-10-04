@@ -50,15 +50,11 @@ const APP_TABS: Record<string, TabDef> = {
   school: { key: "school", href: "/dashboard/school", label: "School", icon: IcSchool, match: (p) => p.startsWith("/dashboard/school") },
 };
 
-// 2026-09-28 (row 38): a child's nav only holds their own things — their
-// week (homework, tests, chores, activities), the shared shopping list and
-// their own wishlist. No Calendar/Home tabs that just bounce them back.
-const CHILD_TABS: TabDef[] = [
-  { key: "my-week", href: "/dashboard/family/child", label: "Home", icon: IcHome, match: (p) => p.startsWith("/dashboard/family/child") || p === "/dashboard" },
-  { key: "shopping-list", href: "/dashboard/family/shopping-list", label: "Shopping list", icon: IcCart, match: (p) => p.startsWith("/dashboard/family/shopping-list") },
-  { key: "wishlist", href: "/dashboard/wishlist", label: "Wishlist", icon: IcGift, match: (p) => p.startsWith("/dashboard/wishlist") },
-];
-
+// 2026-09-28 (row 38): a child's Home is their own week.
+// 2026-10-04: children pick their own tabs too (default Home, Calendar,
+// School, Activities — see lib/navTabs.ts); before this the child nav was a
+// fixed Home / Shopping list / Wishlist and ignored the Settings choice.
+const CHILD_HOME_TAB: TabDef = { key: "my-week", href: "/dashboard/family/child", label: "Home", icon: IcHome, match: (p) => p.startsWith("/dashboard/family/child") || p === "/dashboard" };
 
 // Default, used whenever a person hasn't picked their own set yet
 // (User.bottomNavTabs is null) — matches the agreed default: "Calendar,
@@ -76,7 +72,7 @@ export default function BottomNav() {
     getMe().then((d) => {
       if (cancelled || !d) return;
       if (d.isChildProfile) setIsChild(true);
-      setAppKeys(parseNavTabs(d.bottomNavTabs ?? null));
+      setAppKeys(parseNavTabs(d.bottomNavTabs ?? null, !!d.isChildProfile));
     }).catch(() => { /* keep default on error */ });
     return () => { cancelled = true; };
   }, []);
@@ -115,7 +111,7 @@ export default function BottomNav() {
   // Calendar is always first and always present — everything else is the
   // person's own pick (2026-07-28).
   // 2026-10-03: Home is always first (leftmost); the rest is the person's pick.
-  const tabs: TabDef[] = isChild ? CHILD_TABS : [HOME_TAB, ...appKeys.map((k) => APP_TABS[k]).filter(Boolean)];
+  const tabs: TabDef[] = [isChild ? CHILD_HOME_TAB : HOME_TAB, ...appKeys.map((k) => APP_TABS[k]).filter(Boolean)];
 
   return (
     // Outer element only handles fixed positioning across the full viewport —

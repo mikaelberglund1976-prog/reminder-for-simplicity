@@ -18,6 +18,7 @@ import HamburgerMenu from "@/components/HamburgerMenu";
 import AvatarPicker from "@/components/AvatarPicker";
 import Avatar from "@/components/Avatar";
 import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
+import { withNextDate } from "@/lib/recurrence";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -112,7 +113,7 @@ function ChildViewContent() {
       }
       if (rRes && rRes.ok) {
         const list = await rRes.json();
-        setShared(Array.isArray(list) ? list : []);
+        setShared(Array.isArray(list) ? list.map(withNextDate) : []);
       }
       if (tRes.ok) {
         const t = await tRes.json();

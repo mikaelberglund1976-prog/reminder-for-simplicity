@@ -13,6 +13,10 @@ export const NAV_APPS = ["calendar", "shopping-list", "wishlist", "chores", "tra
 export type NavApp = (typeof NAV_APPS)[number];
 
 export const DEFAULT_NAV_APPS: NavApp[] = ["calendar", "shopping-list", "school"];
+// 2026-10-04 (Mikael): a child who hasn't picked anything gets
+// Home, Calendar, School, Activities. Chores live on the child's Home.
+export const DEFAULT_CHILD_NAV_APPS: NavApp[] = ["calendar", "school", "training"];
+export const CHILD_NAV_APPS: NavApp[] = ["calendar", "shopping-list", "wishlist", "training", "school"];
 export const MIN_NAV_APPS = 3;
 export const MAX_NAV_APPS = 4;
 
@@ -20,8 +24,11 @@ function isNavApp(k: string): k is NavApp {
   return (NAV_APPS as readonly string[]).includes(k);
 }
 
-export function parseNavTabs(saved: string | null | undefined): NavApp[] {
-  if (!saved) return [...DEFAULT_NAV_APPS];
+export function parseNavTabs(saved: string | null | undefined, isChild = false): NavApp[] {
+  const defaults = isChild ? DEFAULT_CHILD_NAV_APPS : DEFAULT_NAV_APPS;
+  // Children's nav ignored their saved choice before 2026-10-04, so only a
+  // choice saved in the new format counts as theirs.
+  if (!saved || (isChild && !saved.startsWith("v2:"))) return [...defaults];
   let keys: string[];
   if (saved.startsWith("v2:")) {
     keys = saved.slice(3).split(",");
@@ -30,8 +37,8 @@ export function parseNavTabs(saved: string | null | undefined): NavApp[] {
     keys = ["calendar", ...saved.split(",").filter((k) => k !== "reminders")];
   }
   const out: NavApp[] = [];
-  for (const k of keys) if (isNavApp(k) && !out.includes(k)) out.push(k);
-  for (const d of DEFAULT_NAV_APPS) if (out.length < MIN_NAV_APPS && !out.includes(d)) out.push(d);
+  for (const k of keys) if (isNavApp(k) && !out.includes(k) && (!isChild || CHILD_NAV_APPS.includes(k))) out.push(k);
+  for (const d of defaults) if (out.length < MIN_NAV_APPS && !out.includes(d)) out.push(d);
   return out.slice(0, MAX_NAV_APPS);
 }
 

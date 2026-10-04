@@ -9,6 +9,7 @@ import AdSlot from "@/components/AdSlot";
 import Avatar from "@/components/Avatar";
 import { getMe } from "@/lib/me";
 import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
+import { withNextDate } from "@/lib/recurrence";
 
 type HouseholdMember = { id: string; userId: string; role?: string; user: { id: string; name: string | null; email: string } };
 
@@ -327,7 +328,8 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/reminders");
       const data = await res.json();
-      setReminders(Array.isArray(data) ? data : []);
+      // 2026-10-04: recurring items show their next date everywhere (as in the calendar).
+      setReminders(Array.isArray(data) ? data.map(withNextDate) : []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }
@@ -415,7 +417,9 @@ export default function DashboardPage() {
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
 
   // Pre-compute family card display values (avoids complex JSX expressions)
-  const familyCardRows = familySummary.slice(0, 4).map(c => ({
+  // 2026-10-04 (Mikael): only children who actually have chores this week —
+  // the card used to show "0/0" for everyone before any chore existed.
+  const familyCardRows = familySummary.filter(c => c.total > 0).slice(0, 4).map(c => ({
     id: c.childId,
     name: c.childName,
     label: c.done + "/" + c.total,
@@ -555,15 +559,13 @@ export default function DashboardPage() {
         {/* Coming up — horizontal cards for the next 7 days (overdue first).
             Replaces both the old "Needs your attention" list (which repeated
             the same rows as the main list below) and the "IQ Spotlight" card. */}
+        {/* 2026-10-04 (Mikael): empty sections aren't shown. */}
+        {attentionItems.length > 0 && (<>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
           <SectionTitle inline>Coming up</SectionTitle>
           <Link href="/dashboard/calendar" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>Calendar →</Link>
         </div>
-        {attentionItems.length === 0 ? (
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "18px 16px", marginBottom: 24, fontSize: 14, color: "var(--muted)" }}>
-            Nothing in the next 7 days. Enjoy the calm.
-          </div>
-        ) : (
+        {(
           <div className="rfs-hscroll" style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 24px", padding: "2px 20px 4px", scrollSnapType: "x mandatory", scrollPaddingInline: 20 }}>
             {attentionItems.slice(0, 10).map((r) => {
               const days = getDaysUntil(r.date);
@@ -596,6 +598,7 @@ export default function DashboardPage() {
             })}
           </div>
         )}
+        </>)}
 
         {/* 2026-09-28 (test round, row 39): a parent sees every child's
             upcoming tests and homework right on Home. */}
@@ -645,6 +648,7 @@ export default function DashboardPage() {
         {/* Overview tiles — three honest numbers. "Needs attention" used to
             count only overdue items while the list above said "4 items";
             it's now labelled for what it is. */}
+        {reminders.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
           <StatCard icon={<IcBell />} iconColor="var(--accent)" iconBg="var(--tint-accent)" value={totalActive} label="Active" />
           <StatCard icon={<IcAlert />} iconColor="var(--danger)" iconBg="var(--tint-danger)" value={passedCount} label="Overdue" />
@@ -654,6 +658,7 @@ export default function DashboardPage() {
               value={yearlyTotal > 0 ? compactAmount(yearlyTotal) : "—"} label={`Per year${yearlyTotal > 0 ? " · " + preferredCurrency : ""}`} />
           </button>
         </div>
+        )}
 
         {/* Family progress — only when there's something to show. */}
         {familyCardRows.length > 0 && (
@@ -681,6 +686,8 @@ export default function DashboardPage() {
           </Link>
         )}
 
+        {/* 2026-10-04: hidden until there is something to list (New reminder is in the quick actions + the floating button). */}
+        {reminders.length > 0 && (<>
         <div id="all-reminders" style={{ scrollMarginTop: 16 }} />
         <SectionTitle>All reminders</SectionTitle>
 
@@ -749,6 +756,7 @@ export default function DashboardPage() {
             </Link>
             )}
           </>
+        </>)}
 
       </main>
 

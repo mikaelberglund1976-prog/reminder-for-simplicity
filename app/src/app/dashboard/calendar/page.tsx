@@ -174,6 +174,7 @@ export default function CalendarPage() {
   // är". Step 3 (the actual details) is the existing per-type creation
   // screen, reached via a `date` query param so it doesn't have to be picked
   // twice.
+  const [isChildView, setIsChildView] = useState(false);
   const [addStep, setAddStep] = useState<0 | 1 | 2>(0); // 0 = closed, 1 = pick type, 2 = pick date
   const [addKind, setAddKind] = useState<AddKind>("reminder");
   const [addDate, setAddDate] = useState("");
@@ -212,7 +213,9 @@ export default function CalendarPage() {
         const res = await fetch("/api/profile");
         if (res.ok) {
           const d = await res.json();
-          if (d.isChildProfile) { router.replace("/dashboard/family/child"); return; }
+          // 2026-10-04: children get the calendar too (their own items plus
+          // what's shared with them — the APIs already filter by role).
+          if (d.isChildProfile) setIsChildView(true);
         }
       } catch { /* fall through — worst case an adult-shaped calendar for an edge-case session */ }
       setCheckedChild(true);
@@ -370,7 +373,7 @@ export default function CalendarPage() {
     if (entry.kind === "reminder") router.push(`/dashboard/${entry.id}`);
     else if (entry.kind === "homework" || entry.kind === "test") router.push("/dashboard/school");
     else if (entry.kind === "training") router.push("/dashboard/training");
-    else router.push("/dashboard/family");
+    else router.push(isChildView ? "/dashboard/family/child" : "/dashboard/family");
   }
 
   if (status === "loading" || !checkedChild) {
@@ -597,6 +600,7 @@ export default function CalendarPage() {
 
       {/* Floating "+" — same style as Reminders. Type first, then date, then
           the existing per-type details screen (2026-07-28). */}
+{!isChildView && (
       <button
         onClick={openAddWizard}
         aria-label="Add"
@@ -610,6 +614,7 @@ export default function CalendarPage() {
       >
         <IcPlusBig />
       </button>
+      )}
 
       {addStep > 0 && (
         <div

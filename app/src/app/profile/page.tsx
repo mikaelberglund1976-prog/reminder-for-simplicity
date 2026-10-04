@@ -12,7 +12,7 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
 import Avatar from "@/components/Avatar";
 import AvatarPicker from "@/components/AvatarPicker";
 import { invalidateMe } from "@/lib/me";
-import { DEFAULT_NAV_APPS, parseNavTabs } from "@/lib/navTabs";
+import { DEFAULT_NAV_APPS, CHILD_NAV_APPS, parseNavTabs } from "@/lib/navTabs";
 
 type HouseholdMember = {
   id: string;
@@ -172,9 +172,8 @@ export default function ProfilePage() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
-        if (data.bottomNavTabs) {
-          setBottomNavApps(parseNavTabs(data.bottomNavTabs));
-        }
+        // 2026-10-04: children have their own default (Home, Calendar, School, Activities).
+        setBottomNavApps(parseNavTabs(data.bottomNavTabs ?? null, !!data.isChildProfile));
         setForm({
           firstName: (data.name || "").split(" ")[0],
           lastName: (data.name || "").split(" ").slice(1).join(" "),
@@ -559,9 +558,9 @@ export default function ProfilePage() {
                   borderRadius: 50, fontSize: 12.5, fontWeight: 700,
                   background: "var(--surface-3)", color: "var(--subtle)", border: "1.5px solid var(--border)",
                 }}>
-                  📅 Calendar
+                  🏠 Home
                 </span>
-                {BOTTOM_NAV_APP_OPTIONS.map(opt => {
+                {BOTTOM_NAV_APP_OPTIONS.filter(opt => !profile?.isChildProfile || (CHILD_NAV_APPS as readonly string[]).includes(opt.key)).map(opt => {
                   const active = bottomNavApps.includes(opt.key);
                   const disabled = savingBottomNav || (active && bottomNavApps.length <= 3) || (!active && bottomNavApps.length >= 4);
                   return (
