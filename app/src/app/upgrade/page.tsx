@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { PLAN_ROWS, PRO_PRICE_TEXT } from "@/lib/plans";
 
 type Access = {
   plan: "FREE" | "TRIAL" | "PRO";
@@ -23,18 +24,8 @@ type Access = {
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const ADULT_ROLES = ["OWNER", "PARENT", "ADULT", "MEMBER"];
 
-const ROWS: { label: string; free: boolean | string; pro: boolean | string }[] = [
-  { label: "Reminders — bills, subscriptions, birthdays", free: true, pro: true },
-  { label: "Shared family (invite adults)", free: true, pro: true },
-  { label: "Shared shopping list", free: "1 list", pro: "Unlimited" },
-  { label: "Calendar + sync to your phone's calendar", free: true, pro: true },
-  { label: "Child accounts", free: false, pro: true },
-  { label: "Chores with approval", free: false, pro: true },
-  { label: "Homework & tests", free: false, pro: true },
-  { label: "Wishlists & gift reservations", free: false, pro: true },
-  { label: "Activities (sports, music…)", free: false, pro: true },
-  { label: "No ads", free: false, pro: true },
-];
+// 2026-10-04: rows come from lib/plans.ts (shared with the public pages).
+const ROWS = PLAN_ROWS;
 
 function Cell({ v }: { v: boolean | string }) {
   if (typeof v === "string") return <span style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)" }}>{v}</span>;
@@ -103,7 +94,10 @@ export default function UpgradePage() {
 
         <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--fg)", margin: "0 0 6px", letterSpacing: "-0.5px" }}>Plans</h1>
         <p style={{ fontSize: 14, color: "var(--muted)", margin: "0 0 20px", lineHeight: 1.5 }}>
-          Reminders and one shared shopping list are free, always (with a small sponsored card). Pro adds everything for the kids — and no ads.
+          Reminders, the calendar and one shared shopping list are free, always (with a small sponsored card). Pro adds everything for the kids — and no ads.
+        </p>
+        <p style={{ fontSize: 13, color: "var(--fg-2)", margin: "-12px 0 20px", fontWeight: 700 }}>
+          Pro: {PRO_PRICE_TEXT}. Try it free for 14 days first.
         </p>
 
         {/* Current plan */}
@@ -141,7 +135,7 @@ export default function UpgradePage() {
           </div>
           {ROWS.map((r, i) => (
             <div key={r.label} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 64px 72px", alignItems: "center", padding: "12px 16px", borderTop: i ? "1px solid var(--border-soft)" : "none" }}>
-              <span style={{ fontSize: 14, color: "var(--fg)", lineHeight: 1.35 }}>{r.label}</span>
+              <span style={{ fontSize: 14, color: "var(--fg)", lineHeight: 1.35 }}>{r.icon} {r.label}</span>
               <span style={{ textAlign: "center" }}><Cell v={r.free} /></span>
               <span style={{ textAlign: "center" }}><Cell v={r.pro} /></span>
             </div>

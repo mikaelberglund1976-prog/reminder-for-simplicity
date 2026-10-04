@@ -174,6 +174,7 @@ function IcAlert()   { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle 
 function IcDown()    { return <svg width={13} height={13} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="6 9 12 15 18 9"/></svg>; }
 function IcPlus()    { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>; }
 
+const HOME_LIST_LIMIT = 5;
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
 function IcCart()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 6H5.6"/></svg>; }
@@ -299,6 +300,9 @@ export default function DashboardPage() {
   const [preferredCurrency, setCurrency] = useState("SEK");
     const [filterCategory, setFilter]      = useState("ALL");
   const [sortBy, setSort]                = useState("date_asc");
+  // 2026-10-04 (Mikael): a whole family's reminders make a long Home — show
+  // the nearest few, the rest one tap away.
+  const [showAllReminders, setShowAllReminders] = useState(false);
   const [hasHousehold, setHasHousehold]  = useState(false);
   const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
   const [plan, setPlan] = useState<{ plan: "FREE" | "TRIAL" | "PRO"; trialDaysLeft: number | null } | null>(null);
@@ -652,7 +656,7 @@ export default function DashboardPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
           <StatCard icon={<IcBell />} iconColor="var(--accent)" iconBg="var(--tint-accent)" value={totalActive} label="Active" />
           <StatCard icon={<IcAlert />} iconColor="var(--danger)" iconBg="var(--tint-danger)" value={passedCount} label="Overdue" />
-          <button onClick={() => { setSort("amount_desc"); document.getElementById("all-reminders")?.scrollIntoView({ behavior: "smooth" }); }}
+          <button onClick={() => { setSort("amount_desc"); setShowAllReminders(true); document.getElementById("all-reminders")?.scrollIntoView({ behavior: "smooth" }); }}
             style={{ all: "unset", cursor: "pointer", display: "block" }} aria-label="Review recurring costs">
             <StatCard icon={<IcCard />} iconColor="var(--success)" iconBg="var(--tint-success)"
               value={yearlyTotal > 0 ? compactAmount(yearlyTotal) : "—"} label={`Per year${yearlyTotal > 0 ? " · " + preferredCurrency : ""}`} />
@@ -737,11 +741,21 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 12 }}>
-                {filtered.map((r, i) => (
+                {(showAllReminders ? filtered : filtered.slice(0, HOME_LIST_LIMIT)).map((r, i) => (
                   <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
                     isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
                 ))}
                   </div>
+            )}
+
+            {filtered.length > HOME_LIST_LIMIT && (
+              <button onClick={() => setShowAllReminders(v => !v)} style={{
+                display: "block", width: "100%", marginBottom: 12, padding: "13px", borderRadius: 16,
+                background: "var(--surface)", border: "1px solid var(--border)", cursor: "pointer",
+                fontSize: 14, fontWeight: 700, color: "var(--accent)", fontFamily: FONT,
+              }}>
+                {showAllReminders ? "Show fewer" : `See all (${filtered.length})`}
+              </button>
             )}
 
             {/* Add reminder (hidden when the empty state above already offers it) */}
