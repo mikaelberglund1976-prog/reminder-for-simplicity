@@ -103,6 +103,11 @@ providers.push(
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
+    // 2026-10-04 (PWA): stay logged in when the app is opened from the home
+    // screen. Rolling: refreshed at most once a day while in use, so only
+    // ~90 days of inactivity logs someone out.
+    maxAge: 60 * 60 * 24 * 90,
+    updateAge: 60 * 60 * 24,
   },
   pages: {
     signIn: "/login",

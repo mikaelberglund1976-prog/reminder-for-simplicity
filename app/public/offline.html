@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#F5F4F0">
+<title>Offline – Reminder for Simplicity</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+         background: #F5F4F0; color: #1C1C28; padding: 24px; box-sizing: border-box;
+         font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; text-align: center; }
+  @media (prefers-color-scheme: dark) { body { background: #15151d; color: #ECECF1; } p { color: #A3A3B2 !important; } }
+  .box { max-width: 340px; }
+  img { width: 72px; height: 72px; border-radius: 18px; margin-bottom: 20px; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  p { font-size: 15px; line-height: 1.5; color: #6B6B7B; margin: 0 0 6px; }
+  button { margin-top: 20px; font: inherit; font-weight: 600; font-size: 15px; padding: 12px 24px; border: 0;
+           border-radius: 12px; background: #4A5FD5; color: #fff; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <img src="/icons/icon-192.png" alt="">
+    <h1>Ingen anslutning</h1>
+    <p>Kontrollera internet och försök igen.</p>
+    <p lang="en">You're offline. Check your connection and try again.</p>
+    <button onclick="location.reload()">Försök igen / Try again</button>
+  </div>
+</body>
+</html>

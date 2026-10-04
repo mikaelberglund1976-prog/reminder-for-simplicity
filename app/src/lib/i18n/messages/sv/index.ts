@@ -19,6 +19,7 @@ import { nav } from "./nav";
 import { newBooking } from "./newBooking";
 import { plans } from "./plans";
 import { profile } from "./profile";
+import { pwa } from "./pwa";
 import { reminderDetail } from "./reminderDetail";
 import { reminderForm } from "./reminderForm";
 import { reminders } from "./reminders";
@@ -48,6 +49,7 @@ export const sv: Messages = {
   newBooking,
   plans,
   profile,
+  pwa,
   reminderDetail,
   reminderForm,
   reminders,

@@ -3,6 +3,7 @@
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
+**Uppdaterad igen:** 2026-10-04 (sen kväll) – punkt 41: PWA-installation på mobilen + namnfrågan uppsatt (se `RELEASE_2026-10-04c.md`).
 **Uppdaterad igen:** 2026-10-04 (kväll) – punkt 40: svenska + flerspråksstöd, språk per familj (se `RELEASE_2026-10-04b.md`) – live.
 **Uppdaterad igen:** 2026-10-04 – punkt 39 (mobiltestets fynd 4 okt: delade poster, nästa datum, barnens bottenmeny, Home, poster utan person, Free/Pro, publika sidor) – live. Alla md-filer synkade.
 **Uppdaterad igen:** 2026-10-03 – punkt 36 (barnets startsida, ta bort familjemedlemmar, samma bild överallt, Home först i menyn) och 37 (SchoolSoft-import per barn, bara prov på vuxnas Home) – live. Alla md-filer synkade.
@@ -808,3 +809,9 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [ ] Jurist läser svenska integritetstexten.
 - [ ] Senare: fler språk (norska/danska/finska) – se receptet i release-notisen.
 
+## 41. PWA – installera som app på mobilen + namnfrågan (2026-10-04, sen kväll) – se `RELEASE_2026-10-04c.md`
+- [x] Beslut: ingen egen iPhone/Android-app nu, hemsidan blir installerbar PWA.
+- [x] Manifest med maskable-ikoner, id/scope, genvägar. Service worker v2 (cachar aldrig sidor, offlinesida). "Lägg till på mobilen"-ruta (Android-knapp, iPhone-steg). Inloggning 90 dagar rullande.
+- [ ] Klicktest `TEST_VERIFICATION.md` §15.
+- [ ] Nästa: webb-push-notiser.
+- [ ] **Namnbeslut:** Reminder for Simplicity eller Assistiq (eller "Assistiq Familj") – se överst i `LAUNCH_CHECKLIST.md`.

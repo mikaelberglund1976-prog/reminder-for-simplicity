@@ -1,24 +1,23 @@
 {
+  "id": "/dashboard",
   "name": "Reminder for Simplicity",
   "short_name": "Reminder",
-  "description": "Never forget what matters. Track subscriptions, birthdays, renewals and shared household responsibilities.",
-  "start_url": "/dashboard",
+  "description": "Everything your family needs to remember, buy and want – in one calm place.",
+  "start_url": "/dashboard?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#F5F4F0",
-  "theme_color": "#1C1C28",
+  "theme_color": "#F5F4F0",
   "orientation": "portrait",
+  "categories": ["productivity", "lifestyle"],
   "icons": [
-    {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Shopping list", "short_name": "Shopping", "url": "/dashboard/family/shopping-list?source=pwa", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "New reminder", "short_name": "New", "url": "/dashboard/new?source=pwa", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

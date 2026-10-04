@@ -2,7 +2,7 @@
 
 **Syfte:** en enda, avdubblerad, omprioriterad lista över allt som återstår innan produkten är "helt klar" för bred lansering. Ersätter inte `TODO.md` (som förblir den kronologiska arbetsloggen/historiken) utan sitter ovanpå den – det här dokumentet är **den aktuella sanningen om vad som är kvar**, `TODO.md` är **hur vi kom hit**.
 **Metod:** allt `- [ ]` extraherat ur `TODO.md` (punkt 1–25), `PRODUCT_SPEC.md`, `ROADMAP.md`, `OPERATIONS.md`, `APP_STORE_READINESS.md`, dubbletter slagna ihop, omgrupperat i faser efter vad som faktiskt blockerar vad.
-**Senast synkad:** 2026-10-04 (kväll) – svenska + flerspråksstöd LIVE, språk per familj (`RELEASE_2026-10-04b.md`, `TODO.md` punkt 40). Före det: 2026-10-04 – mobiltestets fynd 4 okt LIVE (`RELEASE_2026-10-04.md`, `TODO.md` punkt 39). Före det: 2026-10-03 – barnets startsida, radera medlemmar, Home först, SchoolSoft-import LIVE (`RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`, `TODO.md` punkt 36–37). Före det: 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
+**Senast synkad:** 2026-10-04 (sen kväll) – PWA-installation + namnfrågan uppsatt (`RELEASE_2026-10-04c.md`, `TODO.md` punkt 41). Före det: 2026-10-04 (kväll) – svenska + flerspråksstöd LIVE, språk per familj (`RELEASE_2026-10-04b.md`, `TODO.md` punkt 40). Före det: 2026-10-04 – mobiltestets fynd 4 okt LIVE (`RELEASE_2026-10-04.md`, `TODO.md` punkt 39). Före det: 2026-10-03 – barnets startsida, radera medlemmar, Home först, SchoolSoft-import LIVE (`RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`, `TODO.md` punkt 36–37). Före det: 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
 **Obs:** den gemensamma lanseringslistan för alla Assistiq-appar (namn, bolag, webb, GDPR, betalning) finns i Claude Docs ("Genomlysning: Assistiq inför kommersiell lansering", fliken Todo-lista). Den här filen är appens egen tekniska checklista.
 **Uppdatera detta dokument** när en punkt blir klar (bocka av `- [x]`) eller när prioritet ändras – det tappar sitt värde annars.
 
@@ -10,6 +10,7 @@
 
 ## Först: ett obesvarat beslut som påverkar allt nedan
 
+- [ ] **Appens namn: behålla "Reminder for Simplicity" eller byta (t.ex. till Assistiq)?** (Mikael 2026-10-04.) Domänen är redan `assistiq.se` och ikonen är ett A-märke, medan appen heter Reminder for Simplicity. Att kolla innan beslut: (1) ska Assistiq vara paraplymärket/bolaget för flera appar (sportappen m.fl.) eller namnet på just den här appen – t.ex. "Assistiq" rakt av, eller "Assistiq Familj/Family"; (2) varumärkessök hos PRV + EUIPO (klass 9 och 42); (3) ledigt namn i App Store/Google Play och som `.com`; (4) fungerar på både svenska och engelska. Styr: `manifest.json` (name/short_name), `layout.tsx` (title, appleWebApp.title), mejlavsändare, sajttexter, `BRAND.md`. Hör ihop med rad 1–8 i den gemensamma lanseringslistan.
 - [ ] **Fas 1-beta eller fortsätt bygga Fas 2 rakt av?** (öppnat i `TODO.md` punkt 8/12, aldrig besvarat.) Påverkar om Fas A nedan ska göras *innan* riktiga externa användare, eller om ni redan kör med riktiga användare och det är mer akut än det ser ut.
 
 ---
@@ -111,7 +112,7 @@ Från `COMPETITOR_ANALYSIS_TASKAPPS.md`/`PRODUCT_SPEC.md` 4b.30. Kan göras när
 - [ ] Kostnadssummering per kategori.
 - [ ] Månatlig email-digest.
 - [ ] CSV-import.
-- [ ] Push-notiser (PWA-grunden finns, push-logiken saknas).
+- [ ] Push-notiser (PWA-grunden finns och installationen är klar 2026-10-04, push-logiken saknas – se PWA-avsnittet).
 - [ ] **Inkommande ICS-prenumeration för Activities** (klubb-/skolkalender in i appen, hette "Training" innan namnbytet 2026-08-02, se `PRODUCT_SPEC.md` 4b.33) – **väg beslutad 2026-08-02: offentlig .ics-länk, ingen Google/Outlook-inloggning** (se `ROADMAP.md`), bekräftat slutgiltigt. Själva byggarbetet inte gjort än.
 - [ ] Receptimport via foto (OCR/Tesseract.js) – medvetet väntat, kräver nytt npm-beroende + telefontest.
 - [ ] Google/Apple Calendar tvåvägssynk (skiljer sig från redan byggd envägs-export).
@@ -202,6 +203,18 @@ PIN borttaget + e-postverifiering, mjuk radering med 60 dagars återställning, 
 - `0930cf3` – poster utan person i familjen syns och kan tas bort; × på sysslor.
 - [ ] Mikael tar bort testposterna (Bandy, Empty the dishwasher, Hhdd).
 - [ ] Klicktesta: `TEST_VERIFICATION.md` §13.
+
+## PWA – installera som app på mobilen (2026-10-04, se `RELEASE_2026-10-04c.md`)
+
+Beslut (Mikael 2026-10-04): ingen separat iPhone/Android-app nu – hemsidan installeras som PWA. Fas C (App Store/Play) ligger kvar som senare alternativ.
+- [x] Manifest: separata maskable-ikoner, `id`, `scope`, genvägar (Inköpslista, Ny påminnelse), temafärg lika med appen.
+- [x] Service worker v2: sidor cachas aldrig (familjedata stannar inte i telefonen, nya versioner syns direkt), offlinesida, snabb start via cachade byggfiler. Gamla v1-cachen raderas.
+- [x] "Lägg till på mobilen"-ruta på startsidan och i appen: Installera-knapp på Android, 3 steg på iPhone, "Inte nu" = 14 dagar. Aldrig inne i installerade appen.
+- [x] Inloggning håller 90 dagar (rullande) i stället för 30.
+- [ ] Klicktesta: `TEST_VERIFICATION.md` §15 (iPhone + Android).
+- [ ] Lighthouse/PWA-kontroll i Chrome DevTools efter deploy.
+- [ ] Nästa steg: **webb-push-notiser** (påminnelser i telefonen i stället för bara mejl). Fungerar på iPhone bara när appen är installerad på hemskärmen. Kräver VAPID-nycklar i Vercel + tabell för prenumerationer + att cron skickar push.
+- [ ] Byt namn/ikon i manifestet när namnbeslutet ovan är taget.
 
 ## Vad som redan är klart och inte behöver oroa er (för sammanhanget)
 

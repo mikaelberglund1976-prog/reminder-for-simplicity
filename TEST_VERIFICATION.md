@@ -161,3 +161,16 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Utloggad: språkknappen på login och register byter språk och minns valet.
 - [ ] Byt tillbaka till English → allt på engelska igen.
 
+## 15. PWA – installera på mobilen (2026-10-04)
+**iPhone (Safari):**
+1. Öppna www.assistiq.se → efter ~2 s visas "Lägg till på hemskärmen" med 3 steg.
+2. Dela → Lägg till på hemskärmen → (Öppna som webbapp på) → Lägg till. Ikonen ska vara A-märket.
+3. Öppna från ikonen: ingen Safari-ram, hamnar på Home (eller login första gången). Logga in en gång – stäng appen helt och öppna igen: fortfarande inloggad.
+4. Inne i den installerade appen ska rutan aldrig visas.
+**Android (Chrome):**
+5. Öppna sajten → rutan "Lägg till på mobilen" med knappen Installera → systemdialogen → ikon på hemskärmen (rund/ovanlig form ska inte klippa A-märket).
+6. Långtryck på ikonen: genvägarna Shopping list och New reminder.
+**Båda:**
+7. "Inte nu"/"Stäng" → rutan syns inte igen på 14 dagar.
+8. Flygplansläge → öppna appen → offlinesidan "Ingen anslutning" i stället för webbläsarens felsida.
+9. Logga ut → logga in som annan användare: ingen data från förra användaren syns (sidor cachas inte längre).
