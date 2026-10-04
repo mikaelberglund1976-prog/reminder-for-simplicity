@@ -2,9 +2,10 @@
 //
 // Adding a language later:
 //   1. Add its code to LOCALES and its own name to LOCALE_NAMES / DATE_LOCALES.
-//   2. Copy messages/en.ts to messages/<code>.ts and translate every string —
-//      TypeScript refuses to build until every key exists (type Messages).
+//   2. Copy the folder messages/en to messages/<code> and translate every
+//      string — TypeScript refuses to build until every key exists (type Messages).
 //   3. Register it in messages/index.ts.
+//   4. Add app/privacy/Privacy<Code>.tsx and pick it in app/privacy/page.tsx.
 // Nothing else needs to change: the family setting, the language picker, emails
 // and dates all read from these lists.
 
