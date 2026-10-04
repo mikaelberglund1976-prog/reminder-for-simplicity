@@ -1,4 +1,5 @@
 # Roadmap – Reminder for Simplicity
+**Uppdaterad igen:** 2026-10-04 (kväll) – appen på svenska och engelska, språk väljs per familj av familjens admin, förberett för fler språk (Fas 1.10). Se `RELEASE_2026-10-04b.md`.
 **Uppdaterad igen:** 2026-10-04 – mobiltestets fynd 4 okt åtgärdade och live (Fas 1.9): delade poster går att öppna, nästa datum överallt, barnens egen bottenmeny, städad Home, Free/Pro på ett ställe, ny publik startsida och "See how it works". Kalendersynk fortsatt Free. Se `RELEASE_2026-10-04.md`.
 **Uppdaterad igen:** 2026-09-29 – mobiltestets 13 fynd åtgärdade (familjefoton, Family members-sida, startsida per roll, prov/läxor per barn, radera listor m.m.), barn med eget konto/Google kan gå med i familjen, och GDPR-åtgärder live (`/privacy` publicerad, data i EU, vårdnadshavarens bekräftelse). Se ny sektion "Fas 1.7", `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`.
 **Uppdaterad igen:** 2026-09-28 – ljust/mörkt tema, ny startsida, planer (Free/Pro + 14 dagars provperiod), Pro-förfrågan + admin-beviljning, betalning förberedd och egen reklam – allt live. Se ny sektion "Fas 1.6" och `RELEASE_2026-09-28.md`.
@@ -126,6 +127,12 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] Publik startsida med "Log in"; "See how it works" omskriven
 - [ ] **Senare (idé, Mikael):** Pro-funktioner för synk – skolans läxor direkt till barnens kalender, synk av träningar
 
+## Fas 1.10 – Svenska + flerspråksstöd (2026-10-04 kväll, LIVE)
+- [x] Hela appen (utom admin), familjemejl, felmeddelanden och `/privacy` på svenska och engelska (`lib/i18n/`)
+- [x] Språk per familj, ändras av familjens admin (Family members / Settings); ny familj ärver grundarens språk; språkknapp på publika sidor
+- [ ] Klicktest (`TEST_VERIFICATION.md` §14) och juristläsning av svenska `/privacy`
+- [ ] **Senare:** fler språk (norska, danska, finska, tyska) – recept i `RELEASE_2026-10-04b.md`; butikstexter i App Store/Google Play per språk
+
 ## USP:ar och prioritet inför användartester (2026-07-28)
 
 Sammanställt efter konkurrentanalysen av Best4Family (`COMPETITOR_ANALYSIS_BEST4FAMILY.md`) och en bredare EU-marknadsundersökning (`MARKET_RESEARCH_EU.md`). Syfte: samla **vad som redan är en verklig USP**, och **vad som är billigt att stärka innan betaanvändarna kommer**, på ett ställe.
@@ -226,7 +233,7 @@ Mikael bekräftade ICS-riktningen och lade till två saker: (1) vill också synk
 - ~~"AssistIQ" (gammalt projektnamn) fanns kvar i `schema.prisma` och `sw.js`.~~ **Löst 2026-07-27 – långt mer utbrett än väntat:** samma kvarleva fanns även i `manifest.json` (PWA-appnamn), `layout.tsx` (sidtitel/OpenGraph), flera loading-states, header-loggor (register/join-household/admin) och **alla utgående transaktionsmail** (`email.ts` – ämnesrader, header, footer på reminder-, invite-, handover- och welcome-mail). Allt bytt till "Reminder for Simplicity".
 - ~~Färgpaletten i `BRAND.md` (`#4F6EF7`) matchade varken `RFS-Product-Direction.md` (`#4A5FD5`) eller `globals.css` (`#5B9CF5`).~~ **Löst 2026-07-26:** `#4A5FD5` (från `RFS-Product-Direction.md`) valdes som sanning. Genomfört i `globals.css`, `BRAND.md` och samtliga `.tsx`-filer i `app/src` + `public/manifest.json`.
 - ~~`landing-page.html` (svenska, gammal palett) och `app/src/app/page.tsx` (engelska, ny palett) var två helt olika hero-sektioner.~~ **Löst 2026-07-27:** `landing-page.html` borttagen, `page.tsx` är den enda landningssidan.
-- ~~**Språkmotsägelse:** Hela den byggda appen är på engelska, men `PRODUCT_SPEC.md` §9 angav svenska som primärspråk för MVP.~~ **Löst 2026-07-26:** engelska är primärspråk, matchar redan byggd app. PRODUCT_SPEC.md uppdaterad.
+- ~~**Språkmotsägelse:** Hela den byggda appen är på engelska, men `PRODUCT_SPEC.md` §9 angav svenska som primärspråk för MVP.~~ **Löst 2026-07-26:** engelska är primärspråk, matchar redan byggd app. PRODUCT_SPEC.md uppdaterad. **Sedan 2026-10-04:** svenska och engelska, familjen väljer (Fas 1.10).
 - ~~Arbetskopian hade CRLF-radslut (Windows-kopiering), `app/.gitignore` var UTF-16-kodad och innehöll bara `app/.env`, och `app/.env.local` var likaså UTF-16-kodad vilket gjorde att flera miljövariabler tystnat föll bort.~~ **Löst 2026-07-27:** `.gitattributes` tillagd + renormaliserat, `.gitignore` (rot + app) omskrivna i UTF-8, `.env.local` omskriven i UTF-8 med alla nycklar ifyllda (`GOOGLE_CLIENT_ID/SECRET` medvetet tomma – se Todo).
 - **Nytt fynd (2026-07-27):** `npm audit` visar att Next.js 14.2 har flera kända säkerhetsluckor (DoS, cache-poisoning, SSRF). Full fix kräver major-uppgradering till Next 16 – för stort/riskabelt för att göra utan din granskning, se Todo punkt 5.
 - **Nytt fynd (2026-07-27, sen kväll):** kosmetisk bugg – efter att ha loggat in via PIN visar Profile → Security "Change password" istället för "Signed in with Google" på ett Google-konto. Inte ett säkerhetsproblem, se `TODO.md` punkt 6.

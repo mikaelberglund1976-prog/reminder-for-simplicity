@@ -1,6 +1,7 @@
 # App Store-lansering – vad krävs för Apple App Store & Google Play (2026-08-02)
 
 **Metod:** Websökningar mot Apples och Googles egna aktuella riktlinjer (App Store Review Guidelines, Play Console-hjälp) plus tredjepartskällor för praktisk implementation, korsat mot vår faktiska kodbas (`app/`). Källor längst ner.
+**Tillägg 2026-10-04:** appen finns nu på svenska och engelska (`RELEASE_2026-10-04b.md`) – butikstexter, skärmdumpar och nyckelord bör göras på båda språken (App Store Connect och Play Console har lokalisering per språk).
 **Syfte:** svara konkret på "om jag skulle vilja lansera för Apple och Google, vad måste vi göra om" – inte en allmän guide, utan vad *just den här appen* (Next.js-webbapp, redan PWA-förberedd) faktiskt behöver.
 
 ---

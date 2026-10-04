@@ -659,7 +659,7 @@ Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar me
 1. **Max 3 klick** för att lägga till en påminnelse
 2. **Inga obligatoriska fält utom namn och datum** – resten är valfritt
 3. **Mobilanpassad** – fungerar perfekt på telefon i webbläsaren
-4. **Engelska som primärspråk** *(beslutat 2026-07-26 – matchar den redan byggda appen. Tidigare version av denna spec sa svenska; det var fel/inaktuellt.)*
+4. **Svenska och engelska, familjen väljer** *(2026-10-04, se 4b.43. Engelska är standard och facit för texterna; tidigare beslut 2026-07-26: engelska som enda språk.)*
 5. **Snabbval framför formulär** – välj "Netflix" istället för att skriva
 6. **Visa värde innan vi ber om något** *(tillagd 2026-08-02, se `COMPETITOR_ANALYSIS_TASKAPPS.md`)* – ny användare ska hinna uppleva kärnvärdet (en tillagd påminnelse/vara) innan konto-konfiguration, familjeinbjudan eller ett eventuellt framtida betalflöde tvingas fram. Motsatsen till Do Habits-mönstret (hård paywall innan en enda funktion testats).
 7. **Gamification i små, billiga doser** *(tillagd 2026-08-02)* – enkla mikro-belöningar (t.ex. en visuell bekräftelse vid första avklarade posten) bygger vana utan att kräva ny infrastruktur. Se 4b.30 för konkreta kandidater.

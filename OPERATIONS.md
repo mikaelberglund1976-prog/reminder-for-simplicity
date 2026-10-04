@@ -147,6 +147,15 @@ Dessa är kända luckor, inte akuta – men bör tas i tur och ordning i takt me
 
 ---
 
+## 7b. Språk och översättningar (sedan 2026-10-04)
+
+- Alla texter i appen ligger i `app/src/lib/i18n/messages/<språk>/`. Engelska (`en`) är facit; svenska (`sv`) måste ha samma nycklar, annars bygger inte appen (TypeScript). **Ny text i appen = lägg till den i både `en` och `sv`.**
+- Felmeddelanden från API:t skrivs på engelska i koden och översätts i webbläsaren via `messages/sv/serverErrors.ts`. Ett nytt felmeddelande som saknas där visas på engelska även för svenska familjer – lägg till det i tabellen.
+- Mejl till familjer skrivs på mottagarens familjespråk (`lib/email.ts`, `messages/*/emails.ts`). Admin-mejl till Mikael är på engelska.
+- Integritetsmeddelandet finns i två filer (`privacy/PrivacyEn.tsx`, `PrivacySv.tsx`) – ändra båda.
+- Familjens språk sparas i `households.language`; kolumnen skapas automatiskt av appen (ingen `db push`). Support: en familj som "fastnat" på fel språk byter själv under Family members → Language (admin), eller så sätts kolumnen direkt i Supabase.
+- Nytt språk: se receptet i `RELEASE_2026-10-04b.md`.
+
 ## 8. Säkerhetsgranskning av användardata (2026-08-02)
 
 Genomförd på Mikaels begäran ("vi har mycket användaruppgifter, viktigt att ingen kommer åt den") – en konkret kodgenomgång (inte bara dokumentation) av autentisering, auktorisering, adminpanelen, publika token-endpoints, barn-dataskydd, hemlighetshantering och injektion/XSS. Se `PRODUCT_SPEC.md` §10 för hur detta speglas i de icke-funktionella kraven, och punkt 24 i `TODO.md` för handlingslistan.
