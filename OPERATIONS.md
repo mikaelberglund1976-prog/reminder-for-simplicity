@@ -11,11 +11,12 @@
 - Endpointen kräver `Authorization: Bearer ${CRON_SECRET}` – Vercel skickar detta automatiskt för schemalagda cron-jobb.
 - Logiken bor i `app/src/lib/cron.ts` (`runReminderCron`):
   1. Hämtar alla `isActive: true` reminders
-  2. Räknar ut sändningsdatum som `date - reminderDaysBefore`
+  1b. *(2026-10-04)* Återkommande påminnelser (inte sysslor/aktiviteter/skola) vars datum passerat flyttas fram till nästa förekomst. Loggrad "[namn] rolled forward ÅÅÅÅ-MM-DD -> ÅÅÅÅ-MM-DD"
+  2. Räknar ut sändningsdatum som `date - reminderDaysBefore`. *(2026-10-04)* För återkommande påminnelser: skickar om dagen `reminderDaysBefore` framåt är en förekomst (`occursOn`), och mailet visar förekomstens datum
   3. Skickar bara om sändningsdatum = idag OCH ingen `ReminderLog` redan finns för idag (idempotens)
   4. Skickar email via Resend (`sendReminderEmail` i `app/src/lib/email.ts`)
   5. Skriver en `ReminderLog`-rad + uppdaterar `lastSentAt`
-  6. Om reminder är återkommande (DAILY/WEEKLY/MONTHLY/YEARLY): räknar ut och sparar nästa datum
+  6. Sysslor/aktiviteter/skola som är återkommande: flyttar datumet en period fram efter mailet (som förut). *(2026-10-04)* Vanliga påminnelser flyttas inte längre direkt efter mailet – det gör steg 1b när datumet passerat
   7. Rensar konton som varit mjukt raderade i mer än 60 dagar (inkl. profilbilden)
   0. *(2026-10-03, körs först)* Hämtar SchoolSoft-länkar som inte synkats senaste ~20 h (`syncAllFeeds` i `lib/schoolFeeds.ts`). Loggrad "SchoolSoft feeds: X synced, Y failed"; "SchoolSoft sync ERROR" ska inte förekomma. Fel per barn syns också för föräldern på School-sidan. Endpointen har `maxDuration = 60`.
   8. *(2026-09-29, GDPR)* Tar bort bilder vars person/familj inte finns kvar (`purgeOrphanMedia`) och nollställer sparade Google-tokens
@@ -175,4 +176,4 @@ Genomförd på Mikaels begäran ("vi har mycket användaruppgifter, viktigt att 
 
 ---
 
-*Detta dokument beskriver nuläget (2026-09-29: region fra1, självskapande tabeller, GDPR-rensning i cron, deploy via VS Code Sync; 2026-09-28: punkt 31 live; 2026-08-02: säkerhetsgranskningen i §8). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, sätter upp en verifierad email-domän, eller åtgärdar fynden i §8.*
+*Detta dokument beskriver nuläget (2026-10-04: cron rullar fram passerade återkommande påminnelser, se steg 1b; 2026-09-29: region fra1, självskapande tabeller, GDPR-rensning i cron, deploy via VS Code Sync; 2026-09-28: punkt 31 live; 2026-08-02: säkerhetsgranskningen i §8). Uppdatera det när driftrutiner ändras – t.ex. om ni lägger till Sentry, byter från `db push` till `migrate`, sätter upp en verifierad email-domän, eller åtgärdar fynden i §8.*

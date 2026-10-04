@@ -3,6 +3,7 @@
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
+**Uppdaterad igen:** 2026-10-04 – punkt 39 (mobiltestets fynd 4 okt: delade poster, nästa datum, barnens bottenmeny, Home, poster utan person, Free/Pro, publika sidor) – live. Alla md-filer synkade.
 **Uppdaterad igen:** 2026-10-03 – punkt 36 (barnets startsida, ta bort familjemedlemmar, samma bild överallt, Home först i menyn) och 37 (SchoolSoft-import per barn, bara prov på vuxnas Home) – live. Alla md-filer synkade.
 **Uppdaterad igen:** 2026-09-29 – punkt 33 (mobiltestets fynd rad 36–48, live), 34 (barn med eget konto/Google, live) och 35 (GDPR-genomgång + åtgärder, live, ny fil `GDPR.md`). Alla md-filer synkade mot nuläget.
 **Uppdaterad:** 2026-07-27 (kväll) – hamburgermeny + admin-åtkomst byggd, alla md-filer (PRODUCT_SPEC, ROADMAP, BRAND, OPERATIONS, TODO) synkade mot nuläget. Sektionerna nedan är nu i kronologisk ordning (döpte om 4d0→4e osv, som tidigare låg fel i ordning).
@@ -783,4 +784,19 @@ Se `RELEASE_2026-10-03.md`. Ersätter den gamla "inkommande ICS-import"-punkten 
 ## 38. Admin "View as" (impersonation) – LIVE ✅ (2026-10-03)
 Se `RELEASE_2026-10-03.md` §4. Family members → "👁 View as" (bara admin, bara egen familj), röd list med Switch/Back to me, 2 h max, loggas.
 - [ ] Senare, om det behövs för support: View as även för andra familjer från `/admin` (kräver beslut – integritet)
+
+## 39. Mobiltestets fynd 4 okt – LIVE ✅ (commits `705e72e`, `db1214f`, `0930cf3`)
+Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
+- [x] 1 Coming up-kort gick inte att öppna (bara skaparen fick läsa) → läsning enligt listans regler, vuxna ändrar/tar bort (`lib/reminderAccess.ts`)
+- [x] 2 Dubbel Calendar i Settings → låst knapp heter Home
+- [x] 3 Barnets standardmeny Home, Calendar, School, Activities; barn väljer själva; barn får kalendern
+- [x] 4 Tilldelningar genomgångna: bara fyra testposter fanns, alla tas bort
+- [x] 5 "Overdue · 16 Apr" vs 16 okt → nästa datum överallt; cron rullar fram och mejlar per förekomst
+- [x] 6 Home: tomma sektioner döljs, Chores this week bara med sysslor, All reminders 5 + "See all"
+- [x] 8 Free/Pro i `lib/plans.ts`; kalendersynk fortsatt Free (Mikael)
+- [x] 9 Startsidan: Log in; `/features` omskriven
+- [x] Tillägg: poster utan person i familjen syntes ingenstans och gick inte att ta bort → egen grupp + × (även på sysslor)
+- [ ] 7 Mikael tar bort testposterna (Bandy, Empty the dishwasher, Hhdd) – "Outlook test" redan borta
+- [ ] Klicktesta §13 i mobilen, ljust/mörkt, vuxen och barn
+- [ ] Idé: Pro-synk av skolans läxor till barnen och av träningar
 

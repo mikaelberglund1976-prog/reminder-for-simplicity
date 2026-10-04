@@ -1,6 +1,7 @@
 # GDPR – Reminder for Simplicity
 
 **Skapad:** 2026-09-29 · **Underlag:** GDPR-genomgången i projektet ("GDPR-genomgång: Reminder for Simplicity", Claude Docs) och koden live efter commit `59d4e40` + GDPR-releasen samma dag (`RELEASE_2026-09-29.md`).
+**Ändring 2026-10-04:** ingen ny behandling av personuppgifter. Behörigheten skärptes inte utan förtydligades: barn ser i kalendern samma saker de redan såg (egna + delade med dem); vuxna i familjen kan nu öppna, ändra och ta bort poster som delas i familjen även om någon annan skapat dem (`lib/reminderAccess.ts`). Privata poster syns fortfarande bara för den som skapade dem.
 **Status:** grunden är på plats och integritetsmeddelandet är publicerat på `/privacy` (version 2026-09-29). Det som återstår kräver beslut eller inloggning hos bolag/leverantörer – se §5.
 
 Det här dokumentet innehåller de två interna dokument GDPR kräver: **registerförteckning** (art. 30) och **incidentrutin** (art. 33–34). Det publika integritetsmeddelandet finns i appen (`app/src/app/privacy/page.tsx`). Ingen juridisk rådgivning – låt gärna en jurist läsa innan bred lansering.

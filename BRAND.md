@@ -1,5 +1,5 @@
 # Brand Guide – Reminder for Simplicity
-**Version:** 1.2 | **Skapad:** 2026-03-31 | **Färgpalett uppdaterad:** 2026-07-26 | **Nav/ikon-sektion omskriven:** 2026-07-28 (anpassningsbar bottenmeny + fullständig hamburgermeny + kalenderns typfärger, se `TODO.md` 19/20)
+**Version:** 1.2 | **Skapad:** 2026-03-31 | **Färgpalett uppdaterad:** 2026-07-26 | **Nav/ikon-sektion omskriven:** 2026-07-28, nuläge tillagt 2026-10-04 (anpassningsbar bottenmeny + fullständig hamburgermeny + kalenderns typfärger, se `TODO.md` 19/20)
 
 > ✅ **Färgpalett löst (2026-07-26):** Tidigare fanns tre olika accentfärger i `BRAND.md`, `RFS-Product-Direction.md` och `globals.css`. Mikael valde paletten från `RFS-Product-Direction.md` (accent `#4A5FD5`) som sanningskälla. Den är nu genomförd i `globals.css` och samtliga `.tsx`-filer i `app/src`. Paletten nedan är uppdaterad i enlighet med detta.
 
@@ -89,6 +89,8 @@ Reminders:     #5A6080  (neutral blågrå, för att inte konkurrera med accentf�
 
 Sedan appen breddades till att inte bara vara påminnelser (se positioneringsbeslutet i `PRODUCT_SPEC.md` §3, "vi tänker stort, inte bara reminder-app") används linjeikoner (SVG, inte emoji) i bottenmenyn (`components/BottomNav.tsx`) och hamburgermenyn (`components/HamburgerMenu.tsx`).
 
+> **Nuläge 2026-10-04:** Home (husikon) är den låsta första fliken sedan 2026-10-03; Calendar är ett val bland de andra. Barn väljer också själva, standard Home, Calendar, School, Activities. Activities har 🎯-ikon sedan namnbytet 2026-08-02. Tabellen nedan är den ursprungliga versionen.
+
 **Bottenmenyn är sedan 2026-07-28 anpassningsbar per person** (se `TODO.md` 19a, `PRODUCT_SPEC.md` 4b.10) istället för tre fasta flikar. Calendar är den enda obligatoriska, alltid-första fliken. Utöver den väljer varje person 2–3 till i Profile → Preferences, bland:
 
 | App | Ikon | Kommentar |
@@ -103,7 +105,7 @@ Sedan appen breddades till att inte bara vara påminnelser (se positioneringsbes
 
 Default om inget valts: Reminders, Shopping list, School (+ Calendar = 4 totalt).
 
-I marknadsföringstexter (startsida, feature-pills) används däremot fortfarande emoji (🔔 🛒 🎁 osv) för samma appar – konsekvent parvis med SVG-versionen i appen.
+I marknadsföringstexter (startsida, feature-pills, `/features`) används däremot fortfarande emoji (🔔 📅 🛒 📚 🧒 🎯 🧹 🎁) för samma appar – konsekvent parvis med SVG-versionen i appen. *(Startsidan och `/features` omgjorda 2026-10-04: Log in uppe till höger, Free/Pro från `lib/plans.ts`.)*
 
 **Hamburgermenyn innehåller sedan 2026-07-28 alla sidor, inte bara Family/Settings/Admin/Sign out** – den är tänkt som den fullständiga åtkomstpunkten oavsett vad som är valt i bottenmenyn: Reminders, Calendar, Shopping list, Wishlist, Chores, Training, School, Ideas & voting, Settings, (Admin, villkorat), Sign out. Samma linjeikon-stil som bottenmenyn, inte emoji.
 

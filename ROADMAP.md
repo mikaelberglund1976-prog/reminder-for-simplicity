@@ -1,4 +1,5 @@
 # Roadmap – Reminder for Simplicity
+**Uppdaterad igen:** 2026-10-04 – mobiltestets fynd 4 okt åtgärdade och live (Fas 1.9): delade poster går att öppna, nästa datum överallt, barnens egen bottenmeny, städad Home, Free/Pro på ett ställe, ny publik startsida och "See how it works". Kalendersynk fortsatt Free. Se `RELEASE_2026-10-04.md`.
 **Uppdaterad igen:** 2026-09-29 – mobiltestets 13 fynd åtgärdade (familjefoton, Family members-sida, startsida per roll, prov/läxor per barn, radera listor m.m.), barn med eget konto/Google kan gå med i familjen, och GDPR-åtgärder live (`/privacy` publicerad, data i EU, vårdnadshavarens bekräftelse). Se ny sektion "Fas 1.7", `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`.
 **Uppdaterad igen:** 2026-09-28 – ljust/mörkt tema, ny startsida, planer (Free/Pro + 14 dagars provperiod), Pro-förfrågan + admin-beviljning, betalning förberedd och egen reklam – allt live. Se ny sektion "Fas 1.6" och `RELEASE_2026-09-28.md`.
 **Uppdaterad igen:** 2026-09-27 – PIN-inloggning pensionerad (verifierad e-post + lösenord/Google för alla), självbetjänings-kontoradering byggd (mjuk radering, 60 dagar), Läxor & prov utökat (typ/ämne/avbockning/kalenderval). Kodat, **inte deployat** – se `TODO.md` punkt 31. Även 2026-08-18-ändringarna (punkt 30b, live) inlagda nedan.
@@ -99,7 +100,7 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] `/upgrade`, "I want Pro"-förfrågan, admin ger Pro i N dagar
 - [x] Betalning förberedd i databasen (Stripe-fält) + `lib/entitlements.ts`
 - [x] Egen reklam (`/admin/ads`) för gratis-vuxna, aldrig barn; "reklamfritt" förberett
-- [ ] **Nästa:** Stripe-kassa (49 kr/mån / 399 kr/år), mail före provperiodens slut, uppdatera `/features`
+- [ ] **Nästa:** Stripe-kassa (49 kr/mån / 399 kr/år), mail före provperiodens slut (`/features` uppdaterad 2026-10-04)
 
 ## Fas 1.7 – Mobiltest, barnkonton och GDPR (2026-09-28 kväll–29 sep, LIVE)
 - [x] Mikaels mobiltest rad 36–48: butiksläge med Undo, radera lista, startsida per roll, prov/läxor per barn på Home, profilbilder + familjefoto, prov vs läxa i kalendern, tryck-på-dag i mobilen, sysslor/aktiviteter för vuxna, Family members-sida, dagväljare, flera personer per aktivitet, iOS-datumfält, ☰-menyn
@@ -114,6 +115,16 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] SchoolSoft-import per barn: vuxen kopplar, daglig synk, isär från manuella, "Remove imported", justerbara poster (`RELEASE_2026-10-03.md`)
 - [x] Admin "View as" en person i egen familj (för att testa barnvyn)
 - [ ] **Nästa:** testa mot riktig SchoolSoft; samma import för idrottsklubbar (Activities)
+
+## Fas 1.9 – Mobiltestets fynd 4 okt (2026-10-04, LIVE)
+- [x] Coming up-kort går att öppna; vuxna ändrar/tar bort allt som delas i familjen
+- [x] Återkommande poster visar nästa datum överallt; cron mejlar per förekomst
+- [x] Bottenmeny: Home låst först; barn väljer själva (standard Home, Calendar, School, Activities); barn får kalendern
+- [x] Vuxnas Home: tomma sektioner döljs, All reminders 5 + "See all"
+- [x] Poster utan person i familjen syns och kan tas bort; sysslor har ×
+- [x] Free/Pro + pris på ett ställe (`lib/plans.ts`); kalendersynk fortsatt Free
+- [x] Publik startsida med "Log in"; "See how it works" omskriven
+- [ ] **Senare (idé, Mikael):** Pro-funktioner för synk – skolans läxor direkt till barnens kalender, synk av träningar
 
 ## USP:ar och prioritet inför användartester (2026-07-28)
 

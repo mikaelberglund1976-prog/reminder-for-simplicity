@@ -15,7 +15,7 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Klick på en reminder-post öppnar rätt reminder-detalj.
 - [ ] Klick på en syssla-post tar dig till Family-hubben (sysslor saknar egen detaljsida ännu — medvetet, se kod-kommentar i `calendar/page.tsx`).
 - [ ] "Today"-knappen och pil-navigeringen fungerar, dagens datum är visuellt markerat.
-- [ ] Som barnprofil: `/dashboard/calendar` ska omdirigera till barnets egen vy, inte visa kalendern.
+- [x] ~~Som barnprofil: `/dashboard/calendar` ska omdirigera till barnets egen vy~~ – inaktuellt sedan 2026-10-04: barn får kalendern (se §13).
 - [ ] Ingen synlig data-läcka: en PRIVATE reminder från en annan hushållsmedlem ska inte dyka upp i din kalender (samma regel som `/api/reminders` redan följer).
 
 ## 1. Vercel-deploy
@@ -37,7 +37,7 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Glömt lösenord end-to-end (begär → mail → återställ → logga in med nytt lösenord).
 - [ ] PWA på en riktig telefon (installation, offline-ikon, service worker).
 - [ ] Hamburgermeny – alla länkar (Family/Settings/Admin/Sign out), Admin bara synlig för admin-email.
-- [ ] Ny startsida – rubrik, tre feature-pills, telefonmockup.
+- [ ] Ny startsida – rubrik, feature-pills, telefonmockup *(omgjord 2026-10-04, se §13)*.
 - [ ] Mobil/webb-vy-växlare i Profile → Preferences.
 
 ## 5. Multi-lista / åtkomststyrning (4l)
@@ -85,7 +85,7 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 ## 9. Testrundan 2026-09-28 kväll – rad 36–48 i Todo-listan (LIVE, klicktestat lokalt i mobilstorlek)
 - [ ] Inköpslistan → 🏪 Store mode: bocka en vara → den hamnar under "Already in the cart" längst ned, "Undo" lägger tillbaka den. (36)
 - [ ] Inköpslistan: välj en extra lista → "Delete list" → bekräfta. Delad lista kan bara raderas av ägare/förälder; sista listan går inte att radera. (37)
-- [ ] Logga in som barn: bottenmenyn visar bara My week / Shopping list / Wishlist, ☰ visar bara egna saker; "My week" visar läxor/prov, aktiviteter och sysslor. (38)
+- [ ] *(Menyn ändrad 2026-10-04, se §13.)* Logga in som barn: bottenmenyn visar bara My week / Shopping list / Wishlist, ☰ visar bara egna saker; "My week" visar läxor/prov, aktiviteter och sysslor. (38)
 - [ ] Home som förälder: kortet "Homework & tests" visar varje barns kommande prov och läxor (prov i rött). (39)
 - [ ] ☰ → Family members: tryck på en bild → välj foto (eget eller barnets). "Family photo" → välj bild → syns överst på Home. (40)
 - [ ] Kalendern: prov (🧪, röd) och läxa (📝, indigo) har egna färger och egna filterchips. (41)

@@ -1,5 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.21 | **Uppdaterad:** 2026-09-29 | **Ägare:** Mikael Berglund
+**Version:** 2.22 | **Uppdaterad:** 2026-10-04 | **Ägare:** Mikael Berglund
+**Not (2026-10-04, live):** 4b.42 (mobiltestets fynd 4 okt) tillagd; 4b.10 och §7.4 uppdaterade – barn väljer egen bottenmeny (standard Home, Calendar, School, Activities), återkommande poster visar nästa datum, Free/Pro samlat i `lib/plans.ts`, kalendersynk fortsatt Free. Se `RELEASE_2026-10-04.md`.
 **Not (2026-09-29, live):** 4b.36 (mobiltestets fynd), 4b.37 (barn med eget konto/Google) och 4b.38 (GDPR) tillagda; 4b.28 och §10 uppdaterade – integritetsmeddelandet är publicerat. Se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`.
 **Not (2026-09-28, live):** §7.4 tillagd – ny Free/Pro-gräns, 14 dagars provperiod, Pro-förfrågan/admin-beviljning, förberedd betalning och reklam. Ersätter delar av §7.1 och hela §7.3 (7-dagars trial). Se `RELEASE_2026-09-28.md`.
 **Not (2026-08-18, deploy bekräftad live):** Fas A:s säkerhetsfixar och Training→Activity-namnbytet (nedan) pushade till GitHub och bekräftat deployade till produktion på Vercel (commit `29bf8e9`, deployment `dpl_3qWTb64whz1ZuTNefwK3TXnUuxUx`, state READY). Se `TODO.md` punkt 30 och `LAUNCH_CHECKLIST.md`. Kvarstår: manuell klicktestning i den skarpa appen (rate limit-låsning, gratis hushållsdelning, Activity-namnet överallt).
@@ -167,6 +168,8 @@ Varje barn har sin egen önskelista, separat från den delade inköpslistan (P0.
 - API: `GET/POST /api/family/wishlist`, `PATCH/DELETE /api/family/wishlist/[id]`.
 
 ### 4b.10 Bottenmeny / navigering (byggd 2026-07-27, gjord anpassningsbar 2026-07-28)
+
+> **Nuläge (2026-10-04):** Home är alltid första fliken (sedan 3 okt), därefter 3–4 valfria appar inkl. Calendar. Format `v2:…` i `User.bottomNavTabs`, logik i `lib/navTabs.ts`. **Barn** väljer också själva (Calendar, Shopping list, Wishlist, Activities, School – inte Chores); standard för barn är Home, Calendar, School, Activities. Texten nedan beskriver den ursprungliga versionen.
 
 - **Ursprungligen** tre hårdkodade flikar (Reminders/Shopping list/Wishlist), sedan fyra efter att Calendar lades till 2026-07-28 (se 4b.19). **Från 2026-07-28 (kväll) är menyn per-person-anpassningsbar**, efter direkt beställning ("under sin person kunna säga vilka av apparna som ska ligga i bannern"):
   - **Calendar är alltid längst till vänster och går inte att ta bort** – den enda låsta fliken.
@@ -463,6 +466,15 @@ Detaljer: `TODO.md` punkt 31.
 
 - Admin kan se appen som en person i sin egen familj (Family members → "👁 View as"), byta person i den röda listen och gå tillbaka. Max 2 h, loggas. `lib/impersonation.ts`.
 
+### 4b.42 Mobiltestets fynd 4 okt (2026-10-04, live)
+
+- **Öppna delade poster:** alla i familjen kan öppna det som delas med dem (samma regler som listan). Vuxna (OWNER/PARENT/ADULT) får ändra och ta bort allt som inte är privat; barn ser men ändrar inte. Sysslor och aktiviteter kan tas bort av alla vuxna. `lib/reminderAccess.ts`.
+- **Nästa datum:** en återkommande post sparar sitt startdatum; allt utom kalendern visar nästa förekomst (`nextOccurrence`/`withNextDate` i `lib/recurrence.ts`). Bara engångsposter kan vara förfallna. Cron flyttar passerade återkommande datum framåt och matchar mejl mot förekomsten (sysslor/aktiviteter/skola: som förut).
+- **Bottenmeny:** se 4b.10. Barn får kalendern (egna + delade poster, ingen +-knapp).
+- **Vuxnas Home:** tomma sektioner visas inte (Coming up, siffrorna, All reminders); "Chores this week" bara för barn med sysslor; All reminders visar 5 + "See all (N)".
+- **Poster utan person:** sysslor, aktiviteter och läxor som saknar person, eller hör till någon som lämnat familjen, visas i en egen grupp "Not assigned to anyone in the family" och kan tas bort. Sysslor har fått ×.
+- **Publika sidor:** startsidan har "Log in"; `/features` ("See how it works") omskriven efter appen som den är nu. Free/Pro och pris kommer från `lib/plans.ts` (samma som `/upgrade`).
+
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
 - [ ] **WhatsApp-påminnelser** – Alternativ kanal till email, högre öppningsgrad
@@ -536,6 +548,8 @@ Ersätter "Basic/Pro" i 7.1 där de skiljer sig, och hela 7.3. Källan till sann
 **Free (för alltid):** påminnelser (obegränsat), hushåll + bjuda in vuxna, dela påminnelser, **en** delad inköpslista (den äldsta i hushållet), kalender + ICS-kalendersynk, Ideas & voting. Visar ett "Sponsored"-kort för vuxna.
 
 **Pro:** barnkonton, sysslor med godkännande, läxor & prov, önskelistor + reservationer, aktiviteter, obegränsat antal inköpslistor, ingen reklam. (Ändring mot 7.1: första barnprofilen är inte längre gratis, och ICS-synk förblir gratis – som koden redan gjorde.)
+
+**Uppdatering 2026-10-04:** Mikael bekräftade att **kalendersynk förblir Free** tills vidare (tankar om framtida Pro: synk av skolans läxor till barnen, synk av träningar). SchoolSoft-import räknas som del av Läxor & prov (Pro). Uppdelningen och priset (49 kr/mån, 399 kr/år) finns nu på ett ställe, `app/src/lib/plans.ts`, som används av `/upgrade`, `/` och `/features`.
 
 **Provperiod:** 14 dagar, hela familjen, utan kort, en gång per hushåll, startas av en vuxen (`FamilyTrial.childId` är nu frivilligt). Ångerrätt (14 dagar enligt lag) gäller när betalning införs – inget produktval.
 
