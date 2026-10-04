@@ -1,10 +1,25 @@
 import { Resend } from "resend";
-import { format } from "date-fns";
+import { getLocaleForEmail } from "@/lib/i18n/server";
+import { getMessages } from "@/lib/i18n/messages";
+import { DATE_LOCALES, type Locale } from "@/lib/i18n/config";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
 const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+// 2026-10-04: emails are written in the recipient's family language (or the
+// language of the request when they have no family yet). Pass `locale` to
+// override. Admin-only emails to Mikael stay in English.
+async function lang(to: string, locale?: Locale) {
+  const l = locale ?? (await getLocaleForEmail(to));
+  const m = getMessages(l);
+  return {
+    l,
+    t: m.emails,
+    d: (date: Date) => date.toLocaleDateString(DATE_LOCALES[l], { day: "numeric", month: "long", year: "numeric" }),
+  };
+}
 
 const CATEGORY_ICONS: Record<string, string> = {
   SUBSCRIPTION: "💳",
@@ -27,7 +42,9 @@ export async function sendReminderEmail({
   note,
   reminderId,
   category,
+  locale,
 }: {
+  locale?: Locale;
   to: string;
   name: string | null;
   reminderName: string;
@@ -38,8 +55,9 @@ export async function sendReminderEmail({
   reminderId: string;
   category?: string;
 }) {
-  const firstName = name?.split(" ")[0] ?? "there";
-  const formattedDate = format(date, "d MMMM yyyy");
+  const { l, t, d } = await lang(to, locale);
+  const firstName = name?.split(" ")[0] ?? t.there;
+  const formattedDate = d(date);
   const daysLeft = Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const dashboardUrl = `${APP_URL}/dashboard/${reminderId}`;
   const icon = category ? (CATEGORY_ICONS[category] ?? "🔔") : "🔔";
@@ -51,21 +69,21 @@ export async function sendReminderEmail({
     "#4A5FD5";
 
   const daysLabel =
-    daysLeft <= 0 ? "due today" :
-    daysLeft === 1 ? "due tomorrow" :
-    `due in ${daysLeft} days`;
+    daysLeft <= 0 ? t.reminder.dueToday :
+    daysLeft === 1 ? t.reminder.dueTomorrow :
+    t.reminder.dueIn(daysLeft);
 
   const urgencyBadge =
-    daysLeft <= 0 ? `<span style="background:#fff0f0;color:#e53e3e;border:1px solid #fed7d7;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">⚡ Due today</span>` :
-    daysLeft <= 3 ? `<span style="background:#fff8f0;color:#dd6b20;border:1px solid #fbd38d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">⚠️ ${daysLeft} days left</span>` :
-    daysLeft <= 7 ? `<span style="background:#fffff0;color:#b7791f;border:1px solid #faf089;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">📅 ${daysLeft} days left</span>` :
-    `<span style="background:#ebf4ff;color:#4A5FD5;border:1px solid #bee3f8;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">📅 ${daysLeft} days left</span>`;
+    daysLeft <= 0 ? `<span style="background:#fff0f0;color:#e53e3e;border:1px solid #fed7d7;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">${t.reminder.badgeToday}</span>` :
+    daysLeft <= 3 ? `<span style="background:#fff8f0;color:#dd6b20;border:1px solid #fbd38d;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">⚠️ ${t.reminder.badgeDaysLeft(daysLeft)}</span>` :
+    daysLeft <= 7 ? `<span style="background:#fffff0;color:#b7791f;border:1px solid #faf089;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">📅 ${t.reminder.badgeDaysLeft(daysLeft)}</span>` :
+    `<span style="background:#ebf4ff;color:#4A5FD5;border:1px solid #bee3f8;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">📅 ${t.reminder.badgeDaysLeft(daysLeft)}</span>`;
 
   const amountRow = amount
     ? `<tr>
-        <td style="padding:12px 0;color:#718096;font-size:14px;border-bottom:1px solid #EDF2F7;">Amount</td>
+        <td style="padding:12px 0;color:#718096;font-size:14px;border-bottom:1px solid #EDF2F7;">${t.reminder.amount}</td>
         <td style="padding:12px 0;color:#1A202C;font-size:15px;font-weight:700;text-align:right;border-bottom:1px solid #EDF2F7;">
-          ${amount.toLocaleString("en")} ${currency}
+          ${amount.toLocaleString(DATE_LOCALES[l])} ${currency}
         </td>
       </tr>` : "";
 
@@ -80,11 +98,11 @@ export async function sendReminderEmail({
     subject: `${icon} ${reminderName} — ${daysLabel}`,
     html: `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${t.htmlLang}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Reminder for Simplicity Reminder</title>
+  <title>${t.reminder.title}</title>
 </head>
 <body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
 
@@ -94,13 +112,13 @@ export async function sendReminderEmail({
     <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
       <div style="font-size:32px;margin-bottom:6px;">${icon}</div>
       <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Reminder for Simplicity</div>
-      <div style="color:rgba(255,255,255,0.35);font-size:11px;">Never forget what matters</div>
+      <div style="color:rgba(255,255,255,0.35);font-size:11px;">${t.tagline}</div>
     </div>
 
     <!-- Card -->
     <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
 
-      <p style="margin:0 0 20px;color:#718096;font-size:15px;">Hi ${firstName},</p>
+      <p style="margin:0 0 20px;color:#718096;font-size:15px;">${t.hi(firstName)}</p>
 
       <!-- Reminder name + badge -->
       <div style="margin-bottom:24px;">
@@ -111,7 +129,7 @@ export async function sendReminderEmail({
       <!-- Details table -->
       <table style="width:100%;border-collapse:collapse;border-top:1px solid #EDF2F7;">
         <tr>
-          <td style="padding:12px 0;color:#718096;font-size:14px;border-bottom:1px solid #EDF2F7;">Date</td>
+          <td style="padding:12px 0;color:#718096;font-size:14px;border-bottom:1px solid #EDF2F7;">${t.reminder.date}</td>
           <td style="padding:12px 0;color:#1A202C;font-size:15px;font-weight:600;text-align:right;border-bottom:1px solid #EDF2F7;">${formattedDate}</td>
         </tr>
         ${amountRow}
@@ -123,7 +141,7 @@ export async function sendReminderEmail({
       <div style="text-align:center;margin-top:32px;">
         <a href="${dashboardUrl}"
           style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;letter-spacing:-0.2px;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
-          View reminder →
+          ${t.reminder.view}
         </a>
       </div>
 
@@ -132,10 +150,10 @@ export async function sendReminderEmail({
     <!-- Footer -->
     <div style="text-align:center;padding:24px 0 0;">
       <p style="margin:0 0 6px;font-size:12px;color:#A0AEC0;line-height:1.8;">
-        You're receiving this because you set up a reminder in Reminder for Simplicity.<br>
-        <a href="${APP_URL}/dashboard" style="color:#A0AEC0;text-decoration:underline;">Manage reminders</a>
+        ${t.reminder.why}<br>
+        <a href="${APP_URL}/dashboard" style="color:#A0AEC0;text-decoration:underline;">${t.reminder.manage}</a>
         &nbsp;·&nbsp;
-        <span>by Berget &amp; Fredde</span>
+        <span>${t.footerBy.replace("Reminder for Simplicity · ", "")}</span>
       </p>
     </div>
 
@@ -154,14 +172,17 @@ export async function sendReminderEmail({
 // ─── Household invite email ───────────────────────────────────────────────────
 
 export async function sendHouseholdInviteEmail({
-  to, fromName, householdName, joinUrl, expiresText = "48 hours", asChild = false,
-}: { to: string; fromName: string; householdName: string; joinUrl: string; expiresText?: string; asChild?: boolean }) {
+  to, fromName, householdName, joinUrl, expiresText, asChild = false, locale,
+}: { to: string; fromName: string; householdName: string; joinUrl: string; expiresText?: string; asChild?: boolean; locale?: Locale }) {
+  const { t } = await lang(to, locale);
+  // Callers pass "48 hours" / "7 days" (English) — shown in the email's language.
+  const expires = expiresText === "7 days" ? t.invite.days7 : expiresText === "48 hours" || !expiresText ? t.invite.hours48 : expiresText;
   const { error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: `${fromName} invited you to join ${householdName} on Reminder for Simplicity`,
+    subject: t.invite.subject(fromName, householdName),
     html: `
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<!DOCTYPE html><html lang="${t.htmlLang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
 <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
   <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
@@ -169,21 +190,19 @@ export async function sendHouseholdInviteEmail({
     <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity</div>
   </div>
   <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
-    <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#1A202C;">You've been invited! 🎉</h1>
+    <h1 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#1A202C;">${t.invite.title}</h1>
     <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 8px;">
-      <strong style="color:#1A202C;">${fromName}</strong> has invited you to join <strong style="color:#1A202C;">${householdName}</strong> on Reminder for Simplicity.
+      ${t.invite.body(fromName, householdName)}
     </p>
     <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 28px;">
-      ${asChild
-        ? "Open the link and log in with your account (or tap “Continue with Google”) — you’ll see your homework, tests, chores, activities and wishlist in the family."
-        : "Share reminders, assign tasks and make sure nothing falls between the cracks."}
+      ${asChild ? t.invite.childBody : t.invite.adultBody}
     </p>
     <div style="text-align:center;">
       <a href="${joinUrl}" style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
-        Accept invitation →
+        ${t.invite.accept}
       </a>
     </div>
-    <p style="color:#A0AEC0;font-size:12px;text-align:center;margin:24px 0 0;">This invite expires in ${expiresText}.</p>
+    <p style="color:#A0AEC0;font-size:12px;text-align:center;margin:24px 0 0;">${t.invite.expires(expires)}</p>
   </div>
 </div>
 </body></html>`,
@@ -197,36 +216,37 @@ export async function sendHouseholdInviteEmail({
 // ─── Handover request email ───────────────────────────────────────────────────
 
 export async function sendHandoverRequestEmail({
-  to, toName, fromName, reminderName, reminderDate, acceptUrl,
-}: { to: string; toName: string | null; fromName: string; reminderName: string; reminderDate: Date; acceptUrl: string }) {
-  const firstName = toName?.split(" ")[0] ?? "there";
-  const formattedDate = reminderDate.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  to, toName, fromName, reminderName, reminderDate, acceptUrl, locale,
+}: { to: string; toName: string | null; fromName: string; reminderName: string; reminderDate: Date; acceptUrl: string; locale?: Locale }) {
+  const { t, d } = await lang(to, locale);
+  const firstName = toName?.split(" ")[0] ?? t.there;
+  const formattedDate = d(reminderDate);
 
   await resend.emails.send({
     from: FROM,
     to,
-    subject: `${fromName} wants to hand over: ${reminderName}`,
+    subject: t.handover.requestSubject(fromName, reminderName),
     html: `
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"></head>
+<!DOCTYPE html><html lang="${t.htmlLang}"><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
 <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
   <div style="background:linear-gradient(135deg,#1e3f8a 0%,#2e5ec8 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
     <div style="font-size:32px;margin-bottom:6px;">🤝</div>
-    <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity · Handover Request</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">${t.handover.requestHeader}</div>
   </div>
   <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
-    <p style="margin:0 0 20px;color:#718096;font-size:15px;">Hi ${firstName},</p>
+    <p style="margin:0 0 20px;color:#718096;font-size:15px;">${t.hi(firstName)}</p>
     <div style="background:#FFF9E6;border:1.5px solid #F6E05E;border-radius:12px;padding:16px;margin-bottom:24px;">
-      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#B7791F;text-transform:uppercase;letter-spacing:0.05em;">Pending handover</p>
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#B7791F;text-transform:uppercase;letter-spacing:0.05em;">${t.handover.pending}</p>
       <p style="margin:0;font-size:17px;font-weight:800;color:#1A202C;">${reminderName}</p>
-      <p style="margin:4px 0 0;font-size:14px;color:#718096;">Due ${formattedDate}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#718096;">${t.handover.due(formattedDate)}</p>
     </div>
     <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 28px;">
-      <strong style="color:#1A202C;">${fromName}</strong> wants to transfer this reminder to you. Until you accept, <strong style="color:#1A202C;">${fromName}</strong> remains responsible.
+      ${t.handover.requestBody(fromName)}
     </p>
     <div style="text-align:center;">
       <a href="${acceptUrl}" style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
-        Review handover →
+        ${t.handover.review}
       </a>
     </div>
   </div>
@@ -238,35 +258,36 @@ export async function sendHandoverRequestEmail({
 // ─── Handover response email ──────────────────────────────────────────────────
 
 export async function sendHandoverResponseEmail({
-  to, toName, responderName, reminderName, action, dashboardUrl,
-}: { to: string; toName: string | null; responderName: string; reminderName: string; action: "accepted" | "rejected"; dashboardUrl: string }) {
-  const firstName = toName?.split(" ")[0] ?? "there";
+  to, toName, responderName, reminderName, action, dashboardUrl, locale,
+}: { to: string; toName: string | null; responderName: string; reminderName: string; action: "accepted" | "rejected"; dashboardUrl: string; locale?: Locale }) {
+  const { t } = await lang(to, locale);
+  const firstName = toName?.split(" ")[0] ?? t.there;
   const isAccepted = action === "accepted";
 
   await resend.emails.send({
     from: FROM,
     to,
-    subject: `${responderName} ${isAccepted ? "accepted" : "declined"} the handover: ${reminderName}`,
+    subject: t.handover.responseSubject(responderName, isAccepted, reminderName),
     html: `
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"></head>
+<!DOCTYPE html><html lang="${t.htmlLang}"><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
 <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
   <div style="background:linear-gradient(135deg,${isAccepted ? "#1e7d52 0%,#2a9d6f" : "#8B0000 0%,#C44444"} 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
     <div style="font-size:32px;margin-bottom:6px;">${isAccepted ? "✅" : "❌"}</div>
-    <div style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Reminder for Simplicity · Handover ${isAccepted ? "Accepted" : "Declined"}</div>
+    <div style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">${t.handover.responseHeader(isAccepted)}</div>
   </div>
   <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
-    <p style="margin:0 0 16px;color:#718096;font-size:15px;">Hi ${firstName},</p>
+    <p style="margin:0 0 16px;color:#718096;font-size:15px;">${t.hi(firstName)}</p>
     <p style="color:#1A202C;font-size:16px;font-weight:600;margin:0 0 24px;line-height:1.5;">
-      <strong>${responderName}</strong> has <strong style="color:${isAccepted ? "#2A9D6F" : "#D94F4F"};">${isAccepted ? "accepted" : "declined"}</strong> the handover for <strong>${reminderName}</strong>.
+      ${t.handover.responseBody(responderName, isAccepted, reminderName, isAccepted ? "#2A9D6F" : "#D94F4F")}
     </p>
     ${isAccepted
-      ? `<p style="color:#718096;font-size:14px;line-height:1.6;margin:0 0 28px;">You're off the hook — ${responderName} is now responsible for this reminder.</p>`
-      : `<p style="color:#718096;font-size:14px;line-height:1.6;margin:0 0 28px;">You are still the responsible owner of this reminder.</p>`
+      ? `<p style="color:#718096;font-size:14px;line-height:1.6;margin:0 0 28px;">${t.handover.offTheHook(responderName)}</p>`
+      : `<p style="color:#718096;font-size:14px;line-height:1.6;margin:0 0 28px;">${t.handover.stillOwner}</p>`
     }
     <div style="text-align:center;">
       <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
-        View reminder →
+        ${t.handover.view}
       </a>
     </div>
   </div>
@@ -278,17 +299,18 @@ export async function sendHandoverResponseEmail({
 // ─── Password reset email ──────────────────────────────────────────────────────
 
 export async function sendPasswordResetEmail({
-  to, name, resetUrl,
-}: { to: string; name: string | null; resetUrl: string }) {
-  const firstName = name?.split(" ")[0] ?? "there";
+  to, name, resetUrl, locale,
+}: { to: string; name: string | null; resetUrl: string; locale?: Locale }) {
+  const { t } = await lang(to, locale);
+  const firstName = name?.split(" ")[0] ?? t.there;
 
   const { error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: "Reset your Reminder for Simplicity password",
+    subject: t.reset.subject,
     html: `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${t.htmlLang}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -303,19 +325,19 @@ export async function sendPasswordResetEmail({
     </div>
 
     <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
-      <p style="margin:0 0 20px;color:#718096;font-size:15px;">Hi ${firstName},</p>
+      <p style="margin:0 0 20px;color:#718096;font-size:15px;">${t.hi(firstName)}</p>
       <p style="color:#1A202C;font-size:15px;line-height:1.7;margin:0 0 8px;">
-        We received a request to reset your password.
+        ${t.reset.body}
       </p>
       <p style="color:#718096;font-size:14px;line-height:1.7;margin:0 0 28px;">
-        If you didn't request this, you can safely ignore this email — your password won't change.
+        ${t.reset.ignore}
       </p>
       <div style="text-align:center;margin-bottom:8px;">
         <a href="${resetUrl}" style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
-          Reset password →
+          ${t.reset.button}
         </a>
       </div>
-      <p style="color:#A0AEC0;font-size:12px;text-align:center;margin:24px 0 0;">This link expires in 1 hour.</p>
+      <p style="color:#A0AEC0;font-size:12px;text-align:center;margin:24px 0 0;">${t.reset.expires}</p>
     </div>
 
   </div>
@@ -332,16 +354,17 @@ export async function sendPasswordResetEmail({
 
 // ─── Welcome email ────────────────────────────────────────────────────────────
 
-export async function sendWelcomeEmail({ to, name }: { to: string; name: string | null }) {
-  const firstName = name?.split(" ")[0] ?? "there";
+export async function sendWelcomeEmail({ to, name, locale }: { to: string; name: string | null; locale?: Locale }) {
+  const { t } = await lang(to, locale);
+  const firstName = name?.split(" ")[0] ?? t.there;
 
   await resend.emails.send({
     from: FROM,
     to,
-    subject: `Welcome to Reminder for Simplicity 🔔`,
+    subject: t.welcome.subject,
     html: `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${t.htmlLang}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -356,23 +379,23 @@ export async function sendWelcomeEmail({ to, name }: { to: string; name: string 
     </div>
 
     <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
-      <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#1A202C;">Welcome, ${firstName}! 👋</h1>
+      <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#1A202C;">${t.welcome.title(firstName)}</h1>
       <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 24px;">
-        You're all set up on Reminder for Simplicity — your personal reminder assistant for the things that are easy to miss but important to keep on top of.
+        ${t.welcome.p1}
       </p>
       <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 32px;">
-        Add your first reminder — subscriptions, birthdays, insurance renewals — and we'll make sure you never forget what matters.
+        ${t.welcome.p2}
       </p>
       <div style="text-align:center;">
         <a href="${APP_URL}/dashboard/new"
           style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
-          Add your first reminder →
+          ${t.welcome.button}
         </a>
       </div>
     </div>
 
     <div style="text-align:center;padding:24px 0 0;">
-      <p style="margin:0;font-size:12px;color:#A0AEC0;">Reminder for Simplicity · by Berget &amp; Fredde</p>
+      <p style="margin:0;font-size:12px;color:#A0AEC0;">${t.footerBy}</p>
     </div>
 
   </div>
@@ -389,13 +412,16 @@ export async function sendBroadcastEmail({
   name,
   senderName,
   message,
+  locale,
 }: {
   to: string;
   name: string | null;
   senderName: string;
   message: string;
+  locale?: Locale;
 }) {
-  const firstName = name?.split(" ")[0] ?? "there";
+  const { t } = await lang(to, locale);
+  const firstName = name?.split(" ")[0] ?? t.there;
   // Message is plain text from a form (see /api/family/broadcast) — escape it
   // before dropping into HTML, then turn newlines into <br> so paragraphs
   // survive.
@@ -408,10 +434,10 @@ export async function sendBroadcastEmail({
   await resend.emails.send({
     from: FROM,
     to,
-    subject: `📣 Family update from ${senderName}`,
+    subject: t.broadcast.subject(senderName),
     html: `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${t.htmlLang}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -426,21 +452,21 @@ export async function sendBroadcastEmail({
     </div>
 
     <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
-      <h1 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#1A202C;">Hi ${firstName},</h1>
-      <p style="color:#A0AEC0;font-size:13px;margin:0 0 20px;">${senderName} sent an update to your household:</p>
+      <h1 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#1A202C;">${t.hi(firstName)}</h1>
+      <p style="color:#A0AEC0;font-size:13px;margin:0 0 20px;">${t.broadcast.sentUpdate(senderName)}</p>
       <div style="background:#F7FAFF;border:1px solid #E1E9FF;border-radius:12px;padding:20px;color:#2D3748;font-size:15px;line-height:1.7;margin:0 0 28px;">
         ${safeMessage}
       </div>
       <div style="text-align:center;">
         <a href="${APP_URL}/dashboard"
           style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:50px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
-          Open Reminder for Simplicity →
+          ${t.broadcast.open}
         </a>
       </div>
     </div>
 
     <div style="text-align:center;padding:24px 0 0;">
-      <p style="margin:0;font-size:12px;color:#A0AEC0;">Reminder for Simplicity · by Berget &amp; Fredde</p>
+      <p style="margin:0;font-size:12px;color:#A0AEC0;">${t.footerBy}</p>
     </div>
 
   </div>
@@ -456,16 +482,17 @@ export async function sendBroadcastEmail({
 // can log in. Two emails: one to the new user ("we got your signup"), one to
 // the admin ("someone's waiting"). A third fires once the admin approves.
 
-export async function sendPendingApprovalEmail({ to, name }: { to: string; name: string | null }) {
-  const firstName = name?.split(" ")[0] ?? "there";
+export async function sendPendingApprovalEmail({ to, name, locale }: { to: string; name: string | null; locale?: Locale }) {
+  const { t } = await lang(to, locale);
+  const firstName = name?.split(" ")[0] ?? t.there;
 
   await resend.emails.send({
     from: FROM,
     to,
-    subject: `Your account is awaiting approval`,
+    subject: t.pending.subject,
     html: `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${t.htmlLang}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -480,17 +507,17 @@ export async function sendPendingApprovalEmail({ to, name }: { to: string; name:
     </div>
 
     <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
-      <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#1A202C;">Thanks, ${firstName}!</h1>
+      <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#1A202C;">${t.pending.title(firstName)}</h1>
       <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 16px;">
-        We got your signup. We're in a testing phase right now, so every new account is manually approved before it can log in — this normally doesn't take long.
+        ${t.pending.p1}
       </p>
       <p style="color:#718096;font-size:15px;line-height:1.7;margin:0;">
-        You'll get another email as soon as you're approved. No need to do anything else in the meantime.
+        ${t.pending.p2}
       </p>
     </div>
 
     <div style="text-align:center;padding:24px 0 0;">
-      <p style="margin:0;font-size:12px;color:#A0AEC0;">Reminder for Simplicity · by Berget &amp; Fredde</p>
+      <p style="margin:0;font-size:12px;color:#A0AEC0;">${t.footerBy}</p>
     </div>
 
   </div>
@@ -551,16 +578,17 @@ export async function sendAdminApprovalRequestEmail({
   });
 }
 
-export async function sendAccountApprovedEmail({ to, name }: { to: string; name: string | null }) {
-  const firstName = name?.split(" ")[0] ?? "there";
+export async function sendAccountApprovedEmail({ to, name, locale }: { to: string; name: string | null; locale?: Locale }) {
+  const { t } = await lang(to, locale);
+  const firstName = name?.split(" ")[0] ?? t.there;
 
   await resend.emails.send({
     from: FROM,
     to,
-    subject: `You're approved — welcome to Reminder for Simplicity 🎉`,
+    subject: t.approved.subject,
     html: `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${t.htmlLang}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -575,20 +603,20 @@ export async function sendAccountApprovedEmail({ to, name }: { to: string; name:
     </div>
 
     <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 32px;box-shadow:0 4px 24px rgba(30,63,138,0.12);">
-      <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#1A202C;">You're in, ${firstName}! 🎉</h1>
+      <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:#1A202C;">${t.approved.title(firstName)}</h1>
       <p style="color:#718096;font-size:15px;line-height:1.7;margin:0 0 32px;">
-        Your account has been approved. Log in whenever you're ready.
+        ${t.approved.body}
       </p>
       <div style="text-align:center;">
         <a href="${APP_URL}/login"
           style="display:inline-block;background:linear-gradient(135deg,#4a7ee0,#2e5ec8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(46,94,200,0.4);">
-          Log in →
+          ${t.approved.button}
         </a>
       </div>
     </div>
 
     <div style="text-align:center;padding:24px 0 0;">
-      <p style="margin:0;font-size:12px;color:#A0AEC0;">Reminder for Simplicity · by Berget &amp; Fredde</p>
+      <p style="margin:0;font-size:12px;color:#A0AEC0;">${t.footerBy}</p>
     </div>
 
   </div>
@@ -600,12 +628,12 @@ export async function sendAccountApprovedEmail({ to, name }: { to: string; name:
 
 // ─── 2026-09-27: email verification, child account setup, deletion ─────────────
 
-function simpleEmailHtml({ icon, greeting, lines, buttonText, buttonUrl, footer }: {
-  icon: string; greeting: string; lines: string[]; buttonText?: string; buttonUrl?: string; footer?: string;
+function simpleEmailHtml({ icon, greeting, lines, buttonText, buttonUrl, footer, htmlLang = "en" }: {
+  icon: string; greeting: string; lines: string[]; buttonText?: string; buttonUrl?: string; footer?: string; htmlLang?: string;
 }) {
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${htmlLang}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#F0F4FF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:32px 16px 48px;">
@@ -634,58 +662,57 @@ async function sendSimple(to: string, subject: string, html: string, tag: string
   }
 }
 
-export async function sendVerifyEmail({ to, name, verifyUrl }: { to: string; name: string | null; verifyUrl: string }) {
-  const firstName = name?.split(" ")[0] ?? "there";
-  await sendSimple(to, "Confirm your email – Reminder for Simplicity", simpleEmailHtml({
+export async function sendVerifyEmail({ to, name, verifyUrl, locale }: { to: string; name: string | null; verifyUrl: string; locale?: Locale }) {
+  const { t } = await lang(to, locale);
+  const firstName = name?.split(" ")[0] ?? t.there;
+  await sendSimple(to, t.verify.subject, simpleEmailHtml({
+    htmlLang: t.htmlLang,
     icon: "✉️",
-    greeting: `Hi ${firstName},`,
-    lines: ["Please confirm that this is your email address. You can log in as soon as it's confirmed."],
-    buttonText: "Confirm email →",
+    greeting: t.hi(firstName),
+    lines: [t.verify.body],
+    buttonText: t.verify.button,
     buttonUrl: verifyUrl,
-    footer: "This link expires in 48 hours. If you didn't create an account, you can ignore this email.",
+    footer: t.verify.footer,
   }), "verify email");
 }
 
-export async function sendAccountSetupEmail({ to, name, invitedBy, setupUrl }: {
-  to: string; name: string | null; invitedBy: string | null; setupUrl: string;
+export async function sendAccountSetupEmail({ to, name, invitedBy, setupUrl, locale }: {
+  to: string; name: string | null; invitedBy: string | null; setupUrl: string; locale?: Locale;
 }) {
-  const firstName = name?.split(" ")[0] ?? "there";
-  await sendSimple(to, `${invitedBy ?? "Your family"} created an account for ${firstName}`, simpleEmailHtml({
+  const { t } = await lang(to, locale);
+  const firstName = name?.split(" ")[0] ?? t.there;
+  await sendSimple(to, t.setup.subject(invitedBy, firstName), simpleEmailHtml({
+    htmlLang: t.htmlLang,
     icon: "👋",
-    greeting: `Hi ${firstName},`,
-    lines: [
-      `${invitedBy ?? "Someone in your family"} has added you to your family in Reminder for Simplicity.`,
-      "Confirm your email and choose a password to log in. You can also log in with Google if this is a Google address.",
-    ],
-    buttonText: "Confirm & choose password →",
+    greeting: t.hi(firstName),
+    lines: [t.setup.p1(invitedBy), t.setup.p2],
+    buttonText: t.setup.button,
     buttonUrl: setupUrl,
-    footer: "This link expires in 7 days.",
+    footer: t.setup.footer,
   }), "account setup");
 }
 
-export async function sendDeletionRequestEmail({ to, adminName, memberName, familyUrl }: {
-  to: string; adminName: string | null; memberName: string | null; familyUrl: string;
+export async function sendDeletionRequestEmail({ to, adminName, memberName, familyUrl, locale }: {
+  to: string; adminName: string | null; memberName: string | null; familyUrl: string; locale?: Locale;
 }) {
-  await sendSimple(to, `${memberName ?? "A family member"} wants to delete their account`, simpleEmailHtml({
+  const { t } = await lang(to, locale);
+  await sendSimple(to, t.deletionRequest.subject(memberName), simpleEmailHtml({
+    htmlLang: t.htmlLang,
     icon: "🗑️",
-    greeting: `Hi ${adminName?.split(" ")[0] ?? "there"},`,
-    lines: [
-      `${memberName ?? "A member of your family"} has asked to delete their account. As the family admin you need to approve or decline.`,
-      "If approved, the account is hidden from the family right away and permanently deleted after 60 days.",
-    ],
-    buttonText: "Review request →",
+    greeting: t.hi(adminName?.split(" ")[0] ?? t.there),
+    lines: [t.deletionRequest.p1(memberName), t.deletionRequest.p2],
+    buttonText: t.deletionRequest.button,
     buttonUrl: familyUrl,
   }), "deletion request");
 }
 
-export async function sendAccountDeletedEmail({ to, name, purgeDate }: { to: string; name: string | null; purgeDate: Date }) {
-  await sendSimple(to, "Your account has been deleted – Reminder for Simplicity", simpleEmailHtml({
+export async function sendAccountDeletedEmail({ to, name, purgeDate, locale }: { to: string; name: string | null; purgeDate: Date; locale?: Locale }) {
+  const { t, d } = await lang(to, locale);
+  await sendSimple(to, t.deleted.subject, simpleEmailHtml({
+    htmlLang: t.htmlLang,
     icon: "👋",
-    greeting: `Hi ${name?.split(" ")[0] ?? "there"},`,
-    lines: [
-      "Your account has been deleted and you can no longer log in.",
-      `Your data is kept until <strong>${format(purgeDate, "d MMMM yyyy")}</strong> and then permanently removed. If this was a mistake, reply to this email before then and we can restore it.`,
-    ],
+    greeting: t.hi(name?.split(" ")[0] ?? t.there),
+    lines: [t.deleted.p1, t.deleted.p2(d(purgeDate))],
   }), "account deleted");
 }
 
@@ -706,15 +733,12 @@ export async function sendProRequestEmail({ to, familyName, requesterName, reque
   }), "pro request");
 }
 
-export async function sendProGrantedEmail({ to, name, until }: { to: string; name: string | null; until: Date | null }) {
-  await sendSimple(to, "Pro is on for your family – Reminder for Simplicity", simpleEmailHtml({
+export async function sendProGrantedEmail({ to, name, until, locale }: { to: string; name: string | null; until: Date | null; locale?: Locale }) {
+  const { t, d } = await lang(to, locale);
+  await sendSimple(to, t.proGranted.subject, simpleEmailHtml({
+    htmlLang: t.htmlLang,
     icon: "⚡",
-    greeting: `Hi ${name?.split(" ")[0] ?? "there"},`,
-    lines: [
-      until
-        ? `Pro is now active for your family until <strong>${format(until, "d MMMM yyyy")}</strong>.`
-        : "Pro is now active for your family.",
-      "Children, chores, homework & tests, wishlists, activities and more shopping lists are all unlocked.",
-    ],
+    greeting: t.hi(name?.split(" ")[0] ?? t.there),
+    lines: [until ? t.proGranted.until(d(until)) : t.proGranted.on, t.proGranted.unlocked],
   }), "pro granted");
 }

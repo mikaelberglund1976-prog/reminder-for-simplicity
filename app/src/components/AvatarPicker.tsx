@@ -8,11 +8,14 @@ import { useRef, useState } from "react";
 import Avatar from "@/components/Avatar";
 import { compressImage } from "@/lib/imageCompress";
 import { removeAvatar, uploadAvatar, useFamilyMedia } from "@/lib/familyMedia";
+import { useI18n } from "@/lib/i18n/client";
 
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
 export default function AvatarPicker({ userId, name, size = 56, showRemove = false }: { userId: string; name: string | null | undefined; size?: number; showRemove?: boolean }) {
   const media = useFamilyMedia();
+  const { m, err } = useI18n();
+  const t = m.components.avatar;
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,14 +30,14 @@ export default function AvatarPicker({ userId, name, size = 56, showRemove = fal
     try {
       const dataUrl = await compressImage(file, { mode: "square", size: 320 });
       await uploadAvatar(userId, dataUrl);
-    } catch (err) { setError(err instanceof Error ? err.message : "Upload failed"); }
+    } catch (e2) { setError(e2 instanceof Error ? err(e2.message) : t.uploadFailed); }
     finally { setBusy(false); }
   }
 
   return (
     <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
       <input ref={input} type="file" accept="image/*" onChange={onFile} style={{ display: "none" }} />
-      <button type="button" onClick={() => input.current?.click()} disabled={busy} aria-label={hasPhoto ? "Change your photo" : "Add your photo"}
+      <button type="button" onClick={() => input.current?.click()} disabled={busy} aria-label={hasPhoto ? t.change : t.add}
         style={{ position: "relative", background: "none", border: "none", padding: 0, cursor: "pointer", opacity: busy ? 0.5 : 1, borderRadius: "50%" }}>
         <Avatar userId={userId} name={name} size={size} />
         <span style={{
@@ -47,7 +50,7 @@ export default function AvatarPicker({ userId, name, size = 56, showRemove = fal
       </button>
       {showRemove && hasPhoto && !busy && (
         <button type="button" onClick={() => removeAvatar(userId)} style={{ background: "none", border: "none", padding: 0, color: "var(--subtle)", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-          Remove
+          {t.remove}
         </button>
       )}
       {error && <span style={{ fontSize: 11, color: "var(--danger)", maxWidth: 120, textAlign: "center" }}>{error}</span>}

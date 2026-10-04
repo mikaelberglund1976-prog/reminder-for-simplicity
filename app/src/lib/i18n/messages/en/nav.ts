@@ -1,0 +1,16 @@
+export const nav = {
+  home: "Home",
+  calendar: "Calendar",
+  shoppingList: "Shopping list",
+  wishlist: "Wishlist",
+  myWishlist: "My wishlist",
+  chores: "Chores",
+  activities: "Activities",
+  school: "School",
+  familyMembers: "Family members",
+  ideas: "Ideas & voting",
+  settings: "Settings",
+  privacy: "Privacy",
+  admin: "Admin",
+  reminders: "Reminders",
+};

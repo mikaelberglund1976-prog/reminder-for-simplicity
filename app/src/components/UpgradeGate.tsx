@@ -7,6 +7,7 @@
 // for a child: ask a parent.
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n/client";
 
 type Access = {
   plan: "FREE" | "TRIAL" | "PRO";
@@ -28,6 +29,8 @@ export default function UpgradeGate({ feature, description, emoji = "⚡", compa
   const [isAdult, setIsAdult] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const { m, err } = useI18n();
+  const t = m.components.upgradeGate;
 
   useEffect(() => {
     fetch("/api/family/trial").then((r) => (r.ok ? r.json() : null)).then((d) => {
@@ -42,21 +45,21 @@ export default function UpgradeGate({ feature, description, emoji = "⚡", compa
     try {
       const res = await fetch("/api/family/trial", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error ?? "Could not start the trial");
+      if (!res.ok) throw new Error(d.error ? err(d.error) : t.couldNotStart);
       if (onUnlocked) onUnlocked(); else window.location.reload();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+      setError(e instanceof Error ? e.message : m.common.somethingWentWrong);
       setBusy(false);
     }
   }
 
   const trialEnded = access?.trialUsed && access.plan === "FREE";
-  const title = trialEnded ? "Your free trial has ended" : `${feature} is part of Pro`;
+  const title = trialEnded ? t.trialEnded : t.isPartOfPro(feature);
   const body = !isAdult
-    ? "Ask a parent to turn on Pro for the family."
+    ? t.askParent
     : trialEnded
-      ? `Upgrade to Pro to keep using ${feature.toLowerCase()} — everything you added is still here.`
-      : description ?? `Try everything free for 14 days — no card needed.`;
+      ? t.keepUsing(feature)
+      : description ?? t.tryFree;
 
   return (
     <div style={{
@@ -73,12 +76,12 @@ export default function UpgradeGate({ feature, description, emoji = "⚡", compa
         <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
           {access?.canStartTrial ? (
             <button onClick={startTrial} disabled={busy} style={primary}>
-              {busy ? "Starting…" : "Start free 14-day trial"}
+              {busy ? t.starting : t.startTrial}
             </button>
           ) : (
-            <Link href="/upgrade" style={primary}>{access?.proRequested ? "Pro requested — see status" : "Upgrade to Pro"}</Link>
+            <Link href="/upgrade" style={primary}>{access?.proRequested ? t.requested : t.upgrade}</Link>
           )}
-          <Link href="/upgrade" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>What&apos;s included in Pro →</Link>
+          <Link href="/upgrade" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{t.whatsIncluded}</Link>
         </div>
       )}
       {error && <div style={{ color: "var(--danger)", fontSize: 13, marginTop: 12 }}>{error}</div>}

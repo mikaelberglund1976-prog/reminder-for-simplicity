@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
-import { PRO_PRICE_TEXT } from "@/lib/plans";
+import { PRO_PRICE } from "@/lib/plans";
+import { useM } from "@/lib/i18n/client";
+import LanguageToggle from "@/components/LanguageToggle";
 
 // 2026-10-04 (Mikael, phone test item 9): a clear "Log in" (there was only
 // "Get started"), copy and pills that match the app as it is now (kids'
@@ -9,6 +11,8 @@ import { PRO_PRICE_TEXT } from "@/lib/plans";
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
 export default function Home() {
+  const m = useM();
+  const t = m.landing;
   return (
     <div style={{
       minHeight: "100vh", background: "var(--background)",
@@ -26,9 +30,12 @@ export default function Home() {
           <span style={{ width: 30, height: 30, borderRadius: 9, background: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>🔔</span>
           <span style={{ fontWeight: 700, fontSize: 14.5, color: "var(--fg)" }}>Reminder for Simplicity</span>
         </span>
-        <Link href="/login" style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)", textDecoration: "none", padding: "8px 16px", border: "1.5px solid var(--accent-border)", borderRadius: 50 }}>
-          Log in
-        </Link>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+          <LanguageToggle />
+          <Link href="/login" style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)", textDecoration: "none", padding: "8px 16px", border: "1.5px solid var(--accent-border)", borderRadius: 50 }}>
+            {t.logIn}
+          </Link>
+        </span>
       </header>
 
       {/* ── Hero ── */}
@@ -44,8 +51,8 @@ export default function Home() {
           color: "var(--fg)", lineHeight: 1.15, letterSpacing: "-1px",
           margin: "0 0 16px", maxWidth: 400,
         }}>
-          The whole family&apos;s week,{" "}
-          <span style={{ color: "var(--accent)" }}>in one calm place</span>
+          {t.heroA}
+          <span style={{ color: "var(--accent)" }}>{t.heroB}</span>
         </h1>
 
         {/* Subtitle */}
@@ -53,7 +60,7 @@ export default function Home() {
           fontSize: 16, color: "var(--muted)", lineHeight: 1.6,
           maxWidth: 380, margin: "0 0 20px",
         }}>
-          Bills and birthdays for the adults. Homework, tests, chores and activities for the kids — with their own login. One calendar, one shopping list, not five different apps.
+          {t.sub}
         </p>
 
         {/* Feature pills — proof this is more than a reminder app */}
@@ -62,15 +69,8 @@ export default function Home() {
           margin: "0 0 40px", maxWidth: 420,
         }}>
           {[
-            { icon: "🔔", label: "Reminders" },
-            { icon: "📅", label: "Calendar" },
-            { icon: "🛒", label: "Shopping list" },
-            { icon: "📚", label: "Homework & tests" },
-            { icon: "🧒", label: "Kids' accounts" },
-            { icon: "🎯", label: "Activities" },
-            { icon: "🧹", label: "Chores" },
-            { icon: "🎁", label: "Wishlists" },
-          ].map(p => (
+            "🔔", "📅", "🛒", "📚", "🧒", "🎯", "🧹", "🎁",
+          ].map((icon, i) => ({ icon, label: t.pills[i] })).map(p => (
             <span key={p.label} style={{
               display: "inline-flex", alignItems: "center", gap: 6,
               background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 50,
@@ -146,10 +146,10 @@ export default function Home() {
                     fontSize: 18,
                   }}>🎂</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fg)" }}>Julias Birthday</div>
-                    <div style={{ fontSize: 10, color: "var(--muted)" }}>Tomorrow</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fg)" }}>{t.mock.birthday}</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)" }}>{t.mock.tomorrow}</div>
                   </div>
-                  <div style={{ fontSize: 9, color: "var(--accent)", fontWeight: 600 }}>Tomorrow</div>
+                  <div style={{ fontSize: 9, color: "var(--accent)", fontWeight: 600 }}>{t.mock.tomorrow}</div>
                 </div>
 
                 {/* Test */}
@@ -164,10 +164,10 @@ export default function Home() {
                     fontSize: 18,
                   }}>📚</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fg)" }}>Maths test · Emma</div>
-                    <div style={{ fontSize: 10, color: "var(--muted)" }}>Chapter 4–5</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fg)" }}>{t.mock.test}</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)" }}>{t.mock.testSub}</div>
                   </div>
-                  <div style={{ fontSize: 9, color: "var(--danger)", fontWeight: 600 }}>Thursday</div>
+                  <div style={{ fontSize: 9, color: "var(--danger)", fontWeight: 600 }}>{t.mock.thursday}</div>
                 </div>
 
                 {/* Activity */}
@@ -182,10 +182,10 @@ export default function Home() {
                     fontSize: 18,
                   }}>⚽</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fg)" }}>Football · Leo</div>
-                    <div style={{ fontSize: 10, color: "var(--muted)" }}>Tuesday 17:30</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--fg)" }}>{t.mock.activity}</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)" }}>{t.mock.activitySub}</div>
                   </div>
-                  <div style={{ fontSize: 9, color: "var(--violet)", fontWeight: 600 }}>Weekly</div>
+                  <div style={{ fontSize: 9, color: "var(--violet)", fontWeight: 600 }}>{t.mock.weekly}</div>
                 </div>
 
               </div>
@@ -238,7 +238,7 @@ export default function Home() {
           fontSize: 16, fontWeight: 700, color: "#fff",
           textDecoration: "none", boxShadow: "0 6px 18px rgba(74,95,213,0.28)",
         }}>
-          Get started free
+          {t.getStarted}
         </Link>
         <Link href="/login" style={{
           flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
@@ -248,16 +248,16 @@ export default function Home() {
           textDecoration: "none",
           boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
         }}>
-          Log in
+          {t.logIn}
         </Link>
       </div>
       <div style={{ textAlign: "center", padding: "18px 24px 44px" }}>
         <Link href="/features" style={{ fontSize: 15, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
-          See how it works →
+          {t.seeHow}
         </Link>
         <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "10px auto 0", lineHeight: 1.5, maxWidth: 360 }}>
-          Free: reminders, calendar and a shared shopping list. Pro adds the kids — {PRO_PRICE_TEXT}, 14 days free first.{" "}
-          <Link href="/features#plans" style={{ color: "var(--muted)", textDecoration: "underline" }}>Compare</Link>
+          {t.freeLine(m.plans.priceText(PRO_PRICE.month, PRO_PRICE.year))}{" "}
+          <Link href="/features#plans" style={{ color: "var(--muted)", textDecoration: "underline" }}>{t.compare}</Link>
         </p>
       </div>
 

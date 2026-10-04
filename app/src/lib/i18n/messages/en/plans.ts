@@ -1,0 +1,21 @@
+export const plans = {
+  rows: {
+    reminders: { label: "Reminders", detail: "Bills, subscriptions, birthdays, insurance — email before it's due." },
+    family: { label: "Shared family", detail: "Invite the other adults. Choose what's private and what's shared." },
+    shopping: { label: "Shared shopping list", detail: "Everyone adds, ticks off in the shop. Share a link with anyone." },
+    calendar: { label: "Calendar + sync to your phone", detail: "Everything with a date on one calendar, also in Google, Outlook or Apple Calendar." },
+    children: { label: "Child accounts", detail: "Each child gets their own login and their own week." },
+    chores: { label: "Chores", detail: "Recurring chores per child, ticked off by them, approved by you." },
+    school: { label: "Homework & tests", detail: "Per child, on Home and in the calendar. Import from SchoolSoft." },
+    activities: { label: "Activities", detail: "Football on Tuesdays, music on Thursdays — per child." },
+    wishlists: { label: "Wishlists", detail: "Kids add what they want; adults reserve without spoiling the surprise." },
+    noAds: { label: "No ads", detail: "Free shows one small sponsored card to adults. Children never see ads." },
+  } as Record<string, { label: string; detail: string }>,
+  cellValues: { oneList: "1 list", unlimited: "Unlimited" } as Record<string, string>,
+  priceText: (month: number, year: number) => `SEK ${month}/month or SEK ${year}/year`,
+  trialText: (days: number) => `${days} days free`,
+  included: "Included",
+  notIncluded: "Not included",
+  free: "Free",
+  pro: "Pro",
+};

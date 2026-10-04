@@ -5,6 +5,8 @@ import { Providers } from "./providers";
 import { SwRegister } from "./sw-register";
 import { VIEW_MODE_INIT_SCRIPT } from "@/lib/viewMode";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { getRequestLocale } from "@/lib/i18n/server";
+import { getMessages } from "@/lib/i18n/messages";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,11 +18,13 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export const metadata: Metadata = {
+// 2026-10-04: title/description follow the visitor's language (cookie or browser).
+export async function generateMetadata(): Promise<Metadata> {
+  const meta = getMessages(getRequestLocale()).meta;
+  return {
   title: "Reminder for Simplicity",
-  description:
-    "Everything your family needs to remember, buy, and want — reminders, a shared shopping list, and wishlists the kids control, all in one calm place. Free to get started.",
-  keywords: ["reminder", "subscription", "birthday", "renewal", "shopping list", "wishlist", "family app", "notifications"],
+  description: meta.description,
+  keywords: meta.keywords,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -29,7 +33,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Reminder for Simplicity",
-    description: "Everything your family needs to remember, buy, and want — in one calm place.",
+    description: meta.ogDescription,
     type: "website",
   },
   icons: {
@@ -41,15 +45,19 @@ export const metadata: Metadata = {
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
   },
-};
+  };
+}
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // 2026-10-04: first language from the device (cookie → browser); once logged
+  // in, the family's language takes over (lib/i18n/client.tsx).
+  const locale = getRequestLocale();
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html lang={locale} data-theme="light" suppressHydrationWarning>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
@@ -61,7 +69,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <SwRegister />
-        <Providers>{children}</Providers>
+        <Providers locale={locale}>{children}</Providers>
       </body>
     </html>
   );

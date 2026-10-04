@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/client";
+import LanguageToggle from "@/components/LanguageToggle";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -26,25 +28,28 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [info, setInfo] = useState("");
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+  const { m: msg, err } = useI18n();
+  const t = msg.auth;
 
   // Google's signIn callback redirects here with ?error=PendingApproval when
   // a not-yet-approved account tries to sign in (see auth.ts).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("error") === "PendingApproval") {
-      setError(PENDING_APPROVAL_MESSAGE);
+      setError(t.pendingApproval);
     }
     if (params.get("error") === "AccountDeleted") {
-      setError(ACCOUNT_DELETED_MESSAGE);
+      setError(t.accountDeleted);
     }
     if (params.get("verified") === "1") {
-      setInfo("Email confirmed — you can log in now.");
+      setInfo(t.emailConfirmed);
     }
     if (params.get("info") === "pin-retired") {
-      setInfo("PIN login has been retired. Log in with your email and password, or with Google. No password yet? Ask a parent to resend your invite, or use \"Forgot password?\".");
+      setInfo(t.pinRetired);
     }
     const e = params.get("email");
     if (e) setEmail(e);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleGoogleSignIn() {
@@ -67,7 +72,7 @@ export default function LoginPage() {
     setError("");
     const result = await signIn("credentials", { email, password, redirect: false });
     if (result?.error) {
-      setError(PASS_THROUGH.includes(result.error) || result.error.startsWith("Too many attempts") ? result.error : "Incorrect email or password.");
+      setError(PASS_THROUGH.includes(result.error) || result.error.startsWith("Too many attempts") ? err(result.error) : t.incorrect);
       setResendState("idle");
       setLoading(false);
     } else {
@@ -82,16 +87,18 @@ export default function LoginPage() {
       position: "relative", overflow: "hidden",
     }}>
 
+      <LanguageToggle style={{ position: "absolute", top: 16, right: 20, zIndex: 2 }} />
+
       {/* Content */}
       <main style={{ flex: 1, maxWidth: "var(--content-max-width)", width: "100%", margin: "0 auto", padding: "60px 28px 0" }}>
 
         {/* Title */}
         <div style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
-            Welcome back
+            {t.welcomeBack}
           </h1>
           <p style={{ fontSize: 15, color: "var(--fg-2)", margin: "8px 0 0" }}>
-            Log in to your account.
+            {t.logInToAccount}
           </p>
         </div>
 
@@ -101,14 +108,14 @@ export default function LoginPage() {
             borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 20,
           }}>
             {error}
-            {error === EMAIL_NOT_VERIFIED_MESSAGE && email && (
+            {(error === EMAIL_NOT_VERIFIED_MESSAGE || error === t.emailNotVerified) && email && (
               <div style={{ marginTop: 8 }}>
                 {resendState === "sent" ? (
-                  <span style={{ color: "var(--success)", fontWeight: 600 }}>New link sent — check your inbox (and spam).</span>
+                  <span style={{ color: "var(--success)", fontWeight: 600 }}>{t.newLinkSent}</span>
                 ) : (
                   <button type="button" onClick={resendVerification} disabled={resendState === "sending"}
                     style={{ background: "none", border: "none", padding: 0, color: "var(--accent)", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: FONT }}>
-                    {resendState === "sending" ? "Sending…" : "Resend confirmation email"}
+                    {resendState === "sending" ? msg.common.sending : t.resendConfirmation}
                   </button>
                 )}
               </div>
@@ -145,14 +152,14 @@ export default function LoginPage() {
             <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
           </svg>
-          {googleLoading ? "Redirecting…" : "Continue with Google"}
+          {googleLoading ? t.redirecting : t.continueWithGoogle}
         </button>
 
         {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
           <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
           <span style={{ color: "var(--muted)", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap" }}>
-            or sign in with email
+            {t.orSignInEmail}
           </span>
           <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
         </div>
@@ -161,10 +168,10 @@ export default function LoginPage() {
 
           {/* Email */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>Email</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>{msg.common.email}</div>
             <input
               type="email"
-              placeholder="Email"
+              placeholder={msg.common.email}
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -175,15 +182,15 @@ export default function LoginPage() {
           {/* Password */}
           <div style={{ marginBottom: 28 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)" }}>Password</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)" }}>{msg.common.password}</div>
               <Link href="/forgot-password" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-                Forgot password?
+                {t.forgotPassword}
               </Link>
             </div>
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Password"
+                placeholder={msg.common.password}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -192,6 +199,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
+                aria-label={t.showPassword}
                 style={{
                   position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
                   background: "none", border: "none", cursor: "pointer",
@@ -228,16 +236,16 @@ export default function LoginPage() {
               fontFamily: FONT, transition: "all 0.15s",
             }}
           >
-            {loading ? "Signing in…" : "Log in"}
+            {loading ? t.signingIn : msg.common.logIn}
           </button>
 
         </form>
 
         {/* Create account */}
         <p style={{ textAlign: "center", fontSize: 14, color: "var(--fg-2)", marginTop: 24 }}>
-          No account?{" "}
+          {t.noAccount}{" "}
           <Link href="/register" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            Create account
+            {t.createAccount}
           </Link>
         </p>
 

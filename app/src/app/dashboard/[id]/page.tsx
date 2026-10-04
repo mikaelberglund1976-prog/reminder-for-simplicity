@@ -6,18 +6,11 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import { withNextDate } from "@/lib/recurrence";
+import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  SUBSCRIPTION: "Subscription",
-  BIRTHDAY:     "Birthday",
-  INSURANCE:    "Insurance",
-  CONTRACT:     "Contract",
-  HEALTH:       "Health",
-  BILL:         "Bill",
-  OTHER:        "Other",
-};
+// Category / recurrence words: messages.reminders (2026-10-04).
 
 const CATEGORY_BADGE: Record<string, { bg: string; color: string }> = {
   SUBSCRIPTION: { bg: "var(--tint-accent)", color: "var(--accent-strong)" },
@@ -29,13 +22,6 @@ const CATEGORY_BADGE: Record<string, { bg: string; color: string }> = {
   OTHER:        { bg: "var(--border)", color: "var(--slate)" },
 };
 
-const RECURRENCE_LABELS: Record<string, string> = {
-  ONCE:    "Once",
-  DAILY:   "Daily",
-  WEEKLY:  "Weekly",
-  MONTHLY: "Monthly",
-  YEARLY:  "Yearly",
-};
 
 const BRAND_COLORS: Record<string, { bg: string; text: string }> = {
   spotify:   { bg: "#1DB954", text: "#fff" },
@@ -111,8 +97,8 @@ type Reminder = {
   canEdit?: boolean;
 };
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
+function formatDate(dateStr: string, dateLocale: string) {
+  return new Date(dateStr).toLocaleDateString(dateLocale, {
     day: "numeric", month: "long", year: "numeric",
   });
 }
@@ -176,6 +162,8 @@ export default function ReminderDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
+  const { m: msg, dateLocale, err: tErr } = useI18n();
+  const t = msg.reminderDetail;
 
   const [reminder, setReminder] = useState<Reminder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -221,12 +209,12 @@ export default function ReminderDetailPage() {
         body: JSON.stringify({ toUserId: selectedHandoverUser }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
-      setHandoverMsg({ type: "ok", text: "Handover request sent ✓" });
+      if (!res.ok) throw new Error(data.error ? tErr(data.error) : t.failed);
+      setHandoverMsg({ type: "ok", text: t.handoverSent });
       setShowHandoverPanel(false);
       fetchReminder();
     } catch (err: unknown) {
-      setHandoverMsg({ type: "err", text: err instanceof Error ? err.message : "Failed" });
+      setHandoverMsg({ type: "err", text: err instanceof Error ? err.message : t.failed });
     } finally { setHandoverLoading(false); }
   }
 
@@ -239,11 +227,11 @@ export default function ReminderDetailPage() {
         body: JSON.stringify({ action }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
-      setHandoverMsg({ type: "ok", text: action === "accept" ? "You accepted the handover ✓" : "Handover declined." });
+      if (!res.ok) throw new Error(data.error ? tErr(data.error) : t.failed);
+      setHandoverMsg({ type: "ok", text: action === "accept" ? t.handoverAccepted : t.handoverDeclined });
       fetchReminder();
     } catch (err: unknown) {
-      setHandoverMsg({ type: "err", text: err instanceof Error ? err.message : "Failed" });
+      setHandoverMsg({ type: "err", text: err instanceof Error ? err.message : t.failed });
     } finally { setRespondingHandover(false); }
   }
 
@@ -275,7 +263,7 @@ export default function ReminderDetailPage() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <span style={{ color: "var(--muted)", fontSize: 15 }}>Reminder for Simplicity is thinking…</span>
+        <span style={{ color: "var(--muted)", fontSize: 15 }}>{msg.home.thinking}</span>
       </div>
     );
   }
@@ -284,10 +272,10 @@ export default function ReminderDetailPage() {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, padding: "24px 20px" }}>
         <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--accent)", fontSize: 14, fontWeight: 600, textDecoration: "none", marginBottom: 20 }}>
-          <IcBack /> Back
+          <IcBack /> {t.back}
         </Link>
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: 20, color: "var(--muted)", fontSize: 14 }}>
-          {notFound ? "This reminder has been removed or isn't shared with you." : "Couldn't load this reminder."}
+          {notFound ? t.notFound : t.couldNotLoad}
         </div>
       </div>
     );
@@ -298,9 +286,9 @@ export default function ReminderDetailPage() {
     (new Date(reminder.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
   );
   const statusLabel = daysUntil < 0
-    ? Math.abs(daysUntil) + " days ago"
-    : daysUntil === 0 ? "Today"
-    : daysUntil + " days left";
+    ? t.daysAgo(Math.abs(daysUntil))
+    : daysUntil === 0 ? t.today
+    : t.daysLeft(daysUntil);
   const statusColor = daysUntil < 0 ? "var(--danger)" : daysUntil <= 3 ? "var(--warning)" : "var(--success)";
   const badge = CATEGORY_BADGE[reminder.category] ?? CATEGORY_BADGE.OTHER;
 
@@ -309,7 +297,7 @@ export default function ReminderDetailPage() {
     : null;
   const ownerDisplayName = ownerMember
     ? (ownerMember.user.name ?? ownerMember.user.email)
-    : "Unassigned";
+    : t.unassigned;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, paddingBottom: 40 }}>
@@ -321,16 +309,16 @@ export default function ReminderDetailPage() {
           color: "var(--accent)", fontSize: 14, fontWeight: 600,
           textDecoration: "none", marginBottom: 20,
         }}>
-          <IcBack /> Back
+          <IcBack /> {t.back}
         </Link>
 
         {/* Title */}
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
-            Reminder
+            {t.title}
           </h1>
           <p style={{ fontSize: 14, color: "var(--fg-2)", margin: "6px 0 0" }}>
-            Edit the details or remove this reminder.
+            {t.intro}
           </p>
         </div>
 
@@ -353,7 +341,7 @@ export default function ReminderDetailPage() {
                   fontSize: 13, fontWeight: 600,
                   background: badge.bg, color: badge.color,
                 }}>
-                  {CATEGORY_LABELS[reminder.category] ?? reminder.category}
+                  {msg.reminders.categories[reminder.category] ?? reminder.category}
                 </span>
               </div>
             </div>
@@ -362,21 +350,21 @@ export default function ReminderDetailPage() {
           {/* Date row — no icon, just label: value */}
           <div style={{ borderTop: "1px solid var(--border-soft)", padding: "15px 0 0" }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)" }}>
-              {reminder.recurrence !== "ONCE" ? "Next: " : "Date: "}{formatDate(reminder.date)}
+              {reminder.recurrence !== "ONCE" ? t.next : t.dateLabel}{formatDate(reminder.date, dateLocale)}
             </span>
           </div>
 
           {/* Info rows */}
-          <Row icon={<IcClock />}  label="Status"     value={statusLabel}  valueColor={statusColor} />
-          <Row icon={<IcRepeat />} label="Recurrence" value={RECURRENCE_LABELS[reminder.recurrence] ?? reminder.recurrence} />
+          <Row icon={<IcClock />}  label={t.status}     value={statusLabel}  valueColor={statusColor} />
+          <Row icon={<IcRepeat />} label={t.recurrence} value={msg.reminders.recurrence[reminder.recurrence] ?? reminder.recurrence} />
           {reminder.amount != null && (
-            <Row icon={<IcCard />} label="Amount"
-              value={reminder.amount.toLocaleString("sv") + " " + (reminder.currency ?? "")} />
+            <Row icon={<IcCard />} label={t.amount}
+              value={reminder.amount.toLocaleString(dateLocale) + " " + (reminder.currency ?? "")} />
           )}
-          <Row icon={<IcBell />} label="Remind me"
-            value={reminder.reminderDaysBefore + " day" + (reminder.reminderDaysBefore !== 1 ? "s" : "") + " before"} />
+          <Row icon={<IcBell />} label={t.remindMe}
+            value={t.daysBefore(reminder.reminderDaysBefore)} />
           {householdMembers.length > 0 && (
-            <Row icon={<IcUser />} label="Owner"
+            <Row icon={<IcUser />} label={t.owner}
               value={ownerDisplayName}
               valueColor={reminder.assignedTo ? undefined : "var(--subtle)"} />
           )}
@@ -384,7 +372,7 @@ export default function ReminderDetailPage() {
           {/* Note if present */}
           {reminder.note && (
             <div style={{ borderTop: "1px solid var(--border-soft)", paddingTop: 14, marginTop: 2 }}>
-              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500, marginBottom: 4 }}>Note</div>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500, marginBottom: 4 }}>{t.note}</div>
               <div style={{ fontSize: 14, color: "var(--fg)", lineHeight: 1.5 }}>{reminder.note}</div>
             </div>
           )}
@@ -400,9 +388,9 @@ export default function ReminderDetailPage() {
         {/* Pending handover — receiver sees Accept/Reject */}
         {reminder.handoverState === "PENDING" && reminder.handoverTo === session?.user?.id && (
           <div style={{ background: "var(--tint-warning)", border: "1.5px solid #F6E05E", borderRadius: 18, padding: 20, marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--warning)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>🤝 Pending handover — your response needed</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--warning)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>{t.pendingTitle}</div>
             <p style={{ fontSize: 14, color: "#4A3728", lineHeight: 1.5, marginBottom: 16 }}>
-              Someone wants to transfer <strong>{reminder.name}</strong> to you. If you accept, you become the responsible owner.
+              {t.pendingBody1}<strong>{reminder.name}</strong>{t.pendingBody2}
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <button
@@ -410,14 +398,14 @@ export default function ReminderDetailPage() {
                 disabled={respondingHandover}
                 style={{ flex: 1, padding: "13px", background: "#2A9D6F", border: "none", borderRadius: 50, fontSize: 14, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: FONT, opacity: respondingHandover ? 0.6 : 1 }}
               >
-                ✓ Accept
+                {t.accept}
               </button>
               <button
                 onClick={() => handleRespondHandover("reject")}
                 disabled={respondingHandover}
                 style={{ flex: 1, padding: "13px", background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 50, fontSize: 14, fontWeight: 600, color: "var(--danger)", cursor: "pointer", fontFamily: FONT, opacity: respondingHandover ? 0.6 : 1 }}
               >
-                ✕ Decline
+                {t.decline}
               </button>
             </div>
           </div>
@@ -426,7 +414,7 @@ export default function ReminderDetailPage() {
         {/* Pending handover indicator — for initiator */}
         {reminder.handoverState === "PENDING" && reminder.handoverTo !== session?.user?.id && (
           <div style={{ background: "var(--tint-warning)", border: "1.5px solid #F6E05E", borderRadius: 14, padding: "14px 16px", marginBottom: 12, fontSize: 14, color: "var(--warning)", fontWeight: 600 }}>
-            🕐 Handover pending — waiting for response
+            {t.pendingWaiting}
           </div>
         )}
 
@@ -438,11 +426,11 @@ export default function ReminderDetailPage() {
                 onClick={() => setShowHandoverPanel(true)}
                 style={{ width: "100%", padding: "15px", borderRadius: 50, background: "var(--surface)", border: "1.5px solid var(--border)", fontSize: 15, fontWeight: 600, color: "var(--fg)", cursor: "pointer", fontFamily: FONT, marginBottom: 10, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
               >
-                🤝 Assign owner
+                {t.assignOwner}
               </button>
             ) : (
               <form onSubmit={handleInitiateHandover} style={{ background: "var(--surface-2)", border: "1.5px solid var(--border)", borderRadius: 18, padding: 20, marginBottom: 10 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)", marginBottom: 14 }}>Assign owner:</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)", marginBottom: 14 }}>{t.assignOwnerLabel}</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                   {householdMembers
                     .filter(m => m.userId !== session?.user?.id)
@@ -458,9 +446,9 @@ export default function ReminderDetailPage() {
                     ))}
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button type="button" onClick={() => setShowHandoverPanel(false)} style={{ flex: 1, padding: "13px", background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 50, fontSize: 14, fontWeight: 600, color: "var(--muted)", cursor: "pointer", fontFamily: FONT }}>Cancel</button>
+                  <button type="button" onClick={() => setShowHandoverPanel(false)} style={{ flex: 1, padding: "13px", background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 50, fontSize: 14, fontWeight: 600, color: "var(--muted)", cursor: "pointer", fontFamily: FONT }}>{msg.common.cancel}</button>
                   <button type="submit" disabled={!selectedHandoverUser || handoverLoading} style={{ flex: 2, padding: "13px", background: selectedHandoverUser ? "var(--ink)" : "var(--border)", border: "none", borderRadius: 50, fontSize: 14, fontWeight: 700, color: selectedHandoverUser ? "#fff" : "var(--subtle)", cursor: selectedHandoverUser ? "pointer" : "not-allowed", fontFamily: FONT, opacity: handoverLoading ? 0.6 : 1 }}>
-                    {handoverLoading ? "Sending…" : "Send handover request"}
+                    {handoverLoading ? t.sending : t.sendHandover}
                   </button>
                 </div>
               </form>
@@ -473,12 +461,12 @@ export default function ReminderDetailPage() {
           <div style={{ background: "linear-gradient(135deg,var(--tint-accent),var(--tint-accent))", border: "1.5px solid var(--accent-border)", borderRadius: 18, padding: 18, marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
               <span style={{ fontSize: 22 }}>⚡</span>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>Pro feature — Handover</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{t.proHandover}</div>
             </div>
             <div style={{ fontSize: 13, color: "#6B7080", lineHeight: 1.5 }}>
-              Transfer responsibility to a family member with a digital handshake. They confirm before ownership shifts.
+              {t.proHandoverBody}
             </div>
-            <div style={{ fontSize: 12, color: "#8B80C8", marginTop: 10, fontWeight: 600 }}>Ask your admin to enable Pro →</div>
+            <div style={{ fontSize: 12, color: "#8B80C8", marginTop: 10, fontWeight: 600 }}>{t.askAdmin}</div>
           </div>
         )}
 
@@ -492,7 +480,7 @@ export default function ReminderDetailPage() {
           textDecoration: "none", boxSizing: "border-box",
           boxShadow: "0 2px 10px rgba(26,35,64,0.22)", marginBottom: 10,
         }}>
-          Edit reminder
+          {t.edit}
         </Link>
 
         {/* Delete button */}
@@ -507,7 +495,7 @@ export default function ReminderDetailPage() {
               boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
             }}
           >
-            Delete reminder
+            {t.delete}
           </button>
         ) : (
           <div style={{
@@ -515,10 +503,10 @@ export default function ReminderDetailPage() {
             borderRadius: 20, padding: "18px 20px", textAlign: "center",
           }}>
             <div style={{ fontSize: 14, color: "var(--fg)", fontWeight: 600, marginBottom: 4 }}>
-              Delete this reminder?
+              {t.deleteConfirm}
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
-              This cannot be undone.
+              {t.cannotUndo}
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button
@@ -530,7 +518,7 @@ export default function ReminderDetailPage() {
                   cursor: "pointer", fontFamily: FONT,
                  }}
               >
-                Cancel
+                {msg.common.cancel}
               </button>
               <button
                 onClick={handleDelete}
@@ -543,13 +531,13 @@ export default function ReminderDetailPage() {
                   opacity: deleting ? 0.6 : 1, fontFamily: FONT,
                 }}
               >
-                {deleting ? "Deleting\u2026" : "Yes, delete"}
+                {deleting ? t.deleting : t.yesDelete}
               </button>
             </div>
           </div>
         )}
         </>) : (
-          <div style={{ fontSize: 13, color: "var(--muted)", textAlign: "center", padding: "8px 0" }}>Shared with you — only a parent or the person who added it can change it.</div>
+          <div style={{ fontSize: 13, color: "var(--muted)", textAlign: "center", padding: "8px 0" }}>{t.sharedReadOnly}</div>
         )}
 
       </main>

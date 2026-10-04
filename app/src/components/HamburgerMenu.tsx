@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { useMe } from "@/lib/me";
 import { ADMIN_EMAIL } from "@/lib/adminConfig";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import { useM } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -33,6 +34,7 @@ function IcLogout() { return <svg width={17} height={17} viewBox="0 0 24 24" {..
 export default function HamburgerMenu() {
   const { data: session } = useSession();
   const me = useMe();
+  const m = useM();
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -88,27 +90,27 @@ export default function HamburgerMenu() {
     >
       {isChild ? (
         <>
-          <MenuLink href="/dashboard/family/child" icon={<IcHome />} label="Home" onClick={close} />
-          <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label="Shopping list" onClick={close} />
-          <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label="My wishlist" onClick={close} />
-          <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={close} />
-          <MenuLink href="/privacy" icon={<IcShield />} label="Privacy" onClick={close} />
+          <MenuLink href="/dashboard/family/child" icon={<IcHome />} label={m.nav.home} onClick={close} />
+          <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label={m.nav.shoppingList} onClick={close} />
+          <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label={m.nav.myWishlist} onClick={close} />
+          <MenuLink href="/profile" icon={<IcGear />} label={m.nav.settings} onClick={close} />
+          <MenuLink href="/privacy" icon={<IcShield />} label={m.nav.privacy} onClick={close} />
         </>
       ) : (
         <>
-          <MenuLink href="/dashboard" icon={<IcHome />} label="Home" onClick={close} />
-          <MenuLink href="/dashboard/calendar" icon={<IcCalendar />} label="Calendar" onClick={close} />
-          <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label="Shopping list" onClick={close} />
-          <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label="Wishlist" onClick={close} />
-          <MenuLink href="/dashboard/family" icon={<IcChecklist />} label="Chores" onClick={close} />
-          <MenuLink href="/dashboard/training" icon={<IcTraining />} label="Activities" onClick={close} />
-          <MenuLink href="/dashboard/school" icon={<IcSchool />} label="School" onClick={close} />
-          <MenuLink href="/dashboard/family/members" icon={<IcUsers />} label="Family members" onClick={close} />
-          <MenuLink href="/dashboard/suggestions" icon={<IcBulb />} label="Ideas & voting" onClick={close} />
-          <MenuLink href="/profile" icon={<IcGear />} label="Settings" onClick={close} />
-          <MenuLink href="/privacy" icon={<IcShield />} label="Privacy" onClick={close} />
+          <MenuLink href="/dashboard" icon={<IcHome />} label={m.nav.home} onClick={close} />
+          <MenuLink href="/dashboard/calendar" icon={<IcCalendar />} label={m.nav.calendar} onClick={close} />
+          <MenuLink href="/dashboard/family/shopping-list" icon={<IcCart />} label={m.nav.shoppingList} onClick={close} />
+          <MenuLink href="/dashboard/wishlist" icon={<IcGift />} label={m.nav.wishlist} onClick={close} />
+          <MenuLink href="/dashboard/family" icon={<IcChecklist />} label={m.nav.chores} onClick={close} />
+          <MenuLink href="/dashboard/training" icon={<IcTraining />} label={m.nav.activities} onClick={close} />
+          <MenuLink href="/dashboard/school" icon={<IcSchool />} label={m.nav.school} onClick={close} />
+          <MenuLink href="/dashboard/family/members" icon={<IcUsers />} label={m.nav.familyMembers} onClick={close} />
+          <MenuLink href="/dashboard/suggestions" icon={<IcBulb />} label={m.nav.ideas} onClick={close} />
+          <MenuLink href="/profile" icon={<IcGear />} label={m.nav.settings} onClick={close} />
+          <MenuLink href="/privacy" icon={<IcShield />} label={m.nav.privacy} onClick={close} />
           {isAdmin && (
-            <MenuLink href="/admin" icon={<IcShield />} label="Admin" onClick={close} />
+            <MenuLink href="/admin" icon={<IcShield />} label={m.nav.admin} onClick={close} />
           )}
         </>
       )}
@@ -126,7 +128,7 @@ export default function HamburgerMenu() {
           fontFamily: FONT, textAlign: "left",
         }}
       >
-        <IcLogout /> Sign out
+        <IcLogout /> {m.common.signOut}
       </button>
     </div>
   ) : null;
@@ -136,7 +138,7 @@ export default function HamburgerMenu() {
       <button
         ref={btnRef}
         onClick={toggle}
-        aria-label="Menu"
+        aria-label={m.common.menu}
         aria-expanded={open}
         style={{
           display: "flex", alignItems: "center", justifyContent: "center",

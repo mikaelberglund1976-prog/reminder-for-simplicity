@@ -2,7 +2,7 @@
 
 **Syfte:** en enda, avdubblerad, omprioriterad lista över allt som återstår innan produkten är "helt klar" för bred lansering. Ersätter inte `TODO.md` (som förblir den kronologiska arbetsloggen/historiken) utan sitter ovanpå den – det här dokumentet är **den aktuella sanningen om vad som är kvar**, `TODO.md` är **hur vi kom hit**.
 **Metod:** allt `- [ ]` extraherat ur `TODO.md` (punkt 1–25), `PRODUCT_SPEC.md`, `ROADMAP.md`, `OPERATIONS.md`, `APP_STORE_READINESS.md`, dubbletter slagna ihop, omgrupperat i faser efter vad som faktiskt blockerar vad.
-**Senast synkad:** 2026-10-04 – mobiltestets fynd 4 okt LIVE (`RELEASE_2026-10-04.md`, `TODO.md` punkt 39). Före det: 2026-10-03 – barnets startsida, radera medlemmar, Home först, SchoolSoft-import LIVE (`RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`, `TODO.md` punkt 36–37). Före det: 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
+**Senast synkad:** 2026-10-04 (kväll) – svenska + flerspråksstöd LIVE, språk per familj (`RELEASE_2026-10-04b.md`, `TODO.md` punkt 40). Före det: 2026-10-04 – mobiltestets fynd 4 okt LIVE (`RELEASE_2026-10-04.md`, `TODO.md` punkt 39). Före det: 2026-10-03 – barnets startsida, radera medlemmar, Home först, SchoolSoft-import LIVE (`RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`, `TODO.md` punkt 36–37). Före det: 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
 **Obs:** den gemensamma lanseringslistan för alla Assistiq-appar (namn, bolag, webb, GDPR, betalning) finns i Claude Docs ("Genomlysning: Assistiq inför kommersiell lansering", fliken Todo-lista). Den här filen är appens egen tekniska checklista.
 **Uppdatera detta dokument** när en punkt blir klar (bocka av `- [x]`) eller när prioritet ändras – det tappar sitt värde annars.
 
@@ -54,6 +54,9 @@ Ingen inbördes teknisk ordning inom fasen, men allt här bör vara klart innan 
 - [ ] **Verifiera egen avsändardomän i Resend + sätt `RESEND_FROM_EMAIL`.** Med `onboarding@resend.dev` levererar Resend bara till kontoägarens egen adress – verifierings- och inbjudningsmail till nya användare/barn kommer inte fram, och de kan då inte logga in. Var tidigare en Fas F-punkt, nu blockerande.
 
 ---
+
+- [x] **Svenska i appen** (marknadsundersökningen 4 okt: engelska only var största hindret) – live 2026-10-04, `RELEASE_2026-10-04b.md`.
+- [ ] Jurist läser svenska integritetstexten (`app/src/app/privacy/PrivacySv.tsx`).
 
 ## Fas B – Betalning (innan riktiga pengar tas emot)
 

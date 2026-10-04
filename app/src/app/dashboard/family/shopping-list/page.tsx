@@ -11,6 +11,9 @@ import { DEFAULT_CATEGORIES } from "@/lib/shoppingCategories";
 import { markSeen } from "@/lib/listBadges";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import ListAccessPanel, { type ListMemberOption } from "@/components/ListAccessPanel";
+import { useI18n, useM } from "@/lib/i18n/client";
+import { categoryLabel, listName } from "@/lib/i18n/shoppingLabels";
+import type { Messages } from "@/lib/i18n/messages";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -53,7 +56,6 @@ type Item = {
   purchaser: { id: string; name: string | null } | null;
 };
 
-const UNSORTED_LABEL = "Unsorted";
 const UNSORTED_ICON = "❔";
 
 function sortByName(items: Item[]): Item[] {
@@ -63,6 +65,8 @@ function sortByName(items: Item[]): Item[] {
 export default function ShoppingListPage() {
   const { status } = useSession();
   const router = useRouter();
+  const { m: msg, err } = useI18n();
+  const t = msg.shopping;
 
   const [access, setAccess] = useState<"LOADING" | "NO_HOUSEHOLD" | "LOCKED" | "PRO" | "TRIAL" | "FREE">("LOADING");
 
@@ -262,7 +266,7 @@ export default function ShoppingListPage() {
       const res = await fetch(`/api/family/lists/${activeListId}`, { method: "DELETE" });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setListError(d.error ?? "Couldn't delete the list");
+        setListError(d.error ? err(d.error) : t.couldNotDeleteList);
         return;
       }
       setConfirmDelete(false);
@@ -343,7 +347,7 @@ export default function ShoppingListPage() {
       const data = await res.json();
       if (!res.ok) {
         setItems((prev) => prev.filter((i) => i.id !== tempId));
-        setError(data.error ?? "Something went wrong");
+        setError(data.error ? err(data.error) : msg.common.somethingWentWrong);
       } else {
         setItems((prev) => prev.map((i) => (i.id === tempId ? data : i)));
         fetch("/api/family/shopping-list/suggestions").then((r) => r.json()).then((d) => setRecent(d.recent ?? [])).catch(() => {});
@@ -351,7 +355,7 @@ export default function ShoppingListPage() {
       }
     } catch {
       setItems((prev) => prev.filter((i) => i.id !== tempId));
-      setError("Network error");
+      setError(msg.common.networkError);
     }
   }
 
@@ -444,14 +448,14 @@ export default function ShoppingListPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setItems((prev) => prev.filter((i) => i.id !== tempId));
-        setError(data.error ?? "Something went wrong");
+        setError(data.error ? err(data.error) : msg.common.somethingWentWrong);
       } else {
         const data = await res.json();
         setItems((prev) => prev.map((i) => (i.id === tempId ? data : i)));
       }
     } catch {
       setItems((prev) => prev.filter((i) => i.id !== tempId));
-      setError("Network error");
+      setError(msg.common.networkError);
     }
   }
 
@@ -479,7 +483,7 @@ export default function ShoppingListPage() {
     setScanError(null);
     setScanStatus(null);
     if (!("BarcodeDetector" in window)) {
-      setScanError("Barcode scanning isn't supported in this browser yet — try Chrome on Android, or add the item manually.");
+      setScanError(t.scanUnsupported);
       return;
     }
     try {
@@ -492,7 +496,7 @@ export default function ShoppingListPage() {
       setScanning(true);
       detectLoop();
     } catch {
-      setScanError("Couldn't access the camera — check your browser's camera permission for this site.");
+      setScanError(t.noCamera);
     }
   }
 
@@ -519,7 +523,7 @@ export default function ShoppingListPage() {
   }
 
   async function lookupBarcode(code: string) {
-    setScanStatus("Looking up product…");
+    setScanStatus(t.lookingUp);
     try {
       // Open Food Facts — free, public, no API key. Coverage is strongest
       // for EU grocery products; a miss just falls back to manual entry.
@@ -529,10 +533,10 @@ export default function ShoppingListPage() {
       if (productName) {
         quickAddAndClose(productName);
       } else {
-        setScanError(`No product found for barcode ${code} — add it manually instead.`);
+        setScanError(t.noProduct(code));
       }
     } catch {
-      setScanError("Couldn't look up that barcode — check your connection and try again.");
+      setScanError(t.lookupFailed);
     } finally {
       setScanStatus(null);
     }
@@ -604,7 +608,7 @@ export default function ShoppingListPage() {
       if (!urlOut) return;
       if (typeof navigator !== "undefined" && "share" in navigator) {
         try {
-          await navigator.share({ title: "Our shopping list", url: urlOut });
+          await navigator.share({ title: t.shareTitle, url: urlOut });
           return;
         } catch {
           // User cancelled the native share sheet, or it's not fully supported — fall back to copy.
@@ -612,7 +616,7 @@ export default function ShoppingListPage() {
       }
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(urlOut);
-        setShareFlash("Link copied!");
+        setShareFlash(t.linkCopied);
         setTimeout(() => setShareFlash(null), 2000);
       }
     } finally {
@@ -634,21 +638,21 @@ export default function ShoppingListPage() {
   if (status === "loading" || access === "LOADING") {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading shopping list…</div>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>{t.loading}</div>
       </div>
     );
   }
 
   if (access === "NO_HOUSEHOLD") {
     return (
-      <Screen title="Shopping list" onBack={() => router.push("/dashboard/family")}>
+      <Screen title={t.title} onBack={() => router.push("/dashboard/family")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Set up your household first</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>{t.setUpHousehold}</h2>
           <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>
-            A shared shopping list needs a household. Invite your family to get started.
+            {t.needsHousehold}
           </p>
-          <Link href="/profile" style={btnStyle("var(--ink)")}>Go to settings →</Link>
+          <Link href="/profile" style={btnStyle("var(--ink)")}>{t.goToSettings}</Link>
         </div>
       </Screen>
     );
@@ -656,8 +660,8 @@ export default function ShoppingListPage() {
 
   if (access === "LOCKED") {
     return (
-      <Screen title="Shopping list" onBack={() => router.push("/dashboard")}>
-        <UpgradeGate feature="More shopping lists" emoji="🛒" description="The free plan includes one shared shopping list. Pro gives you as many as you like — try it free for 14 days." />
+      <Screen title={t.title} onBack={() => router.push("/dashboard")}>
+        <UpgradeGate feature={t.moreListsFeature} emoji="🛒" description={t.moreListsDescription} />
       </Screen>
     );
   }
@@ -671,13 +675,13 @@ export default function ShoppingListPage() {
 
   const sortedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
   const groups: { key: string; label: string; icon: string; items: Item[] }[] = [
-    ...sortedCategories.map((c) => ({ key: c.id, label: c.label, icon: c.icon, items: sortByName(pending.filter(i => i.categoryId === c.id)) })),
-    { key: "unsorted", label: UNSORTED_LABEL, icon: UNSORTED_ICON, items: sortByName(pending.filter(i => !i.categoryId)) },
+    ...sortedCategories.map((c) => ({ key: c.id, label: categoryLabel(c, msg), icon: c.icon, items: sortByName(pending.filter(i => i.categoryId === c.id)) })),
+    { key: "unsorted", label: t.unsorted, icon: UNSORTED_ICON, items: sortByName(pending.filter(i => !i.categoryId)) },
   ].filter(g => g.items.length > 0);
 
   return (
     <Screen
-      title="Shopping list"
+      title={t.title}
       onBack={() => router.push("/dashboard/family")}
       // 2026-07-28: share-link UI intentionally removed per direct instruction
       // ("vi vill inte kunna dela listan så, dölj det"). shareList/turnOffShare
@@ -697,11 +701,11 @@ export default function ShoppingListPage() {
               color: l.id === activeListId ? "#fff" : "var(--fg-2)",
             }}
           >
-            {l.name}
+            {listName(l.name, msg)}
           </button>
         ))}
-        <button onClick={() => (access === "FREE" ? router.push("/upgrade") : setShowNewList((v) => !v))} title={access === "FREE" ? "More lists are part of Pro" : undefined} style={{ flexShrink: 0, background: "none", border: "1.5px dashed var(--accent-border)", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
-          + New list{access === "FREE" ? " ⚡" : ""}
+        <button onClick={() => (access === "FREE" ? router.push("/upgrade") : setShowNewList((v) => !v))} title={access === "FREE" ? t.moreListsPro : undefined} style={{ flexShrink: 0, background: "none", border: "1.5px dashed var(--accent-border)", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
+          {t.newList}{access === "FREE" ? " ⚡" : ""}
         </button>
       </div>
 
@@ -710,11 +714,11 @@ export default function ShoppingListPage() {
           <input
             value={newListName}
             onChange={(e) => setNewListName(e.target.value)}
-            placeholder="e.g. IKEA, weekly groceries…"
+            placeholder={t.newListPlaceholder}
             style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 12px", outline: "none" }}
           />
           <button type="submit" disabled={addingList || !newListName.trim()} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "var(--ink)", border: "none", borderRadius: 10, padding: "0 16px", cursor: addingList || !newListName.trim() ? "not-allowed" : "pointer", opacity: addingList || !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
-            Create
+            {t.create}
           </button>
         </form>
       )}
@@ -723,12 +727,12 @@ export default function ShoppingListPage() {
         onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetchMembers(); }}
         style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}
       >
-        <IcSettings /> {activeList?.visibleToAll ? "Everyone can see this list" : "Only some people can see this list"}
+        <IcSettings /> {activeList?.visibleToAll ? t.everyoneSees : t.someSee}
       </button>
 
       {showAccessPanel && activeList && (
         <ListAccessPanel
-          listName={activeList.name}
+          listName={listName(activeList.name, msg)}
           visibleToAll={activeList.visibleToAll}
           memberIds={activeList.memberIds}
           members={members}
@@ -748,37 +752,37 @@ export default function ShoppingListPage() {
           onClick={() => setStoreMode(true)}
           style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT }}
         >
-          🏪 Store mode
+          {t.storeMode}
         </button>
         <button
           onClick={() => setShowManage((v) => !v)}
           style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT }}
         >
-          <IcSettings /> Manage categories
+          <IcSettings /> {t.manageCategories}
         </button>
         {canDeleteActive && (
           <button
             onClick={() => { setConfirmDelete(true); setListError(null); }}
             style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--danger)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginLeft: "auto" }}
           >
-            <IcTrash /> Delete list
+            <IcTrash /> {t.deleteList}
           </button>
         )}
       </div>
 
       {confirmDelete && activeList && (
         <div style={{ background: "var(--tint-danger)", border: "1px solid var(--border-danger)", borderRadius: 14, padding: "14px 16px", marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>Delete “{activeList.name}”?</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", marginBottom: 4 }}>{t.deleteListConfirm(listName(activeList.name, msg))}</div>
           <div style={{ fontSize: 12.5, color: "var(--fg-2)", lineHeight: 1.45, marginBottom: 12 }}>
-            The list and its {items.length} item{items.length === 1 ? "" : "s"} are removed for everyone{activeIsShared ? " it's shared with" : ""}. This can&apos;t be undone.
+            {t.deleteListBody(items.length, activeIsShared)}
           </div>
           {listError && <div style={{ fontSize: 12.5, color: "var(--danger)", marginBottom: 10 }}>{listError}</div>}
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={deleteList} disabled={deletingList} style={{ flex: 1, padding: "10px 14px", borderRadius: 50, border: "none", background: "var(--danger)", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: FONT, opacity: deletingList ? 0.6 : 1 }}>
-              {deletingList ? "Deleting…" : "Delete list"}
+              {deletingList ? t.deleting : t.deleteList}
             </button>
             <button onClick={() => setConfirmDelete(false)} style={{ padding: "10px 18px", borderRadius: 50, border: "none", background: "var(--surface)", color: "var(--fg-2)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-              Cancel
+              {msg.common.cancel}
             </button>
           </div>
         </div>
@@ -800,15 +804,15 @@ export default function ShoppingListPage() {
                 />
               ) : (
                 <button
-                  onClick={() => { setRenamingId(c.id); setRenameValue(c.label); }}
+                  onClick={() => { setRenamingId(c.id); setRenameValue(categoryLabel(c, msg)); }}
                   style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "var(--fg)", cursor: "pointer", fontFamily: FONT, padding: 0 }}
                 >
-                  {c.label}
+                  {categoryLabel(c, msg)}
                 </button>
               )}
               <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-                <button onClick={() => moveCategory(c.id, "up")} disabled={i === 0} aria-label="Move up" style={reorderBtnStyle(i === 0)}><IcUp /></button>
-                <button onClick={() => moveCategory(c.id, "down")} disabled={i === sortedCategories.length - 1} aria-label="Move down" style={reorderBtnStyle(i === sortedCategories.length - 1)}><IcDown /></button>
+                <button onClick={() => moveCategory(c.id, "up")} disabled={i === 0} aria-label={t.moveUp} style={reorderBtnStyle(i === 0)}><IcUp /></button>
+                <button onClick={() => moveCategory(c.id, "down")} disabled={i === sortedCategories.length - 1} aria-label={t.moveDown} style={reorderBtnStyle(i === sortedCategories.length - 1)}><IcDown /></button>
               </div>
             </div>
           ))}
@@ -816,7 +820,7 @@ export default function ShoppingListPage() {
             <input
               value={newCatLabel}
               onChange={(e) => setNewCatLabel(e.target.value)}
-              placeholder="Add a category…"
+              placeholder={t.addCategoryPlaceholder}
               style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 8, padding: "7px 10px", outline: "none" }}
             />
             <button
@@ -824,7 +828,7 @@ export default function ShoppingListPage() {
               disabled={addingCat || !newCatLabel.trim()}
               style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "var(--ink)", border: "none", borderRadius: 8, padding: "0 14px", cursor: addingCat || !newCatLabel.trim() ? "not-allowed" : "pointer", opacity: addingCat || !newCatLabel.trim() ? 0.5 : 1, fontFamily: FONT }}
             >
-              Add
+              {msg.common.add}
             </button>
           </form>
         </div>
@@ -832,7 +836,7 @@ export default function ShoppingListPage() {
 
       {/* To buy, grouped by category */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <span style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", letterSpacing: "0.01em" }}>To buy</span>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", letterSpacing: "0.01em" }}>{t.toBuy}</span>
         {pending.length > 0 && (
           <span style={{
             background: "var(--accent-bg)", color: "#fff", fontSize: 12, fontWeight: 800,
@@ -845,7 +849,7 @@ export default function ShoppingListPage() {
 
       {pending.length === 0 ? (
         <div style={{ textAlign: "center", padding: "24px 0 32px", color: "var(--subtle)", fontSize: 13 }}>
-          Nothing on the list right now.
+          {t.nothingOnList}
         </div>
       ) : (
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 24 }}>
@@ -861,6 +865,7 @@ export default function ShoppingListPage() {
               {group.items.map((item, i) => (
                 <ItemRow
                   key={item.id}
+                  m={msg}
                   item={item}
                   isFirst={i === 0}
                   busy={busyId === item.id}
@@ -880,7 +885,7 @@ export default function ShoppingListPage() {
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "var(--success)" }}>
-              <span>✓</span> Already in the cart ({purchased.length})
+              <span>✓</span> {t.inCart(purchased.length)}
             </div>
             <button
               onClick={clearBought}
@@ -891,16 +896,16 @@ export default function ShoppingListPage() {
                 cursor: clearing ? "not-allowed" : "pointer", opacity: clearing ? 0.6 : 1, fontFamily: FONT,
               }}
             >
-              {clearing ? "Clearing…" : "Clear bought items"}
+              {clearing ? t.clearing : t.clearBought}
             </button>
           </div>
           <div style={{ background: "rgba(42,157,111,0.06)", borderRadius: 18, border: "1px solid rgba(42,157,111,0.25)", padding: "4px 16px" }}>
             {purchased.map((item, i) => (
-              <ItemRow key={item.id} item={item} isFirst={i === 0} busy={busyId === item.id} categories={categories} onToggle={() => togglePurchased(item)} onRemove={() => removeItem(item.id)} onCategoryChange={(catId) => changeCategory(item, catId)} />
+              <ItemRow key={item.id} m={msg} item={item} isFirst={i === 0} busy={busyId === item.id} categories={categories} onToggle={() => togglePurchased(item)} onRemove={() => removeItem(item.id)} onCategoryChange={(catId) => changeCategory(item, catId)} />
             ))}
           </div>
           <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 8, textAlign: "center" }}>
-            Bought items stay here until you clear them — handy since you often buy the same things again.
+            {t.boughtStay}
           </div>
         </>
       )}
@@ -911,7 +916,7 @@ export default function ShoppingListPage() {
           add sheet below (2026-07-28). */}
       <button
         onClick={() => { setAddTab("create"); setAddSheetOpen(true); }}
-        aria-label="Add item"
+        aria-label={t.addItem}
         style={{
           position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
           width: 52, height: 52, borderRadius: "50%",
@@ -941,10 +946,10 @@ export default function ShoppingListPage() {
               {([
                 // 2026-09-27 UI review: typing an item is the #1 job, so
                 // "New" is first and the default when the sheet opens.
-                ["create", "New"],
-                ["recent", "Recent"],
-                ["categories", "Categories"],
-                ["scan", "Scan"],
+                ["create", t.tabs.create],
+                ["recent", t.tabs.recent],
+                ["categories", t.tabs.categories],
+                ["scan", t.tabs.scan],
               ] as const).map(([key, label]) => (
                 <button
                   key={key}
@@ -966,7 +971,7 @@ export default function ShoppingListPage() {
               {addTab === "recent" && (
                 recent.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "24px 0", color: "var(--subtle)", fontSize: 13 }}>
-                    Nothing recent yet — items you add will show up here next time.
+                    {t.nothingRecent}
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingBottom: 8 }}>
@@ -993,10 +998,10 @@ export default function ShoppingListPage() {
                     return (
                       <div key={slug} style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: "var(--subtle)", letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 2px 4px", display: "flex", alignItems: "center", gap: 5 }}>
-                          <span>{def.icon}</span>{def.label}
+                          <span>{def.icon}</span>{categoryLabel({ slug, label: def.label }, msg)}
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 12 }}>
-                          {CATALOG_ITEMS[slug].map((itemName) => (
+                          {(t.catalog[slug] ?? CATALOG_ITEMS[slug]).map((itemName) => (
                             <button key={itemName} onClick={() => quickAddAndClose(itemName)} style={catalogRowStyle}>
                               <span style={{ color: "var(--faint)", flexShrink: 0 }}>+</span>
                               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{itemName}</span>
@@ -1016,24 +1021,24 @@ export default function ShoppingListPage() {
                       autoFocus
                       value={name}
                       onChange={e => setName(e.target.value)}
-                      placeholder="Item name…"
+                      placeholder={t.itemName}
                       style={{ flex: 1, minWidth: 0, padding: "12px 14px", borderRadius: 12, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
                     />
                     <input
                       value={quantity}
                       onChange={e => setQuantity(e.target.value)}
-                      placeholder="Qty"
+                      placeholder={t.qty}
                       style={{ width: 72, padding: "12px 10px", borderRadius: 12, border: "1.5px solid var(--border)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" as const }}
                     />
                   </div>
                   <button type="button" onClick={() => setShowDetails((v) => !v)} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: FONT, display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
-                    <IcChevron open={showDetails} /> Note, link or picture
+                    <IcChevron open={showDetails} /> {t.noteLinkPicture}
                   </button>
                   {showDetails && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-                      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (e.g. brand, size…)" style={detailInputStyle} />
-                      <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Link (optional)" style={detailInputStyle} />
-                      <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL (optional)" style={detailInputStyle} />
+                      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.notePlaceholder} style={detailInputStyle} />
+                      <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder={t.linkOptional} style={detailInputStyle} />
+                      <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder={t.imageOptional} style={detailInputStyle} />
                     </div>
                   )}
                   {error && <div style={{ fontSize: 13, color: "var(--danger)", marginBottom: 8 }}>{error}</div>}
@@ -1047,7 +1052,7 @@ export default function ShoppingListPage() {
                       cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1,
                     }}
                   >
-                    Add to list
+                    {t.addToList}
                   </button>
                 </form>
               )}
@@ -1057,13 +1062,13 @@ export default function ShoppingListPage() {
                   {!scanning ? (
                     <>
                       <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14, lineHeight: 1.5 }}>
-                        Point your camera at a barcode — we'll look it up and add it for you.
+                        {t.pointCamera}
                       </div>
                       <button
                         onClick={startScan}
                         style={{ padding: "13px 24px", borderRadius: 50, background: "var(--ink)", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
                       >
-                        📷 Start scanning
+                        {t.startScanning}
                       </button>
                     </>
                   ) : (
@@ -1073,14 +1078,14 @@ export default function ShoppingListPage() {
                         onClick={stopScan}
                         style={{ padding: "10px 20px", borderRadius: 50, background: "var(--surface-3)", border: "none", fontSize: 13, fontWeight: 700, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}
                       >
-                        Cancel
+                        {msg.common.cancel}
                       </button>
                     </>
                   )}
                   {scanStatus && <div style={{ fontSize: 13, color: "var(--accent)", marginTop: 12 }}>{scanStatus}</div>}
                   {scanError && <div style={{ fontSize: 13, color: "var(--danger)", marginTop: 12 }}>{scanError}</div>}
                   <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 14 }}>
-                    Works in Chrome/Edge on Android and most desktops. Recipe-photo import is planned but not built yet — see the roadmap.
+                    {t.scanNote}
                   </div>
                 </div>
               )}
@@ -1094,17 +1099,17 @@ export default function ShoppingListPage() {
       {storeMode && (
         <div style={{ position: "fixed", inset: 0, background: "var(--background)", zIndex: 39, fontFamily: FONT, overflowY: "auto" }}>
           <div style={{ position: "sticky", top: 0, background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)" }}>🏪 Store mode</span>
+            <span style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)" }}>{t.storeMode}</span>
             <button
               onClick={() => setStoreMode(false)}
               style={{ padding: "10px 18px", borderRadius: 50, background: "var(--ink)", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
             >
-              Done
+              {msg.common.done}
             </button>
           </div>
           <div style={{ padding: "16px 20px 60px" }}>
             {pending.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 16 }}>Nothing left to buy 🎉</div>
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 16 }}>{t.nothingLeft}</div>
             ) : (
               groups.map((g) => (
                 <div key={g.key} style={{ marginBottom: 24 }}>
@@ -1139,13 +1144,13 @@ export default function ShoppingListPage() {
                 They now drop to the bottom — tap again to put it back. */}
             {purchased.length > 0 && (
               <div style={{ marginTop: 8 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--success)", marginBottom: 8 }}>✓ Already in the cart ({purchased.length})</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--success)", marginBottom: 8 }}>{t.inCartStore(purchased.length)}</div>
                 <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", overflow: "hidden", opacity: 0.8 }}>
                   {purchased.map((item, i) => (
                     <button
                       key={item.id}
                       onClick={() => togglePurchased(item)}
-                      aria-label={`Put ${item.name} back on the list`}
+                      aria-label={t.putBack(item.name)}
                       style={{
                         width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "16px 18px",
                         background: "none", border: "none", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)",
@@ -1161,7 +1166,7 @@ export default function ShoppingListPage() {
                       <span style={{ fontSize: 17, fontWeight: 600, color: "var(--subtle)", textDecoration: "line-through", flex: 1 }}>
                         {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
                       </span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", flexShrink: 0 }}>Undo</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", flexShrink: 0 }}>{t.undo}</span>
                     </button>
                   ))}
                 </div>
@@ -1174,8 +1179,8 @@ export default function ShoppingListPage() {
   );
 }
 
-function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCategoryChange }: {
-  item: Item; isFirst: boolean; busy: boolean; categories: Category[]; onToggle: () => void; onRemove: () => void; onCategoryChange: (categoryId: string | null) => void;
+function ItemRow({ m, item, isFirst, busy, categories, onToggle, onRemove, onCategoryChange }: {
+  m: Messages; item: Item; isFirst: boolean; busy: boolean; categories: Category[]; onToggle: () => void; onRemove: () => void; onCategoryChange: (categoryId: string | null) => void;
 }) {
   return (
     <div style={{
@@ -1185,7 +1190,7 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
     }}>
       <button
         onClick={onToggle}
-        aria-label={item.isPurchased ? "Mark as not bought" : "Mark as bought"}
+        aria-label={item.isPurchased ? m.shopping.markNotBought : m.shopping.markBought}
         style={{
           width: 24, height: 24, borderRadius: "50%", flexShrink: 0, marginTop: 1, cursor: "pointer",
           border: item.isPurchased ? "none" : "2px solid var(--border)",
@@ -1220,9 +1225,9 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
               disabled={busy}
               style={{ fontSize: 11, color: "var(--faint)", border: "none", background: "transparent", fontFamily: FONT, cursor: busy ? "not-allowed" : "pointer", padding: 0 }}
             >
-              <option value="">{UNSORTED_ICON} {UNSORTED_LABEL}</option>
+              <option value="">{UNSORTED_ICON} {m.shopping.unsorted}</option>
               {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+                <option key={c.id} value={c.id}>{c.icon} {categoryLabel(c, m)}</option>
               ))}
             </select>
           </div>
@@ -1230,14 +1235,14 @@ function ItemRow({ item, isFirst, busy, categories, onToggle, onRemove, onCatego
       </div>
 
       {item.url && (
-        <a href={item.url} target="_blank" rel="noreferrer" aria-label="Open link" style={{ color: "var(--accent)", padding: 6, flexShrink: 0, display: "flex" }}>
+        <a href={item.url} target="_blank" rel="noreferrer" aria-label={m.shopping.openLink} style={{ color: "var(--accent)", padding: 6, flexShrink: 0, display: "flex" }}>
           <IcLink />
         </a>
       )}
 
       <button
         onClick={onRemove}
-        aria-label="Remove item"
+        aria-label={m.shopping.removeItem}
         style={{ background: "none", border: "none", cursor: "pointer", color: "var(--faint)", padding: 6, flexShrink: 0 }}
       >
         <IcTrash />
@@ -1283,11 +1288,12 @@ function btnStyle(bg: string): React.CSSProperties {
 }
 
 function Screen({ title, onBack, headerExtra, children }: { title: string; onBack: () => void; headerExtra?: React.ReactNode; children: React.ReactNode }) {
+  const m = useM();
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
       <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
+          <button onClick={onBack} aria-label={m.common.back} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
           <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>{title}</h1>

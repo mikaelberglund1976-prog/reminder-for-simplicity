@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { useI18n } from "@/lib/i18n/client";
+import { DATE_LOCALES, type Locale } from "@/lib/i18n/config";
+import type { Messages } from "@/lib/i18n/messages";
 
 /**
  * PhoneInput: landskods-dropdown + nummerfält.
@@ -60,16 +63,26 @@ export function toE164(country: Country, national: string): string {
 }
 
 /** Validera. Returnerar felmeddelande eller null. */
-export function validatePhone(country: Country, national: string): string | null {
+export function validatePhone(country: Country, national: string, m?: Messages, locale?: Locale): string | null {
   const digits = national.replace(/\D/g, "");
   if (digits.length === 0) return null; // tomt = ok (frivilligt)
+  const name = locale ? countryName(country, locale) : country.name;
   if (digits.length < country.minDigits) {
-    return `Too short for ${country.name} — expected at least ${country.minDigits} digits`;
+    return m ? m.account.tooShort(name, country.minDigits) : `Too short for ${name} — expected at least ${country.minDigits} digits`;
   }
   if (digits.length > country.maxDigits) {
-    return `Too long for ${country.name} — expected at most ${country.maxDigits} digits`;
+    return m ? m.account.tooLong(name, country.maxDigits) : `Too long for ${name} — expected at most ${country.maxDigits} digits`;
   }
   return null;
+}
+
+// 2026-10-04: the country's name in the family's language.
+function countryName(country: Country, locale: Locale): string {
+  try {
+    return new Intl.DisplayNames([DATE_LOCALES[locale]], { type: "region" }).of(country.code) ?? country.name;
+  } catch {
+    return country.name;
+  }
 }
 
 type Props = {
@@ -87,8 +100,9 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif
 
 export default function PhoneInput({ value, onChange, onValidChange, placeholder, disabled }: Props) {
   const { country, national } = useMemo(() => splitE164(value), [value]);
+  const { m, locale } = useI18n();
 
-  const error = validatePhone(country, national);
+  const error = validatePhone(country, national, m, locale);
 
   useEffect(() => {
     if (onValidChange) onValidChange(error === null);
@@ -113,7 +127,7 @@ export default function PhoneInput({ value, onChange, onValidChange, placeholder
             value={country.code}
             onChange={(e) => setCountry(e.target.value)}
             disabled={disabled}
-            aria-label="Country code"
+            aria-label={m.account.countryCode}
             style={{
               appearance: "none",
               WebkitAppearance: "none",

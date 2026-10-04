@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -10,6 +11,8 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+  const { m: msg, err } = useI18n();
+  const t = msg.auth;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,12 +26,12 @@ export default function ForgotPasswordPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Please try again.");
+        setError(data.error ? err(data.error) : t.tryAgain);
       } else {
         setSent(true);
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t.tryAgain);
     } finally {
       setLoading(false);
     }
@@ -45,10 +48,10 @@ export default function ForgotPasswordPage() {
 
         <div style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
-            Reset your password
+            {t.resetTitle}
           </h1>
           <p style={{ fontSize: 15, color: "var(--fg-2)", margin: "8px 0 0" }}>
-            Enter your email and we'll send you a reset link.
+            {t.resetIntro}
           </p>
         </div>
 
@@ -66,15 +69,15 @@ export default function ForgotPasswordPage() {
             background: "var(--tint-success)", border: "1px solid var(--tint-success)", color: "var(--success)",
             borderRadius: 12, padding: "16px", fontSize: 14, lineHeight: 1.6,
           }}>
-            If an account exists for <strong>{email}</strong>, we've sent a password reset link. Check your inbox.
+            {t.resetSent1}<strong>{email}</strong>{t.resetSent2}
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>Email</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>{msg.common.email}</div>
               <input
                 type="email"
-                placeholder="Email"
+                placeholder={msg.common.email}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -95,14 +98,14 @@ export default function ForgotPasswordPage() {
                 fontFamily: FONT, transition: "all 0.15s",
               }}
             >
-              {loading ? "Sending…" : "Send reset link"}
+              {loading ? msg.common.sending : t.sendResetLink}
             </button>
           </form>
         )}
 
         <p style={{ textAlign: "center", fontSize: 14, color: "var(--fg-2)", marginTop: 24 }}>
           <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            Back to log in
+            {t.backToLogin}
           </Link>
         </p>
 

@@ -7,10 +7,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import Avatar from "@/components/Avatar";
+import { useI18n, useM } from "@/lib/i18n/client";
+import { weekdayName } from "@/lib/i18n/format";
+import type { Messages } from "@/lib/i18n/messages";
+import type { Locale } from "@/lib/i18n/config";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; // Date#getDay() order — matches lib/recurrence.ts
 
 function IcBack() { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><polyline points="15 18 9 12 15 6"/></svg>; }
 function IcTrash() { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>; }
@@ -32,16 +35,17 @@ type TrialInfo = {
   householdMembers?: { id: string; name: string; role: string }[];
 };
 
-function formatSchedule(item: TrainingItem): string {
+function formatSchedule(item: TrainingItem, m: Messages, locale: Locale): string {
+  const t = m.activities;
   if (item.choreRecurrenceDays) {
     const days = item.choreRecurrenceDays.split(",").map((n) => parseInt(n, 10)).filter((n) => !Number.isNaN(n))
       .sort((x, y) => ((x + 6) % 7) - ((y + 6) % 7)); // Monday first
-    if (days.length === 1) return `Every ${WEEKDAY_SHORT[days[0]]}`;
-    return days.map((d) => WEEKDAY_SHORT[d]).join(", ");
+    if (days.length === 1) return t.every(weekdayName(locale, days[0], "long"));
+    return days.map((d) => weekdayName(locale, d)).join(", ");
   }
-  if (item.recurrence === "DAILY") return "Every day";
-  if (item.recurrence === "WEEKLY") return "Weekly";
-  return "One-off";
+  if (item.recurrence === "DAILY") return t.everyDay;
+  if (item.recurrence === "WEEKLY") return t.weekly;
+  return t.oneOff;
 }
 
 // Dedicated Training section — separate from Chores, mirrors the
@@ -54,6 +58,8 @@ function formatSchedule(item: TrainingItem): string {
 export default function TrainingPage() {
   const { status } = useSession();
   const router = useRouter();
+  const { m: msg, locale } = useI18n();
+  const t = msg.activities;
 
   const [trial, setTrial] = useState<TrialInfo | null>(null);
   const [items, setItems] = useState<TrainingItem[]>([]);
@@ -94,7 +100,7 @@ export default function TrainingPage() {
   if (status === "loading" || loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading activities…</div>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>{t.loading}</div>
       </div>
     );
   }
@@ -104,12 +110,12 @@ export default function TrainingPage() {
       <Screen onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Set up your household first</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>{t.setUpHousehold}</h2>
           <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>
-            Activities need a household with at least one child added.
+            {t.needsHousehold}
           </p>
           <Link href="/dashboard/family" style={{ display: "inline-flex", background: "var(--ink)", color: "#fff", borderRadius: 50, padding: "14px 28px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
-            Go to Chores →
+            {t.goToChores}
           </Link>
         </div>
       </Screen>
@@ -120,7 +126,7 @@ export default function TrainingPage() {
   if (!trial.isPro && !trial.trialActive) {
     return (
       <Screen onBack={() => router.push("/dashboard")}>
-        <UpgradeGate feature="Activities" emoji="🎯" description="Recurring activities like football, scouts or music — synced to the family calendar. Try it free for 14 days." />
+        <UpgradeGate feature={t.feature} emoji="🎯" description={t.gateDescription} />
       </Screen>
     );
   }
@@ -147,14 +153,14 @@ export default function TrainingPage() {
   const orphanList = items.filter((i) => !i.assignedUser?.id || !memberIds.has(i.assignedUser.id)).sort((a, b) => a.name.localeCompare(b.name));
   if (orphanList.length > 0) {
     byChild.set("__orphans", orphanList);
-    children.push({ id: "__orphans", name: "Not assigned to anyone in the family", role: "ORPHAN" } as (typeof children)[number]);
+    children.push({ id: "__orphans", name: t.notAssigned, role: "ORPHAN" } as (typeof children)[number]);
   }
 
   return (
     <Screen onBack={() => router.push("/dashboard")}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
-          Recurring activities for anyone in the family — sports, scouts, theater, music, meetings — synced to the calendar automatically. Pick several people and it shows up for each of them.
+          {t.intro}
         </div>
       </div>
 
@@ -168,12 +174,12 @@ export default function TrainingPage() {
         }}
       >
         <span style={{ fontSize: 18, lineHeight: 1 }}>+</span>
-        Add activity
+        {t.add}
       </Link>
 
       {children.length === 0 && (
         <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
-          No activities yet. Tap <strong>Add activity</strong> above.
+          {t.noneYet1}<strong>{t.add}</strong>{t.noneYet2}
         </div>
       )}
 
@@ -186,7 +192,7 @@ export default function TrainingPage() {
               {child.name} · {list.length}
             </div>
             {list.length === 0 ? (
-              <div style={{ fontSize: 13, color: "var(--subtle)", padding: "8px 2px" }}>No activities booked yet.</div>
+              <div style={{ fontSize: 13, color: "var(--subtle)", padding: "8px 2px" }}>{t.noneBooked}</div>
             ) : (
               <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
                 {list.map((item, i) => (
@@ -204,7 +210,7 @@ export default function TrainingPage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", lineHeight: 1.3 }}>{item.name}</div>
                       <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                        {formatSchedule(item)}{item.note ? ` · ${item.note}` : ""}
+                        {formatSchedule(item, msg, locale)}{item.note ? ` · ${item.note}` : ""}
                       </div>
                     </div>
                     <button
@@ -214,7 +220,7 @@ export default function TrainingPage() {
                         background: "none", border: "none", color: "var(--faint)",
                         cursor: deletingId === item.id ? "wait" : "pointer", padding: 6, display: "flex",
                       }}
-                      aria-label="Remove"
+                      aria-label={msg.common.remove}
                     >
                       <IcTrash />
                     </button>
@@ -230,14 +236,15 @@ export default function TrainingPage() {
 }
 
 function Screen({ onBack, children }: { onBack: () => void; children: React.ReactNode }) {
+  const m = useM();
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
       <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
+          <button onClick={onBack} aria-label={m.common.back} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>🎯 Activities</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>{m.activities.title}</h1>
           <HamburgerMenu />
         </div>
       </div>

@@ -475,6 +475,9 @@ Detaljer: `TODO.md` punkt 31.
 - **Poster utan person:** sysslor, aktiviteter och läxor som saknar person, eller hör till någon som lämnat familjen, visas i en egen grupp "Not assigned to anyone in the family" och kan tas bort. Sysslor har fått ×.
 - **Publika sidor:** startsidan har "Log in"; `/features` ("See how it works") omskriven efter appen som den är nu. Free/Pro och pris kommer från `lib/plans.ts` (samma som `/upgrade`).
 
+### 4b.43 Svenska + flerspråksstöd (2026-10-04, live)
+Hela appen (utom admin) och alla familjemejl på svenska och engelska. Språket väljs per familj av familjens admin (Family members → Language, eller Settings → Preferences). Ny familj ärver grundarens språk; publika sidor har språkknapp (cookie `rfs_lang`). Arkitektur i `lib/i18n/` – nytt språk = config + kopia av `messages/en` + privacy-text. Se `RELEASE_2026-10-04b.md`.
+
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
 - [ ] **WhatsApp-påminnelser** – Alternativ kanal till email, högre öppningsgrad

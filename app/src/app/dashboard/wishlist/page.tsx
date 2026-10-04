@@ -8,6 +8,8 @@ import Link from "next/link";
 import { markSeen } from "@/lib/listBadges";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import ListAccessPanel, { type ListMemberOption } from "@/components/ListAccessPanel";
+import { useI18n, useM } from "@/lib/i18n/client";
+import type { Messages } from "@/lib/i18n/messages";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -37,6 +39,7 @@ export default function WishlistPage() {
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
   const myId = session?.user?.id;
+  const t = useM().wishlist;
 
   const [access, setAccess] = useState<"LOADING" | "NO_HOUSEHOLD" | "LOCKED" | "PRO" | "TRIAL">("LOADING");
   const [role, setRole] = useState<"OWNER" | "PARENT" | "ADULT" | "CHILD" | "MEMBER" | null>(null);
@@ -73,19 +76,19 @@ export default function WishlistPage() {
   if (authStatus === "loading" || access === "LOADING") {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading wishlist…</div>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>{t.loading}</div>
       </div>
     );
   }
 
   if (access === "NO_HOUSEHOLD") {
     return (
-      <Screen title="Wishlist" onBack={() => router.push("/dashboard")}>
+      <Screen title={t.title} onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Set up your household first</h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>Wishlists live inside a household. Invite your family to get started.</p>
-          <Link href="/profile" style={btnStyle("var(--ink)")}>Go to settings →</Link>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>{t.setUpHousehold}</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>{t.needsHousehold}</p>
+          <Link href="/profile" style={btnStyle("var(--ink)")}>{t.goToSettings}</Link>
         </div>
       </Screen>
     );
@@ -93,8 +96,8 @@ export default function WishlistPage() {
 
   if (access === "LOCKED") {
     return (
-      <Screen title="Wishlist" onBack={() => router.push("/dashboard")}>
-        <UpgradeGate feature="Wishlists" emoji="🎁" description="Everyone gets their own wishlist, and the family can quietly reserve gifts. Try it free for 14 days." />
+      <Screen title={t.title} onBack={() => router.push("/dashboard")}>
+        <UpgradeGate feature={t.feature} emoji="🎁" description={t.gateDescription} />
       </Screen>
     );
   }
@@ -114,8 +117,8 @@ export default function WishlistPage() {
   const myLists = lists.filter((l) => l.ownerId === myId);
   const tabBar = (
     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-      <TabButton active={tab === "mine"} onClick={() => setTab("mine")}>My wishlist</TabButton>
-      <TabButton active={tab === "family"} onClick={() => setTab("family")}>Family</TabButton>
+      <TabButton active={tab === "mine"} onClick={() => setTab("mine")}>{t.myWishlist}</TabButton>
+      <TabButton active={tab === "family"} onClick={() => setTab("family")}>{t.family}</TabButton>
     </div>
   );
 
@@ -142,6 +145,8 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 
 function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: ListInfo[]; canEditAccess: boolean; onChange: () => void; tabBar?: React.ReactNode }) {
   const router = useRouter();
+  const { m: msg, err } = useI18n();
+  const t = msg.wishlist;
   const [activeListId, setActiveListId] = useState<string | null>(lists[0]?.id ?? null);
   const [items, setItems] = useState<ChildSafeItem[]>([]);
   const [showNewList, setShowNewList] = useState(false);
@@ -198,13 +203,13 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
       const data = await res.json();
       if (!res.ok) {
         setItems((prev) => prev.filter((i) => i.id !== tempId));
-        setError(data.error ?? "Something went wrong");
+        setError(data.error ? err(data.error) : msg.common.somethingWentWrong);
       } else {
         setItems((prev) => prev.map((i) => (i.id === tempId ? data : i)));
       }
     } catch {
       setItems((prev) => prev.filter((i) => i.id !== tempId));
-      setError("Network error");
+      setError(msg.common.networkError);
     }
   }
 
@@ -241,7 +246,7 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
   const activeList = lists.find((l) => l.id === activeListId);
 
   return (
-    <Screen title="My wishlist" onBack={() => router.push("/dashboard")}>
+    <Screen title={t.myWishlist} onBack={() => router.push("/dashboard")}>
       {tabBar}
       {lists.length > 1 || true ? (
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2, marginBottom: 10 }}>
@@ -252,26 +257,26 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
               background: l.id === activeListId ? "var(--ink)" : "var(--surface)",
               color: l.id === activeListId ? "#fff" : "var(--fg-2)",
             }}>
-              {l.name}
+              {listLabel(l, undefined, msg)}
             </button>
           ))}
           <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed var(--accent-border)", borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
-            + New list
+            {t.newList}
           </button>
         </div>
       ) : null}
 
       {showNewList && (
         <form onSubmit={createList} style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="e.g. Birthday, Christmas…" style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 12px", outline: "none" }} />
+          <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder={t.newListPlaceholder} style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 12px", outline: "none" }} />
           <button type="submit" disabled={!newListName.trim()} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "var(--ink)", border: "none", borderRadius: 10, padding: "0 16px", cursor: !newListName.trim() ? "not-allowed" : "pointer", opacity: !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
-            Create
+            {t.create}
           </button>
         </form>
       )}
 
       <button onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetch("/api/family/members").then((r) => r.json()).then((d) => setMembers(d.members ?? [])); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}>
-        <IcSettings /> {activeList?.visibleToAll ? "Everyone can see this list" : "Only some people can see this list"}
+        <IcSettings /> {activeList?.visibleToAll ? t.everyoneSees : t.someSee}
       </button>
 
       {showAccessPanel && activeList && (
@@ -292,18 +297,18 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
       )}
 
       <form onSubmit={addWish} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="Something you'd like…" style={inputStyle()} />
+        <input value={name} onChange={e => setName(e.target.value)} placeholder={t.wishPlaceholder} style={inputStyle()} />
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" style={{ ...inputStyle(), width: 90 }} />
+          <input value={price} onChange={e => setPrice(e.target.value)} placeholder={t.price} style={{ ...inputStyle(), width: 90 }} />
           <button type="button" onClick={() => setShowDetails((v) => !v)} style={{ flex: 1, background: "none", border: "1.5px solid var(--border)", borderRadius: 12, color: "var(--accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-            {showDetails ? "Hide link & note" : "+ Link, picture or note"}
+            {showDetails ? t.hideDetails : t.showDetails}
           </button>
         </div>
         {showDetails && (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Link (optional)" style={inputStyle()} />
-            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL (optional)" style={inputStyle()} />
-            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" style={inputStyle()} />
+            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder={t.linkOptional} style={inputStyle()} />
+            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder={t.imageOptional} style={inputStyle()} />
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.noteOptional} style={inputStyle()} />
           </div>
         )}
         {error && <div style={{ fontSize: 13, color: "var(--danger)", marginTop: 10 }}>{error}</div>}
@@ -311,17 +316,17 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
           type="submit" disabled={!name.trim() || !activeListId}
           style={{ marginTop: 12, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, cursor: !name.trim() ? "not-allowed" : "pointer", opacity: !name.trim() ? 0.5 : 1, fontFamily: FONT }}
         >
-          <IcPlus /> Add to my wishlist
+          <IcPlus /> {t.addToMine}
         </button>
       </form>
 
       <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 10, letterSpacing: "0.02em" }}>
-        Your wishes {items.length > 0 && `(${items.length})`}
+        {t.yourWishes} {items.length > 0 && `(${items.length})`}
       </div>
 
       {items.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 13 }}>
-          Nothing here yet — add something you'd like above.
+          {t.nothingYet}
         </div>
       ) : (
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
@@ -336,10 +341,10 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
                 {item.note && <div style={{ fontSize: 11.5, color: "var(--subtle)", marginTop: 2 }}>{item.note}</div>}
                 <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 2 }}>
                   {item.price != null ? `${item.price} ${item.currency ?? "SEK"}` : ""}
-                  {item.url ? (item.price != null ? " · " : "") + "has a link" : ""}
+                  {item.url ? (item.price != null ? " · " : "") + t.hasLink : ""}
                 </div>
               </div>
-              <button onClick={() => removeWish(item.id)} aria-label="Remove wish" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--faint)", padding: 6, flexShrink: 0 }}>
+              <button onClick={() => removeWish(item.id)} aria-label={t.removeWish} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--faint)", padding: 6, flexShrink: 0 }}>
                 <IcTrash />
               </button>
             </div>
@@ -352,7 +357,6 @@ function ChildWishlist({ lists, canEditAccess, onChange, tabBar }: { lists: List
 
 // ---------- Adult view: per-child, per-list; reserve/purchase controls, never shown to the child ----------
 
-const STATUS_LABEL: Record<AdultItem["status"], string> = { WANTED: "Wanted", RESERVED: "Reserved", PURCHASED: "Bought" };
 const STATUS_COLOR: Record<AdultItem["status"], { bg: string; color: string }> = {
   WANTED: { bg: "var(--tint-accent)", color: "var(--violet)" },
   RESERVED: { bg: "var(--tint-warning)", color: "var(--warning)" },
@@ -361,6 +365,8 @@ const STATUS_COLOR: Record<AdultItem["status"], { bg: string; color: string }> =
 
 function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists: ListInfo[]; canEditAccess: boolean; onChange: () => void; tabBar?: React.ReactNode; myId?: string }) {
   const router = useRouter();
+  const { m: msg, err } = useI18n();
+  const t = msg.wishlist;
   const [busyId, setBusyId] = useState<string | null>(null);
   const [items, setItems] = useState<AdultItem[]>([]);
   const [showAccessPanel, setShowAccessPanel] = useState(false);
@@ -373,7 +379,7 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
   // Own wishlist now lives under the "My wishlist" tab, so it's excluded
   // here to avoid showing it twice (and reserve/purchase controls on your
   // own gifts don't make sense anyway).
-  const children = Array.from(new Map(lists.filter((l) => l.ownerId && l.ownerId !== myId).map((l) => [l.ownerId as string, l.ownerName ?? "Family member"])).entries());
+  const children = Array.from(new Map(lists.filter((l) => l.ownerId && l.ownerId !== myId).map((l) => [l.ownerId as string, l.ownerName ?? t.familyMember])).entries());
   const [activeChild, setActiveChild] = useState<string>(children[0]?.[0] ?? "");
   useEffect(() => {
     if (!activeChild && children[0]) setActiveChild(children[0][0]);
@@ -424,13 +430,13 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
         body: JSON.stringify({ kind: "WISHLIST", name: trimmed, ownerId: activeChild }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setNewListError(data.error ?? `Error ${res.status}`); return; }
+      if (!res.ok) { setNewListError(data.error ? err(data.error) : t.error(res.status)); return; }
       setNewListName("");
       setShowNewList(false);
       await onChange();
       setActiveListId(data.id);
-    } catch (err) {
-      setNewListError("Could not reach server: " + String(err));
+    } catch (e2) {
+      setNewListError(t.couldNotReach(String(e2)));
     } finally {
       setCreatingList(false);
     }
@@ -462,20 +468,20 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
 
   if (children.length === 0) {
     return (
-      <Screen title="Wishlists" onBack={() => router.push("/dashboard")}>
+      <Screen title={t.wishlists} onBack={() => router.push("/dashboard")}>
         {tabBar}
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ marginBottom: 16, display: "flex", justifyContent: "center", color: "var(--faint)" }}><IcGift /></div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>No one else yet</h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>Invite a family member or add a child profile from Family settings — everyone gets their own wishlist automatically.</p>
-          <Link href="/dashboard/family" style={btnStyle("var(--ink)")}>Go to Family →</Link>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>{t.noOneElse}</h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>{t.noOneElseBody}</p>
+          <Link href="/dashboard/family" style={btnStyle("var(--ink)")}>{t.goToFamily}</Link>
         </div>
       </Screen>
     );
   }
 
   return (
-    <Screen title="Wishlists" onBack={() => router.push("/dashboard")}>
+    <Screen title={t.wishlists} onBack={() => router.push("/dashboard")}>
       {tabBar}
       {children.length > 1 && (
         <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto" }}>
@@ -504,12 +510,12 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
               background: l.id === activeListId ? "var(--tint-accent)" : "var(--surface)",
               color: l.id === activeListId ? "var(--accent-strong)" : "var(--muted)",
             }}>
-              {listLabel(l, myId)}
+              {listLabel(l, myId, msg)}
             </button>
           ))}
           {canEditAccess && (
             <button onClick={() => setShowNewList((v) => !v)} style={{ flexShrink: 0, background: "none", border: "1.5px dashed var(--accent-border)", borderRadius: 999, padding: "6px 12px", fontSize: 12.5, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
-              + New list
+              {t.newList}
             </button>
           )}
         </div>
@@ -517,9 +523,9 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
 
       {showNewList && (
         <form onSubmit={createList} style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="e.g. Birthday, Christmas…" style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 12px", outline: "none" }} />
+          <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder={t.newListPlaceholder} style={{ flex: 1, minWidth: 0, fontSize: 13, fontFamily: FONT, border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 12px", outline: "none" }} />
           <button type="submit" disabled={!newListName.trim() || creatingList} style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", background: "var(--ink)", border: "none", borderRadius: 10, padding: "0 16px", cursor: !newListName.trim() ? "not-allowed" : "pointer", opacity: !newListName.trim() ? 0.5 : 1, fontFamily: FONT }}>
-            {creatingList ? "…" : "Create"}
+            {creatingList ? "…" : t.create}
           </button>
         </form>
       )}
@@ -528,7 +534,7 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
       )}
 
       <button onClick={() => { setShowAccessPanel((v) => !v); if (!showAccessPanel) fetch("/api/family/members").then((r) => r.json()).then((d) => setMembers(d.members ?? [])); }} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 2px", fontFamily: FONT, marginBottom: 14 }}>
-        <IcSettings /> {activeList?.visibleToAll ? "Everyone can see this list" : "Only some people can see this list"}
+        <IcSettings /> {activeList?.visibleToAll ? t.everyoneSees : t.someSee}
       </button>
 
       {showAccessPanel && activeList && (
@@ -549,12 +555,12 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
       )}
 
       <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 14, lineHeight: 1.5 }}>
-        Only adults see this — they never see reserved or bought status on their own list.
+        {t.adultsOnly}
       </div>
 
       {items.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 13 }}>
-          Nothing on this wishlist yet.
+          {t.emptyList}
         </div>
       ) : (
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
@@ -573,29 +579,29 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
                     <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 2 }}>
                       {item.price != null ? `${item.price} ${item.currency ?? "SEK"}` : ""}
                       {item.url ? (
-                        <> {item.price != null && "· "}<a href={item.url} target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>view link</a></>
+                        <> {item.price != null && "· "}<a href={item.url} target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>{t.viewLink}</a></>
                       ) : ""}
                     </div>
                     {item.status !== "WANTED" && (
                       <div style={{ fontSize: 11, color: "var(--subtle)", marginTop: 2 }}>
-                        {item.status === "RESERVED" && `Reserved by ${item.reserver?.name ?? "someone"}`}
-                        {item.status === "PURCHASED" && `Bought by ${item.purchaser?.name ?? "someone"}`}
+                        {item.status === "RESERVED" && t.reservedBy(item.reserver?.name ?? t.someone)}
+                        {item.status === "PURCHASED" && t.boughtBy(item.purchaser?.name ?? t.someone)}
                       </div>
                     )}
                   </div>
                   <span style={{ background: badge.bg, color: badge.color, fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 50, flexShrink: 0 }}>
-                    {STATUS_LABEL[item.status]}
+                    {t.status[item.status]}
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                   {item.status !== "RESERVED" && (
-                    <StatusBtn label="Reserve" busy={busyId === item.id} onClick={() => setStatus(item.id, "RESERVED")} />
+                    <StatusBtn label={t.reserve} busy={busyId === item.id} onClick={() => setStatus(item.id, "RESERVED")} />
                   )}
                   {item.status !== "PURCHASED" && (
-                    <StatusBtn label="Mark bought" busy={busyId === item.id} onClick={() => setStatus(item.id, "PURCHASED")} />
+                    <StatusBtn label={t.markBought} busy={busyId === item.id} onClick={() => setStatus(item.id, "PURCHASED")} />
                   )}
                   {item.status !== "WANTED" && (
-                    <StatusBtn label="Reset" busy={busyId === item.id} onClick={() => setStatus(item.id, "WANTED")} subtle />
+                    <StatusBtn label={t.reset} busy={busyId === item.id} onClick={() => setStatus(item.id, "WANTED")} subtle />
                   )}
                 </div>
               </div>
@@ -625,11 +631,13 @@ function StatusBtn({ label, busy, onClick, subtle }: { label: string; busy: bool
 }
 
 // Default lists are all called "Wishlist" — show whose it is instead.
-function listLabel(l: ListInfo, myId?: string) {
-  if (l.ownerId && l.ownerId !== myId && l.name.trim().toLowerCase() === "wishlist") {
-    return `${(l.ownerName ?? "Family member").split(" ")[0]}'s wishlist`;
+function listLabel(l: ListInfo, myId: string | undefined, m: Messages) {
+  const isDefault = l.name.trim().toLowerCase() === "wishlist";
+  if (myId && l.ownerId && l.ownerId !== myId && isDefault) {
+    return m.wishlist.ownersWishlist((l.ownerName ?? m.wishlist.familyMember).split(" ")[0]);
   }
-  return l.name;
+  // The default list is stored as "Wishlist" — show it in the family's language.
+  return isDefault ? m.wishlist.defaultListName : l.name;
 }
 
 function inputStyle(): React.CSSProperties {
@@ -641,11 +649,12 @@ function btnStyle(bg: string): React.CSSProperties {
 }
 
 function Screen({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
+  const m = useM();
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
       <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
+          <button onClick={onBack} aria-label={m.common.back} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
           <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>{title}</h1>

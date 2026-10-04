@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -25,17 +26,20 @@ function JoinHouseholdContent() {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
+  const { m: msg, err: tErr } = useI18n();
+  const t = msg.auth;
 
   useEffect(() => {
-    if (!token) { setError("No invite token found."); setLoading(false); return; }
+    if (!token) { setError(t.noInviteToken); setLoading(false); return; }
     fetch(`/api/household/join?token=${token}`)
       .then(r => r.json())
       .then(d => {
-        if (d.error) setError(d.error);
+        if (d.error) setError(tErr(d.error));
         else setInfo(d);
       })
-      .catch(() => setError("Could not validate invite."))
+      .catch(() => setError(t.couldNotValidate))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   async function handleJoin() {
@@ -51,11 +55,11 @@ function JoinHouseholdContent() {
         body: JSON.stringify({ token }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to join");
+      if (!res.ok) throw new Error(data.error ? tErr(data.error) : t.failedJoin);
       setJoined(true);
       setTimeout(() => router.push("/dashboard"), 2500);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(err instanceof Error ? err.message : t.somethingWrong);
     } finally {
       setJoining(false);
     }
@@ -64,7 +68,7 @@ function JoinHouseholdContent() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <span style={{ color: "var(--muted)", fontSize: 15 }}>Validating invite…</span>
+        <span style={{ color: "var(--muted)", fontSize: 15 }}>{t.validating}</span>
       </div>
     );
   }
@@ -86,18 +90,18 @@ function JoinHouseholdContent() {
           {joined ? (
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", margin: "0 0 12px" }}>You&apos;re in!</h2>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", margin: "0 0 12px" }}>{t.youreIn}</h2>
               <p style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.6, margin: 0 }}>
-                Welcome to <strong style={{ color: "var(--fg)" }}>{info?.householdName ?? "the household"}</strong>. Redirecting to dashboard…
+                {t.welcomeTo1}<strong style={{ color: "var(--fg)" }}>{info?.householdName ?? t.theHousehold}</strong>{t.welcomeTo2}
               </p>
             </div>
           ) : error ? (
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 12px" }}>Invalid invite</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 12px" }}>{t.invalidInvite}</h2>
               <p style={{ fontSize: 14, color: "var(--danger)", marginBottom: 24 }}>{error}</p>
               <Link href="/dashboard" style={{ display: "inline-block", padding: "12px 28px", background: "var(--ink)", color: "#fff", borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
-                Go to dashboard
+                {t.goToDashboard}
               </Link>
             </div>
           ) : info ? (
@@ -105,10 +109,10 @@ function JoinHouseholdContent() {
               <div style={{ textAlign: "center", marginBottom: 28 }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🏠</div>
                 <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", margin: "0 0 8px", letterSpacing: "-0.4px" }}>
-                  Join {info.householdName ?? "a household"}
+                  {t.joinName(info.householdName)}
                 </h2>
                 <p style={{ fontSize: 15, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
-                  <strong style={{ color: "var(--fg)" }}>{info.ownerName}</strong> invited you to share reminders and manage tasks together.
+                  <strong style={{ color: "var(--fg)" }}>{info.ownerName}</strong>{t.invitedYou}
                 </p>
               </div>
 
@@ -116,21 +120,21 @@ function JoinHouseholdContent() {
               <div style={{ background: "linear-gradient(135deg,var(--tint-accent),var(--tint-accent))", borderRadius: 14, padding: "14px 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ fontSize: 20 }}>⚡</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)" }}>Reminder for Simplicity Pro household</div>
-                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>Shared reminders, handovers & safety net included</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)" }}>{t.proHousehold}</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{t.proHouseholdSub}</div>
                 </div>
               </div>
 
               {status === "unauthenticated" ? (
                 <>
                   <p style={{ fontSize: 14, color: "var(--muted)", textAlign: "center", marginBottom: 20 }}>
-                    You need to be signed in to accept this invite.
+                    {t.needSignIn}
                   </p>
                   <button
                     onClick={handleJoin}
                     style={{ width: "100%", padding: "16px", background: "linear-gradient(135deg,var(--accent),var(--accent))", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: FONT, boxShadow: "0 4px 14px rgba(46,94,200,0.3)" }}
                   >
-                    Sign in to accept →
+                    {t.signInToAccept}
                   </button>
                 </>
               ) : (
@@ -139,12 +143,12 @@ function JoinHouseholdContent() {
                   disabled={joining}
                   style={{ width: "100%", padding: "16px", background: joining ? "rgba(74,126,224,0.6)" : "linear-gradient(135deg,var(--accent),var(--accent))", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "#fff", cursor: joining ? "not-allowed" : "pointer", fontFamily: FONT, boxShadow: "0 4px 14px rgba(46,94,200,0.3)", transition: "all 0.15s" }}
                 >
-                  {joining ? "Joining…" : `Accept & join ${info.householdName ?? "household"}`}
+                  {joining ? t.joining : t.acceptJoin(info.householdName)}
                 </button>
               )}
 
               <p style={{ fontSize: 12, color: "var(--faint)", textAlign: "center", marginTop: 16 }}>
-                By joining, you agree to share your reminders visibility with household members.
+                {t.joinNote}
               </p>
             </>
           ) : null}
@@ -155,10 +159,11 @@ function JoinHouseholdContent() {
 }
 
 export default function JoinHouseholdPage() {
+  const { m } = useI18n();
   return (
     <Suspense fallback={
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <span style={{ color: "var(--muted)", fontSize: 15 }}>Loading…</span>
+        <span style={{ color: "var(--muted)", fontSize: 15 }}>{m.common.loading}</span>
       </div>
     }>
       <JoinHouseholdContent />

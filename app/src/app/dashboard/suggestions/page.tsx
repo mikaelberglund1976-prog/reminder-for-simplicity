@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import { ADMIN_EMAIL } from "@/lib/adminConfig";
+import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -36,7 +37,6 @@ type Suggestion = {
   hasVoted: boolean;
 };
 
-const STATUS_LABEL: Record<Status, string> = { OPEN: "Open", PLANNED: "Planned", IN_PROGRESS: "In progress", DONE: "Done", DECLINED: "Declined" };
 const STATUS_COLOR: Record<Status, { bg: string; color: string }> = {
   OPEN: { bg: "var(--tint-accent)", color: "var(--violet)" },
   PLANNED: { bg: "var(--tint-warning)", color: "var(--warning)" },
@@ -49,6 +49,8 @@ export default function SuggestionsPage() {
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
   const isAdmin = session?.user?.email === ADMIN_EMAIL;
+  const { m: msg, err } = useI18n();
+  const t = msg.ideas;
 
   const [filter, setFilter] = useState<"ALL" | Category>("ALL");
   const [items, setItems] = useState<Suggestion[] | null>(null);
@@ -92,13 +94,13 @@ export default function SuggestionsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong");
+        setError(data.error ? err(data.error) : msg.common.somethingWentWrong);
       } else {
         setItems((prev) => (prev ? [data, ...prev] : [data]));
         setTitle(""); setDescription(""); setCategory("NEW_FEATURE"); setShowForm(false);
       }
     } catch {
-      setError("Network error");
+      setError(msg.common.networkError);
     } finally {
       setSubmitting(false);
     }
@@ -152,32 +154,32 @@ export default function SuggestionsPage() {
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
       <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => router.push("/dashboard")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
+          <button onClick={() => router.push("/dashboard")} aria-label={msg.common.back} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>Ideas &amp; voting</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>{t.title}</h1>
           <HamburgerMenu />
         </div>
       </div>
 
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 40px", paddingBottom: 96 }}>
         <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6, margin: "0 0 18px" }}>
-          Suggest an improvement or a brand-new feature, and vote on what other families want most. Every customer sees the same list — this shapes what we build next.
+          {t.intro}
         </p>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto" }}>
           {[
-            { key: "ALL" as const, label: "All" },
-            { key: "IMPROVEMENT" as const, label: "Improvements" },
-            { key: "NEW_FEATURE" as const, label: "New features" },
-          ].map((t) => (
-            <button key={t.key} onClick={() => setFilter(t.key)} style={{
+            { key: "ALL" as const, label: t.all },
+            { key: "IMPROVEMENT" as const, label: t.improvements },
+            { key: "NEW_FEATURE" as const, label: t.newFeatures },
+          ].map((f) => (
+            <button key={f.key} onClick={() => setFilter(f.key)} style={{
               flexShrink: 0, borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
-              border: filter === t.key ? "none" : "1px solid var(--border)",
-              background: filter === t.key ? "var(--accent-bg)" : "var(--surface)",
-              color: filter === t.key ? "#fff" : "var(--fg-2)",
+              border: filter === f.key ? "none" : "1px solid var(--border)",
+              background: filter === f.key ? "var(--accent-bg)" : "var(--surface)",
+              color: filter === f.key ? "#fff" : "var(--fg-2)",
             }}>
-              {t.label}
+              {f.label}
             </button>
           ))}
         </div>
@@ -188,7 +190,7 @@ export default function SuggestionsPage() {
             background: "var(--ink)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 0",
             fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT, marginBottom: 20,
           }}>
-            <IcPlus /> Suggest an idea
+            <IcPlus /> {t.suggest}
           </button>
         ) : (
           <form onSubmit={submitIdea} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: 16, marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
@@ -200,33 +202,33 @@ export default function SuggestionsPage() {
                   background: category === c ? "var(--accent-bg)" : "var(--surface)",
                   color: category === c ? "#fff" : "var(--muted)",
                 }}>
-                  {c === "NEW_FEATURE" ? "New feature" : "Improvement"}
+                  {c === "NEW_FEATURE" ? t.newFeature : t.improvement}
                 </button>
               ))}
             </div>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Short, clear title" maxLength={140} style={inputStyle()} />
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add detail (optional) — what problem would this solve?" rows={3}
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.titlePlaceholder} maxLength={140} style={inputStyle()} />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t.descriptionPlaceholder} rows={3}
               style={{ ...inputStyle(), marginTop: 8, resize: "vertical" as const, fontFamily: FONT }} />
             {error && <div style={{ fontSize: 13, color: "var(--danger)", marginTop: 10 }}>{error}</div>}
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <button type="button" onClick={() => { setShowForm(false); setError(""); }} style={{ flex: 1, background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, color: "var(--muted)", cursor: "pointer", fontFamily: FONT }}>
-                Cancel
+                {msg.common.cancel}
               </button>
               <button type="submit" disabled={!title.trim() || submitting} style={{ flex: 2, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 14, fontWeight: 700, cursor: !title.trim() ? "not-allowed" : "pointer", opacity: !title.trim() || submitting ? 0.6 : 1, fontFamily: FONT }}>
-                {submitting ? "Posting…" : "Post idea"}
+                {submitting ? t.posting : t.post}
               </button>
             </div>
           </form>
         )}
 
         {items === null ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 13 }}>Loading…</div>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 13 }}>{t.loading}</div>
         ) : active.length === 0 && closed.length === 0 ? (
           <div style={{ textAlign: "center", padding: "50px 24px" }}>
             <div style={{ marginBottom: 14, display: "flex", justifyContent: "center", color: "var(--faint)" }}><IcBulb /></div>
-            <h2 style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)", margin: "0 0 8px" }}>No ideas yet</h2>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)", margin: "0 0 8px" }}>{t.none}</h2>
             <p style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6, maxWidth: 320, margin: "0 auto" }}>
-              Be the first to suggest something — every family&apos;s vote helps shape what we build next.
+              {t.noneBody}
             </p>
           </div>
         ) : (
@@ -240,7 +242,7 @@ export default function SuggestionsPage() {
             {closed.length > 0 && (
               <div style={{ marginTop: 20 }}>
                 <button onClick={() => setShowClosed((v) => !v)} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT, padding: "6px 2px" }}>
-                  {showClosed ? "Hide" : "Show"} shipped &amp; declined ({closed.length})
+                  {t.showClosed(showClosed, closed.length)}
                 </button>
                 {showClosed && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
@@ -266,11 +268,12 @@ function SuggestionCard({ s, isAdmin, onVote, onStatusChange, onDelete }: {
   onDelete: (id: string) => void;
 }) {
   const badge = STATUS_COLOR[s.status];
+  const t = useI18n().m.ideas;
   return (
     <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", padding: 14, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", display: "flex", gap: 12 }}>
       <button
         onClick={() => onVote(s.id)}
-        aria-label={s.hasVoted ? "Remove vote" : "Vote for this"}
+        aria-label={s.hasVoted ? t.removeVote : t.vote}
         style={{
           flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
           width: 46, height: 46, borderRadius: 12, cursor: "pointer",
@@ -286,19 +289,19 @@ function SuggestionCard({ s, isAdmin, onVote, onStatusChange, onDelete }: {
         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, justifyContent: "space-between" }}>
           <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--fg)", lineHeight: 1.4 }}>{s.title}</div>
           <span style={{ flexShrink: 0, background: badge.bg, color: badge.color, fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 50 }}>
-            {STATUS_LABEL[s.status]}
+            {t.status[s.status]}
           </span>
         </div>
         {s.description && <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 4, lineHeight: 1.5 }}>{s.description}</div>}
         <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const }}>
-          <span>{s.category === "NEW_FEATURE" ? "💡 New feature" : "🔧 Improvement"}</span>
+          <span>{s.category === "NEW_FEATURE" ? t.newFeatureTag : t.improvementTag}</span>
           <span>·</span>
-          <span>{s.isOwn ? "You" : s.authorName}</span>
+          <span>{s.isOwn ? t.you : s.authorName}</span>
           {s.isOwn && s.status === "OPEN" && (
             <>
               <span>·</span>
               <button onClick={() => onDelete(s.id)} style={{ background: "none", border: "none", color: "var(--danger)", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONT, padding: 0 }}>
-                Remove
+                {t.remove}
               </button>
             </>
           )}
@@ -313,7 +316,7 @@ function SuggestionCard({ s, isAdmin, onVote, onStatusChange, onDelete }: {
                 background: st === s.status ? "var(--ink)" : "var(--surface)",
                 color: st === s.status ? "#fff" : "var(--subtle)",
               }}>
-                {STATUS_LABEL[st]}
+                {t.status[st]}
               </button>
             ))}
           </div>

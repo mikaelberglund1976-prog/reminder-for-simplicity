@@ -1,0 +1,27 @@
+import type { Messages } from "../en";
+
+export const ideas: Messages["ideas"] = {
+  status: { OPEN: "Öppen", PLANNED: "Planerad", IN_PROGRESS: "Pågår", DONE: "Klar", DECLINED: "Avböjd" },
+  title: "Idéer & röstning",
+  intro: "Föreslå en förbättring eller en helt ny funktion och rösta på det andra familjer vill ha mest. Alla kunder ser samma lista – den styr vad vi bygger härnäst.",
+  all: "Alla",
+  improvements: "Förbättringar",
+  newFeatures: "Nya funktioner",
+  suggest: "Föreslå en idé",
+  newFeature: "Ny funktion",
+  improvement: "Förbättring",
+  titlePlaceholder: "Kort och tydlig rubrik",
+  descriptionPlaceholder: "Beskriv mer (valfritt) – vilket problem skulle det lösa?",
+  posting: "Skickar…",
+  post: "Skicka idé",
+  loading: "Laddar…",
+  none: "Inga idéer än",
+  noneBody: "Bli först med ett förslag – varje familjs röst hjälper oss välja vad vi bygger härnäst.",
+  showClosed: (show, n) => `${show ? "Dölj" : "Visa"} klara & avböjda (${n})`,
+  removeVote: "Ta bort röst",
+  vote: "Rösta på den här",
+  newFeatureTag: "💡 Ny funktion",
+  improvementTag: "🔧 Förbättring",
+  you: "Du",
+  remove: "Ta bort",
+};

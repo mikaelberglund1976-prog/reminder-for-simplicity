@@ -1,0 +1,20 @@
+// Delete-account section and phone input.
+export const account = {
+  deletionRequested: "Deletion requested",
+  waitingFor: (names: string) => `Waiting for ${names} to approve. Your account works as normal until then.`,
+  theFamilyAdmin: "the family admin",
+  or: " or ",
+  cancelRequest: "Cancel request",
+  deleteAccount: "Delete account",
+  cantDelete: "Can't delete yet",
+  askDelete: "Ask to delete your account?",
+  askDeleteBody: (names: string, days: number) => `Your family admin (${names}) needs to approve this. Once approved you'll be removed from the family and can't log in. Your data is kept for ${days} days in case you change your mind, then permanently deleted.`,
+  sendRequest: "Send request",
+  sureTitle: "Are you sure?",
+  sureBody: (days: number) => `You'll be logged out and can't log in again. Your data is kept for ${days} days — contact us within that time if you want it back — then permanently deleted.`,
+  willBecomeAdmin: (name: string) => ` ${name} will become the family admin.`,
+  yesDelete: "Yes, delete my account",
+  countryCode: "Country code",
+  tooShort: (country: string, n: number) => `Too short for ${country} — expected at least ${n} digits`,
+  tooLong: (country: string, n: number) => `Too long for ${country} — expected at most ${n} digits`,
+};

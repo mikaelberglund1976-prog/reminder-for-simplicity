@@ -8,6 +8,8 @@
 // skapat" + "ska även kunna se i kalendervy om man väljer det".
 import { useEffect, useState } from "react";
 import UpgradeGate from "@/components/UpgradeGate";
+import { useI18n } from "@/lib/i18n/client";
+import type { Messages } from "@/lib/i18n/messages";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -28,22 +30,23 @@ export type SchoolItem = {
   imported?: boolean;
 };
 
-export const KIND_META: Record<SchoolKind, { label: string; icon: string; color: string; bg: string }> = {
-  HOMEWORK: { label: "Homework", icon: "📝", color: "var(--school)", bg: "var(--tint-school)" },
-  TEST:     { label: "Test",     icon: "🧪", color: "var(--danger)", bg: "var(--tint-danger)" },
-  OTHER:    { label: "Other",    icon: "📌", color: "var(--fg-2)", bg: "var(--surface-3)" },
+// Labels: messages.school.kinds[kind]
+export const KIND_META: Record<SchoolKind, { icon: string; color: string; bg: string }> = {
+  HOMEWORK: { icon: "📝", color: "var(--school)", bg: "var(--tint-school)" },
+  TEST:     { icon: "🧪", color: "var(--danger)", bg: "var(--tint-danger)" },
+  OTHER:    { icon: "📌", color: "var(--fg-2)", bg: "var(--surface-3)" },
 };
 
-const SUBJECTS = ["Maths", "Swedish", "English", "Science", "History", "Geography", "Religion", "Civics", "Music", "Art", "PE", "Spanish", "French", "German"];
 
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 
-export function countdown(dateStr: string): { text: string; tone: "overdue" | "soon" | "later" } {
+export function countdown(dateStr: string, m: Messages): { text: string; tone: "overdue" | "soon" | "later" } {
+  const t = m.school;
   const days = Math.round((startOfDay(new Date(dateStr)).getTime() - startOfDay(new Date()).getTime()) / 86400000);
-  if (days < 0) return { text: days === -1 ? "Yesterday" : `${-days} days ago`, tone: "overdue" };
-  if (days === 0) return { text: "Today", tone: "soon" };
-  if (days === 1) return { text: "Tomorrow", tone: "soon" };
-  return { text: `In ${days} days`, tone: days <= 3 ? "soon" : "later" };
+  if (days < 0) return { text: days === -1 ? t.yesterday : t.daysAgo(-days), tone: "overdue" };
+  if (days === 0) return { text: t.today, tone: "soon" };
+  if (days === 1) return { text: t.tomorrow, tone: "soon" };
+  return { text: t.inDays(days), tone: days <= 3 ? "soon" : "later" };
 }
 
 type Props = {
@@ -59,6 +62,8 @@ type Props = {
 
 export default function SchoolSection({ mode, members = [], initialDate, onlyUserId }: Props) {
   const [items, setItems] = useState<SchoolItem[]>([]);
+  const { m: msg, err } = useI18n();
+  const t = msg.school;
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
   const [showAdd, setShowAdd] = useState(!!initialDate);
@@ -125,8 +130,8 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
         }),
       });
       if (res.ok) { resetForm(); setShowAdd(false); await load(); }
-      else { const d = await res.json().catch(() => ({})); setError(d?.error ?? "Could not add"); }
-    } catch { setError("Something went wrong"); }
+      else { const d = await res.json().catch(() => ({})); setError(d?.error ? err(d.error) : t.couldNotAdd); }
+    } catch { setError(msg.common.somethingWentWrong); }
     finally { setAdding(false); }
   }
 
@@ -166,9 +171,9 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
     finally { setBusy(null); }
   }
 
-  if (loading) return <div style={{ fontSize: 13, color: "var(--subtle)", padding: "8px 2px", fontFamily: FONT }}>Loading homework & tests…</div>;
+  if (loading) return <div style={{ fontSize: 13, color: "var(--subtle)", padding: "8px 2px", fontFamily: FONT }}>{t.loading}</div>;
   if (locked) {
-    return <UpgradeGate compact feature="Homework & tests" emoji="📚" />;
+    return <UpgradeGate compact feature={t.feature} emoji="📚" />;
   }
 
   const byDate = (a: SchoolItem, b: SchoolItem) => new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -200,29 +205,29 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
         .concat((() => {
           const ids = new Set(members.map(m => m.id));
           const list = upcoming.filter(i => !i.assignedUser?.id || !ids.has(i.assignedUser.id));
-          return list.length ? [{ id: "__orphans", name: "Not in the family", role: "ORPHAN", list }] : [];
+          return list.length ? [{ id: "__orphans", name: t.notInFamily, role: "ORPHAN", list }] : [];
         })())
     : [];
 
   return (
     <div style={{ marginBottom: 20, fontFamily: FONT }}>
-      <datalist id="school-subjects">{SUBJECTS.map(s => <option key={s} value={s} />)}</datalist>
+      <datalist id="school-subjects">{t.subjects.map(s => <option key={s} value={s} />)}</datalist>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--school)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          📚 Homework & tests {upcoming.length > 0 && `· ${upcoming.length}`}
+          {t.title} {upcoming.length > 0 && `· ${upcoming.length}`}
         </div>
       </div>
 
       {mode === "child" && (upcoming.length > 0
         ? renderList(upcoming)
-        : !showAdd && <div style={{ fontSize: 13, color: "var(--subtle)", padding: "4px 2px 12px" }}>Nothing coming up. 🎉</div>)}
+        : !showAdd && <div style={{ fontSize: 13, color: "var(--subtle)", padding: "4px 2px 12px" }}>{t.nothingComingUpChild}</div>)}
 
       {mode === "overview" && groups.map(g => (
         <div key={g.id} style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
             {g.name} · {g.list.length}
           </div>
-          {g.list.length ? renderList(g.list) : <div style={{ fontSize: 13, color: "var(--subtle)", padding: "4px 2px" }}>Nothing coming up.</div>}
+          {g.list.length ? renderList(g.list) : <div style={{ fontSize: 13, color: "var(--subtle)", padding: "4px 2px" }}>{t.nothingComingUp}</div>}
         </div>
       ))}
 
@@ -235,19 +240,19 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
           fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
           display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
         }}>
-          <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Add homework or a test
+          <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> {t.addButton}
         </button>
       ) : (
         <form onSubmit={handleAdd} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
             {(Object.keys(KIND_META) as SchoolKind[]).map(k => {
-              const m = KIND_META[k]; const on = kind === k;
+              const km = KIND_META[k]; const on = kind === k;
               return (
                 <button key={k} type="button" onClick={() => setKind(k)} style={{
                   flex: 1, padding: "10px 6px", borderRadius: 12, cursor: "pointer", fontFamily: FONT,
-                  fontSize: 13, fontWeight: 700, border: on ? `1.5px solid ${m.color}` : "1.5px solid var(--border)",
-                  background: on ? m.bg : "var(--background)", color: on ? m.color : "var(--muted)",
-                }}>{m.icon} {m.label}</button>
+                  fontSize: 13, fontWeight: 700, border: on ? `1.5px solid ${km.color}` : "1.5px solid var(--border)",
+                  background: on ? km.bg : "var(--background)", color: on ? km.color : "var(--muted)",
+                }}>{km.icon} {t.kinds[k]}</button>
               );
             })}
           </div>
@@ -258,19 +263,19 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
             </select>
           )}
 
-          <input type="text" placeholder={kind === "TEST" ? "e.g. Chapter 4 test" : "e.g. Read pages 20–30"} value={name}
+          <input type="text" placeholder={kind === "TEST" ? t.testPlaceholder : t.homeworkPlaceholder} value={name}
             onChange={e => setName(e.target.value)} disabled={adding} autoFocus style={input} />
-          <input type="text" list="school-subjects" placeholder="Subject (e.g. Maths)" value={subject}
+          <input type="text" list="school-subjects" placeholder={t.subjectPlaceholder} value={subject}
             onChange={e => setSubject(e.target.value)} disabled={adding} style={input} />
           <label style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, display: "block", marginBottom: 4 }}>
-            {kind === "TEST" ? "Test date" : "Due date"}
+            {kind === "TEST" ? t.testDate : t.dueDate}
           </label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} disabled={adding} style={input} />
-          <input type="text" placeholder="Note (optional)" value={note} onChange={e => setNote(e.target.value)} disabled={adding} style={input} />
+          <input type="text" placeholder={t.noteOptional} value={note} onChange={e => setNote(e.target.value)} disabled={adding} style={input} />
 
           <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--fg)", margin: "2px 2px 12px", cursor: "pointer" }}>
             <input type="checkbox" checked={inCalendar} onChange={e => setInCalendar(e.target.checked)} style={{ width: 18, height: 18, accentColor: "var(--school)" }} />
-            Show in calendar
+            {t.showInCalendar}
           </label>
 
           {error && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{error}</div>}
@@ -278,14 +283,14 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
             <button type="button" onClick={() => { setShowAdd(false); resetForm(); }} disabled={adding} style={{
               flex: 1, padding: "12px 14px", borderRadius: 12, background: "var(--background)", border: "1.5px solid var(--border)",
               color: "var(--fg-2)", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
-            }}>Cancel</button>
+            }}>{msg.common.cancel}</button>
             <button type="submit" disabled={adding || !name.trim()} style={{
               flex: 1, padding: "12px 14px", borderRadius: 12, border: "none", color: "#fff", fontSize: 14, fontWeight: 700,
               background: !name.trim() || adding ? "var(--faint)" : "var(--school-bg)", cursor: !name.trim() || adding ? "not-allowed" : "pointer", fontFamily: FONT,
-            }}>{adding ? "Adding…" : "Add"}</button>
+            }}>{adding ? msg.common.adding : msg.common.add}</button>
           </div>
           <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 10, textAlign: "center" }}>
-            You'll get an email reminder the day before.
+            {t.emailDayBefore}
           </div>
         </form>
       )}
@@ -293,7 +298,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
       {done.length > 0 && (
         <div style={{ marginTop: 14 }}>
           <button onClick={() => setShowDone(v => !v)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "4px 2px", fontFamily: FONT }}>
-            {showDone ? "▾" : "▸"} Done · {done.length}
+            {showDone ? "▾" : "▸"} {t.done(done.length)}
           </button>
           {showDone && <div style={{ marginTop: 8 }}>{renderList(done)}</div>}
         </div>
@@ -318,8 +323,10 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
   onSave: (f: { name: string; subject: string; schoolKind: SchoolKind; date: string }) => Promise<boolean>;
 }) {
   const meta = KIND_META[item.schoolKind ?? "OTHER"];
+  const { m: msg, dateLocale } = useI18n();
+  const t = msg.school;
   const isDone = !!item.completedAt;
-  const cd = countdown(item.date);
+  const cd = countdown(item.date, msg);
   const toneColor = isDone ? "var(--subtle)" : cd.tone === "overdue" ? "var(--danger)" : cd.tone === "soon" ? "var(--warning)" : "var(--muted)";
   const [editing, setEditing] = useState(false);
   const [eName, setEName] = useState(item.name);
@@ -339,24 +346,24 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
         style={{ padding: "12px 14px", borderTop: first ? "none" : "1px solid var(--border-soft)", background: "var(--surface-2)", fontFamily: FONT }}>
         <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
           {(Object.keys(KIND_META) as SchoolKind[]).map(k => {
-            const m = KIND_META[k]; const on = eKind === k;
+            const km = KIND_META[k]; const on = eKind === k;
             return (
               <button key={k} type="button" onClick={() => setEKind(k)} style={{
                 flex: 1, padding: "8px 4px", borderRadius: 10, cursor: "pointer", fontFamily: FONT, fontSize: 12.5, fontWeight: 700,
-                border: on ? `1.5px solid ${m.color}` : "1.5px solid var(--border)", background: on ? m.bg : "var(--background)", color: on ? m.color : "var(--muted)",
-              }}>{m.icon} {m.label}</button>
+                border: on ? `1.5px solid ${km.color}` : "1.5px solid var(--border)", background: on ? km.bg : "var(--background)", color: on ? km.color : "var(--muted)",
+              }}>{km.icon} {t.kinds[k]}</button>
             );
           })}
         </div>
-        <input value={eName} onChange={e => setEName(e.target.value)} style={input} aria-label="Name" />
+        <input value={eName} onChange={e => setEName(e.target.value)} style={input} aria-label={msg.common.name} />
         <div style={{ display: "flex", gap: 8 }}>
-          <input value={eSubject} onChange={e => setESubject(e.target.value)} list="school-subjects" placeholder="Subject" style={{ ...input, flex: 1 }} aria-label="Subject" />
-          <input type="date" value={eDate} onChange={e => setEDate(e.target.value)} style={{ ...input, flex: 1 }} aria-label="Date" />
+          <input value={eSubject} onChange={e => setESubject(e.target.value)} list="school-subjects" placeholder={t.subject} style={{ ...input, flex: 1 }} aria-label={t.subject} />
+          <input type="date" value={eDate} onChange={e => setEDate(e.target.value)} style={{ ...input, flex: 1 }} aria-label={msg.common.date} />
         </div>
-        {item.imported && <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.4 }}>From SchoolSoft — after you save, SchoolSoft won&apos;t overwrite your changes.</div>}
+        {item.imported && <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.4 }}>{t.fromSchoolSoftEdit}</div>}
         <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" onClick={() => setEditing(false)} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--background)", border: "1.5px solid var(--border)", color: "var(--fg-2)", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>Cancel</button>
-          <button type="submit" disabled={busy || !eName.trim()} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--school-bg)", border: "none", color: "#fff", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT, opacity: busy ? 0.6 : 1 }}>Save</button>
+          <button type="button" onClick={() => setEditing(false)} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--background)", border: "1.5px solid var(--border)", color: "var(--fg-2)", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>{msg.common.cancel}</button>
+          <button type="submit" disabled={busy || !eName.trim()} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--school-bg)", border: "none", color: "#fff", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT, opacity: busy ? 0.6 : 1 }}>{msg.common.save}</button>
         </div>
       </form>
     );
@@ -364,30 +371,30 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: first ? "none" : "1px solid var(--border-soft)", opacity: busy ? 0.6 : 1 }}>
-      <button onClick={onToggle} aria-label={isDone ? "Mark as not done" : "Mark as done"} style={{
+      <button onClick={onToggle} aria-label={isDone ? t.markNotDone : t.markDone} style={{
         width: 28, height: 28, borderRadius: "50%", flexShrink: 0, cursor: "pointer",
         border: isDone ? "none" : "2px solid var(--accent-border)", background: isDone ? "#16A34A" : "var(--surface)",
         color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, padding: 0,
       }}>{isDone ? "✓" : ""}</button>
-      <div style={{ width: 34, height: 34, borderRadius: 10, background: meta.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }} title={meta.label}>
+      <div style={{ width: 34, height: 34, borderRadius: 10, background: meta.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }} title={t.kinds[item.schoolKind ?? "OTHER"]}>
         {meta.icon}
       </div>
-      <div onClick={startEdit} role={canEdit ? "button" : undefined} title={canEdit ? "Tap to change" : undefined} style={{ flex: 1, minWidth: 0, cursor: canEdit ? "pointer" : "default" }}>
+      <div onClick={startEdit} role={canEdit ? "button" : undefined} title={canEdit ? t.tapToChange : undefined} style={{ flex: 1, minWidth: 0, cursor: canEdit ? "pointer" : "default" }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: isDone ? "var(--subtle)" : "var(--fg)", lineHeight: 1.3, textDecoration: isDone ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis" }}>
           {item.subject ? <span style={{ color: isDone ? "var(--subtle)" : meta.color }}>{item.subject} · </span> : null}{item.name}
         </div>
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
           <span style={{ color: toneColor, fontWeight: 700 }}>{cd.text}</span>
-          {" · "}{new Date(item.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+          {" · "}{new Date(item.date).toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" })}
           {showOwner && item.assignedUser?.name ? ` · ${item.assignedUser.name}` : ""}
           {item.imported && <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, padding: "1px 6px", borderRadius: 6, background: "var(--tint-success)", color: "var(--success)" }}>SchoolSoft</span>}
         </div>
         {item.note && !isDone && <div style={{ fontSize: 12, color: "var(--subtle)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.note}</div>}
       </div>
-      <button onClick={onCalendar} title={item.showInCalendar ? "Shown in calendar — tap to hide" : "Hidden from calendar — tap to show"} aria-label="Toggle calendar" style={{
+      <button onClick={onCalendar} title={item.showInCalendar ? t.shownInCalendar : t.hiddenFromCalendar} aria-label={t.toggleCalendar} style={{
         background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4, opacity: item.showInCalendar ? 1 : 0.25, filter: item.showInCalendar ? "none" : "grayscale(1)",
       }}>📅</button>
-      {canDelete && <button onClick={onDelete} aria-label="Remove" style={{ background: "none", border: "none", color: "var(--faint)", fontSize: 18, cursor: "pointer", padding: 4, lineHeight: 1 }}>×</button>}
+      {canDelete && <button onClick={onDelete} aria-label={msg.common.remove} style={{ background: "none", border: "none", color: "var(--faint)", fontSize: 18, cursor: "pointer", padding: 4, lineHeight: 1 }}>×</button>}
     </div>
   );
 }

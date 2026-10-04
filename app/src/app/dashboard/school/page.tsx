@@ -8,6 +8,7 @@ import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import SchoolSection from "@/components/SchoolSection";
 import SchoolSoftCard from "@/components/SchoolSoftCard";
+import { useM } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -56,6 +57,7 @@ function SchoolPageInner() {
 
   const [trial, setTrial] = useState<TrialInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const t = useM().school;
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -77,7 +79,7 @@ function SchoolPageInner() {
   if (status === "loading" || loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading school…</div>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>{t.pageLoadingSchool}</div>
       </div>
     );
   }
@@ -87,12 +89,12 @@ function SchoolPageInner() {
       <Screen onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Set up your household first</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>{t.setUpHousehold}</h2>
           <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>
-            School needs a household to belong to.
+            {t.needsHousehold}
           </p>
           <Link href="/dashboard/family" style={{ display: "inline-flex", background: "var(--ink)", color: "#fff", borderRadius: 50, padding: "14px 28px", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
-            Go to Family →
+            {t.goToFamily}
           </Link>
         </div>
       </Screen>
@@ -103,7 +105,7 @@ function SchoolPageInner() {
   if (!trial.isPro && !trial.trialActive) {
     return (
       <Screen onBack={() => router.push("/dashboard")}>
-        <UpgradeGate feature="Homework & tests" emoji="📚" description="Keep track of homework and tests for every child — they see theirs first thing when they log in. Try it free for 14 days." />
+        <UpgradeGate feature={t.feature} emoji="📚" description={t.gateDescription} />
       </Screen>
     );
   }
@@ -114,13 +116,13 @@ function SchoolPageInner() {
   return (
     <Screen onBack={() => router.push("/dashboard")}>
       <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 20 }}>
-        Upcoming homework and tests for the whole family. Tick them off when done, and choose per item whether it shows in the calendar. Children see theirs first thing when they log in.
+        {t.intro}
       </div>
       {/* 2026-10-03: SchoolSoft import per child (adults only — the card hides itself otherwise). */}
       <SchoolSoftCard />
       {members.length === 0 ? (
         <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
-          Add someone in Family before creating school items.
+          {t.addSomeoneFirst}
         </div>
       ) : (
         <SchoolSection mode="overview" members={members} initialDate={dateFromQuery} />
@@ -130,14 +132,15 @@ function SchoolPageInner() {
 }
 
 function Screen({ onBack, children }: { onBack: () => void; children: React.ReactNode }) {
+  const m = useM();
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
       <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
+          <button onClick={onBack} aria-label={m.common.back} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>📚 School</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>{m.school.header}</h1>
           <HamburgerMenu />
         </div>
       </div>

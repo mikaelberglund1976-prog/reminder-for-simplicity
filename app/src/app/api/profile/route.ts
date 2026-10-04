@@ -1,3 +1,4 @@
+import { getUserHouseholdLanguage } from "@/lib/i18n/server";
 import { NAV_APPS, serializeNavTabs } from "@/lib/navTabs";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -67,7 +68,9 @@ export async function GET() {
   // and is missing (falsely showing "Change password") after logging in via
   // the "pin" or "credentials" provider on a Google-linked account.
   const { password, ...rest } = user;
-  return NextResponse.json({ ...rest, hasPassword: !!password });
+  // 2026-10-04: the family's language, so every device follows it.
+  const language = await getUserHouseholdLanguage(user.id);
+  return NextResponse.json({ ...rest, hasPassword: !!password, language });
 }
 
 // PUT /api/profile — update user profile

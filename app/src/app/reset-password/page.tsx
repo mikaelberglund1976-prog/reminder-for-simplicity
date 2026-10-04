@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -16,17 +17,19 @@ function ResetPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const { m: msg, err } = useI18n();
+  const t = msg.auth;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
     if (!token) {
-      setError("This reset link is missing its token. Request a new one.");
+      setError(t.missingToken);
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords don't match.");
+      setError(t.noMatch);
       return;
     }
 
@@ -39,13 +42,13 @@ function ResetPasswordContent() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Please try again.");
+        setError(data.error ? err(data.error) : t.tryAgain);
       } else {
         setDone(true);
         setTimeout(() => router.push("/login"), 2500);
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t.tryAgain);
     } finally {
       setLoading(false);
     }
@@ -62,10 +65,10 @@ function ResetPasswordContent() {
 
         <div style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
-            Choose a new password
+            {t.newPasswordTitle}
           </h1>
           <p style={{ fontSize: 15, color: "var(--fg-2)", margin: "8px 0 0" }}>
-            Must be at least 8 characters, with an uppercase letter and a number.
+            {t.passwordRules}
           </p>
         </div>
 
@@ -83,15 +86,15 @@ function ResetPasswordContent() {
             background: "var(--tint-success)", border: "1px solid var(--tint-success)", color: "var(--success)",
             borderRadius: 12, padding: "16px", fontSize: 14, lineHeight: 1.6,
           }}>
-            Password updated! Redirecting you to log in…
+            {t.passwordUpdated}
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>New password</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>{t.newPassword}</div>
               <input
                 type="password"
-                placeholder="New password"
+                placeholder={t.newPassword}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -100,10 +103,10 @@ function ResetPasswordContent() {
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>Confirm password</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", marginBottom: 10 }}>{t.confirmPassword}</div>
               <input
                 type="password"
-                placeholder="Confirm password"
+                placeholder={t.confirmPassword}
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 required
@@ -124,14 +127,14 @@ function ResetPasswordContent() {
                 fontFamily: FONT, transition: "all 0.15s",
               }}
             >
-              {loading ? "Saving…" : "Save new password"}
+              {loading ? msg.common.saving : t.saveNewPassword}
             </button>
           </form>
         )}
 
         <p style={{ textAlign: "center", fontSize: 14, color: "var(--fg-2)", marginTop: 24 }}>
           <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            Back to log in
+            {t.backToLogin}
           </Link>
         </p>
 
@@ -150,10 +153,11 @@ function ResetPasswordContent() {
 }
 
 export default function ResetPasswordPage() {
+  const { m } = useI18n();
   return (
     <Suspense fallback={
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <span style={{ color: "var(--muted)", fontSize: 15 }}>Reminder for Simplicity is thinking…</span>
+        <span style={{ color: "var(--muted)", fontSize: 15 }}>{m.home.thinking}</span>
       </div>
     }>
       <ResetPasswordContent />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useM } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -31,11 +32,12 @@ export default function ListAccessPanel({
   onToggleMember: (userId: string) => void;
 }) {
   const [nameDraft, setNameDraft] = useState(listName);
+  const t = useM().components.listAccess;
 
   return (
     <div style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--border)", padding: "14px", marginBottom: 18, fontFamily: FONT }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: "var(--subtle)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-        List name
+        {t.listName}
       </div>
       <input
         value={nameDraft}
@@ -46,18 +48,18 @@ export default function ListAccessPanel({
       />
 
       <div style={{ fontSize: 11, fontWeight: 700, color: "var(--subtle)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-        Who can see this list
+        {t.whoCanSee}
       </div>
 
       {!canEditAccess ? (
         <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
-          {visibleToAll ? "Everyone in the family." : "Only some family members — ask an owner or parent to change this."}
+          {visibleToAll ? t.everyoneInFamily : t.onlySome}
         </div>
       ) : (
         <>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--fg)", cursor: "pointer", marginBottom: visibleToAll ? 0 : 10 }}>
             <input type="checkbox" checked={visibleToAll} onChange={(e) => onToggleVisibleToAll(e.target.checked)} style={{ width: 16, height: 16 }} />
-            Everyone in the family
+            {t.everyoneCheckbox}
           </label>
 
           {!visibleToAll && (

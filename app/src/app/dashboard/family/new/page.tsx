@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Avatar from "@/components/Avatar";
+import { useI18n } from "@/lib/i18n/client";
+import { weekdayName } from "@/lib/i18n/format";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -13,14 +15,9 @@ function IcBack() { return <svg width={20} height={20} viewBox="0 0 24 24" {...S
 type Member = { id: string; name: string; role: string; memberId?: string };
 type BookingCategory = "CHORE" | "TRAINING";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_NUMS = [1, 2, 3, 4, 5, 6, 0]; // JS getDay: 0=Sun, mapped to index
 
-const CHORE_TEMPLATES = [
-  "Clean your room", "Empty the dishwasher", "Take out the trash",
-  "Set the table", "Pack your gym bag", "Do your homework",
-  "Feed the pet", "Make your bed", "Tidy your desk",
-];
+// Suggestions (chores / activities) live in messages.newBooking.
 
 // 2026-07-28: trainings/practices as a recurring booking assigned to a
 // child — Mikael's request was "like a normal booking, Karate, then set it
@@ -31,15 +28,14 @@ const CHORE_TEMPLATES = [
 // ... scouter, teater eller liknande") — first six shown (.slice(0,6) below)
 // deliberately mix sport and non-sport so the suggestions themselves signal
 // this isn't just a sports-practice tracker.
-const TRAINING_TEMPLATES = [
-  "Karate", "Scouts", "Dance class", "Football practice", "Theater/Drama", "Piano lesson",
-  "Swimming", "Choir", "Gymnastics", "Chess club", "Ice hockey", "Riding lesson",
-];
 
 function NewBookingContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { m: msg, locale, err } = useI18n();
+  const t = msg.newBooking;
+  const DAYS = DAY_NUMS.map((n) => weekdayName(locale, n));
   // Locked for the lifetime of this form — set once from the entry point
   // (URL `?type=`), never toggled by the user. See the 2026-08-18 note below.
   const [category] = useState<BookingCategory>(
@@ -100,9 +96,9 @@ function NewBookingContent() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setError(isTraining ? "Name is required" : "Chore name is required"); return; }
-    if (assignees.length === 0) { setError("Pick at least one person"); return; }
-    if (recurrence === "DAYS" && selectedDays.length === 0) { setError("Select at least one day"); return; }
+    if (!name.trim()) { setError(isTraining ? t.nameRequired : t.choreNameRequired); return; }
+    if (assignees.length === 0) { setError(t.pickPerson); return; }
+    if (recurrence === "DAYS" && selectedDays.length === 0) { setError(t.pickDay); return; }
 
     setSaving(true);
     setError("");
@@ -131,11 +127,11 @@ function NewBookingContent() {
         router.push(isTraining ? "/dashboard/training" : "/dashboard/family");
       } else {
         const d = await res.json();
-        setError(d.error ?? "Something went wrong");
+        setError(d.error ? err(d.error) : msg.common.somethingWentWrong);
       }
     } catch (e) {
       console.error(e);
-      setError("Network error");
+      setError(msg.common.networkError);
     } finally {
       setSaving(false);
     }
@@ -157,10 +153,10 @@ function NewBookingContent() {
       {/* Header */}
       <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
+          <button onClick={() => router.back()} aria-label={msg.common.back} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0 }}>{isTraining ? "New activity" : "New chore"}</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0 }}>{isTraining ? t.newActivity : t.newChore}</h1>
         </div>
       </div>
 
@@ -179,23 +175,23 @@ function NewBookingContent() {
             background: "var(--surface-3)", borderRadius: 999, padding: "6px 14px",
           }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "var(--fg-2)" }}>
-              {isTraining ? "🎯 New activity" : "🧹 New chore"}
+              {isTraining ? t.newActivityChip : t.newChoreChip}
             </span>
           </div>
 
           {/* Name */}
           <div>
-            <label style={label}>{isTraining ? "What is it?" : "Chore name"}</label>
+            <label style={label}>{isTraining ? t.whatIsIt : t.choreName}</label>
             <input value={name} onChange={e => setName(e.target.value)}
-              placeholder={isTraining ? "e.g. Karate, Scouts, Theater…" : "e.g. Clean your room"}
+              placeholder={isTraining ? t.activityPlaceholder : t.chorePlaceholder}
               style={inp} autoFocus />
             {/* Suggestions */}
             {!name && (
               <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 7 }}>
-                {(isTraining ? TRAINING_TEMPLATES : CHORE_TEMPLATES).slice(0, 6).map(t => (
-                  <button key={t} type="button" onClick={() => setName(t)}
+                {(isTraining ? t.activityTemplates : t.choreTemplates).slice(0, 6).map(s => (
+                  <button key={s} type="button" onClick={() => setName(s)}
                     style={{ background: "var(--surface-3)", border: "none", borderRadius: 50, padding: "7px 14px", fontSize: 12, fontWeight: 600, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}>
-                    {t}
+                    {s}
                   </button>
                 ))}
               </div>
@@ -205,10 +201,10 @@ function NewBookingContent() {
           {/* Assigned to — 2026-09-28: pick one or more people (row 46);
               anyone in the family, children and adults (row 43). */}
           <div>
-            <label style={label}>Who? <span style={{ fontWeight: 400, color: "var(--subtle)" }}>(pick one or more)</span></label>
+            <label style={label}>{t.who} <span style={{ fontWeight: 400, color: "var(--subtle)" }}>{t.pickOneOrMore}</span></label>
             {members.length === 0 ? (
               <div style={{ background: "var(--tint-warning)", borderRadius: 12, padding: 14, fontSize: 13, color: "var(--warning)" }}>
-                No family members yet. <a href="/dashboard/family/members" style={{ color: "var(--warning)", fontWeight: 700 }}>Add someone first →</a>
+                {t.noMembers} <a href="/dashboard/family/members" style={{ color: "var(--warning)", fontWeight: 700 }}>{t.addSomeoneFirst}</a>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -225,7 +221,7 @@ function NewBookingContent() {
                       }}>
                       <Avatar userId={c.id} name={c.name} size={32} />
                       <span style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)", flex: 1 }}>{c.name}</span>
-                      <span style={{ fontSize: 11, color: "var(--subtle)", fontWeight: 600 }}>{c.role === "CHILD" ? "Child" : "Adult"}</span>
+                      <span style={{ fontSize: 11, color: "var(--subtle)", fontWeight: 600 }}>{c.role === "CHILD" ? t.child : t.adult}</span>
                       <span style={{
                         width: 22, height: 22, borderRadius: 6, flexShrink: 0,
                         border: on ? "none" : "1.5px solid var(--border)", background: on ? "var(--accent-bg)" : "transparent",
@@ -236,7 +232,7 @@ function NewBookingContent() {
                 })}
                 {assignees.length > 1 && (
                   <div style={{ fontSize: 12, color: "var(--muted)", padding: "2px 2px 0" }}>
-                    Everyone you picked gets it in their own list and calendar.
+                    {t.everyonePicked}
                   </div>
                 )}
               </div>
@@ -245,9 +241,9 @@ function NewBookingContent() {
 
           {/* Frequency */}
           <div>
-            <label style={label}>How often?</label>
+            <label style={label}>{t.howOften}</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
-              {([["DAILY", "Every day"], ["WEEKLY", "Once a week"], ["DAYS", "Specific days"]] as const).map(([val, lbl]) => (
+              {([["DAILY", t.everyDay], ["WEEKLY", t.onceAWeek], ["DAYS", t.specificDays]] as const).map(([val, lbl]) => (
                 <button key={val} type="button" onClick={() => setRecurrence(val)}
                   style={{
                     padding: "10px 8px", borderRadius: 12, fontSize: 12, fontWeight: 700,
@@ -263,7 +259,7 @@ function NewBookingContent() {
 
             {recurrence === "WEEKLY" && (
               <>
-                <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, marginBottom: 6 }}>Which day?</div>
+                <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, marginBottom: 6 }}>{t.whichDay}</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {DAYS.map((d, i) => {
                     const num = DAY_NUMS[i];
@@ -310,7 +306,7 @@ function NewBookingContent() {
 
           {/* Start date */}
           <div>
-            <label style={label}>Start date</label>
+            <label style={label}>{t.startDate}</label>
             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
               style={inp} />
           </div>
@@ -320,9 +316,9 @@ function NewBookingContent() {
             <div style={{ background: "var(--surface)", borderRadius: 14, border: "1.5px solid var(--border)", padding: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>Requires adult approval</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{t.requiresApproval}</div>
                   <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
-                    Child marks done → you approve it
+                    {t.approvalHint}
                   </div>
                 </div>
                 <button type="button" onClick={() => setRequiresApproval(p => !p)}
@@ -345,9 +341,9 @@ function NewBookingContent() {
 
           {/* Notes (optional) */}
           <div>
-            <label style={label}>Notes <span style={{ fontWeight: 400, color: "var(--subtle)" }}>(optional)</span></label>
+            <label style={label}>{t.notes} <span style={{ fontWeight: 400, color: "var(--subtle)" }}>{t.optional}</span></label>
             <textarea value={note} onChange={e => setNote(e.target.value)}
-              placeholder={isTraining ? "e.g. location, leader, what to bring…" : "Any extra instructions for the child…"}
+              placeholder={isTraining ? t.activityNotePlaceholder : t.choreNotePlaceholder}
               rows={3}
               style={{ ...inp, resize: "none" as const }} />
           </div>
@@ -366,7 +362,7 @@ function NewBookingContent() {
               padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer",
               fontFamily: FONT, opacity: saving || !name.trim() || assignees.length === 0 ? 0.6 : 1,
             }}>
-            {saving ? "Saving…" : isTraining ? "Save activity" : "Save chore"}
+            {saving ? msg.common.saving : isTraining ? t.saveActivity : t.saveChore}
           </button>
         </form>
       </main>
@@ -375,10 +371,11 @@ function NewBookingContent() {
 }
 
 export default function NewBookingPage() {
+  const { m } = useI18n();
   return (
     <Suspense fallback={
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "var(--muted)" }}>Loading…</div>
+        <div style={{ color: "var(--muted)" }}>{m.common.loading}</div>
       </div>
     }>
       <NewBookingContent />

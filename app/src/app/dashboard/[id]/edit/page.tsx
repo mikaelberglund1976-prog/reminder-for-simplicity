@@ -3,45 +3,19 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
-const CATEGORIES = [
-  { value: "SUBSCRIPTION", label: "Subscription" },
-  { value: "BIRTHDAY",     label: "Birthday" },
-  { value: "INSURANCE",    label: "Insurance" },
-  { value: "CONTRACT",     label: "Contract" },
-  { value: "BILL",         label: "Bill" },
-  { value: "HEALTH",       label: "Health" },
-  { value: "OTHER",        label: "Other" },
-];
-
-const RECURRENCES_MAIN = [
-  { value: "ONCE",    label: "Once" },
-  { value: "MONTHLY", label: "Monthly" },
-  { value: "YEARLY",  label: "Yearly" },
-];
-
-const RECURRENCES_MORE = [
-  { value: "DAILY",  label: "Daily" },
-  { value: "WEEKLY", label: "Weekly" },
-];
-
-const REMINDER_DAYS = [
-  { value: "1",  label: "1 day before" },
-  { value: "3",  label: "3 days before" },
-  { value: "7",  label: "7 days before" },
-  { value: "14", label: "14 days before" },
-  { value: "30", label: "30 days before" },
-];
+// Labels come from messages.reminders / messages.reminderForm (2026-10-04).
+const CATEGORIES = ["SUBSCRIPTION", "BIRTHDAY", "INSURANCE", "CONTRACT", "BILL", "HEALTH", "OTHER"].map((value) => ({ value }));
+const RECURRENCES_MAIN = ["ONCE", "MONTHLY", "YEARLY"].map((value) => ({ value }));
+const RECURRENCES_MORE = ["DAILY", "WEEKLY"].map((value) => ({ value }));
+const REMINDER_DAYS = ["1", "3", "7", "14", "30"].map((value) => ({ value }));
 
 const CURRENCIES = ["SEK", "EUR", "USD", "GBP", "NOK", "DKK"];
 
-const VISIBILITY_OPTIONS = [
-  { value: "PRIVATE",   label: "Just me" },
-  { value: "HOUSEHOLD", label: "All" },
-  { value: "PARENTS",   label: "Parents" },
-];
+const VISIBILITY_OPTIONS = ["PRIVATE", "HOUSEHOLD", "PARENTS"].map((value) => ({ value }));
 
 type FormState = {
   name: string; category: string; date: string; recurrence: string;
@@ -77,6 +51,8 @@ export default function EditReminderPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
+  const { m: msg, err: tErr } = useI18n();
+  const t = msg.reminderForm;
 
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
@@ -147,11 +123,11 @@ export default function EditReminderPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Something went wrong.");
+        throw new Error(data.error ? tErr(data.error) : t.somethingWrong);
       }
       router.push("/dashboard/" + id);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(err instanceof Error ? err.message : t.somethingWrong);
     } finally {
       setSaving(false);
     }
@@ -160,7 +136,7 @@ export default function EditReminderPage() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <span style={{ color: "var(--muted)", fontSize: 15 }}>Reminder for Simplicity is thinking…</span>
+        <span style={{ color: "var(--muted)", fontSize: 15 }}>{msg.home.thinking}</span>
       </div>
     );
   }
@@ -183,7 +159,7 @@ export default function EditReminderPage() {
           <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Back
+          {t.back}
         </Link>
       </div>
 
@@ -192,10 +168,10 @@ export default function EditReminderPage() {
         {/* Title */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
-            Edit reminder
+            {t.editTitle}
           </h1>
           <p style={{ fontSize: 14, color: "var(--muted)", margin: "6px 0 0", lineHeight: 1.5 }}>
-            Update the details below and save.
+            {t.editIntro}
           </p>
         </div>
 
@@ -208,13 +184,13 @@ export default function EditReminderPage() {
         <form onSubmit={handleSubmit}>
 
           {/* Name */}
-          <Section label="Name">
+          <Section label={t.name}>
             <input type="text" value={form.name} onChange={e => set("name", e.target.value)}
-              placeholder="e.g. Spotify, Netflix, Mom's" required style={inputStyle} />
+              placeholder={t.editNamePlaceholder} required style={inputStyle} />
           </Section>
 
           {/* Category */}
-          <Section label="Category">
+          <Section label={t.category}>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {CATEGORIES.map(cat => (
                 <button key={cat.value} type="button" onClick={() => set("category", cat.value)} style={pillStyle(form.category === cat.value)}>
@@ -223,14 +199,14 @@ export default function EditReminderPage() {
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   )}
-                  {cat.label}
+                  {msg.reminders.categories[cat.value]}
                 </button>
               ))}
             </div>
           </Section>
 
           {/* Date */}
-          <Section label="Date *">
+          <Section label={t.date}>
             <div style={{ position: "relative" }}>
               <input type="date" value={form.date} onChange={e => set("date", e.target.value)}
                 required style={{ ...inputStyle, paddingRight: 44 }} />
@@ -243,7 +219,7 @@ export default function EditReminderPage() {
           </Section>
 
           {/* Recurrence */}
-          <Section label="Recurrence">
+          <Section label={t.recurrence}>
             <div style={{ display: "flex", gap: 0, background: "var(--surface-3)", borderRadius: 50, padding: 3, width: "fit-content", alignItems: "center" }}>
               {allRec.map(rec => (
                 <button key={rec.value} type="button" onClick={() => set("recurrence", rec.value)} style={{
@@ -253,7 +229,7 @@ export default function EditReminderPage() {
                   color: form.recurrence === rec.value ? "#fff" : "var(--muted)",
                   transition: "all 0.15s",
                 }}>
-                  {rec.label}
+                  {msg.reminders.recurrence[rec.value]}
                 </button>
               ))}
               <button type="button" onClick={() => setShowMoreRec(v => !v)} style={{
@@ -270,11 +246,11 @@ export default function EditReminderPage() {
           </Section>
 
           {/* Remind me + currency */}
-          <Section label="Remind me">
+          <Section label={t.remindMe}>
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ position: "relative", flex: 1 }}>
                 <select value={form.reminderDaysBefore} onChange={e => set("reminderDaysBefore", e.target.value)} style={dropdownStyle}>
-                  {REMINDER_DAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                  {REMINDER_DAYS.map(d => <option key={d.value} value={d.value}>{t.remindDays[d.value]}</option>)}
                 </select>
                 <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted)" }}>
                   <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
@@ -292,7 +268,7 @@ export default function EditReminderPage() {
           </Section>
 
           {/* Amount */}
-          <Section label="Amount">
+          <Section label={t.amount}>
             <div style={{ display: "flex", gap: 10 }}>
               <input type="number" value={form.amount} onChange={e => set("amount", e.target.value)}
                 placeholder="0" min="0" step="0.01" style={{ ...inputStyle, width: 110, flexShrink: 0 }} />
@@ -302,7 +278,7 @@ export default function EditReminderPage() {
 
           {/* Visibility — only if Pro household */}
           {hasProHousehold && (
-            <Section label="Visible to">
+            <Section label={t.visibleTo}>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {VISIBILITY_OPTIONS.map(opt => (
                   <button key={opt.value} type="button" onClick={() => set("visibility", opt.value)} style={pillStyle(form.visibility === opt.value)}>
@@ -311,14 +287,14 @@ export default function EditReminderPage() {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     )}
-                    {opt.label}
+                    {t.visibilityOptions[opt.value]}
                   </button>
                 ))}
               </div>
               <p style={{ fontSize: 12, color: "var(--subtle)", margin: "8px 0 0" }}>
-                {form.visibility === "PRIVATE" && "Only you will see this reminder."}
-                {form.visibility === "HOUSEHOLD" && "All household members will see this."}
-                {form.visibility === "PARENTS" && "Only parents and adults in the household will see this."}
+                {form.visibility === "PRIVATE" && t.visPrivateReminder}
+                {form.visibility === "HOUSEHOLD" && t.visHousehold}
+                {form.visibility === "PARENTS" && t.visParents}
               </p>
             </Section>
           )}
@@ -326,7 +302,7 @@ export default function EditReminderPage() {
           {/* Notes */}
           <Section label="">
             <textarea value={form.note} onChange={e => set("note", e.target.value)}
-              placeholder="Optional notes..." rows={3}
+              placeholder={t.notesPlaceholder} rows={3}
               style={{ ...inputStyle, resize: "none" as const, lineHeight: 1.5, fontFamily: FONT }} />
           </Section>
 
@@ -339,7 +315,7 @@ export default function EditReminderPage() {
               cursor: saving ? "not-allowed" : "pointer",
               boxShadow: "0 1px 4px rgba(0,0,0,0.06)", fontFamily: FONT,
             }}>
-              {saving ? "Saving…" : "Save changes"}
+              {saving ? msg.common.saving : t.saveChanges}
             </button>
           </div>
 

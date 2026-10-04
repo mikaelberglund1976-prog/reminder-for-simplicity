@@ -7,6 +7,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -26,6 +27,8 @@ function VerifyEmailInner() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);
+  const { m: msg, err } = useI18n();
+  const t = msg.auth;
 
   // Guard against the effect running twice (React strict mode / fast
   // re-renders) — the second run would find the token already used.
@@ -33,13 +36,13 @@ function VerifyEmailInner() {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    if (!token) { setState("error"); setError("This link is missing its token."); return; }
+    if (!token) { setState("error"); setError(t.linkMissingToken); return; }
     (async () => {
       const res = await fetch("/api/auth/verify-email", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, check: true }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setState("error"); setError(data.error ?? "This link doesn't work."); return; }
+      if (!res.ok) { setState("error"); setError(data.error ? err(data.error) : t.linkDoesntWork); return; }
       setInfo(data);
       if (data.needsPassword) setState("password");
       else await submit();
@@ -56,7 +59,7 @@ function VerifyEmailInner() {
     const data = await res.json().catch(() => ({}));
     setSaving(false);
     if (!res.ok) {
-      setError(data.error ?? "Something went wrong.");
+      setError(data.error ? err(data.error) : t.somethingWrong);
       if (!pw) setState("error");
       return;
     }
@@ -66,7 +69,7 @@ function VerifyEmailInner() {
 
   function handlePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (password !== confirm) { setError("Passwords don't match."); return; }
+    if (password !== confirm) { setError(t.noMatch); return; }
     submit(password);
   }
 
@@ -74,29 +77,29 @@ function VerifyEmailInner() {
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
       <div style={{ maxWidth: 400, width: "100%", margin: "0 auto", textAlign: state === "password" ? "left" : "center" }}>
         {(state === "checking" || state === "confirming") && (
-          <p style={{ color: "var(--muted)", fontSize: 15 }}>Confirming your email…</p>
+          <p style={{ color: "var(--muted)", fontSize: 15 }}>{t.confirming}</p>
         )}
 
         {state === "error" && (
           <>
             <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-            <h1 style={titleStyle}>Link not valid</h1>
+            <h1 style={titleStyle}>{t.linkNotValid}</h1>
             <p style={textStyle}>{error}</p>
-            <Link href="/login" style={buttonStyle}>Go to login</Link>
+            <Link href="/login" style={buttonStyle}>{t.goToLogin}</Link>
           </>
         )}
 
         {state === "password" && (
           <form onSubmit={handlePassword}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>👋</div>
-            <h1 style={titleStyle}>Welcome{info?.name ? `, ${info.name.split(" ")[0]}` : ""}!</h1>
-            <p style={textStyle}>Choose a password for <strong>{info?.email}</strong>. You'll use it to log in.</p>
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required style={inputStyle} />
-            <input type="password" placeholder="Repeat password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required style={inputStyle} />
-            <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 16px" }}>At least 8 characters, one uppercase letter and one number.</p>
+            <h1 style={titleStyle}>{t.welcomeName(info?.name ? info.name.split(" ")[0] : null)}</h1>
+            <p style={textStyle}>{t.choosePassword1}<strong>{info?.email}</strong>{t.choosePassword2}</p>
+            <input type="password" placeholder={msg.common.password} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required style={inputStyle} />
+            <input type="password" placeholder={t.repeatPassword} value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required style={inputStyle} />
+            <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 16px" }}>{t.passwordRulesShort}</p>
             {error && <div style={{ background: "var(--tint-danger)", border: "1px solid var(--border-danger)", color: "var(--danger)", borderRadius: 12, padding: "12px 16px", fontSize: 14, marginBottom: 16 }}>{error}</div>}
             <button type="submit" disabled={saving} style={{ ...buttonStyle, width: "100%", border: "none", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
-              {saving ? "Saving…" : "Save password & continue"}
+              {saving ? msg.common.saving : t.savePasswordContinue}
             </button>
           </form>
         )}
@@ -104,14 +107,14 @@ function VerifyEmailInner() {
         {state === "done" && (
           <>
             <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-            <h1 style={titleStyle}>Email confirmed</h1>
+            <h1 style={titleStyle}>{t.confirmedTitle}</h1>
             <p style={textStyle}>
               {info?.pendingApproval
-                ? "Thanks! Your account is still waiting for admin approval — you'll get an email as soon as you can log in."
-                : "You're all set. Log in to get started."}
+                ? t.confirmedPending
+                : t.confirmedReady}
             </p>
             {!info?.pendingApproval && (
-              <Link href={`/login?verified=1&email=${encodeURIComponent(info?.email ?? "")}`} style={buttonStyle}>Log in</Link>
+              <Link href={`/login?verified=1&email=${encodeURIComponent(info?.email ?? "")}`} style={buttonStyle}>{msg.common.logIn}</Link>
             )}
           </>
         )}

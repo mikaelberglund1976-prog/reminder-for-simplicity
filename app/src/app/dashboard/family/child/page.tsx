@@ -19,6 +19,10 @@ import AvatarPicker from "@/components/AvatarPicker";
 import Avatar from "@/components/Avatar";
 import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
 import { withNextDate } from "@/lib/recurrence";
+import { useI18n } from "@/lib/i18n/client";
+import { weekdayName } from "@/lib/i18n/format";
+import type { Messages } from "@/lib/i18n/messages";
+import type { Locale } from "@/lib/i18n/config";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -39,13 +43,13 @@ type SharedReminder = { id: string; name: string; date: string; category: string
 
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function daysUntil(dateStr: string) { return Math.round((startOfDay(new Date(dateStr)).getTime() - startOfDay(new Date()).getTime()) / 86400000); }
-function whenText(dateStr: string) {
+function whenText(dateStr: string, m: Messages, dateLocale: string) {
   const d = daysUntil(dateStr);
-  if (d < 0) return "Overdue";
-  if (d === 0) return "Today";
-  if (d === 1) return "Tomorrow";
-  if (d <= 6) return new Date(dateStr).toLocaleDateString("en-GB", { weekday: "long" });
-  return new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  if (d < 0) return m.reminders.overdue;
+  if (d === 0) return m.common.today;
+  if (d === 1) return m.common.tomorrow;
+  if (d <= 6) return new Date(dateStr).toLocaleDateString(dateLocale, { weekday: "long" });
+  return new Date(dateStr).toLocaleDateString(dateLocale, { day: "numeric", month: "short" });
 }
 
 const SECTION_LABEL: React.CSSProperties = { fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 };
@@ -55,6 +59,8 @@ function ChildViewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const media = useFamilyMedia();
+  const { m: msg, locale, dateLocale, err } = useI18n();
+  const t = msg.childHome;
   const myId = session?.user?.id;
   const childId = searchParams.get("id") ?? myId;
   const isOwn = !!myId && childId === myId;
@@ -138,9 +144,9 @@ function ChildViewContent() {
         await fetchChores();
       } else {
         const data = await res.json().catch(() => ({}));
-        setAddError(data?.error ?? "Could not add chore");
+        setAddError(data?.error ? err(data.error) : t.couldNotAdd);
       }
-    } catch { setAddError("Something went wrong"); }
+    } catch { setAddError(msg.common.somethingWentWrong); }
     finally { setAdding(false); }
   }
 
@@ -156,7 +162,7 @@ function ChildViewContent() {
   if (status === "loading" || loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading your week…</div>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>{t.loading}</div>
       </div>
     );
   }
@@ -188,18 +194,18 @@ function ChildViewContent() {
 
   const tiles: { id: string; emoji: string; value: string; label: string; sub: string; tint: string; color: string }[] = [
     {
-      id: "school", emoji: "📚", value: String(schoolOpen.length), label: "School",
-      sub: nextSchool ? `${nextSchool.schoolKind === "TEST" ? "Test" : "Next"} ${whenText(nextSchool.date).toLowerCase()}` : "All clear",
+      id: "school", emoji: "📚", value: String(schoolOpen.length), label: t.school,
+      sub: nextSchool ? `${nextSchool.schoolKind === "TEST" ? t.test : t.next} ${whenText(nextSchool.date, msg, dateLocale).toLowerCase()}` : t.allClear,
       tint: "var(--tint-school)", color: "var(--school)",
     },
     {
-      id: "chores", emoji: "✅", value: access === "LOCKED" ? "–" : String(todo.length), label: todo.length === 1 ? "Chore left" : "Chores left",
-      sub: chores.length ? `${done.length} of ${chores.length} done` : "None this week",
+      id: "chores", emoji: "✅", value: access === "LOCKED" ? "–" : String(todo.length), label: todo.length === 1 ? t.choreLeft : t.choresLeft,
+      sub: chores.length ? t.doneOf(done.length, chores.length) : t.noneThisWeek,
       tint: "var(--tint-success)", color: "var(--success)",
     },
     {
-      id: "activities", emoji: "🎯", value: String(activitiesToday.length), label: "Today",
-      sub: activitiesToday[0]?.name ?? (activities.length ? "Nothing today" : "No activities"),
+      id: "activities", emoji: "🎯", value: String(activitiesToday.length), label: t.today,
+      sub: activitiesToday[0]?.name ?? (activities.length ? t.nothingToday : t.noActivities),
       tint: "var(--tint-warning)", color: "#D85A30",
     },
   ];
@@ -213,7 +219,7 @@ function ChildViewContent() {
             myId && <AvatarPicker userId={myId} name={session?.user?.name} size={42} />
           ) : (
             <>
-              <button onClick={() => router.back()} aria-label="Back" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
+              <button onClick={() => router.back()} aria-label={msg.common.back} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
                 <IcBack />
               </button>
               {childId && <Avatar userId={childId} name={childName} size={36} />}
@@ -221,10 +227,10 @@ function ChildViewContent() {
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>
-              {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+              {new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" })}
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: 0, letterSpacing: "-0.3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {isOwn ? `Hi${firstName ? " " + firstName : ""}` : `${firstName ?? "Child"}'s week`}
+              {isOwn ? t.hi(firstName) : t.childsWeek(firstName)}
             </h1>
           </div>
           <HamburgerMenu />
@@ -242,13 +248,13 @@ function ChildViewContent() {
 
         {/* Overview — what needs doing, at a glance. */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 22 }}>
-          {tiles.map((t) => (
-            <button key={t.id} onClick={() => document.getElementById(`sec-${t.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          {tiles.map((tile) => (
+            <button key={tile.id} onClick={() => document.getElementById(`sec-${tile.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
               style={{ textAlign: "left", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 11px", cursor: "pointer", fontFamily: FONT, boxShadow: "var(--shadow)", minWidth: 0 }}>
-              <span style={{ display: "inline-flex", width: 30, height: 30, borderRadius: 9, background: t.tint, alignItems: "center", justifyContent: "center", fontSize: 15, marginBottom: 8 }}>{t.emoji}</span>
-              <div style={{ fontSize: 22, fontWeight: 800, color: t.color, lineHeight: 1 }}>{t.value}</div>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fg)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.label}</div>
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.sub}</div>
+              <span style={{ display: "inline-flex", width: 30, height: 30, borderRadius: 9, background: tile.tint, alignItems: "center", justifyContent: "center", fontSize: 15, marginBottom: 8 }}>{tile.emoji}</span>
+              <div style={{ fontSize: 22, fontWeight: 800, color: tile.color, lineHeight: 1 }}>{tile.value}</div>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fg)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tile.label}</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tile.sub}</div>
             </button>
           ))}
         </div>
@@ -260,9 +266,9 @@ function ChildViewContent() {
 
         {/* 2. Activities — today's first. */}
         <div id="sec-activities" style={{ scrollMarginTop: 80, marginBottom: 20 }}>
-          <div style={{ ...SECTION_LABEL, color: "#D85A30" }}>🎯 Activities {activities.length > 0 && `· ${activities.length}`}</div>
+          <div style={{ ...SECTION_LABEL, color: "#D85A30" }}>{t.activities} {activities.length > 0 && `· ${activities.length}`}</div>
           {activities.length === 0 ? (
-            <div style={{ fontSize: 13, color: "var(--subtle)", padding: "0 2px" }}>No activities yet.</div>
+            <div style={{ fontSize: 13, color: "var(--subtle)", padding: "0 2px" }}>{t.noActivitiesYet}</div>
           ) : (
             <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden" }}>
               {activitiesSorted.map((a, i) => {
@@ -274,8 +280,8 @@ function ChildViewContent() {
                       {a.note && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{a.note}</div>}
                     </div>
                     {today
-                      ? <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 50, background: "var(--tint-warning)", color: "var(--warning)", flexShrink: 0 }}>Today</span>
-                      : <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", flexShrink: 0 }}>{scheduleText(a)}</span>}
+                      ? <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 9px", borderRadius: 50, background: "var(--tint-warning)", color: "var(--warning)", flexShrink: 0 }}>{t.today}</span>
+                      : <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", flexShrink: 0 }}>{scheduleText(a, msg, locale)}</span>}
                   </div>
                 );
               })}
@@ -286,13 +292,13 @@ function ChildViewContent() {
         {/* 3. Chores — compact: a thin progress bar, not a big card. */}
         <div id="sec-chores" style={{ scrollMarginTop: 80, marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-            <div style={{ ...SECTION_LABEL, color: "var(--success)" }}>✅ Chores this week</div>
-            {chores.length > 0 && <div style={{ fontSize: 12, fontWeight: 700, color: pct === 100 ? "var(--success)" : "var(--muted)" }}>{pct === 100 ? "🎉 All done" : `${done.length} of ${chores.length} done`}</div>}
+            <div style={{ ...SECTION_LABEL, color: "var(--success)" }}>{t.choresThisWeek}</div>
+            {chores.length > 0 && <div style={{ fontSize: 12, fontWeight: 700, color: pct === 100 ? "var(--success)" : "var(--muted)" }}>{pct === 100 ? t.allDone : t.doneOf(done.length, chores.length)}</div>}
           </div>
 
           {access === "LOCKED" ? (
             <div style={{ background: "var(--tint-warning)", borderRadius: 14, padding: 14, fontSize: 13, color: "var(--warning)", fontWeight: 600 }}>
-              Chores are part of Pro — ask a parent.
+              {t.choresArePro}
             </div>
           ) : (
             <>
@@ -306,16 +312,16 @@ function ChildViewContent() {
                 <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", marginBottom: 8 }}>
                   {[...todo.map((c) => ({ c, s: "todo" as const })), ...pending.map((c) => ({ c, s: "pending" as const })), ...(showDone ? done.map((c) => ({ c, s: "done" as const })) : [])]
                     .map(({ c, s }, i) => (
-                      <ChoreRow key={c.id} chore={c} state={s} isFirst={i === 0} loading={toggling === c.id} onToggle={() => toggleChore(c.id)} />
+                      <ChoreRow key={c.id} m={msg} chore={c} state={s} isFirst={i === 0} loading={toggling === c.id} onToggle={() => toggleChore(c.id)} />
                     ))}
                 </div>
               )}
 
               {chores.length === 0 && !showAdd && (
-                <div style={{ fontSize: 13, color: "var(--subtle)", padding: "0 2px 8px" }}>No chores this week.</div>
+                <div style={{ fontSize: 13, color: "var(--subtle)", padding: "0 2px 8px" }}>{t.noChores}</div>
               )}
               {chores.length > 0 && todo.length === 0 && pending.length === 0 && !showDone && (
-                <div style={{ fontSize: 13, color: "var(--success)", fontWeight: 600, padding: "0 2px 8px" }}>Everything is done this week. Nice! 🎉</div>
+                <div style={{ fontSize: 13, color: "var(--success)", fontWeight: 600, padding: "0 2px 8px" }}>{t.everythingDone}</div>
               )}
 
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -323,28 +329,28 @@ function ChildViewContent() {
                   <button onClick={() => { setShowAdd(true); setAddError(null); }} style={{
                     flex: 1, padding: "11px 14px", borderRadius: 12, background: "var(--surface)", border: "1.5px dashed var(--border)",
                     color: "var(--accent-strong)", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
-                  }}>+ Add a chore</button>
+                  }}>{t.addChore}</button>
                 )}
                 {done.length > 0 && !showAdd && (
                   <button onClick={() => setShowDone((v) => !v)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT, padding: "8px 4px", flexShrink: 0 }}>
-                    {showDone ? "Hide done" : `Show done (${done.length})`}
+                    {showDone ? t.hideDone : t.showDone(done.length)}
                   </button>
                 )}
               </div>
 
               {showAdd && (
                 <form onSubmit={handleAddChore} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: 14 }}>
-                  <input type="text" placeholder="What will you do?" value={newName} onChange={(e) => setNewName(e.target.value)} disabled={adding} autoFocus style={inp} />
-                  <input type="text" placeholder="Note (optional)" value={newNote} onChange={(e) => setNewNote(e.target.value)} disabled={adding} style={inp} />
+                  <input type="text" placeholder={t.whatWillYouDo} value={newName} onChange={(e) => setNewName(e.target.value)} disabled={adding} autoFocus style={inp} />
+                  <input type="text" placeholder={t.noteOptional} value={newNote} onChange={(e) => setNewNote(e.target.value)} disabled={adding} style={inp} />
                   {addError && <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>{addError}</div>}
                   <div style={{ display: "flex", gap: 8 }}>
                     <button type="button" onClick={() => { setShowAdd(false); setNewName(""); setNewNote(""); setAddError(null); }} disabled={adding}
                       style={{ flex: 1, padding: "11px 14px", borderRadius: 12, background: "var(--background)", border: "1.5px solid var(--border)", color: "var(--fg-2)", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-                      Cancel
+                      {msg.common.cancel}
                     </button>
                     <button type="submit" disabled={adding || !newName.trim()}
                       style={{ flex: 1, padding: "11px 14px", borderRadius: 12, background: "var(--ink)", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT, opacity: adding || !newName.trim() ? 0.5 : 1 }}>
-                      {adding ? "Adding…" : "Add chore"}
+                      {adding ? msg.common.adding : t.addChoreBtn}
                     </button>
                   </div>
                 </form>
@@ -357,7 +363,7 @@ function ChildViewContent() {
             assigned to me, or that I made myself. */}
         {isOwn && sharedSoon.length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ ...SECTION_LABEL, color: "var(--accent)" }}>📌 Coming up · {sharedSoon.length}</div>
+            <div style={{ ...SECTION_LABEL, color: "var(--accent)" }}>{t.comingUp} · {sharedSoon.length}</div>
             <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden" }}>
               {sharedSoon.map((r, i) => {
                 const fromOther = r.user && r.user.id !== myId;
@@ -365,9 +371,9 @@ function ChildViewContent() {
                   <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
-                      {fromOther && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>From {r.user?.name?.split(" ")[0] ?? "family"}</div>}
+                      {fromOther && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{t.from(r.user?.name?.split(" ")[0] ?? t.family)}</div>}
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: daysUntil(r.date) <= 1 ? "var(--warning)" : "var(--muted)", flexShrink: 0 }}>{whenText(r.date)}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: daysUntil(r.date) <= 1 ? "var(--warning)" : "var(--muted)", flexShrink: 0 }}>{whenText(r.date, msg, dateLocale)}</span>
                   </div>
                 );
               })}
@@ -378,15 +384,15 @@ function ChildViewContent() {
         {/* 2026-09-29 (GDPR, launch list row 15): what the app keeps about a child. */}
         {isOwn && (
           <details style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 16px", margin: "24px 0 0", fontSize: 13.5, color: "var(--fg-2)", lineHeight: 1.55 }}>
-            <summary style={{ fontWeight: 700, color: "var(--fg)", cursor: "pointer" }}>🔒 What does the app save about me?</summary>
+            <summary style={{ fontWeight: 700, color: "var(--fg)", cursor: "pointer" }}>{t.whatSaved}</summary>
             <ul style={{ margin: "10px 0 4px", paddingLeft: 18 }}>
-              <li>Your name, your email and your password (locked so nobody can read it).</li>
-              <li>Your homework, tests, chores, activities, wishlist — and your photo if you or a parent adds one.</li>
-              <li>The grown-ups in your family can see it. Other kids and other families can&apos;t.</li>
-              <li>We never sell it and you never see ads.</li>
-              <li>If you want something removed, ask a parent — they can change or delete it.</li>
+              <li>{t.saved1}</li>
+              <li>{t.saved2}</li>
+              <li>{t.saved3}</li>
+              <li>{t.saved4}</li>
+              <li>{t.saved5}</li>
             </ul>
-            <a href="/privacy" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>The long version for grown-ups →</a>
+            <a href="/privacy" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>{t.longVersion}</a>
           </details>
         )}
       </main>
@@ -399,25 +405,24 @@ const inp: React.CSSProperties = {
   fontSize: 14, color: "var(--fg)", outline: "none", fontFamily: FONT, boxSizing: "border-box", marginBottom: 10,
 };
 
-const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-function scheduleText(a: { recurrence: string; choreRecurrenceDays: string | null }): string {
+function scheduleText(a: { recurrence: string; choreRecurrenceDays: string | null }, m: Messages, locale: Locale): string {
   if (a.choreRecurrenceDays) {
     return a.choreRecurrenceDays.split(",").map((n) => parseInt(n, 10)).filter((n) => !Number.isNaN(n))
-      .sort((x, y) => ((x + 6) % 7) - ((y + 6) % 7)).map((d) => WEEKDAY_SHORT[d]).join(", ");
+      .sort((x, y) => ((x + 6) % 7) - ((y + 6) % 7)).map((d) => weekdayName(locale, d)).join(", ");
   }
-  if (a.recurrence === "DAILY") return "Every day";
-  if (a.recurrence === "WEEKLY") return "Weekly";
-  return "Once";
+  if (a.recurrence === "DAILY") return m.childHome.everyDay;
+  if (a.recurrence === "WEEKLY") return m.reminders.recurrence.WEEKLY;
+  return m.reminders.recurrence.ONCE;
 }
 
-function ChoreRow({ chore, state, isFirst, loading, onToggle }: {
-  chore: Chore; state: "todo" | "pending" | "done"; isFirst: boolean; loading: boolean; onToggle: () => void;
+function ChoreRow({ m, chore, state, isFirst, loading, onToggle }: {
+  m: Messages; chore: Chore; state: "todo" | "pending" | "done"; isFirst: boolean; loading: boolean; onToggle: () => void;
 }) {
   const isDone = state === "done";
   const isPending = state === "pending";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop: isFirst ? "none" : "1px solid var(--border-soft)" }}>
-      <button onClick={onToggle} disabled={loading} aria-label={isDone ? "Mark as not done" : "Mark as done"}
+      <button onClick={onToggle} disabled={loading} aria-label={isDone ? m.childHome.markNotDone : m.childHome.markDone}
         style={{
           width: 32, height: 32, borderRadius: "50%", border: "none", cursor: loading ? "wait" : "pointer", flexShrink: 0,
           background: isDone ? "var(--tint-success)" : isPending ? "var(--tint-warning)" : "var(--surface-3)",
@@ -429,17 +434,18 @@ function ChoreRow({ chore, state, isFirst, loading, onToggle }: {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, color: isDone ? "var(--subtle)" : "var(--fg)", textDecoration: isDone ? "line-through" : "none" }}>{chore.name}</div>
         {chore.note && !isDone && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{chore.note}</div>}
-        {isPending && <div style={{ fontSize: 11, color: "var(--warning)", fontWeight: 600, marginTop: 2 }}>⏳ Waiting for a parent to approve</div>}
+        {isPending && <div style={{ fontSize: 11, color: "var(--warning)", fontWeight: 600, marginTop: 2 }}>{m.childHome.waitingParent}</div>}
       </div>
     </div>
   );
 }
 
 export default function ChildPage() {
+  const { m } = useI18n();
   return (
     <Suspense fallback={
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "var(--muted)" }}>Loading…</div>
+        <div style={{ color: "var(--muted)" }}>{m.common.loading}</div>
       </div>
     }>
       <ChildViewContent />

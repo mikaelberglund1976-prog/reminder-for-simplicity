@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { hasNewSince } from "@/lib/listBadges";
 import { getMe } from "@/lib/me";
 import { DEFAULT_NAV_APPS, parseNavTabs } from "@/lib/navTabs";
+import { useM } from "@/lib/i18n/client";
+import type { Messages } from "@/lib/i18n/messages";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -24,7 +26,9 @@ function IcTraining() { return <svg width={22} height={22} viewBox="0 0 24 24" {
 function IcSchool() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12.5V17c0 1.5 2.5 3 6 3s6-1.5 6-3v-4.5"/></svg>; }
 
 type TabDef = {
-  key: string; href: string; label: string;
+  key: string; href: string;
+  /** Text key in messages.nav — the label follows the family's language. */
+  label: keyof Messages["nav"];
   icon: () => React.ReactElement;
   match: (p: string) => boolean;
 };
@@ -34,7 +38,7 @@ type TabDef = {
 // handled separately below since it's always present and always first
 // (2026-10-03: Home replaced Calendar as the fixed first tab).
 const HOME_TAB: TabDef = {
-    key: "home", href: "/dashboard", label: "Home", icon: IcHome,
+    key: "home", href: "/dashboard", label: "home", icon: IcHome,
     // Anything under /dashboard that isn't one of the other apps counts as
     // "Reminders" — covers the root list plus create/edit reminder screens.
     match: (p) => p.startsWith("/dashboard") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/wishlist")
@@ -42,19 +46,19 @@ const HOME_TAB: TabDef = {
   };
 
 const APP_TABS: Record<string, TabDef> = {
-  calendar: { key: "calendar", href: "/dashboard/calendar", label: "Calendar", icon: IcCalendar, match: (p) => p.startsWith("/dashboard/calendar") },
-  "shopping-list": { key: "shopping-list", href: "/dashboard/family/shopping-list", label: "Shopping list", icon: IcCart, match: (p) => p.startsWith("/dashboard/family/shopping-list") },
-  wishlist: { key: "wishlist", href: "/dashboard/wishlist", label: "Wishlist", icon: IcGift, match: (p) => p.startsWith("/dashboard/wishlist") },
-  chores: { key: "chores", href: "/dashboard/family", label: "Chores", icon: IcChecklist, match: (p) => p.startsWith("/dashboard/family") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/family/members") },
-  training: { key: "training", href: "/dashboard/training", label: "Activities", icon: IcTraining, match: (p) => p.startsWith("/dashboard/training") },
-  school: { key: "school", href: "/dashboard/school", label: "School", icon: IcSchool, match: (p) => p.startsWith("/dashboard/school") },
+  calendar: { key: "calendar", href: "/dashboard/calendar", label: "calendar", icon: IcCalendar, match: (p) => p.startsWith("/dashboard/calendar") },
+  "shopping-list": { key: "shopping-list", href: "/dashboard/family/shopping-list", label: "shoppingList", icon: IcCart, match: (p) => p.startsWith("/dashboard/family/shopping-list") },
+  wishlist: { key: "wishlist", href: "/dashboard/wishlist", label: "wishlist", icon: IcGift, match: (p) => p.startsWith("/dashboard/wishlist") },
+  chores: { key: "chores", href: "/dashboard/family", label: "chores", icon: IcChecklist, match: (p) => p.startsWith("/dashboard/family") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/family/members") },
+  training: { key: "training", href: "/dashboard/training", label: "activities", icon: IcTraining, match: (p) => p.startsWith("/dashboard/training") },
+  school: { key: "school", href: "/dashboard/school", label: "school", icon: IcSchool, match: (p) => p.startsWith("/dashboard/school") },
 };
 
 // 2026-09-28 (row 38): a child's Home is their own week.
 // 2026-10-04: children pick their own tabs too (default Home, Calendar,
 // School, Activities — see lib/navTabs.ts); before this the child nav was a
 // fixed Home / Shopping list / Wishlist and ignored the Settings choice.
-const CHILD_HOME_TAB: TabDef = { key: "my-week", href: "/dashboard/family/child", label: "Home", icon: IcHome, match: (p) => p.startsWith("/dashboard/family/child") || p === "/dashboard" };
+const CHILD_HOME_TAB: TabDef = { key: "my-week", href: "/dashboard/family/child", label: "home", icon: IcHome, match: (p) => p.startsWith("/dashboard/family/child") || p === "/dashboard" };
 
 // Default, used whenever a person hasn't picked their own set yet
 // (User.bottomNavTabs is null) — matches the agreed default: "Calendar,
@@ -63,6 +67,7 @@ const DEFAULT_APP_TABS: string[] = [...DEFAULT_NAV_APPS];
 
 export default function BottomNav() {
   const pathname = usePathname() || "/dashboard";
+  const m = useM();
   const [badges, setBadges] = useState<{ shoppingList: boolean; wishlist: boolean }>({ shoppingList: false, wishlist: false });
   const [appKeys, setAppKeys] = useState<string[]>(DEFAULT_APP_TABS);
   const [isChild, setIsChild] = useState(false);
@@ -157,7 +162,7 @@ export default function BottomNav() {
                   <span style={{ position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: "50%", background: "#E4574A", border: "1.5px solid var(--surface)" }} />
                 )}
               </span>
-              <span style={{ fontSize: 11, fontWeight: active ? 800 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tab.label}</span>
+              <span style={{ fontSize: 11, fontWeight: active ? 800 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{m.nav[tab.label]}</span>
             </Link>
           );
         })}

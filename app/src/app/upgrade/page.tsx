@@ -8,7 +8,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { PLAN_ROWS, PRO_PRICE_TEXT } from "@/lib/plans";
+import { PLAN_ROWS, PRO_PRICE } from "@/lib/plans";
+import { useI18n } from "@/lib/i18n/client";
+import type { Messages } from "@/lib/i18n/messages";
 
 type Access = {
   plan: "FREE" | "TRIAL" | "PRO";
@@ -27,15 +29,11 @@ const ADULT_ROLES = ["OWNER", "PARENT", "ADULT", "MEMBER"];
 // 2026-10-04: rows come from lib/plans.ts (shared with the public pages).
 const ROWS = PLAN_ROWS;
 
-function Cell({ v }: { v: boolean | string }) {
-  if (typeof v === "string") return <span style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)" }}>{v}</span>;
+function Cell({ v, m }: { v: boolean | string; m: Messages }) {
+  if (typeof v === "string") return <span style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)" }}>{m.plans.cellValues[v] ?? v}</span>;
   return v
-    ? <span aria-label="Included" style={{ color: "var(--success)", fontWeight: 800 }}>✓</span>
-    : <span aria-label="Not included" style={{ color: "var(--faint)", fontWeight: 800 }}>—</span>;
-}
-
-function fmt(d: string) {
-  return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    ? <span aria-label={m.plans.included} style={{ color: "var(--success)", fontWeight: 800 }}>✓</span>
+    : <span aria-label={m.plans.notIncluded} style={{ color: "var(--faint)", fontWeight: 800 }}>—</span>;
 }
 
 export default function UpgradePage() {
@@ -47,6 +45,9 @@ export default function UpgradePage() {
   const [busy, setBusy] = useState<"trial" | "request" | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const { m, dateLocale, err } = useI18n();
+  const t = m.landing.upgrade;
+  const fmt = (d: string) => new Date(d).toLocaleDateString(dateLocale, { day: "numeric", month: "long", year: "numeric" });
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login?callbackUrl=/upgrade");
@@ -67,8 +68,8 @@ export default function UpgradePage() {
     const res = await fetch("/api/family/trial", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     const d = await res.json().catch(() => ({}));
     setBusy(null);
-    if (!res.ok) { setError(d.error ?? "Could not start the trial"); return; }
-    setMessage("Your 14-day trial has started — everything is unlocked.");
+    if (!res.ok) { setError(d.error ? err(d.error) : t.couldNotStart); return; }
+    setMessage(t.trialStarted);
     load();
   }
 
@@ -77,8 +78,8 @@ export default function UpgradePage() {
     const res = await fetch("/api/billing/request", { method: "POST" });
     const d = await res.json().catch(() => ({}));
     setBusy(null);
-    if (!res.ok) { setError(d.error ?? "Something went wrong"); return; }
-    setMessage("Thanks! We've got your request and will email you as soon as Pro is on.");
+    if (!res.ok) { setError(d.error ? err(d.error) : m.common.somethingWentWrong); return; }
+    setMessage(t.requested);
     load();
   }
 
@@ -89,15 +90,15 @@ export default function UpgradePage() {
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "20px 20px 48px" }}>
         <button onClick={() => (window.history.length > 1 ? router.back() : router.push("/dashboard"))}
           style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: "4px 0", marginBottom: 12, fontFamily: FONT }}>
-          ‹ Back
+          {t.back}
         </button>
 
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--fg)", margin: "0 0 6px", letterSpacing: "-0.5px" }}>Plans</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--fg)", margin: "0 0 6px", letterSpacing: "-0.5px" }}>{t.title}</h1>
         <p style={{ fontSize: 14, color: "var(--muted)", margin: "0 0 20px", lineHeight: 1.5 }}>
-          Reminders, the calendar and one shared shopping list are free, always (with a small sponsored card). Pro adds everything for the kids — and no ads.
+          {t.intro}
         </p>
         <p style={{ fontSize: 13, color: "var(--fg-2)", margin: "-12px 0 20px", fontWeight: 700 }}>
-          Pro: {PRO_PRICE_TEXT}. Try it free for 14 days first.
+          {t.proPrice(m.plans.priceText(PRO_PRICE.month, PRO_PRICE.year))}
         </p>
 
         {/* Current plan */}
@@ -108,36 +109,36 @@ export default function UpgradePage() {
             border: access.plan === "FREE" ? "1px solid var(--border)" : "none",
             borderRadius: 20, padding: "18px 20px", marginBottom: 18,
           }}>
-            <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", opacity: 0.7, marginBottom: 4 }}>Your family&apos;s plan</div>
+            <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", opacity: 0.7, marginBottom: 4 }}>{t.familyPlan}</div>
             <div style={{ fontSize: 22, fontWeight: 800 }}>
-              {access.plan === "PRO" ? "⚡ Pro" : access.plan === "TRIAL" ? "⚡ Pro trial" : "Free"}
+              {access.plan === "PRO" ? t.planPro : access.plan === "TRIAL" ? t.planTrial : t.planFree}
             </div>
             <div style={{ fontSize: 13, marginTop: 4, opacity: 0.85 }}>
-              {access.plan === "PRO" && (access.proForever ? "Pro is on — no end date." : access.proUntil ? `Pro until ${fmt(access.proUntil)}.` : "")}
-              {access.plan === "TRIAL" && `${access.trialDaysLeft} day${access.trialDaysLeft === 1 ? "" : "s"} left of your free trial.`}
-              {access.plan === "FREE" && (access.proRequested ? "Pro requested — we'll email you when it's on." : access.trialUsed ? "Your free trial has been used." : "Try Pro free for 14 days — no card needed.")}
+              {access.plan === "PRO" && (access.proForever ? t.proOn : access.proUntil ? t.proUntil(fmt(access.proUntil)) : "")}
+              {access.plan === "TRIAL" && t.trialLeft(access.trialDaysLeft)}
+              {access.plan === "FREE" && (access.proRequested ? t.proRequested : access.trialUsed ? t.trialUsed : t.tryPro)}
             </div>
           </div>
         )}
 
         {!hasHousehold && (
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 16, marginBottom: 18, fontSize: 14, color: "var(--fg-2)" }}>
-            Plans are per family. <Link href="/profile" style={{ color: "var(--accent)", fontWeight: 700 }}>Create your family in Settings</Link> first.
+            {t.perFamily}<Link href="/profile" style={{ color: "var(--accent)", fontWeight: 700 }}>{t.createFamily}</Link>{t.first}
           </div>
         )}
 
         {/* Comparison */}
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, overflow: "hidden", marginBottom: 20, boxShadow: "var(--shadow)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 64px 72px", alignItems: "center", padding: "12px 16px", background: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>What you get</span>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--fg-2)", textAlign: "center" }}>Free</span>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--accent)", textAlign: "center" }}>Pro</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{t.whatYouGet}</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--fg-2)", textAlign: "center" }}>{m.plans.free}</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--accent)", textAlign: "center" }}>{m.plans.pro}</span>
           </div>
           {ROWS.map((r, i) => (
-            <div key={r.label} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 64px 72px", alignItems: "center", padding: "12px 16px", borderTop: i ? "1px solid var(--border-soft)" : "none" }}>
-              <span style={{ fontSize: 14, color: "var(--fg)", lineHeight: 1.35 }}>{r.icon} {r.label}</span>
-              <span style={{ textAlign: "center" }}><Cell v={r.free} /></span>
-              <span style={{ textAlign: "center" }}><Cell v={r.pro} /></span>
+            <div key={r.key} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 64px 72px", alignItems: "center", padding: "12px 16px", borderTop: i ? "1px solid var(--border-soft)" : "none" }}>
+              <span style={{ fontSize: 14, color: "var(--fg)", lineHeight: 1.35 }}>{r.icon} {m.plans.rows[r.key]?.label ?? r.label}</span>
+              <span style={{ textAlign: "center" }}><Cell v={r.free} m={m} /></span>
+              <span style={{ textAlign: "center" }}><Cell v={r.pro} m={m} /></span>
             </div>
           ))}
         </div>
@@ -151,18 +152,18 @@ export default function UpgradePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {access.canStartTrial && (
                 <button onClick={startTrial} disabled={!!busy} style={btn(true)}>
-                  {busy === "trial" ? "Starting…" : "Start free 14-day trial"}
+                  {busy === "trial" ? t.starting : t.startTrial}
                 </button>
               )}
               <button onClick={requestPro} disabled={!!busy || access.proRequested} style={btn(!access.canStartTrial)}>
-                {busy === "request" ? "Sending…" : access.proRequested ? "Pro requested ✓" : "I want Pro"}
+                {busy === "request" ? m.common.sending : access.proRequested ? t.requestedBtn : t.iWantPro}
               </button>
               <p style={{ fontSize: 12, color: "var(--subtle)", textAlign: "center", margin: "4px 0 0", lineHeight: 1.5 }}>
-                Card payments are coming soon. Until then we turn Pro on for your family by hand after a request.
+                {t.paymentsSoon}
               </p>
             </div>
           ) : (
-            <p style={{ fontSize: 14, color: "var(--muted)", textAlign: "center" }}>Ask a parent to turn on Pro for the family.</p>
+            <p style={{ fontSize: 14, color: "var(--muted)", textAlign: "center" }}>{t.askParent}</p>
           )
         )}
       </main>

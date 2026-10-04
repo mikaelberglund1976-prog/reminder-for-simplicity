@@ -3,70 +3,34 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/client";
 
-const CATEGORIES = [
-  { value: "SUBSCRIPTION", label: "Subscription" },
-  { value: "BIRTHDAY",     label: "Birthday" },
-  { value: "INSURANCE",    label: "Insurance" },
-  { value: "CONTRACT",     label: "Contract" },
-  { value: "BILL",         label: "Bill" },
-  { value: "HEALTH",       label: "Health" },
-  { value: "OTHER",        label: "Other" },
-];
-
-const RECURRENCES_MAIN = [
-  { value: "ONCE",    label: "Once" },
-  { value: "MONTHLY", label: "Monthly" },
-  { value: "YEARLY",  label: "Yearly" },
-];
-
-const RECURRENCES_MORE = [
-  { value: "DAILY",  label: "Daily" },
-  { value: "WEEKLY", label: "Weekly" },
-];
-
-const REMINDER_DAYS = [
-  { value: "0",  label: "At time of event" },
-  { value: "1",  label: "1 day before" },
-  { value: "3",  label: "3 days before" },
-  { value: "7",  label: "7 days before" },
-  { value: "14", label: "14 days before" },
-  { value: "30", label: "30 days before" },
-];
-
-const VISIBILITY_OPTIONS = [
-  { value: "PRIVATE",   label: "Just me" },
-  { value: "HOUSEHOLD", label: "All" },
-  { value: "PARENTS",   label: "Parents" },
-];
+// Labels come from messages.reminders / messages.reminderForm (2026-10-04).
+const CATEGORIES = ["SUBSCRIPTION", "BIRTHDAY", "INSURANCE", "CONTRACT", "BILL", "HEALTH", "OTHER"].map((value) => ({ value }));
+const RECURRENCES_MAIN = ["ONCE", "MONTHLY", "YEARLY"].map((value) => ({ value }));
+const RECURRENCES_MORE = ["DAILY", "WEEKLY"].map((value) => ({ value }));
+const REMINDER_DAYS = ["0", "1", "3", "7", "14", "30"].map((value) => ({ value }));
+const VISIBILITY_OPTIONS = ["PRIVATE", "HOUSEHOLD", "PARENTS"].map((value) => ({ value }));
 
 const TEMPLATES = [
   {
     id: "SUBSCRIPTION",
     emoji: "🔄",
-    label: "Subscription",
-    hint: "Monthly or yearly",
     defaults: { category: "SUBSCRIPTION", recurrence: "MONTHLY", reminderDaysBefore: "3" },
   },
   {
     id: "INSURANCE",
     emoji: "🛡️",
-    label: "Insurance",
-    hint: "Yearly renewal",
     defaults: { category: "INSURANCE", recurrence: "YEARLY", reminderDaysBefore: "30" },
   },
   {
     id: "FAMILY_ACTIVITY",
     emoji: "🏠",
-    label: "Family activity",
-    hint: "One-time event",
     defaults: { category: "OTHER", recurrence: "ONCE", reminderDaysBefore: "1" },
   },
   {
     id: "IMPORTANT_RENEWAL",
     emoji: "📋",
-    label: "Important renewal",
-    hint: "Don't let it lapse",
     defaults: { category: "CONTRACT", recurrence: "YEARLY", reminderDaysBefore: "30" },
   },
 ];
@@ -112,6 +76,8 @@ export default function NewReminderPage() {
 function NewReminderForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { m: msg, err: tErr } = useI18n();
+  const t = msg.reminderForm;
   // 2026-07-28: the Calendar's "+" button passes a chosen date through here
   // (type first, then date, then details — see dashboard/calendar/page.tsx)
   // so the date step isn't repeated on this screen.
@@ -157,7 +123,7 @@ function NewReminderForm() {
   }
 
   function applyTemplate(templateId: string) {
-    const tpl = TEMPLATES.find(t => t.id === templateId);
+    const tpl = TEMPLATES.find(x => x.id === templateId);
     if (!tpl) return;
     setFormState(prev => ({ ...prev, ...tpl.defaults }));
     setSelectedTemplate(templateId);
@@ -186,11 +152,11 @@ function NewReminderForm() {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Something went wrong.");
+        throw new Error(data.error ? tErr(data.error) : t.somethingWrong);
       }
       router.push("/dashboard");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(err instanceof Error ? err.message : t.somethingWrong);
     } finally {
       setLoading(false);
     }
@@ -199,10 +165,10 @@ function NewReminderForm() {
   const allRec = showMoreRec ? [...RECURRENCES_MAIN, ...RECURRENCES_MORE] : RECURRENCES_MAIN;
 
   const QUICK_DATES = [
-    { label: "Today",       value: today() },
-    { label: "Tomorrow",    value: tomorrow() },
-    { label: "Next Friday", value: nextFriday() },
-    { label: "In 30 days",  value: in30Days() },
+    { label: t.today,       value: today() },
+    { label: t.tomorrow,    value: tomorrow() },
+    { label: t.nextFriday, value: nextFriday() },
+    { label: t.in30Days,  value: in30Days() },
   ];
 
   return (
@@ -217,7 +183,7 @@ function NewReminderForm() {
           <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Back
+          {t.back}
         </Link>
       </div>
 
@@ -226,17 +192,17 @@ function NewReminderForm() {
         {/* Title */}
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
-            Add item
+            {t.addTitle}
           </h1>
           <p style={{ fontSize: 14, color: "var(--fg-2)", margin: "6px 0 0", lineHeight: 1.5 }}>
-            Add something your household needs to track.
+            {t.addIntro}
           </p>
         </div>
 
         {/* ── Templates — P8 ── */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-            Start with a template
+            {t.startWithTemplate}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
             {TEMPLATES.map(tpl => (
@@ -254,8 +220,8 @@ function NewReminderForm() {
                 }}
               >
                 <span style={{ fontSize: 20, marginBottom: 6 }}>{tpl.emoji}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)" }}>{tpl.label}</span>
-                <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{tpl.hint}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)" }}>{t.templates[tpl.id]?.label}</span>
+                <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{t.templates[tpl.id]?.hint}</span>
               </button>
             ))}
           </div>
@@ -271,7 +237,7 @@ function NewReminderForm() {
               cursor: "pointer", fontFamily: FONT, boxSizing: "border-box" as const,
             }}
           >
-            + Create manually without a template
+            {t.manual}
           </button>
         </div>
 
@@ -287,12 +253,12 @@ function NewReminderForm() {
         <form onSubmit={handleSubmit}>
 
           {/* 1. Name */}
-          <Section label="Name">
+          <Section label={t.name}>
             <input
               type="text"
               value={form.name}
               onChange={e => set("name", e.target.value)}
-              placeholder="e.g. Netflix, Home insurance, School trip"
+              placeholder={t.namePlaceholder}
               required
               autoFocus
               style={inputStyle}
@@ -300,7 +266,7 @@ function NewReminderForm() {
           </Section>
 
           {/* 2. Due date */}
-          <Section label="Due date *">
+          <Section label={t.dueDate}>
             <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
               {QUICK_DATES.map(qd => (
                 <button
@@ -337,7 +303,7 @@ function NewReminderForm() {
           </Section>
 
           {/* 3. Repeats */}
-          <Section label="Repeats">
+          <Section label={t.repeats}>
             <div style={{
               display: "flex", gap: 0, background: "var(--surface-3)", borderRadius: 50,
               padding: 3, width: "fit-content", alignItems: "center",
@@ -355,7 +321,7 @@ function NewReminderForm() {
                     transition: "all 0.15s", fontFamily: FONT,
                   }}
                 >
-                  {rec.label}
+                  {msg.reminders.recurrence[rec.value]}
                 </button>
               ))}
               <button
@@ -378,7 +344,7 @@ function NewReminderForm() {
 
           {/* 4. Owner — surfaced early for household positioning */}
           {hasHousehold && householdMembers.length > 1 && (
-            <Section label="Owner">
+            <Section label={t.owner}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 <button
                   type="button"
@@ -390,7 +356,7 @@ function NewReminderForm() {
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   )}
-                  Unassigned
+                  {t.unassigned}
                 </button>
                 {householdMembers.map(m => (
                   <button
@@ -405,7 +371,7 @@ function NewReminderForm() {
                       </svg>
                     )}
                     {m.user.name ?? m.user.email.split("@")[0]}
-                    {m.userId === currentUserId ? " (me)" : ""}
+                    {m.userId === currentUserId ? t.meSuffix : ""}
                   </button>
                 ))}
               </div>
@@ -428,7 +394,7 @@ function NewReminderForm() {
                 boxSizing: "border-box" as const,
               }}
             >
-              More details
+              {t.moreDetails}
               <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
                 style={{ transform: showMoreDetails ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
                 <polyline points="6 9 12 15 18 9" />
@@ -439,7 +405,7 @@ function NewReminderForm() {
               <div style={{ paddingTop: 16 }}>
 
                 {/* Amount */}
-                <Section label="Amount">
+                <Section label={t.amount}>
                   <div style={{ display: "flex", gap: 10 }}>
                     <input
                       type="number"
@@ -460,7 +426,7 @@ function NewReminderForm() {
                 </Section>
 
                 {/* Category */}
-                <Section label="Category">
+                <Section label={t.category}>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {CATEGORIES.map(cat => (
                       <button
@@ -474,14 +440,14 @@ function NewReminderForm() {
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
                         )}
-                        {cat.label}
+                        {msg.reminders.categories[cat.value]}
                       </button>
                     ))}
                   </div>
                 </Section>
 
                 {/* Remind me */}
-                <Section label="Remind me">
+                <Section label={t.remindMe}>
                   <div style={{ position: "relative" }}>
                     <select
                       value={form.reminderDaysBefore}
@@ -489,7 +455,7 @@ function NewReminderForm() {
                       style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 36, cursor: "pointer" }}
                     >
                       {REMINDER_DAYS.map(d => (
-                        <option key={d.value} value={d.value}>{d.label}</option>
+                        <option key={d.value} value={d.value}>{t.remindDays[d.value]}</option>
                       ))}
                     </select>
                     <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted)" }}>
@@ -503,7 +469,7 @@ function NewReminderForm() {
                   <textarea
                     value={form.note}
                     onChange={e => set("note", e.target.value)}
-                    placeholder="Optional notes..."
+                    placeholder={t.notesPlaceholder}
                     rows={3}
                     style={{ ...inputStyle, resize: "none" as const, lineHeight: 1.5, fontFamily: FONT }}
                   />
@@ -511,7 +477,7 @@ function NewReminderForm() {
 
                 {/* Visibility \u2014 Pro households only */}
                 {hasProHousehold && (
-                  <Section label="Visible to">
+                  <Section label={t.visibleTo}>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {VISIBILITY_OPTIONS.map(opt => (
                         <button
@@ -525,14 +491,14 @@ function NewReminderForm() {
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
                           )}
-                          {opt.label}
+                          {t.visibilityOptions[opt.value]}
                         </button>
                       ))}
                     </div>
                     <p style={{ fontSize: 12, color: "var(--subtle)", margin: "8px 0 0" }}>
-                      {form.visibility === "PRIVATE" && "Only you will see this item."}
-                      {form.visibility === "HOUSEHOLD" && "All household members will see this."}
-                      {form.visibility === "PARENTS" && "Only parents and adults in the household will see this."}
+                      {form.visibility === "PRIVATE" && t.visPrivate}
+                      {form.visibility === "HOUSEHOLD" && t.visHousehold}
+                      {form.visibility === "PARENTS" && t.visParents}
                     </p>
                   </Section>
                 )}
@@ -555,7 +521,7 @@ function NewReminderForm() {
                 fontFamily: FONT, transition: "all 0.15s",
               }}
             >
-              {loading ? "Saving..." : "Save item"}
+              {loading ? t.saving : t.saveItem}
             </button>
           </div>
 

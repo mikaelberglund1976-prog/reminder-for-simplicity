@@ -3,6 +3,7 @@
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
+**Uppdaterad igen:** 2026-10-04 (kväll) – punkt 40: svenska + flerspråksstöd, språk per familj (se `RELEASE_2026-10-04b.md`) – live.
 **Uppdaterad igen:** 2026-10-04 – punkt 39 (mobiltestets fynd 4 okt: delade poster, nästa datum, barnens bottenmeny, Home, poster utan person, Free/Pro, publika sidor) – live. Alla md-filer synkade.
 **Uppdaterad igen:** 2026-10-03 – punkt 36 (barnets startsida, ta bort familjemedlemmar, samma bild överallt, Home först i menyn) och 37 (SchoolSoft-import per barn, bara prov på vuxnas Home) – live. Alla md-filer synkade.
 **Uppdaterad igen:** 2026-09-29 – punkt 33 (mobiltestets fynd rad 36–48, live), 34 (barn med eget konto/Google, live) och 35 (GDPR-genomgång + åtgärder, live, ny fil `GDPR.md`). Alla md-filer synkade mot nuläget.
@@ -799,4 +800,11 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [ ] 7 Mikael tar bort testposterna (Bandy, Empty the dishwasher, Hhdd) – "Outlook test" redan borta
 - [ ] Klicktesta §13 i mobilen, ljust/mörkt, vuxen och barn
 - [ ] Idé: Pro-synk av skolans läxor till barnen och av träningar
+
+## 40. Svenska + flerspråksstöd (2026-10-04, live) – se `RELEASE_2026-10-04b.md`
+- [x] Hela appen (utom admin) + familjemejl + privacy på svenska och engelska, `lib/i18n/`.
+- [x] Språk per familj, ändras av familjens admin (Family members / Settings).
+- [ ] Klicktest enligt `TEST_VERIFICATION.md` §14.
+- [ ] Jurist läser svenska integritetstexten.
+- [ ] Senare: fler språk (norska/danska/finska) – se receptet i release-notisen.
 

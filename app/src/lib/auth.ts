@@ -1,3 +1,4 @@
+import { initHouseholdLanguage } from "@/lib/i18n/server";
 import { NextAuthOptions } from "next-auth";
 import { Provider } from "next-auth/providers/index";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -154,6 +155,7 @@ export const authOptions: NextAuthOptions = {
           const household = await prisma.household.create({
             data: { name: dbUser.name ?? "My household" },
           });
+          await initHouseholdLanguage(household.id);
           await prisma.householdMember.create({
             data: {
               householdId: household.id,

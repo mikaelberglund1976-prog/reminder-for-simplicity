@@ -5,6 +5,7 @@
 // family member, or go back to yourself.
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useM } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 type M = { userId: string; role: string; user: { name: string | null; email: string } };
@@ -19,6 +20,7 @@ export default function ImpersonationBar() {
   const { data: session, update } = useSession();
   const [members, setMembers] = useState<M[]>([]);
   const [busy, setBusy] = useState(false);
+  const t = useM().components.impersonation;
   const imp = session?.impersonator;
 
   useEffect(() => {
@@ -49,16 +51,16 @@ export default function ImpersonationBar() {
       background: "#B42318", color: "#fff", boxShadow: "0 6px 20px rgba(0,0,0,0.25)", fontFamily: FONT, fontSize: 12.5, fontWeight: 700,
       maxWidth: "calc(100vw - 16px)", opacity: busy ? 0.7 : 1,
     }}>
-      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>👁 Viewing as {me?.name?.split(" ")[0] ?? me?.email}</span>
+      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.viewingAs(me?.name?.split(" ")[0] ?? me?.email ?? "")}</span>
       {others.length > 0 && (
-        <select value="" onChange={(e) => switchTo(e.target.value)} disabled={busy} aria-label="Switch person"
+        <select value="" onChange={(e) => switchTo(e.target.value)} disabled={busy} aria-label={t.switchPerson}
           style={{ background: "rgba(255,255,255,0.18)", color: "#fff", border: "none", borderRadius: 50, padding: "5px 8px", fontSize: 12, fontWeight: 700, fontFamily: FONT, maxWidth: 110 }}>
-          <option value="">Switch…</option>
-          {others.map((m) => <option key={m.userId} value={m.userId} style={{ color: "#000" }}>{label(m)}{m.role === "CHILD" ? " (child)" : ""}</option>)}
+          <option value="">{t.switch}</option>
+          {others.map((m) => <option key={m.userId} value={m.userId} style={{ color: "#000" }}>{label(m)}{m.role === "CHILD" ? t.child : ""}</option>)}
         </select>
       )}
       <button onClick={back} disabled={busy} style={{ background: "#fff", color: "#B42318", border: "none", borderRadius: 50, padding: "6px 11px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: FONT, whiteSpace: "nowrap" }}>
-        Back to me
+        {t.backToMe}
       </button>
     </div>
   );

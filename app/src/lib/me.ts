@@ -12,6 +12,8 @@ export type Me = {
   isChildProfile?: boolean;
   bottomNavTabs?: string | null;
   preferredCurrency?: string | null;
+  /** 2026-10-04: the family's language (null = not chosen). */
+  language?: string | null;
 };
 
 const TTL_MS = 30_000;

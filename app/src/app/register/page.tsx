@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { useI18n } from "@/lib/i18n/client";
+import LanguageToggle from "@/components/LanguageToggle";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -21,6 +23,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
   const [approvalNeeded, setApprovalNeeded] = useState(false);
+  const { m: msg, err } = useI18n();
+  const t = msg.auth;
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
@@ -42,7 +46,7 @@ export default function RegisterPage() {
     const data = await res.json();
 
     if (!res.ok) {
-      setError(data.error ?? "Something went wrong. Please try again.");
+      setError(data.error ? err(data.error) : t.tryAgain);
       setLoading(false);
       return;
     }
@@ -62,14 +66,14 @@ export default function RegisterPage() {
         <div style={{ maxWidth: 400, width: "100%", margin: "0 auto", textAlign: "center" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>✉️</div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--fg)", margin: "0 0 12px", letterSpacing: "-0.5px" }}>
-            Check your inbox
+            {t.checkInbox}
           </h1>
           <p style={{ fontSize: 15, color: "var(--muted)", margin: "0 0 16px", lineHeight: 1.6 }}>
-            We've sent a confirmation link to <strong>{form.email}</strong>. Click it to confirm your email address.
+            {t.sentLink1}<strong>{form.email}</strong>{t.sentLink2}
           </p>
           {approvalNeeded && (
             <p style={{ fontSize: 14, color: "var(--muted)", margin: "0 0 28px", lineHeight: 1.6 }}>
-              We're also in a testing phase, so a new account needs a quick admin approval. You'll get another email once you're approved.
+              {t.approvalPhase}
             </p>
           )}
           <Link href="/" style={{
@@ -78,7 +82,7 @@ export default function RegisterPage() {
             background: "var(--ink)", color: "#fff",
             fontSize: 15, fontWeight: 600, textDecoration: "none",
           }}>
-            Back to home
+            {t.backToHome}
           </Link>
         </div>
       </div>
@@ -89,6 +93,8 @@ export default function RegisterPage() {
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 20px" }}>
       <div style={{ maxWidth: 400, width: "100%", margin: "0 auto" }}>
 
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}><LanguageToggle /></div>
+
         {/* Logo */}
         <div style={{ marginBottom: 32 }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", marginBottom: 28 }}>
@@ -96,18 +102,17 @@ export default function RegisterPage() {
             <span style={{ fontWeight: 700, fontSize: 16, color: "var(--fg)" }}>Reminder for Simplicity</span>
           </Link>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--fg)", margin: 0, letterSpacing: "-0.5px" }}>
-            Create your account
+            {t.createYourAccount}
           </h1>
-          <p style={{ fontSize: 14, color: "var(--muted)", margin: "6px 0 0" }}>Free. Takes 30 seconds.</p>
+          <p style={{ fontSize: 14, color: "var(--muted)", margin: "6px 0 0" }}>{t.freeQuick}</p>
         </div>
 
         {/* 2026-09-29: families are joined by invite only (no searching for
             a family) — say so before a child or partner makes a separate one. */}
         <div style={{ background: "var(--tint-accent)", borderRadius: 14, padding: "12px 14px", marginBottom: 18, fontSize: 13, lineHeight: 1.5, color: "var(--fg-2)" }}>
-          <strong style={{ color: "var(--fg)" }}>Joining your family?</strong> Ask a parent to add you under ☰ → Family members with your email.
-          Then just log in here with that email — or with Google — and you land in your family.
+          <strong style={{ color: "var(--fg)" }}>{t.joiningFamily}</strong>{t.joiningFamilyBody}
           <div style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
-            You must be 13 or older to create your own account; younger children are added by a parent. How we handle data: <Link href="/privacy" style={{ color: "var(--accent)", fontWeight: 700 }}>privacy notice</Link>.
+            {t.ageNote}<Link href="/privacy" style={{ color: "var(--accent)", fontWeight: 700 }}>{t.privacyNotice}</Link>.
           </div>
         </div>
 
@@ -131,13 +136,13 @@ export default function RegisterPage() {
             <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
           </svg>
-          {googleLoading ? "Redirecting…" : "Continue with Google"}
+          {googleLoading ? t.redirecting : t.continueWithGoogle}
         </button>
 
         {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
           <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-          <span style={{ fontSize: 13, color: "var(--subtle)", fontWeight: 500 }}>or sign up with email</span>
+          <span style={{ fontSize: 13, color: "var(--subtle)", fontWeight: 500 }}>{t.orSignUpEmail}</span>
           <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
         </div>
 
@@ -150,10 +155,10 @@ export default function RegisterPage() {
           )}
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>Full name</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>{t.fullName}</div>
             <input
               type="text"
-              placeholder="e.g. Anna Andersson"
+              placeholder={t.fullNamePlaceholder}
               value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
               required
@@ -163,10 +168,10 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>Email</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>{msg.common.email}</div>
             <input
               type="email"
-              placeholder="you@example.com"
+              placeholder={t.emailPlaceholder}
               value={form.email}
               onChange={e => setForm({ ...form, email: e.target.value })}
               required
@@ -175,11 +180,11 @@ export default function RegisterPage() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>Password</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>{msg.common.password}</div>
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="At least 8 characters"
+                placeholder={t.passwordPlaceholder}
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 required
@@ -189,6 +194,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
+                aria-label={t.showPassword}
                 style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 0, display: "flex" }}
               >
                 {showPassword ? (
@@ -219,21 +225,21 @@ export default function RegisterPage() {
               boxSizing: "border-box",
             }}
           >
-            {loading ? "Creating account…" : "Create account"}
+            {loading ? t.creatingAccount : t.createAccount}
           </button>
         </form>
 
         <p style={{ textAlign: "center", fontSize: 14, color: "var(--muted)", marginTop: 24 }}>
-          Already have an account?{" "}
+          {t.alreadyHave}{" "}
           <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            Log in
+            {msg.common.logIn}
           </Link>
         </p>
 
         <p style={{ textAlign: "center", fontSize: 12, color: "var(--subtle)", marginTop: 12 }}>
-          By creating an account you agree to our{" "}
+          {t.agreePrefix}
           <Link href="/privacy" style={{ color: "var(--subtle)", textDecoration: "underline" }}>
-            Privacy Policy
+            {t.privacyPolicy}
           </Link>
           .
         </p>

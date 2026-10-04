@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import DeletionRequestsCard from "@/components/DeletionRequestsCard";
+import { useM } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -50,6 +51,8 @@ type TrialInfo = {
 export default function FamilyPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const msg = useM();
+  const t = msg.chores;
 
   const [trial, setTrial] = useState<TrialInfo | null>(null);
   const [summary, setSummary] = useState<ChildSummary[]>([]);
@@ -63,7 +66,7 @@ export default function FamilyPage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   async function removeChore(id: string, name: string) {
-    if (!window.confirm(`Remove "${name}"?`)) return;
+    if (!window.confirm(t.removeConfirm(name))) return;
     setRemovingId(id);
     try {
       const res = await fetch(`/api/reminders/${id}`, { method: "DELETE" });
@@ -151,7 +154,7 @@ export default function FamilyPage() {
   if (status === "loading" || loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "var(--muted)", fontSize: 15 }}>Loading family…</div>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>{t.loading}</div>
       </div>
     );
   }
@@ -159,16 +162,16 @@ export default function FamilyPage() {
   // API error or db not yet migrated
   if (!trial) {
     return (
-      <Screen title="Family" onBack={() => router.push("/dashboard")}>
+      <Screen title={t.family} onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>⚙️</div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Setting up family features</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>{t.settingUp}</h2>
           <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 24 }}>
-            The database needs to be updated before this feature can be used. Run <strong>npm run db:push</strong> in your project folder, then reload.
+            {t.dbNeedsUpdate1}<strong>npm run db:push</strong>{t.dbNeedsUpdate2}
           </p>
           <button onClick={fetchTrial}
             style={{ background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-            Try again
+            {msg.common.retry}
           </button>
         </div>
       </Screen>
@@ -176,22 +179,22 @@ export default function FamilyPage() {
   }
 
   const statusStyle = (s: "done" | "pending" | "missed") => {
-    if (s === "done")    return { bg: "var(--tint-success)", color: "var(--success)", label: "Done" };
-    if (s === "pending") return { bg: "var(--tint-warning)", color: "var(--warning)", label: "Waiting" };
-    return                      { bg: "var(--tint-danger)", color: "var(--danger)", label: "Not done" };
+    if (s === "done")    return { bg: "var(--tint-success)", color: "var(--success)", label: t.done };
+    if (s === "pending") return { bg: "var(--tint-warning)", color: "var(--warning)", label: t.waiting };
+    return                      { bg: "var(--tint-danger)", color: "var(--danger)", label: t.notDone };
   };
 
   // ── No household ───────────────────────────────────────────────
   if (trial?.status === "NO_HOUSEHOLD") {
     return (
-      <Screen title="Family" onBack={() => router.push("/dashboard")}>
+      <Screen title={t.family} onBack={() => router.push("/dashboard")}>
         <div style={{ textAlign: "center", padding: "60px 24px" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏠</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>Set up your household first</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--fg)", margin: "0 0 10px" }}>{t.setUpHousehold}</h2>
           <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 28 }}>
-            Family responsibilities require a household. Invite your family to get started.
+            {t.needsHousehold}
           </p>
-          <Link href="/profile" style={btnStyle("var(--ink)")}>Go to settings →</Link>
+          <Link href="/profile" style={btnStyle("var(--ink)")}>{t.goToSettings}</Link>
         </div>
       </Screen>
     );
@@ -202,18 +205,18 @@ export default function FamilyPage() {
   // 14-day trial" / "trial ended — upgrade" (components/UpgradeGate.tsx).
   if ((trial?.status === "NO_TRIAL" || trial?.status === "TRIAL_EXPIRED") && !trial.isPro) {
     return (
-      <Screen title="Chores" onBack={() => router.push("/dashboard")}>
+      <Screen title={t.title} onBack={() => router.push("/dashboard")}>
         <UpgradeGate
-          feature="Chores"
+          feature={t.title}
           emoji="🧹"
-          description="Add your children, give them chores they tick off themselves, and approve them when they're done. Try everything free for 14 days — no card needed."
+          description={t.gateDescription}
           onUnlocked={() => { setTrial(null); fetchTrial(); }}
         />
         {trial.status === "TRIAL_EXPIRED" && (
           <div style={{ textAlign: "center" }}>
             <button onClick={() => router.push("/dashboard/family/child")}
               style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>
-              View history (read only)
+              {t.viewHistory}
             </button>
           </div>
         )}
@@ -227,16 +230,16 @@ export default function FamilyPage() {
   const viewStats = stats.find(s => s.childId === (viewChild?.childId ?? selectedChild));
 
   return (
-    <Screen title="Chores" onBack={() => router.push("/dashboard")}>
+    <Screen title={t.title} onBack={() => router.push("/dashboard")}>
       {/* Trial banner */}
       {trial?.trialActive && !trial.isPro && (
         <div style={{ background: "var(--tint-warning)", border: "1px solid var(--tint-warning)", borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--warning)" }}>Free trial active</div>
-            <div style={{ fontSize: 12, color: "var(--warning)", marginTop: 2 }}>{trial.daysLeft} day{trial.daysLeft !== 1 ? "s" : ""} remaining</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--warning)" }}>{t.trialActive}</div>
+            <div style={{ fontSize: 12, color: "var(--warning)", marginTop: 2 }}>{t.daysRemaining(trial.daysLeft)}</div>
           </div>
           <Link href="/upgrade" style={{ background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT, textDecoration: "none" }}>
-            Upgrade
+            {t.upgrade}
           </Link>
         </div>
       )}
@@ -269,7 +272,7 @@ export default function FamilyPage() {
         padding: "12px 16px", color: "var(--accent)", fontSize: 13, fontWeight: 700,
         textDecoration: "none", fontFamily: FONT, marginBottom: 16,
       }}>
-        <IcPlus /> Add family member
+        <IcPlus /> {t.addFamilyMember}
       </Link>
 
       {/* Week summary card */}
@@ -278,12 +281,12 @@ export default function FamilyPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)" }}>{viewChild.childName}</div>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>This week</div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{t.thisWeek}</div>
             </div>
             {(viewChild.role ?? "CHILD") === "CHILD" && (
               <Link href={`/dashboard/family/child?id=${viewChild.childId}`}
                 style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-                Child view →
+                {t.childView}
               </Link>
             )}
           </div>
@@ -291,9 +294,9 @@ export default function FamilyPage() {
           {/* Stats row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
             {[
-              { value: `${viewChild.done}/${viewChild.total}`, label: "Done", bg: "var(--tint-success)", color: "var(--success)" },
-              { value: viewChild.pending, label: "Waiting", bg: "var(--tint-warning)", color: "var(--warning)" },
-              { value: viewChild.missed, label: "Not done", bg: "var(--tint-danger)", color: "var(--danger)" },
+              { value: `${viewChild.done}/${viewChild.total}`, label: t.done, bg: "var(--tint-success)", color: "var(--success)" },
+              { value: viewChild.pending, label: t.waiting, bg: "var(--tint-warning)", color: "var(--warning)" },
+              { value: viewChild.missed, label: t.notDone, bg: "var(--tint-danger)", color: "var(--danger)" },
             ].map(s => (
               <div key={s.label} style={{ background: s.bg, borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
@@ -319,16 +322,16 @@ export default function FamilyPage() {
                     {chore.name}
                   </div>
                   {chore.requiresApproval && (
-                    <div style={{ fontSize: 11, color: "var(--subtle)", marginTop: 2 }}>Requires approval</div>
+                    <div style={{ fontSize: 11, color: "var(--subtle)", marginTop: 2 }}>{t.requiresApproval}</div>
                   )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <button
                     onClick={() => !isPending && handleToggleDone(chore.id)}
                     disabled={approvingId === chore.id || isPending}
-                    title={isDone ? "Mark as not done" : "Mark as done"}
+                    title={isDone ? t.markNotDone : t.markDone}
                     style={{ padding: "4px 10px", borderRadius: 50, fontSize: 11, fontWeight: 700, background: style.bg, color: style.color, border: "none", cursor: isPending ? "default" : "pointer", fontFamily: FONT }}>
-                    {isDone ? "✓ Done" : isPending ? style.label : "Mark done"}
+                    {isDone ? t.doneCheck : isPending ? style.label : t.markDoneBtn}
                   </button>
                   {isPending && (
                     <div style={{ display: "flex", gap: 6 }}>
@@ -344,7 +347,7 @@ export default function FamilyPage() {
                       </button>
                     </div>
                   )}
-                  <button onClick={() => removeChore(chore.id, chore.name)} disabled={removingId === chore.id} aria-label="Remove chore"
+                  <button onClick={() => removeChore(chore.id, chore.name)} disabled={removingId === chore.id} aria-label={t.removeChore}
                     style={{ background: "none", border: "none", color: "var(--faint)", fontSize: 18, cursor: "pointer", padding: 4, lineHeight: 1 }}>×</button>
                 </div>
               </div>
@@ -353,8 +356,8 @@ export default function FamilyPage() {
 
           {viewChild.chores.length === 0 && (
             <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
-              No chores assigned yet.{" "}
-              <Link href="/dashboard/family/new" style={{ color: "var(--accent)", fontWeight: 600 }}>Add one →</Link>
+              {t.noChoresAssigned}{" "}
+              <Link href="/dashboard/family/new" style={{ color: "var(--accent)", fontWeight: 600 }}>{t.addOne}</Link>
             </div>
           )}
         </div>
@@ -362,12 +365,12 @@ export default function FamilyPage() {
 
       {orphans.length > 0 && (
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", padding: "16px 20px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 2 }}>Not assigned to anyone in the family</div>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>No one or someone who has left. Remove them or add a new chore for the right person.</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 2 }}>{t.notAssigned}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>{t.notAssignedHint}</div>
           {orphans.map((c, i) => (
             <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)" }}>
               <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{c.name}</span>
-              <button onClick={() => removeChore(c.id, c.name)} disabled={removingId === c.id} aria-label="Remove chore"
+              <button onClick={() => removeChore(c.id, c.name)} disabled={removingId === c.id} aria-label={t.removeChore}
                 style={{ background: "none", border: "none", color: "var(--faint)", fontSize: 18, cursor: "pointer", padding: 4, lineHeight: 1 }}>×</button>
             </div>
           ))}
@@ -381,17 +384,17 @@ export default function FamilyPage() {
           padding: "20px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
         }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", marginBottom: 4 }}>
-            Done over time
+            {t.doneOverTime}
           </div>
           <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
-            Tasks {viewStats.childName} has completed.
+            {t.tasksCompleted(viewStats.childName)}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {[
-              { value: viewStats.last7Days,  label: "Last 7 days" },
-              { value: viewStats.thisMonth,  label: "This month" },
-              { value: viewStats.lastMonth,  label: "Last month" },
-              { value: viewStats.thisYear,   label: "This year" },
+              { value: viewStats.last7Days,  label: t.last7 },
+              { value: viewStats.thisMonth,  label: t.thisMonth },
+              { value: viewStats.lastMonth,  label: t.lastMonth },
+              { value: viewStats.thisYear,   label: t.thisYear },
             ].map(s => (
               <div key={s.label} style={{
                 background: "var(--background)", borderRadius: 12, padding: "12px 8px", textAlign: "center",
@@ -408,11 +411,11 @@ export default function FamilyPage() {
       {isActive && summary.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 24px" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 8 }}>No chores yet</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 8 }}>{t.noChoresYet}</div>
           <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24, lineHeight: 1.5 }}>
-            Create a recurring chore for anyone in the family — children or adults.
+            {t.noChoresBody}
           </div>
-          <Link href="/dashboard/family/new" style={btnStyle("var(--ink)")}>Create first chore</Link>
+          <Link href="/dashboard/family/new" style={btnStyle("var(--ink)")}>{t.createFirst}</Link>
         </div>
       )}
 
@@ -423,7 +426,7 @@ export default function FamilyPage() {
           from the bottom nav/hamburger menu and Profile respectively — this
           page only adds chores now. */}
       {isActive && (
-        <Link href="/dashboard/family/new" aria-label="Add chore" style={{
+        <Link href="/dashboard/family/new" aria-label={t.addChore} style={{
           position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
           width: 52, height: 52, borderRadius: "50%",
           background: "var(--accent-bg)", color: "#fff",
@@ -449,11 +452,12 @@ function btnStyle(bg: string): React.CSSProperties {
 }
 
 function Screen({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
+  const m = useM();
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", fontFamily: FONT }}>
       <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
+          <button onClick={onBack} aria-label={m.common.back} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
           <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0, flex: 1 }}>{title}</h1>

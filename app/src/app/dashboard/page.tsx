@@ -10,6 +10,9 @@ import Avatar from "@/components/Avatar";
 import { getMe } from "@/lib/me";
 import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
 import { withNextDate } from "@/lib/recurrence";
+import { useI18n } from "@/lib/i18n/client";
+import { relativeDay } from "@/lib/i18n/relative";
+import type { Messages } from "@/lib/i18n/messages";
 
 type HouseholdMember = { id: string; userId: string; role?: string; user: { id: string; name: string | null; email: string } };
 
@@ -36,23 +39,7 @@ type Reminder = {
   user?: { id: string; name: string | null };
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  SUBSCRIPTION: "Subscription",
-  BIRTHDAY:     "Birthday",
-  INSURANCE:    "Insurance",
-  CONTRACT:     "Contract",
-  HEALTH:       "Health",
-  BILL:         "Bill",
-  OTHER:        "Other",
-};
-
-const RECURRENCE_LABELS: Record<string, string> = {
-  ONCE:    "Once",
-  DAILY:   "Daily",
-  WEEKLY:  "Weekly",
-  MONTHLY: "Monthly",
-  YEARLY:  "Yearly",
-};
+// 2026-10-04: category / recurrence words come from messages.reminders.
 
 const CATEGORY_BADGE: Record<string, { bg: string; color: string }> = {
   SUBSCRIPTION: { bg: "var(--tint-accent)", color: "var(--accent-strong)" },
@@ -128,20 +115,10 @@ function getDaysUntil(dateStr: string) {
   return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function getRelativeTime(dateStr: string): string {
-  const days = getDaysUntil(dateStr);
-  if (days === 0) return "Today";
-  if (days === 1) return "Tomorrow";
-  if (days <= 6) return "On " + new Date(dateStr).toLocaleDateString("en-GB", { weekday: "long" });
-  if (days <= 13) return "In " + days + " days";
-  if (days <= 59) return "In " + Math.ceil(days / 7) + " weeks";
-  return "In " + Math.ceil(days / 30) + " months";
-}
-
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string, dateLocale: string) {
   const d = new Date(dateStr);
   const now = new Date();
-  return d.toLocaleDateString("en-GB", {
+  return d.toLocaleDateString(dateLocale, {
     day: "numeric",
     month: "short",
     year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
@@ -185,13 +162,13 @@ function IcCalendar() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x
 function IcBellPlus() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M12 6v5M9.5 8.5h5"/></svg>; }
 
 // Order = how often the personas reached for them in the review.
-const QUICK_ACTIONS: { label: string; href: string; Icon: () => React.ReactElement; color: string; tint: string; pro?: boolean }[] = [
-  { label: "New reminder",  href: "/dashboard/new",                 Icon: IcBellPlus,  color: "var(--accent)",  tint: "var(--tint-accent)" },
-  { label: "Shopping list", href: "/dashboard/family/shopping-list", Icon: IcCart,      color: "var(--success)", tint: "var(--tint-success)" },
-  { label: "Homework & tests", href: "/dashboard/school",           Icon: IcSchool,    color: "var(--accent)",  tint: "var(--tint-accent)" , pro: true },
-  { label: "Chores",        href: "/dashboard/family",               Icon: IcChecklist, color: "var(--warning)", tint: "var(--tint-warning)" , pro: true },
-  { label: "Wishlists",     href: "/dashboard/wishlist",             Icon: IcGift,      color: "var(--danger)",  tint: "var(--tint-danger)" , pro: true },
-  { label: "Calendar",      href: "/dashboard/calendar",             Icon: IcCalendar,  color: "var(--fg-2)",    tint: "var(--surface-3)" },
+const QUICK_ACTIONS: { label: keyof Messages["home"]["quick"]; href: string; Icon: () => React.ReactElement; color: string; tint: string; pro?: boolean }[] = [
+  { label: "newReminder",  href: "/dashboard/new",                 Icon: IcBellPlus,  color: "var(--accent)",  tint: "var(--tint-accent)" },
+  { label: "shoppingList", href: "/dashboard/family/shopping-list", Icon: IcCart,      color: "var(--success)", tint: "var(--tint-success)" },
+  { label: "homework", href: "/dashboard/school",           Icon: IcSchool,    color: "var(--accent)",  tint: "var(--tint-accent)" , pro: true },
+  { label: "chores",        href: "/dashboard/family",               Icon: IcChecklist, color: "var(--warning)", tint: "var(--tint-warning)" , pro: true },
+  { label: "wishlists",     href: "/dashboard/wishlist",             Icon: IcGift,      color: "var(--danger)",  tint: "var(--tint-danger)" , pro: true },
+  { label: "calendar",      href: "/dashboard/calendar",             Icon: IcCalendar,  color: "var(--fg-2)",    tint: "var(--surface-3)" },
 ];
 
 function SectionTitle({ children, inline }: { children: React.ReactNode; inline?: boolean }) {
@@ -217,9 +194,9 @@ function StatCard({ icon, iconColor, iconBg, value, label }: {
   );
 }
 
-const VISIBILITY_CHIP: Record<string, { icon: string; label: string; bg: string; color: string }> = {
-  PRIVATE: { icon: "🔒", label: "Private", bg: "var(--background)", color: "var(--muted)" },
-  PARENTS: { icon: "👪", label: "Parents", bg: "var(--tint-warning)", color: "var(--warning)" },
+const VISIBILITY_CHIP: Record<string, { icon: string; bg: string; color: string }> = {
+  PRIVATE: { icon: "🔒", bg: "var(--background)", color: "var(--muted)" },
+  PARENTS: { icon: "👪", bg: "var(--tint-warning)", color: "var(--warning)" },
   // HOUSEHOLD isn't shown as a chip — it's the "everyone sees this" default
   // once you're in a household, so flagging it would just be noise next to
   // the other badges.
@@ -229,10 +206,11 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
   reminder: Reminder; badge: { bg: string; color: string }; isFirst: boolean; onClick: () => void; currentUserId?: string; householdMembers?: HouseholdMember[]; hasHousehold?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
+  const { m: msg, dateLocale } = useI18n();
   const showAmount = reminder.amount != null && reminder.amount > 0;
   const showRecurrence = reminder.recurrence !== "ONCE" || showAmount;
   const isShared = reminder.user && reminder.user.id !== currentUserId;
-  const sharedByName = isShared ? (reminder.user?.name?.split(" ")[0] ?? "someone") : null;
+  const sharedByName = isShared ? (reminder.user?.name?.split(" ")[0] ?? msg.home.someone) : null;
   const ownerMember = reminder.assignedTo ? householdMembers.find(m => m.userId === reminder.assignedTo) : null;
   const ownerName = ownerMember ? (ownerMember.user.name?.split(" ")[0] ?? ownerMember.user.email.split("@")[0]) : null;
   const isUnassigned = householdMembers.length > 1 && !reminder.assignedTo;
@@ -248,7 +226,7 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{reminder.name}</span>
           <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 50, fontSize: 11, fontWeight: 600, background: badge.bg, color: badge.color }}>
-            {CATEGORY_LABELS[reminder.category] ?? reminder.category}
+            {msg.reminders.categories[reminder.category] ?? reminder.category}
           </span>
           {isShared && (
             <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "var(--tint-accent)", color: "var(--accent-strong)", gap: 3 }}>
@@ -262,7 +240,7 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
           )}
           {isUnassigned && !isShared && (
             <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "var(--background)", color: "var(--subtle)" }}>
-              Unassigned
+              {msg.common.unassigned}
             </span>
           )}
           {/* Visibility chip — visibility (PRIVATE/HOUSEHOLD/PARENTS) already
@@ -273,14 +251,14 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
               everyone" default), see VISIBILITY_CHIP above. */}
           {hasHousehold && VISIBILITY_CHIP[reminder.visibility] && (
             <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: VISIBILITY_CHIP[reminder.visibility].bg, color: VISIBILITY_CHIP[reminder.visibility].color, gap: 3 }}>
-              {VISIBILITY_CHIP[reminder.visibility].icon} {VISIBILITY_CHIP[reminder.visibility].label}
+              {VISIBILITY_CHIP[reminder.visibility].icon} {msg.reminders.visibility[reminder.visibility]}
             </span>
           )}
         </div>
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
-          {formatDate(reminder.date)}
-          {showAmount && <> &middot; {reminder.amount!.toLocaleString("sv")} {reminder.currency}</>}
-          {showRecurrence && <> &middot; {RECURRENCE_LABELS[reminder.recurrence] ?? reminder.recurrence}</>}
+          {formatDate(reminder.date, dateLocale)}
+          {showAmount && <> &middot; {reminder.amount!.toLocaleString(dateLocale)} {reminder.currency}</>}
+          {showRecurrence && <> &middot; {msg.reminders.recurrence[reminder.recurrence] ?? reminder.recurrence}</>}
         </div>
       </div>
       <div style={{ color: "var(--faint)", flexShrink: 0 }}>
@@ -313,6 +291,8 @@ export default function DashboardPage() {
   // this isn't a child (they're sent to their own "My week").
   const [roleChecked, setRoleChecked] = useState(false);
   const media = useFamilyMedia();
+  const { m: msg, locale, dateLocale } = useI18n();
+  const t = msg.home;
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -418,7 +398,7 @@ export default function DashboardPage() {
     if (filterCategory !== "ALL")        return r.category === filterCategory;
     return true;
   });
-  const firstName = session?.user?.name?.split(" ")[0] ?? "there";
+  const firstName = session?.user?.name?.split(" ")[0] ?? t.there;
 
   // Pre-compute family card display values (avoids complex JSX expressions)
   // 2026-10-04 (Mikael): only children who actually have chores this week —
@@ -442,7 +422,7 @@ export default function DashboardPage() {
     const map = new Map<string, { id: string; name: string; items: SchoolItem[] }>();
     for (const it of open) {
       const id = it.assignedUser?.id ?? "?";
-      const name = it.assignedUser?.name?.split(" ")[0] ?? it.assignedUser?.email?.split("@")[0] ?? "Someone";
+      const name = it.assignedUser?.name?.split(" ")[0] ?? it.assignedUser?.email?.split("@")[0] ?? t.someone;
       if (!map.has(id)) map.set(id, { id, name, items: [] });
       map.get(id)!.items.push(it);
     }
@@ -452,7 +432,7 @@ export default function DashboardPage() {
   if (status === "loading" || loading || !roleChecked) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-        <div style={{ color: "var(--muted)", fontSize: 15 }}>Reminder for Simplicity is thinking…</div>
+        <div style={{ color: "var(--muted)", fontSize: 15 }}>{t.thinking}</div>
       </div>
     );
   }
@@ -471,7 +451,7 @@ export default function DashboardPage() {
 
         {/* 2026-09-28 (test round, row 40): the family's own photo on top. */}
         {media.header && (
-          <Link href="/dashboard/family/members" aria-label="Family photo — change it in Family members" style={{ display: "block", margin: "-12px 0 18px", borderRadius: 22, overflow: "hidden", boxShadow: "var(--shadow)" }}>
+          <Link href="/dashboard/family/members" aria-label={t.familyPhotoAria} style={{ display: "block", margin: "-12px 0 18px", borderRadius: 22, overflow: "hidden", boxShadow: "var(--shadow)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={headerUrl(media.header)} alt="" style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }} />
           </Link>
@@ -483,7 +463,7 @@ export default function DashboardPage() {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
-                {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+                {new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" })}
               </span>
               {/* 2026-09-28: plan chip — always one tap from the plans page. */}
               {plan && hasHousehold && (
@@ -492,12 +472,12 @@ export default function DashboardPage() {
                   background: plan.plan === "FREE" ? "var(--surface-3)" : "var(--tint-accent)",
                   color: plan.plan === "FREE" ? "var(--muted)" : "var(--accent)",
                 }}>
-                  {plan.plan === "PRO" ? "⚡ Pro" : plan.plan === "TRIAL" ? `⚡ Trial · ${plan.trialDaysLeft}d left` : "Free · Try Pro"}
+                  {plan.plan === "PRO" ? t.planPro : plan.plan === "TRIAL" ? t.planTrial(plan.trialDaysLeft) : t.planFree}
                 </Link>
               )}
             </div>
             <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--fg)", margin: 0, letterSpacing: "-0.6px" }}>
-              Hi {firstName}
+              {t.hi(firstName)}
             </h1>
           </div>
           <HamburgerMenu />
@@ -507,12 +487,12 @@ export default function DashboardPage() {
             dozen buttons that lead to "set up your household first". */}
         {!hasHousehold && (
           <div style={{ background: "var(--hero-grad)", borderRadius: 20, padding: "20px 20px 18px", marginBottom: 22, color: "#fff" }}>
-            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>Set up your family</div>
+            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>{t.setUpTitle}</div>
             <div style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.5, marginBottom: 14 }}>
-              Create your family to share reminders and a shopping list. Got an invite link from someone? Open it instead and you&apos;ll join their family.
+              {t.setUpBody}
             </div>
             <button onClick={createHousehold} disabled={creatingHousehold} style={{ background: "#fff", color: "#1C1C28", border: "none", borderRadius: 50, padding: "11px 20px", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT }}>
-              {creatingHousehold ? "Creating…" : "Create my family"}
+              {creatingHousehold ? t.creating : t.createFamily}
             </button>
           </div>
         )}
@@ -532,7 +512,7 @@ export default function DashboardPage() {
             })}
             <Link href="/dashboard/family/members" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: 56 }}>
               <span style={{ width: 52, height: 52, borderRadius: "50%", border: "1.5px dashed var(--accent-border)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 500, boxSizing: "border-box" }}>+</span>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--accent)" }}>Add</span>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--accent)" }}>{t.add}</span>
             </Link>
           </div>
         )}
@@ -540,7 +520,7 @@ export default function DashboardPage() {
         {/* Quick actions — "What would you like to do?" row, borrowed from the
             reference app: the most common jobs one tap away, horizontally
             scrollable so the row never wraps on a phone. */}
-        <SectionTitle>What would you like to do?</SectionTitle>
+        <SectionTitle>{t.whatToDo}</SectionTitle>
         <div className="rfs-hscroll" style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 24px", padding: "2px 20px 4px", scrollSnapType: "x proximity", scrollPaddingInline: 20 }}>
           {QUICK_ACTIONS.map((qa) => (
             <Link key={qa.href + qa.label} href={qa.href} style={{
@@ -552,10 +532,10 @@ export default function DashboardPage() {
               <span style={{ position: "relative", width: 40, height: 40, borderRadius: 12, background: qa.tint, color: qa.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <qa.Icon />
                 {qa.pro && plan?.plan === "FREE" && (
-                  <span style={{ position: "absolute", top: -6, right: -14, fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 6, background: "var(--accent-bg)", color: "#fff" }}>PRO</span>
+                  <span style={{ position: "absolute", top: -6, right: -14, fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 6, background: "var(--accent-bg)", color: "#fff" }}>{t.pro}</span>
                 )}
               </span>
-              <span style={{ fontSize: 13, fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>{qa.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>{t.quick[qa.label]}</span>
             </Link>
           ))}
         </div>
@@ -566,8 +546,8 @@ export default function DashboardPage() {
         {/* 2026-10-04 (Mikael): empty sections aren't shown. */}
         {attentionItems.length > 0 && (<>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-          <SectionTitle inline>Coming up</SectionTitle>
-          <Link href="/dashboard/calendar" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>Calendar →</Link>
+          <SectionTitle inline>{t.comingUp}</SectionTitle>
+          <Link href="/dashboard/calendar" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{t.calendarLink}</Link>
         </div>
         {(
           <div className="rfs-hscroll" style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 24px", padding: "2px 20px 4px", scrollSnapType: "x mandatory", scrollPaddingInline: 20 }}>
@@ -587,14 +567,14 @@ export default function DashboardPage() {
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: overdue ? "var(--danger)" : days <= 1 ? "var(--warning)" : "var(--accent)", marginTop: 3 }}>
-                      {overdue ? `Overdue · ${formatDate(r.date)}` : getRelativeTime(r.date)}
+                      {overdue ? msg.reminders.overdueOn(formatDate(r.date, dateLocale)) : relativeDay(msg, locale, r.date)}
                     </div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "nowrap", overflow: "hidden" }}>
                       <span style={{ padding: "2px 8px", borderRadius: 50, fontSize: 10.5, fontWeight: 700, background: badge.bg, color: badge.color, whiteSpace: "nowrap" }}>
-                        {CATEGORY_LABELS[r.category] ?? r.category}
+                        {msg.reminders.categories[r.category] ?? r.category}
                       </span>
                       {ownerName && <span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>👤 {ownerName}</span>}
-                      {r.amount != null && r.amount > 0 && <span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>{r.amount.toLocaleString("sv")} {r.currency}</span>}
+                      {r.amount != null && r.amount > 0 && <span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>{r.amount.toLocaleString(dateLocale)} {r.currency}</span>}
                     </div>
                   </div>
                 </button>
@@ -609,8 +589,8 @@ export default function DashboardPage() {
         {schoolByPerson.length > 0 && (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-              <SectionTitle inline>Upcoming tests</SectionTitle>
-              <Link href="/dashboard/school" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>All →</Link>
+              <SectionTitle inline>{t.upcomingTests}</SectionTitle>
+              <Link href="/dashboard/school" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{t.allLink}</Link>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
               {schoolByPerson.map((p) => (
@@ -619,7 +599,7 @@ export default function DashboardPage() {
                     <Avatar userId={p.id} name={p.name} size={28} />
                     <span style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>
-                      {p.items.length} test{p.items.length === 1 ? "" : "s"}
+                      {t.testsCount(p.items.length)}
                     </span>
                   </div>
                   {p.items.slice(0, 2).map((it) => {
@@ -630,17 +610,17 @@ export default function DashboardPage() {
                         <span style={{
                           fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0,
                           background: isTest ? "var(--tint-danger)" : "var(--tint-school)", color: isTest ? "var(--danger)" : "var(--school)",
-                        }}>{isTest ? "Test" : it.schoolKind === "HOMEWORK" ? "Homework" : "School"}</span>
+                        }}>{msg.reminders.schoolKinds[it.schoolKind ?? "OTHER"] ?? msg.reminders.schoolKinds.OTHER}</span>
                         <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {it.subject ? `${it.subject} · ` : ""}{it.name}
                         </span>
                         <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0, color: d < 0 ? "var(--danger)" : d <= 1 ? "var(--warning)" : "var(--muted)" }}>
-                          {d < 0 ? "Overdue" : d === 0 ? "Today" : d === 1 ? "Tomorrow" : formatDate(it.date)}
+                          {d < 0 ? msg.reminders.overdue : d === 0 ? msg.common.today : d === 1 ? msg.common.tomorrow : formatDate(it.date, dateLocale)}
                         </span>
                       </div>
                     );
                   })}
-                  {p.items.length > 2 && <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>+{p.items.length - 2} more on School</div>}
+                  {p.items.length > 2 && <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>{t.moreOnSchool(p.items.length - 2)}</div>}
                 </Link>
               ))}
             </div>
@@ -654,12 +634,12 @@ export default function DashboardPage() {
             it's now labelled for what it is. */}
         {reminders.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
-          <StatCard icon={<IcBell />} iconColor="var(--accent)" iconBg="var(--tint-accent)" value={totalActive} label="Active" />
-          <StatCard icon={<IcAlert />} iconColor="var(--danger)" iconBg="var(--tint-danger)" value={passedCount} label="Overdue" />
+          <StatCard icon={<IcBell />} iconColor="var(--accent)" iconBg="var(--tint-accent)" value={totalActive} label={t.statActive} />
+          <StatCard icon={<IcAlert />} iconColor="var(--danger)" iconBg="var(--tint-danger)" value={passedCount} label={t.statOverdue} />
           <button onClick={() => { setSort("amount_desc"); setShowAllReminders(true); document.getElementById("all-reminders")?.scrollIntoView({ behavior: "smooth" }); }}
-            style={{ all: "unset", cursor: "pointer", display: "block" }} aria-label="Review recurring costs">
+            style={{ all: "unset", cursor: "pointer", display: "block" }} aria-label={t.reviewCosts}>
             <StatCard icon={<IcCard />} iconColor="var(--success)" iconBg="var(--tint-success)"
-              value={yearlyTotal > 0 ? compactAmount(yearlyTotal) : "—"} label={`Per year${yearlyTotal > 0 ? " · " + preferredCurrency : ""}`} />
+              value={yearlyTotal > 0 ? compactAmount(yearlyTotal) : "—"} label={`${t.perYear}${yearlyTotal > 0 ? " · " + preferredCurrency : ""}`} />
           </button>
         </div>
         )}
@@ -671,9 +651,9 @@ export default function DashboardPage() {
             borderRadius: 18, padding: "14px 16px", marginBottom: 12, boxShadow: "var(--shadow)",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>🏠 Chores this week</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{t.choresThisWeek}</span>
               <span style={{ fontSize: 12, fontWeight: 700, color: pendingApprovals > 0 ? "var(--warning)" : "var(--muted)" }}>
-                {pendingApprovals > 0 ? `${pendingApprovals} waiting approval` : "Open →"}
+                {pendingApprovals > 0 ? t.waitingApproval(pendingApprovals) : t.openLink}
               </span>
             </div>
             {familyCardRows.map(row => (
@@ -693,7 +673,7 @@ export default function DashboardPage() {
         {/* 2026-10-04: hidden until there is something to list (New reminder is in the quick actions + the floating button). */}
         {reminders.length > 0 && (<>
         <div id="all-reminders" style={{ scrollMarginTop: 16 }} />
-        <SectionTitle>All reminders</SectionTitle>
+        <SectionTitle>{t.allReminders}</SectionTitle>
 
         {/* Section content */}
         <>
@@ -701,29 +681,25 @@ export default function DashboardPage() {
             <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
               <div style={{ position: "relative", flex: 1 }}>
                 <select value={filterCategory} onChange={e => setFilter(e.target.value)} style={dropdownStyle}>
-                  <option value="ALL">All reminders</option>
+                  <option value="ALL">{t.allReminders}</option>
                   {hasHousehold && sharedReminders.length > 0 && (
-                    <option value="FAMILY">👪 Family shared</option>
+                    <option value="FAMILY">{t.familyShared}</option>
                   )}
                   {hasHousehold && (
-                    <option value="UNASSIGNED">👤 Unassigned</option>
+                    <option value="UNASSIGNED">{t.unassigned}</option>
                   )}
-                  <option value="SUBSCRIPTION">Subscriptions</option>
-                  <option value="BIRTHDAY">Birthdays</option>
-                  <option value="INSURANCE">Insurance</option>
-                  <option value="CONTRACT">Contracts</option>
-                  <option value="HEALTH">Health</option>
-                  <option value="BILL">Bills</option>
-                  <option value="OTHER">Other</option>
+                  {["SUBSCRIPTION", "BIRTHDAY", "INSURANCE", "CONTRACT", "HEALTH", "BILL", "OTHER"].map((c) => (
+                    <option key={c} value={c}>{msg.reminders.categoriesPlural[c]}</option>
+                  ))}
                 </select>
                 <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted)" }}><IcDown /></div>
               </div>
               <div style={{ position: "relative", flex: 1 }}>
                 <select value={sortBy} onChange={e => setSort(e.target.value)} style={dropdownStyle}>
-                  <option value="date_asc">Due soonest</option>
-                  <option value="date_desc">Latest first</option>
-                  <option value="name_asc">Name A–Z</option>
-                  <option value="amount_desc">Highest amount</option>
+                  <option value="date_asc">{t.sort.date_asc}</option>
+                  <option value="date_desc">{t.sort.date_desc}</option>
+                  <option value="name_asc">{t.sort.name_asc}</option>
+                  <option value="amount_desc">{t.sort.amount_desc}</option>
                 </select>
                 <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted)" }}><IcDown /></div>
               </div>
@@ -733,10 +709,10 @@ export default function DashboardPage() {
             {filtered.length === 0 ? (
               <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>&#128237;</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 6 }}>No reminders yet</div>
-                <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24 }}>Add the things you don&apos;t want to forget.</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 6 }}>{t.noReminders}</div>
+                <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24 }}>{t.noRemindersBody}</div>
                 <Link href="/dashboard/new" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "var(--accent-bg)", color: "#fff", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-                  + Add your first reminder
+                  {t.addFirst}
                 </Link>
               </div>
             ) : (
@@ -754,7 +730,7 @@ export default function DashboardPage() {
                 background: "var(--surface)", border: "1px solid var(--border)", cursor: "pointer",
                 fontSize: 14, fontWeight: 700, color: "var(--accent)", fontFamily: FONT,
               }}>
-                {showAllReminders ? "Show fewer" : `See all (${filtered.length})`}
+                {showAllReminders ? t.showFewer : t.seeAllCount(filtered.length)}
               </button>
             )}
 
@@ -766,7 +742,7 @@ export default function DashboardPage() {
               borderRadius: 16, padding: "15px", fontSize: 14, fontWeight: 600,
               color: "var(--muted)", textDecoration: "none", boxSizing: "border-box",
             }}>
-              + Add reminder
+              {t.addReminder}
             </Link>
             )}
           </>
@@ -777,7 +753,7 @@ export default function DashboardPage() {
       {/* Floating "add reminder" button — sits just above the shared bottom tab bar
           (see app/dashboard/layout.tsx + components/BottomNav.tsx) instead of living
           inside its own nav row, so the two don't stack on top of each other. */}
-      <Link href="/dashboard/new" aria-label="Add reminder" style={{
+      <Link href="/dashboard/new" aria-label={t.addReminderAria} style={{
         position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
         width: 52, height: 52, borderRadius: "50%",
         background: "var(--accent-bg)", color: "#fff",

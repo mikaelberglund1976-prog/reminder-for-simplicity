@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPro, describeAccess } from "@/lib/entitlements";
+import { initHouseholdLanguage } from "@/lib/i18n/server";
 
 // POST /api/household — create a new household (user becomes OWNER)
 export async function POST(req: Request) {
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
         },
       },
     });
+    await initHouseholdLanguage(household.id);
 
     return NextResponse.json({ household });
   } catch (err) {

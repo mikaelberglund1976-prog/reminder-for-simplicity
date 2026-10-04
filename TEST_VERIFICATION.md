@@ -146,3 +146,17 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Utloggad: startsidan har "Log in" uppe och nere. "See how it works" visar nya sidan. Free/Pro-tabellen = `/upgrade` inne i appen.
 - [ ] Ljust och mörkt läge på `/` och `/features` i mobilen.
 - [ ] Chores: × på en syssla → bekräfta → borta. Sysslor/aktiviteter/läxor utan person (eller för någon som lämnat familjen) syns under "Not assigned to anyone in the family" och kan tas bort.
+
+
+## 14. Svenska + flerspråksstöd (2026-10-04) – se `RELEASE_2026-10-04b.md`
+- [ ] Som familjens admin: Family members → längst ner "Language" → Svenska → hela appen byter till svenska direkt (meny, Home, kalender, inköpslista, Settings).
+- [ ] Som annan vuxen/barn: samma ruta visas men går inte att ändra ("Bara familjens administratör…").
+- [ ] Annan enhet i familjen: öppna appen igen → svenska.
+- [ ] Datum och veckodagar på svenska (t.ex. "mån 6 okt"), belopp med svensk formatering.
+- [ ] Inköpslistan: standardkategorierna och katalogen på svenska; en egen omdöpt kategori behåller sitt namn.
+- [ ] Ett felmeddelande (t.ex. fel lösenord vid inloggning) visas på svenska.
+- [ ] Mejl: skicka en inbjudan / glömt lösenord → mejlet på svenska.
+- [ ] `/privacy` på svenska när språket är svenska.
+- [ ] Utloggad: språkknappen uppe till höger på start, login och register byter språk och minns valet.
+- [ ] Byt tillbaka till English → allt på engelska igen.
+
