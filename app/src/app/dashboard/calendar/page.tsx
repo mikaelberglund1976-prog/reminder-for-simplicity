@@ -22,6 +22,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import { getOccurrencesInRange, dateKey, type RecurringItem } from "@/lib/recurrence";
+import { formatTimeRange } from "@/lib/timeFormat";
 import { useI18n } from "@/lib/i18n/client";
 import { weekdayName } from "@/lib/i18n/format";
 
@@ -90,6 +91,7 @@ type Reminder = {
   id: string; name: string; category: string; date: string;
   recurrence: "ONCE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
   amount: number | null; currency: string | null;
+  startTime?: string | null; endTime?: string | null;
 };
 
 type Chore = {
@@ -102,6 +104,7 @@ type Chore = {
   subject?: string | null;
   completedAt?: string | null;
   showInCalendar?: boolean;
+  startTime?: string | null; endTime?: string | null;
 };
 
 type CalendarEntry = {
@@ -113,7 +116,13 @@ type CalendarEntry = {
   subtitle: string;
   // Short label for the tiny chip inside a day cell.
   short: string;
+  // 2026-10-07: "HH:MM" start (for sorting) — null = all day.
+  startTime: string | null;
 };
+
+// "17:30 · Activity · Ella" — time first when the item has one.
+function withTime(time: string, rest: string) { return time ? `${time} · ${rest}` : rest; }
+function chipWithTime(start: string | null | undefined, label: string) { return start ? `${start} ${label}` : label; }
 
 function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -272,8 +281,9 @@ export default function CalendarPage() {
         list.push({
           occDate: occ, id: r.id, name: r.name, kind: "reminder",
           color: CATEGORY_COLOR[r.category] ?? CATEGORY_COLOR.OTHER,
-          subtitle: `${msg.reminders.categories[r.category] ?? r.category}${r.recurrence !== "ONCE" ? " · " + msg.reminders.recurrence[r.recurrence] : ""}`,
-          short: r.name,
+          subtitle: withTime(formatTimeRange(r), `${msg.reminders.categories[r.category] ?? r.category}${r.recurrence !== "ONCE" ? " · " + msg.reminders.recurrence[r.recurrence] : ""}`),
+          short: chipWithTime(r.startTime, r.name),
+          startTime: r.startTime ?? null,
         });
         map.set(key, list);
       }
@@ -285,7 +295,7 @@ export default function CalendarPage() {
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: c.id, name: c.name, kind: "chore", color: CHORE_COLOR, subtitle: `${t.chore} · ${who}`, short: c.name });
+        list.push({ occDate: occ, id: c.id, name: c.name, kind: "chore", color: CHORE_COLOR, subtitle: `${t.chore} · ${who}`, short: c.name, startTime: null });
         map.set(key, list);
       }
     }
@@ -296,7 +306,7 @@ export default function CalendarPage() {
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: tr.id, name: tr.name, kind: "training", color: TRAINING_COLOR, subtitle: `${t.activity} · ${who}`, short: tr.name });
+        list.push({ occDate: occ, id: tr.id, name: tr.name, kind: "training", color: TRAINING_COLOR, subtitle: withTime(formatTimeRange(tr), `${t.activity} · ${who}`), short: chipWithTime(tr.startTime, tr.name), startTime: tr.startTime ?? null });
         map.set(key, list);
       }
     }
@@ -315,8 +325,9 @@ export default function CalendarPage() {
         list.push({
           occDate: occ, id: s.id, name: title, kind: isTest ? "test" : "homework",
           color: isTest ? TEST_COLOR : SCHOOL_COLOR,
-          subtitle: `${kindWord} · ${who}${s.completedAt ? t.doneSuffix : ""}`,
-          short: `${isTest ? "🧪" : "📝"} ${s.subject || s.name}`,
+          subtitle: withTime(formatTimeRange(s), `${kindWord} · ${who}${s.completedAt ? t.doneSuffix : ""}`),
+          short: chipWithTime(s.startTime, `${isTest ? "🧪" : "📝"} ${s.subject || s.name}`),
+          startTime: s.startTime ?? null,
         });
         map.set(key, list);
       }
@@ -324,7 +335,15 @@ export default function CalendarPage() {
 
     const KIND_ORDER: Record<CalendarEntry["kind"], number> = { test: 0, reminder: 1, training: 2, homework: 3, chore: 4 };
     for (const list of Array.from(map.values())) {
-      list.sort((a: CalendarEntry, b: CalendarEntry) => (a.kind === b.kind ? a.name.localeCompare(b.name) : KIND_ORDER[a.kind] - KIND_ORDER[b.kind]));
+      // 2026-10-07: timed items first, in clock order; then the all-day ones as before.
+      list.sort((a: CalendarEntry, b: CalendarEntry) => {
+        if (a.startTime || b.startTime) {
+          if (!a.startTime) return 1;
+          if (!b.startTime) return -1;
+          if (a.startTime !== b.startTime) return a.startTime.localeCompare(b.startTime);
+        }
+        return a.kind === b.kind ? a.name.localeCompare(b.name) : KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
+      });
     }
     return map;
   }, [reminders, chores, trainings, schoolItems, gridStart, gridDays, msg]);
@@ -372,7 +391,10 @@ export default function CalendarPage() {
     // out from the Chores/Family page, matching School's existing pattern).
     if (entry.kind === "reminder") router.push(`/dashboard/${entry.id}`);
     else if (entry.kind === "homework" || entry.kind === "test") router.push("/dashboard/school");
-    else if (entry.kind === "training") router.push("/dashboard/training");
+    // 2026-10-07: an activity opens straight in its edit form (a child
+    // can't edit others' activities — the form shows "couldn't load" then,
+    // so a child still goes to the list).
+    else if (entry.kind === "training") router.push(isChildView ? "/dashboard/training" : `/dashboard/family/new?type=training&edit=${entry.id}`);
     else router.push(isChildView ? "/dashboard/family/child" : "/dashboard/family");
   }
 

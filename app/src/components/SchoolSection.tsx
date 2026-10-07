@@ -25,6 +25,8 @@ export type SchoolItem = {
   subject: string | null;
   completedAt: string | null;
   showInCalendar: boolean;
+  // 2026-10-07: optional time ("prov kl 08:20")
+  startTime?: string | null;
   assignedUser: { id: string; name: string | null; email: string } | null;
   // 2026-10-03: came from the child's SchoolSoft link
   imported?: boolean;
@@ -74,6 +76,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
   const [date, setDate] = useState(initialDate ?? "");
+  const [time, setTime] = useState("");
   const [note, setNote] = useState("");
   const [inCalendar, setInCalendar] = useState(true);
   const [assignee, setAssignee] = useState("");
@@ -106,7 +109,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
   }
 
   function resetForm() {
-    setName(""); setSubject(""); setDate(""); setNote(""); setKind("HOMEWORK"); setInCalendar(true); setError(null);
+    setName(""); setSubject(""); setDate(""); setTime(""); setNote(""); setKind("HOMEWORK"); setInCalendar(true); setError(null);
   }
 
   async function handleAdd(e: React.FormEvent) {
@@ -127,6 +130,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
           showInCalendar: inCalendar,
           assignedTo: mode === "overview" ? assignee : onlyUserId,
           startDate: date ? new Date(date + "T12:00:00").toISOString() : undefined,
+          startTime: time || null,
         }),
       });
       if (res.ok) { resetForm(); setShowAdd(false); await load(); }
@@ -152,7 +156,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
     finally { setBusy(null); }
   }
 
-  async function saveEdit(id: string, fields: { name: string; subject: string; schoolKind: SchoolKind; date: string }) {
+  async function saveEdit(id: string, fields: { name: string; subject: string; schoolKind: SchoolKind; date: string; startTime: string | null }) {
     setBusy(id);
     try {
       const res = await fetch(`/api/family/school/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fields) });
@@ -176,7 +180,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
     return <UpgradeGate compact feature={t.feature} emoji="📚" />;
   }
 
-  const byDate = (a: SchoolItem, b: SchoolItem) => new Date(a.date).getTime() - new Date(b.date).getTime();
+  const byDate = (a: SchoolItem, b: SchoolItem) => (toDateInput(a.date).localeCompare(toDateInput(b.date))) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99");
   const upcoming = items.filter(i => !i.completedAt).sort(byDate);
   const done = items.filter(i => i.completedAt).sort((a, b) => byDate(b, a));
 
@@ -270,7 +274,10 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
           <label style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, display: "block", marginBottom: 4 }}>
             {kind === "TEST" ? t.testDate : t.dueDate}
           </label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} disabled={adding} style={input} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} disabled={adding} style={{ ...input, flex: 3 }} />
+            <input type="time" value={time} step={300} onChange={e => setTime(e.target.value)} disabled={adding} style={{ ...input, flex: 2 }} aria-label={t.timeOptional} title={t.timeOptional} />
+          </div>
           <input type="text" placeholder={t.noteOptional} value={note} onChange={e => setNote(e.target.value)} disabled={adding} style={input} />
 
           <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--fg)", margin: "2px 2px 12px", cursor: "pointer" }}>
@@ -320,7 +327,7 @@ function toDateInput(iso: string) {
 function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCalendar, onSave, onDelete }: {
   item: SchoolItem; first: boolean; busy: boolean; showOwner: boolean; canEdit: boolean; canDelete: boolean;
   onToggle: () => void; onCalendar: () => void; onDelete: () => void;
-  onSave: (f: { name: string; subject: string; schoolKind: SchoolKind; date: string }) => Promise<boolean>;
+  onSave: (f: { name: string; subject: string; schoolKind: SchoolKind; date: string; startTime: string | null }) => Promise<boolean>;
 }) {
   const meta = KIND_META[item.schoolKind ?? "OTHER"];
   const { m: msg, dateLocale } = useI18n();
@@ -333,16 +340,17 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
   const [eSubject, setESubject] = useState(item.subject ?? "");
   const [eKind, setEKind] = useState<SchoolKind>(item.schoolKind ?? "OTHER");
   const [eDate, setEDate] = useState(toDateInput(item.date));
+  const [eTime, setETime] = useState(item.startTime ?? "");
 
   function startEdit() {
     if (!canEdit) return;
-    setEName(item.name); setESubject(item.subject ?? ""); setEKind(item.schoolKind ?? "OTHER"); setEDate(toDateInput(item.date));
+    setEName(item.name); setESubject(item.subject ?? ""); setEKind(item.schoolKind ?? "OTHER"); setEDate(toDateInput(item.date)); setETime(item.startTime ?? "");
     setEditing(true);
   }
 
   if (editing) {
     return (
-      <form onSubmit={async (e) => { e.preventDefault(); if (!eName.trim()) return; if (await onSave({ name: eName.trim(), subject: eSubject.trim(), schoolKind: eKind, date: eDate })) setEditing(false); }}
+      <form onSubmit={async (e) => { e.preventDefault(); if (!eName.trim()) return; if (await onSave({ name: eName.trim(), subject: eSubject.trim(), schoolKind: eKind, date: eDate, startTime: eTime || null })) setEditing(false); }}
         style={{ padding: "12px 14px", borderTop: first ? "none" : "1px solid var(--border-soft)", background: "var(--surface-2)", fontFamily: FONT }}>
         <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
           {(Object.keys(KIND_META) as SchoolKind[]).map(k => {
@@ -360,6 +368,7 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
           <input value={eSubject} onChange={e => setESubject(e.target.value)} list="school-subjects" placeholder={t.subject} style={{ ...input, flex: 1 }} aria-label={t.subject} />
           <input type="date" value={eDate} onChange={e => setEDate(e.target.value)} style={{ ...input, flex: 1 }} aria-label={msg.common.date} />
         </div>
+        <input type="time" value={eTime} step={300} onChange={e => setETime(e.target.value)} style={input} aria-label={t.timeOptional} title={t.timeOptional} />
         {item.imported && <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.4 }}>{t.fromSchoolSoftEdit}</div>}
         <div style={{ display: "flex", gap: 8 }}>
           <button type="button" onClick={() => setEditing(false)} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--background)", border: "1.5px solid var(--border)", color: "var(--fg-2)", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>{msg.common.cancel}</button>
@@ -386,6 +395,7 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
           <span style={{ color: toneColor, fontWeight: 700 }}>{cd.text}</span>
           {" · "}{new Date(item.date).toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" })}
+          {item.startTime ? ` ${item.startTime}` : ""}
           {showOwner && item.assignedUser?.name ? ` · ${item.assignedUser.name}` : ""}
           {item.imported && <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, padding: "1px 6px", borderRadius: 6, background: "var(--tint-success)", color: "var(--success)" }}>SchoolSoft</span>}
         </div>

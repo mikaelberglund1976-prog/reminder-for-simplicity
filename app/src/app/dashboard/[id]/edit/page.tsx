@@ -20,7 +20,7 @@ const VISIBILITY_OPTIONS = ["PRIVATE", "HOUSEHOLD", "PARENTS"].map((value) => ({
 type FormState = {
   name: string; category: string; date: string; recurrence: string;
   amount: string; currency: string; note: string; reminderDaysBefore: string;
-  visibility: string;
+  visibility: string; startTime: string;
 };
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -62,7 +62,7 @@ export default function EditReminderPage() {
 
   const [form, setForm] = useState<FormState>({
     name: "", category: "SUBSCRIPTION", date: "", recurrence: "MONTHLY",
-    amount: "", currency: "SEK", note: "", reminderDaysBefore: "1", visibility: "PRIVATE",
+    amount: "", currency: "SEK", note: "", reminderDaysBefore: "1", visibility: "PRIVATE", startTime: "",
   });
 
   useEffect(() => { if (id) fetchReminder(); }, [id]);
@@ -90,6 +90,7 @@ export default function EditReminderPage() {
         note: data.note || "",
         reminderDaysBefore: String(data.reminderDaysBefore ?? 1),
         visibility: data.visibility || "PRIVATE",
+        startTime: data.startTime || "",
       });
     } catch {
       router.push("/dashboard");
@@ -119,6 +120,7 @@ export default function EditReminderPage() {
           note: form.note || null,
           reminderDaysBefore: parseInt(form.reminderDaysBefore),
           visibility: form.visibility,
+          startTime: form.startTime || null,
         }),
       });
       if (!res.ok) {
@@ -214,6 +216,22 @@ export default function EditReminderPage() {
                 <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
+              </div>
+            </div>
+            {/* 2026-10-07: optional time of day */}
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, marginBottom: 4 }}>
+                {t.time} <span style={{ fontWeight: 400, color: "var(--subtle)" }}>{t.timeOptional}</span>
+              </div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <input type="time" value={form.startTime} step={300} onChange={e => set("startTime", e.target.value)}
+                  aria-label={t.time} style={{ ...inputStyle, flex: 1 }} />
+                {form.startTime && (
+                  <button type="button" onClick={() => set("startTime", "")}
+                    style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 4, whiteSpace: "nowrap" }}>
+                    {t.clearTime}
+                  </button>
+                )}
               </div>
             </div>
           </Section>

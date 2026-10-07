@@ -38,15 +38,26 @@ function NewBookingContent() {
   const DAYS = DAY_NUMS.map((n) => weekdayName(locale, n));
   // Locked for the lifetime of this form — set once from the entry point
   // (URL `?type=`), never toggled by the user. See the 2026-08-18 note below.
-  const [category] = useState<BookingCategory>(
+  const [category, setCategory] = useState<BookingCategory>(
     searchParams.get("type") === "training" ? "TRAINING" : "CHORE"
   );
+  // 2026-10-07 (Mikael: "när man går in på alla aktiviteter kunna uppdatera
+  // dem"): `?edit=<id>` opens an existing activity/chore in this same form.
+  // Each person has their own copy of a shared activity, so editing changes
+  // that one copy and "Who?" picks exactly one person.
+  const editId = searchParams.get("edit");
+  const isEdit = !!editId;
+  const [loadError, setLoadError] = useState("");
+  const [canChangePerson, setCanChangePerson] = useState(true);
 
   const [name, setName] = useState("");
   // 2026-09-28 (test round, row 46): several people can share one
   // activity/chore — everyone picked gets it in their own calendar.
   const [assignees, setAssignees] = useState<string[]>([]);
-  const [recurrence, setRecurrence] = useState<"DAILY" | "WEEKLY" | "DAYS">("WEEKLY");
+  const [recurrence, setRecurrence] = useState<"ONCE" | "DAILY" | "WEEKLY" | "DAYS">("WEEKLY");
+  // 2026-10-07: time of day (activities only — a chore is "some time today").
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]); // Mon–Fri
   // 2026-07-28: prefilled when arriving from the Calendar's "+" button
   // (type first, then date, then details).
@@ -71,6 +82,46 @@ function NewBookingContent() {
     if (status === "authenticated") fetchTrialInfo();
   }, [status]);
 
+  useEffect(() => {
+    if (status === "authenticated" && editId) loadExisting(editId);
+  }, [status, editId]);
+
+  async function loadExisting(id: string) {
+    try {
+      const res = await fetch(`/api/family/chores/${id}`);
+      if (!res.ok) { setLoadError(t.couldNotLoad); return; }
+      const item = await res.json();
+      setCategory(item.category === "TRAINING" ? "TRAINING" : "CHORE");
+      setName(item.name ?? "");
+      setNote(item.note ?? "");
+      setRequiresApproval(!!item.requiresApproval);
+      setCanChangePerson(item.canChangePerson !== false);
+      if (item.assignedTo) setAssignees([item.assignedTo]);
+      const day = typeof item.date === "string" ? item.date.slice(0, 10) : startDate;
+      // Show the date as the family's local day (dates are stored around midday).
+      const local = item.date ? new Date(item.date) : null;
+      const localDay = local && !Number.isNaN(local.getTime())
+        ? `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, "0")}-${String(local.getDate()).padStart(2, "0")}`
+        : day;
+      setStartDate(localDay);
+      const days: number[] = typeof item.choreRecurrenceDays === "string" && item.choreRecurrenceDays
+        ? item.choreRecurrenceDays.split(",").map((n: string) => parseInt(n, 10)).filter((n: number) => !Number.isNaN(n))
+        : [];
+      if (item.recurrence === "ONCE") setRecurrence("ONCE");
+      else if (item.recurrence === "DAILY" && days.length === 0) setRecurrence("DAILY");
+      else if (days.length > 1) { setRecurrence("DAYS"); setSelectedDays(days); }
+      else {
+        setRecurrence("WEEKLY");
+        setWeeklyDay(days.length === 1 ? days[0] : (local ?? new Date()).getDay());
+      }
+      setStartTime(item.startTime ?? "");
+      setEndTime(item.endTime ?? "");
+    } catch (e) {
+      console.error(e);
+      setLoadError(t.couldNotLoad);
+    }
+  }
+
   async function fetchTrialInfo() {
     try {
       const res = await fetch("/api/family/trial");
@@ -79,9 +130,11 @@ function NewBookingContent() {
         const householdMembers: Member[] = data.householdMembers ?? [];
         setMembers(householdMembers);
         // Pre-select the first child if there is one, else the first member.
-        const firstChild = householdMembers.find((m) => m.role === "CHILD");
-        if (firstChild) setAssignees([firstChild.id]);
-        else if (householdMembers.length > 0) setAssignees([householdMembers[0].id]);
+        if (!editId) {
+          const firstChild = householdMembers.find((m) => m.role === "CHILD");
+          if (firstChild) setAssignees([firstChild.id]);
+          else if (householdMembers.length > 0) setAssignees([householdMembers[0].id]);
+        }
       }
     } catch (e) { console.error(e); }
   }
@@ -113,10 +166,19 @@ function NewBookingContent() {
       requiresApproval: isTraining ? false : requiresApproval,
       note: note.trim() || null,
     };
+    if (isTraining) {
+      body.startTime = startTime || null;
+      body.endTime = startTime && endTime ? endTime : null;
+    }
+    if (isEdit) {
+      delete body.assignees;
+      delete body.category;
+      body.assignedTo = assignees[0];
+    }
 
     try {
-      const res = await fetch("/api/family/chores", {
-        method: "POST",
+      const res = await fetch(isEdit ? `/api/family/chores/${editId}` : "/api/family/chores", {
+        method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
@@ -156,11 +218,16 @@ function NewBookingContent() {
           <button onClick={() => router.back()} aria-label={msg.common.back} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", display: "flex", padding: 4 }}>
             <IcBack />
           </button>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0 }}>{isTraining ? t.newActivity : t.newChore}</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)", margin: 0 }}>{isEdit ? (isTraining ? t.editActivity : t.editChore) : isTraining ? t.newActivity : t.newChore}</h1>
         </div>
       </div>
 
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "24px 20px 60px" }}>
+        {loadError ? (
+          <div style={{ background: "var(--tint-danger)", borderRadius: 12, padding: "14px 16px", fontSize: 14, color: "var(--danger)", fontWeight: 600 }}>
+            {loadError}
+          </div>
+        ) : (
         <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
           {/* 2026-08-18: Chore and Activity are now fully separate flows —
@@ -175,7 +242,7 @@ function NewBookingContent() {
             background: "var(--surface-3)", borderRadius: 999, padding: "6px 14px",
           }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "var(--fg-2)" }}>
-              {isTraining ? t.newActivityChip : t.newChoreChip}
+              {isEdit ? (isTraining ? "🎯 " + t.editActivity : "🧹 " + t.editChore) : isTraining ? t.newActivityChip : t.newChoreChip}
             </span>
           </div>
 
@@ -184,9 +251,9 @@ function NewBookingContent() {
             <label style={label}>{isTraining ? t.whatIsIt : t.choreName}</label>
             <input value={name} onChange={e => setName(e.target.value)}
               placeholder={isTraining ? t.activityPlaceholder : t.chorePlaceholder}
-              style={inp} autoFocus />
+              style={inp} autoFocus={!isEdit} />
             {/* Suggestions */}
-            {!name && (
+            {!name && !isEdit && (
               <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {(isTraining ? t.activityTemplates : t.choreTemplates).slice(0, 6).map(s => (
                   <button key={s} type="button" onClick={() => setName(s)}
@@ -201,18 +268,20 @@ function NewBookingContent() {
           {/* Assigned to — 2026-09-28: pick one or more people (row 46);
               anyone in the family, children and adults (row 43). */}
           <div>
-            <label style={label}>{t.who} <span style={{ fontWeight: 400, color: "var(--subtle)" }}>{t.pickOneOrMore}</span></label>
+            <label style={label}>{t.who} <span style={{ fontWeight: 400, color: "var(--subtle)" }}>{isEdit ? t.onePerson : t.pickOneOrMore}</span></label>
             {members.length === 0 ? (
               <div style={{ background: "var(--tint-warning)", borderRadius: 12, padding: 14, fontSize: 13, color: "var(--warning)" }}>
                 {t.noMembers} <a href="/dashboard/family/members" style={{ color: "var(--warning)", fontWeight: 700 }}>{t.addSomeoneFirst}</a>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {members.map(c => {
+                {members.filter(c => !isEdit || canChangePerson || assignees.includes(c.id)).map(c => {
                   const on = assignees.includes(c.id);
                   return (
                     <button key={c.id} type="button" aria-pressed={on}
-                      onClick={() => setAssignees(prev => on ? prev.filter(id => id !== c.id) : [...prev, c.id])}
+                      onClick={() => isEdit
+                        ? (canChangePerson && setAssignees([c.id]))
+                        : setAssignees(prev => on ? prev.filter(id => id !== c.id) : [...prev, c.id])}
                       style={{
                         display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
                         background: on ? "var(--tint-accent)" : "var(--surface)",
@@ -230,7 +299,7 @@ function NewBookingContent() {
                     </button>
                   );
                 })}
-                {assignees.length > 1 && (
+                {!isEdit && assignees.length > 1 && (
                   <div style={{ fontSize: 12, color: "var(--muted)", padding: "2px 2px 0" }}>
                     {t.everyonePicked}
                   </div>
@@ -242,8 +311,11 @@ function NewBookingContent() {
           {/* Frequency */}
           <div>
             <label style={label}>{t.howOften}</label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
-              {([["DAILY", t.everyDay], ["WEEKLY", t.onceAWeek], ["DAYS", t.specificDays]] as const).map(([val, lbl]) => (
+            <div style={{ display: "grid", gridTemplateColumns: isTraining ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+              {(isTraining
+                ? ([["ONCE", t.onlyOnce], ["DAILY", t.everyDay], ["WEEKLY", t.onceAWeek], ["DAYS", t.specificDays]] as const)
+                : ([["DAILY", t.everyDay], ["WEEKLY", t.onceAWeek], ["DAYS", t.specificDays]] as const)
+              ).map(([val, lbl]) => (
                 <button key={val} type="button" onClick={() => setRecurrence(val)}
                   style={{
                     padding: "10px 8px", borderRadius: 12, fontSize: 12, fontWeight: 700,
@@ -306,10 +378,40 @@ function NewBookingContent() {
 
           {/* Start date */}
           <div>
-            <label style={label}>{t.startDate}</label>
+            <label style={label}>{recurrence === "ONCE" ? t.date : t.startDate}</label>
             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
               style={inp} />
           </div>
+
+          {/* 2026-10-07: time of day — activities only */}
+          {isTraining && (
+            <div>
+              <label style={label}>{t.time} <span style={{ fontWeight: 400, color: "var(--subtle)" }}>{t.optional}</span></label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, marginBottom: 4 }}>{t.starts}</div>
+                  <input type="time" value={startTime} step={300}
+                    onChange={e => { setStartTime(e.target.value); if (!e.target.value) setEndTime(""); }}
+                    style={inp} aria-label={t.starts} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, marginBottom: 4 }}>{t.ends} <span style={{ fontWeight: 400, color: "var(--subtle)" }}>{t.endsHint}</span></div>
+                  <input type="time" value={endTime} step={300} disabled={!startTime}
+                    onChange={e => setEndTime(e.target.value)}
+                    style={{ ...inp, opacity: startTime ? 1 : 0.5 }} aria-label={t.ends} />
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
+                <span style={{ fontSize: 12, color: "var(--subtle)" }}>{t.timeHint}</span>
+                {startTime && (
+                  <button type="button" onClick={() => { setStartTime(""); setEndTime(""); }}
+                    style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FONT, padding: 0 }}>
+                    {t.noTime}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Requires approval toggle — a CHORE-only concept, no one "approves" a training booking */}
           {!isTraining && (
@@ -362,9 +464,10 @@ function NewBookingContent() {
               padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer",
               fontFamily: FONT, opacity: saving || !name.trim() || assignees.length === 0 ? 0.6 : 1,
             }}>
-            {saving ? msg.common.saving : isTraining ? t.saveActivity : t.saveChore}
+            {saving ? msg.common.saving : isEdit ? t.saveChanges : isTraining ? t.saveActivity : t.saveChore}
           </button>
         </form>
+        )}
       </main>
     </div>
   );

@@ -84,6 +84,7 @@ type Reminder = {
   name: string;
   category: string;
   date: string;
+  startTime?: string | null;
   recurrence: string;
   amount: number | null;
   currency: string | null;
@@ -350,7 +351,7 @@ export default function ReminderDetailPage() {
           {/* Date row — no icon, just label: value */}
           <div style={{ borderTop: "1px solid var(--border-soft)", padding: "15px 0 0" }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)" }}>
-              {reminder.recurrence !== "ONCE" ? t.next : t.dateLabel}{formatDate(reminder.date, dateLocale)}
+              {reminder.recurrence !== "ONCE" ? t.next : t.dateLabel}{formatDate(reminder.date, dateLocale)}{reminder.startTime ? ` · ${reminder.startTime}` : ""}
             </span>
           </div>
 

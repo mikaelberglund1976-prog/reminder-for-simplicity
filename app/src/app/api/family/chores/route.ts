@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPro } from "@/lib/entitlements";
 import { importedIds } from "@/lib/schoolFeeds";
+import { withTimes, timesFromBody, setTime } from "@/lib/reminderTimes";
 
 // 2026-08-18: MEMBER included too — a chore/activity/school item can be
 // created by any household member, not just an OWNER/PARENT/ADULT (Mikael:
@@ -76,7 +77,7 @@ export async function GET(req: Request) {
       whereFilter.assignedTo = session.user.id;
     }
 
-    const chores = await prisma.reminder.findMany({
+    const rawChores = await prisma.reminder.findMany({
       where: whereFilter,
       include: {
         completions: { where: { weekStart } },
@@ -84,6 +85,8 @@ export async function GET(req: Request) {
       },
       orderBy: { createdAt: "asc" },
     });
+    // 2026-10-07: time of day (activities/school), see lib/reminderTimes.ts.
+    const chores = await withTimes(rawChores);
 
     // 2026-10-03: mark items that came from SchoolSoft.
     if (category === "SCHOOL") {
@@ -160,6 +163,11 @@ export async function POST(req: Request) {
       ? (["HOMEWORK", "TEST", "OTHER"].includes(rawSchoolKind) ? rawSchoolKind : "HOMEWORK")
       : null;
 
+    // 2026-10-07: optional time of day — activities (start–end) and school
+    // items (start). Chores are "some time today" and have no time.
+    const time = category === "CHORE" ? undefined : timesFromBody(body);
+    if (time && category === "SCHOOL") time.endTime = null;
+
     const created = [];
     for (const finalAssignedTo of targets) {
     const chore = await prisma.reminder.create({
@@ -192,7 +200,8 @@ export async function POST(req: Request) {
       },
       include: { assignedUser: { select: { id: true, name: true } } },
     });
-    created.push(chore);
+    if (time?.startTime) await setTime(chore.id, time);
+    created.push({ ...chore, startTime: time?.startTime ?? null, endTime: time?.endTime ?? null });
     }
 
     // Single target → the item itself (unchanged response shape); several →

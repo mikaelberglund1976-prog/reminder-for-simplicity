@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { findReminderFor } from "@/lib/reminderAccess";
+import { getTimes, timesFromBody, setTime } from "@/lib/reminderTimes";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -32,7 +33,8 @@ export async function GET(
     return NextResponse.json({ error: "Hittades inte" }, { status: 404 });
   }
 
-  return NextResponse.json({ ...found.reminder, canEdit: found.canEdit });
+  const t = (await getTimes([found.reminder.id])).get(found.reminder.id);
+  return NextResponse.json({ ...found.reminder, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null, canEdit: found.canEdit });
 }
 
 // DELETE /api/reminders/[id] – Ta bort en reminder (soft delete)
@@ -77,7 +79,8 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const data = updateSchema.parse(body);
+    const data = updateSchema.parse(body); // zod strips startTime/endTime
+    const time = timesFromBody(body);
 
     // Hantera visibility och householdId
     // Pro-kravet borttaget 2026-08-02 (se PRODUCT_SPEC.md §7.2, samma
@@ -104,7 +107,9 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updated);
+    if (time) await setTime(params.id, time);
+    const t = (await getTimes([params.id])).get(params.id);
+    return NextResponse.json({ ...updated, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });

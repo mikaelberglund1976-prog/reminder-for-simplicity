@@ -317,14 +317,15 @@ export default function FamilyPage() {
                 borderTop: i === 0 ? "none" : "1px solid var(--border-soft)",
                 padding: "12px 0",
               }}>
-                <div style={{ flex: 1 }}>
+                {/* 2026-10-07: tap the name to open and edit the chore */}
+                <Link href={`/dashboard/family/new?edit=${chore.id}`} style={{ flex: 1, minWidth: 0, textDecoration: "none" }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: isDone ? "var(--muted)" : "var(--fg)", textDecoration: isDone ? "line-through" : "none" }}>
                     {chore.name}
                   </div>
                   {chore.requiresApproval && (
                     <div style={{ fontSize: 11, color: "var(--subtle)", marginTop: 2 }}>{t.requiresApproval}</div>
                   )}
-                </div>
+                </Link>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <button
                     onClick={() => !isPending && handleToggleDone(chore.id)}
@@ -369,7 +370,7 @@ export default function FamilyPage() {
           <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>{t.notAssignedHint}</div>
           {orphans.map((c, i) => (
             <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)" }}>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{c.name}</span>
+              <Link href={`/dashboard/family/new?edit=${c.id}`} style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "var(--fg)", textDecoration: "none" }}>{c.name}</Link>
               <button onClick={() => removeChore(c.id, c.name)} disabled={removingId === c.id} aria-label={t.removeChore}
                 style={{ background: "none", border: "none", color: "var(--faint)", fontSize: 18, cursor: "pointer", padding: 4, lineHeight: 1 }}>×</button>
             </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getOccurrencesInRange, type RecurringItem } from "@/lib/recurrence";
 import { buildIcsFeed, type IcsEvent } from "@/lib/ics";
+import { getTimes } from "@/lib/reminderTimes";
 
 // GET /api/calendar/feed/[token].ics — public, no login. The token itself is
 // the auth (same trust model as List.shareToken / Household.shoppingListShareToken):
@@ -67,8 +68,10 @@ export async function GET(_req: Request, { params }: { params: { token: string }
       TRAINING: "Activity", SCHOOL: "School", OTHER: "Reminder",
     };
 
+    const times = await getTimes(reminders.map((r) => r.id));
     const events: IcsEvent[] = [];
     for (const r of reminders) {
+      const time = times.get(r.id);
       const occs = getOccurrencesInRange(r as unknown as RecurringItem, from, to);
       const categoryLabel = CATEGORY_LABELS[r.category] ?? r.category;
       const who = ["CHORE", "TRAINING", "SCHOOL"].includes(r.category) && r.assignedUser?.name ? ` (${r.assignedUser.name})` : "";
@@ -85,6 +88,8 @@ export async function GET(_req: Request, { params }: { params: { token: string }
             ? `${r.schoolKind === "TEST" ? "🧪 Test" : r.schoolKind === "HOMEWORK" ? "📝 Homework" : "📚 School"}: ${r.subject ? r.subject + " – " : ""}${r.name}`
             : r.name,
           date: occ,
+          startTime: time?.startTime ?? null,
+          endTime: time?.endTime ?? null,
           description: descriptionParts.join(" — ") || undefined,
         });
       }

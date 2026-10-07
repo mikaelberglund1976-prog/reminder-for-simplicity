@@ -43,4 +43,6 @@ export const school: Messages["school"] = {
   intro: "Kommande läxor och prov för hela familjen. Bocka av när de är klara och välj för varje sak om den ska synas i kalendern. Barnen ser sina direkt när de loggar in.",
   addSomeoneFirst: "Lägg till någon i familjen innan du skapar skoluppgifter.",
   header: "📚 Skola",
+  // 2026-10-07
+  timeOptional: "Klockslag (valfritt)",
 };

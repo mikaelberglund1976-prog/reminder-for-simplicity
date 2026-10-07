@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { withTimes, timesFromBody, setTime } from "@/lib/reminderTimes";
 
 const reminderSchema = z.object({
   name: z.string().min(1, "Namn kravs").max(200),
@@ -66,7 +67,8 @@ export async function GET() {
     });
   }
 
-  return NextResponse.json(reminders);
+  // 2026-10-07: optional time of day, see lib/reminderTimes.ts.
+  return NextResponse.json(await withTimes(reminders));
 }
 
 // POST /api/reminders
@@ -78,7 +80,8 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const data = reminderSchema.parse(body);
+    const data = reminderSchema.parse(body); // zod strips startTime/endTime
+    const time = timesFromBody(body);
 
     // Pro requirement removed 2026-08-02 (Mikael's decision, see
     // PRODUCT_SPEC.md §7.2): sharing a reminder within your own household is
@@ -107,7 +110,8 @@ export async function POST(req: Request) {
       include: { user: { select: { id: true, name: true } } },
     });
 
-    return NextResponse.json(reminder, { status: 201 });
+    if (time?.startTime) await setTime(reminder.id, time);
+    return NextResponse.json({ ...reminder, startTime: time?.startTime ?? null, endTime: time?.endTime ?? null }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });

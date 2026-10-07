@@ -20,6 +20,7 @@ type SchoolItem = {
   id: string; name: string; date: string; subject: string | null;
   schoolKind: "HOMEWORK" | "TEST" | "OTHER" | null; completedAt: string | null;
   assignedUser: { id: string; name: string | null; email: string } | null;
+  startTime?: string | null;
 };
 
 type Reminder = {
@@ -37,6 +38,7 @@ type Reminder = {
   visibility: string;
   assignedTo?: string | null;
   user?: { id: string; name: string | null };
+  startTime?: string | null;
 };
 
 // 2026-10-04: category / recurrence words come from messages.reminders.
@@ -256,7 +258,7 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
           )}
         </div>
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
-          {formatDate(reminder.date, dateLocale)}
+          {formatDate(reminder.date, dateLocale)}{reminder.startTime ? ` · ${reminder.startTime}` : ""}
           {showAmount && <> &middot; {reminder.amount!.toLocaleString(dateLocale)} {reminder.currency}</>}
           {showRecurrence && <> &middot; {msg.reminders.recurrence[reminder.recurrence] ?? reminder.recurrence}</>}
         </div>
@@ -567,7 +569,7 @@ export default function DashboardPage() {
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: overdue ? "var(--danger)" : days <= 1 ? "var(--warning)" : "var(--accent)", marginTop: 3 }}>
-                      {overdue ? msg.reminders.overdueOn(formatDate(r.date, dateLocale)) : relativeDay(msg, locale, r.date)}
+                      {overdue ? msg.reminders.overdueOn(formatDate(r.date, dateLocale)) : relativeDay(msg, locale, r.date)}{r.startTime ? ` · ${r.startTime}` : ""}
                     </div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "nowrap", overflow: "hidden" }}>
                       <span style={{ padding: "2px 8px", borderRadius: 50, fontSize: 10.5, fontWeight: 700, background: badge.bg, color: badge.color, whiteSpace: "nowrap" }}>
@@ -615,7 +617,7 @@ export default function DashboardPage() {
                           {it.subject ? `${it.subject} · ` : ""}{it.name}
                         </span>
                         <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0, color: d < 0 ? "var(--danger)" : d <= 1 ? "var(--warning)" : "var(--muted)" }}>
-                          {d < 0 ? msg.reminders.overdue : d === 0 ? msg.common.today : d === 1 ? msg.common.tomorrow : formatDate(it.date, dateLocale)}
+                          {d < 0 ? msg.reminders.overdue : d === 0 ? msg.common.today : d === 1 ? msg.common.tomorrow : formatDate(it.date, dateLocale)}{it.startTime ? ` ${it.startTime}` : ""}
                         </span>
                       </div>
                     );

@@ -44,4 +44,8 @@ export const reminderForm: Messages["reminderForm"] = {
   recurrence: "Upprepas",
   visPrivateReminder: "Bara du ser den här påminnelsen.",
   saveChanges: "Spara ändringar",
+  // 2026-10-07
+  time: "Klockslag",
+  timeOptional: "(valfritt – t.ex. tandläkare 14:30)",
+  clearTime: "Ta bort tid",
 };

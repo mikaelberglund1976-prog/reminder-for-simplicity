@@ -8,10 +8,14 @@
 // service), and small enough that a library would add more surface area
 // than it saves.
 //
-// All-day events are used throughout (DTSTART/DTEND with VALUE=DATE, no
-// time-of-day) because nothing in this app stores a meaningful time-of-day
-// today — the in-app calendar itself is day-granularity only (see
-// dashboard/calendar/page.tsx). This avoids an entire class of timezone bugs.
+// Items without a time are all-day events (DTSTART/DTEND with VALUE=DATE);
+// items with a time (since 2026-10-07) are timed events, see IcsEvent below.
+
+// 2026-10-07: items can now carry a time of day (lib/reminderTimes.ts). An
+// event with `startTime` is written as a timed event in Europe/Stockholm
+// (TZID + a VTIMEZONE block, so phones show 17:30 local all year round);
+// everything else stays an all-day event exactly as before.
+export const ICS_TZID = "Europe/Stockholm";
 
 export interface IcsEvent {
   /** Stable per-occurrence id, e.g. `reminder-abc123-2026-08-14`. */
@@ -20,6 +24,41 @@ export interface IcsEvent {
   /** The day this occurs on (time-of-day ignored). */
   date: Date;
   description?: string;
+  /** "HH:MM" wall-clock start; omitted = all day. */
+  startTime?: string | null;
+  /** "HH:MM" wall-clock end; omitted = one hour after the start. */
+  endTime?: string | null;
+}
+
+// Standard CET/CEST rules (EU: last Sunday of March / October).
+const VTIMEZONE_STOCKHOLM = [
+  "BEGIN:VTIMEZONE",
+  `TZID:${ICS_TZID}`,
+  "BEGIN:DAYLIGHT",
+  "TZOFFSETFROM:+0100",
+  "TZOFFSETTO:+0200",
+  "TZNAME:CEST",
+  "DTSTART:19700329T020000",
+  "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
+  "END:DAYLIGHT",
+  "BEGIN:STANDARD",
+  "TZOFFSETFROM:+0200",
+  "TZOFFSETTO:+0100",
+  "TZNAME:CET",
+  "DTSTART:19701025T030000",
+  "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
+  "END:STANDARD",
+  "END:VTIMEZONE",
+];
+
+function toIcsLocal(d: Date, hhmm: string): string {
+  return `${toIcsDate(d)}T${hhmm.replace(":", "")}00`;
+}
+
+function plusOneHour(hhmm: string): { time: string; nextDay: boolean } {
+  const [h, m] = hhmm.split(":").map((n) => parseInt(n, 10));
+  const total = h * 60 + m + 60;
+  return { time: `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`, nextDay: total >= 24 * 60 };
 }
 
 function foldLine(line: string): string {
@@ -74,16 +113,23 @@ export function buildIcsFeed(calendarName: string, events: IcsEvent[]): string {
     // it's the only "how fresh should this be" signal an ICS feed has.
     "REFRESH-INTERVAL;VALUE=DURATION:PT4H",
     "X-PUBLISHED-TTL:PT4H",
+    ...VTIMEZONE_STOCKHOLM,
   ];
 
   for (const ev of events) {
-    const dtStart = toIcsDate(ev.date);
-    const dtEnd = toIcsDate(addDays(ev.date, 1)); // exclusive end, per spec, for an all-day event
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${ev.uid}@reminder-for-simplicity`);
     lines.push(`DTSTAMP:${now}`);
-    lines.push(`DTSTART;VALUE=DATE:${dtStart}`);
-    lines.push(`DTEND;VALUE=DATE:${dtEnd}`);
+    if (ev.startTime) {
+      const end = ev.endTime && ev.endTime > ev.startTime
+        ? { time: ev.endTime, nextDay: false }
+        : plusOneHour(ev.startTime);
+      lines.push(`DTSTART;TZID=${ICS_TZID}:${toIcsLocal(ev.date, ev.startTime)}`);
+      lines.push(`DTEND;TZID=${ICS_TZID}:${toIcsLocal(end.nextDay ? addDays(ev.date, 1) : ev.date, end.time)}`);
+    } else {
+      lines.push(`DTSTART;VALUE=DATE:${toIcsDate(ev.date)}`);
+      lines.push(`DTEND;VALUE=DATE:${toIcsDate(addDays(ev.date, 1))}`); // exclusive end, per spec, for an all-day event
+    }
     lines.push(foldLine(`SUMMARY:${escapeText(ev.title)}`));
     if (ev.description) lines.push(foldLine(`DESCRIPTION:${escapeText(ev.description)}`));
     lines.push("END:VEVENT");

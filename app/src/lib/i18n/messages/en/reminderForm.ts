@@ -43,4 +43,8 @@ export const reminderForm = {
   recurrence: "Recurrence",
   visPrivateReminder: "Only you will see this reminder.",
   saveChanges: "Save changes",
+  // 2026-10-07
+  time: "Time",
+  timeOptional: "(optional — e.g. a doctor’s appointment at 14:30)",
+  clearTime: "Clear time",
 };

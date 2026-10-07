@@ -11,11 +11,13 @@ import { useI18n, useM } from "@/lib/i18n/client";
 import { weekdayName } from "@/lib/i18n/format";
 import type { Messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/i18n/config";
+import { formatTimeRange, timeSortKey } from "@/lib/timeFormat";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
 function IcBack() { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><polyline points="15 18 9 12 15 6"/></svg>; }
+function IcChevRight() { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR}><polyline points="9 18 15 12 9 6"/></svg>; }
 function IcTrash() { return <svg width={16} height={16} viewBox="0 0 24 24" {...STR}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>; }
 
 type TrainingItem = {
@@ -24,6 +26,9 @@ type TrainingItem = {
   note: string | null;
   recurrence: "ONCE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
   choreRecurrenceDays: string | null;
+  date?: string;
+  startTime?: string | null;
+  endTime?: string | null;
   assignedUser: { id: string; name: string | null; email: string } | null;
 };
 
@@ -46,6 +51,17 @@ function formatSchedule(item: TrainingItem, m: Messages, locale: Locale): string
   if (item.recurrence === "DAILY") return t.everyDay;
   if (item.recurrence === "WEEKLY") return t.weekly;
   return t.oneOff;
+}
+
+// 2026-10-07: "Every Tuesday · 17:30–19:00" (time when set).
+function formatWhen(item: TrainingItem, m: Messages, locale: Locale): string {
+  const time = formatTimeRange(item);
+  let when = formatSchedule(item, m, locale);
+  if (item.recurrence === "ONCE" && !item.choreRecurrenceDays && item.date) {
+    const d = new Date(item.date);
+    if (!Number.isNaN(d.getTime())) when = d.toLocaleDateString(locale === "sv" ? "sv-SE" : "en-GB", { weekday: "short", day: "numeric", month: "short" });
+  }
+  return time ? `${when} · ${time}` : when;
 }
 
 // Dedicated Training section — separate from Chores, mirrors the
@@ -141,7 +157,7 @@ export default function TrainingPage() {
     byChild.get(key)!.push(item);
   }
   for (const list of Array.from(byChild.values())) {
-    list.sort((a: TrainingItem, b: TrainingItem) => a.name.localeCompare(b.name));
+    list.sort((a: TrainingItem, b: TrainingItem) => timeSortKey(a).localeCompare(timeSortKey(b)) || a.name.localeCompare(b.name));
   }
   const children = [
     ...allMembers.filter((m) => m.role === "CHILD"),
@@ -207,12 +223,16 @@ export default function TrainingPage() {
                     }}>
                       🎯
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", lineHeight: 1.3 }}>{item.name}</div>
-                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                        {formatSchedule(item, msg, locale)}{item.note ? ` · ${item.note}` : ""}
+                    {/* 2026-10-07: tap to open and edit */}
+                    <Link href={`/dashboard/family/new?type=training&edit=${item.id}`} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", lineHeight: 1.3 }}>{item.name}</div>
+                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                          {formatWhen(item, msg, locale)}{item.note ? ` · ${item.note}` : ""}
+                        </div>
                       </div>
-                    </div>
+                      <span style={{ color: "var(--faint)", display: "flex", flexShrink: 0 }}><IcChevRight /></span>
+                    </Link>
                     <button
                       onClick={() => handleDelete(item.id)}
                       disabled={deletingId === item.id}

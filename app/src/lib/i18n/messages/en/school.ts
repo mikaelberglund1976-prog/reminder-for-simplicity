@@ -41,4 +41,6 @@ export const school = {
   intro: "Upcoming homework and tests for the whole family. Tick them off when done, and choose per item whether it shows in the calendar. Children see theirs first thing when they log in.",
   addSomeoneFirst: "Add someone in Family before creating school items.",
   header: "📚 School",
+  // 2026-10-07
+  timeOptional: "Time (optional)",
 };

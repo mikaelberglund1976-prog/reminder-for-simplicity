@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { importedIds, markImport } from "@/lib/schoolFeeds";
+import { timesFromBody, setTime } from "@/lib/reminderTimes";
 
 async function loadAllowed(id: string, userId: string) {
   const item = await prisma.reminder.findUnique({ where: { id } });
@@ -68,13 +69,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       data.date = d; contentEdit = true;
     }
     if (body?.note !== undefined) { data.note = typeof body.note === "string" && body.note.trim() ? body.note.trim().slice(0, 1000) : null; contentEdit = true; }
-    if (Object.keys(data).length === 0) {
+    // 2026-10-07: optional time ("prov kl 08:20"); school items have no end time.
+    const time = timesFromBody(body);
+    if (time) time.endTime = null;
+    if (Object.keys(data).length === 0 && !time) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
 
-    const updated = await prisma.reminder.update({ where: { id: item.id }, data });
+    const updated = Object.keys(data).length > 0 ? await prisma.reminder.update({ where: { id: item.id }, data }) : item;
+    if (time) { await setTime(item.id, time); contentEdit = true; }
     if (contentEdit) await markImport(item.id, "edited");
-    return NextResponse.json(updated);
+    return NextResponse.json({ ...updated, ...(time ?? {}) });
   } catch (err) {
     console.error("School PATCH error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

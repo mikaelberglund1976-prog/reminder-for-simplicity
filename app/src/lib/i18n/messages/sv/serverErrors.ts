@@ -110,6 +110,7 @@ export const serverErrors: Record<string, string> = {
   "Not found or already deleted": "Hittades inte eller är redan borttagen",
   "Invalid date": "Ogiltigt datum",
   "Nothing to update": "Inget att uppdatera",
+  "Pick at least one day": "Välj minst en dag",
   "Namn kravs": "Namn krävs",
   "A handover is already pending for this reminder": "Det finns redan en väntande överlämning för påminnelsen",
   "No pending handover on this reminder": "Ingen väntande överlämning för påminnelsen",
