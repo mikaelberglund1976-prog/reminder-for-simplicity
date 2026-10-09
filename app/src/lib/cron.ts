@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { sendReminderEmail } from "@/lib/email";
+import { sendReminderEmail, sendTrialEndingEmail } from "@/lib/email";
+import { sendPushToUser } from "@/lib/webPush";
+import { hasPro } from "@/lib/entitlements";
+import { getLocaleForUser } from "@/lib/i18n/server";
+import { getMessages } from "@/lib/i18n/messages";
 import { addDays, addWeeks, addMonths, addYears } from "date-fns";
 import { purgeExpiredAccounts } from "@/lib/accountDeletion";
 import { purgeOrphanMedia } from "@/lib/media";
@@ -146,6 +150,24 @@ export async function runReminderCron() {
         data: { reminderId: reminder.id, type: "email" },
       });
 
+      // 2026-10-09: the same reminder as a push to everyone who got the email
+      // and turned notifications on (best-effort — never fails the run).
+      const pushIds = new Set<string>();
+      if (!imported.has(reminder.id)) pushIds.add(reminder.user.id);
+      if (reminder.category === "SCHOOL" && reminder.assignedUser && !reminder.assignedUser.deletedAt) pushIds.add(reminder.assignedUser.id);
+      for (const uid of Array.from(pushIds)) {
+        const pm = getMessages(await getLocaleForUser(uid)).push;
+        const days = reminder.reminderDaysBefore;
+        const when = days <= 0 ? pm.today : days === 1 ? pm.tomorrow : pm.inDays(days);
+        const amount = reminder.amount ? `${reminder.amount} ${reminder.currency ?? ""}`.trim() : null;
+        await sendPushToUser(uid, {
+          title: reminder.name,
+          body: pm.dueBody(when, amount),
+          url: reminder.category === "SCHOOL" ? "/dashboard/school" : `/dashboard/${reminder.id}`,
+          tag: `reminder-${reminder.id}`,
+        }, "reminders");
+      }
+
       await prisma.reminder.update({
         where: { id: reminder.id },
         data: { lastSentAt: now },
@@ -181,6 +203,28 @@ export async function runReminderCron() {
   // every week) that households wanted them to stick around as a quick
   // reference/re-add list instead of disappearing on a timer. Clearing is
   // now only ever manual, via the "Clear bought items" button.
+
+  // 2026-10-09 (persona review): email the family's adults 3 days before the
+  // trial ends. The cron runs once a day, so the window [now+2d, now+3d)
+  // catches each trial exactly once without storing anything.
+  try {
+    const from = addDays(now, 2), to = addDays(now, 3);
+    const ending = await prisma.familyTrial.findMany({
+      where: { expiresAt: { gte: from, lt: to } },
+      include: { household: { include: { members: { where: { role: { in: ["OWNER", "PARENT"] } }, include: { user: true } } } } },
+    });
+    for (const tr of ending) {
+      if (hasPro(tr.household)) continue;
+      for (const mem of tr.household.members) {
+        if (mem.user.deletedAt) continue;
+        await sendTrialEndingEmail({ to: mem.user.email, name: mem.user.name, expiresAt: tr.expiresAt, daysLeft: 3 }).catch((e) => console.error("Trial ending email failed:", e));
+      }
+      log.push(`Trial ending notice: household ${tr.householdId} (${tr.household.members.length} adults)`);
+    }
+  } catch (err) {
+    console.error("Trial ending notices failed:", err);
+    log.push(`Trial ending ERROR: ${String(err)}`);
+  }
 
   // 2026-09-27: accounts soft-deleted more than 60 days ago are removed for real.
   try {

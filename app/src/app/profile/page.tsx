@@ -17,6 +17,8 @@ import { useI18n } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/messages";
 import LanguageSetting from "@/components/LanguageSetting";
 import HomePrefsSettings from "@/components/HomePrefsSettings";
+import { isManagedEmail } from "@/lib/managedProfileClient";
+import PushCard from "@/components/PushCard";
 
 type HouseholdMember = {
   id: string;
@@ -234,20 +236,22 @@ export default function ProfilePage() {
   function startEditChild(c: { id: string; name: string; email?: string }) {
     setEditingChildId(c.id);
     setEditChildName(c.name);
-    setEditChildEmail(c.email ?? "");
+    setEditChildEmail(isManagedEmail(c.email) ? "" : (c.email ?? ""));
     setEditChildError("");
   }
 
   async function saveChildEdit() {
     if (!editingChildId) return;
     if (!editChildName.trim()) { setEditChildError(t.enterName); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editChildEmail.trim())) { setEditChildError(t.enterValidEmail); return; }
+    const editedChild = pinChildren.find((c) => c.id === editingChildId);
+    const keepManaged = isManagedEmail(editedChild?.email) && !editChildEmail.trim();
+    if (!keepManaged && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editChildEmail.trim())) { setEditChildError(t.enterValidEmail); return; }
     setSavingChildEdit(true); setEditChildError("");
     try {
       const res = await fetch(`/api/family/child-profiles/${editingChildId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editChildName.trim(), email: editChildEmail.trim() }),
+        body: JSON.stringify(keepManaged ? { name: editChildName.trim() } : { name: editChildName.trim(), email: editChildEmail.trim() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setEditChildError(data.error ? tErr(data.error) : t.error(res.status)); return; }
@@ -600,6 +604,13 @@ export default function ProfilePage() {
             </div>
           )}
 
+          {/* 2026-10-09: push notifications on this phone (persona review). */}
+          <div id="notifications" style={{ scrollMarginTop: 16 }}>
+            <Card title={msg.push.cardTitle}>
+              <PushCard />
+            </Card>
+          </div>
+
           {/* ── Calendar sync ── */}
           {/* Outbound-only ICS feed: reminders, chores and trainings visible
               to you (same rule as the in-app dashboard), read into your own
@@ -891,8 +902,9 @@ export default function ProfilePage() {
                               <Avatar userId={c.id} name={c.name} size={32} />
                               <div style={{ minWidth: 0, flex: 1 }}>
                                 <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{c.name}</div>
-                                {c.email && <div style={{ fontSize: 11, color: "var(--subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.email}</div>}
-                                {c.emailVerified === false && (
+                                {c.email && !isManagedEmail(c.email) && <div style={{ fontSize: 11, color: "var(--subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.email}</div>}
+                                {isManagedEmail(c.email) && <div style={{ fontSize: 11, color: "var(--subtle)" }}>{t.managedNoLogin}</div>}
+                                {c.emailVerified === false && !isManagedEmail(c.email) && (
                                   <div style={{ fontSize: 11, color: "var(--warning)", fontWeight: 600, marginTop: 2 }}>
                                     {t.notConfirmed}{" "}
                                     <button type="button" onClick={() => resendChildInvite(c.id, c.email)} disabled={resendingChild === c.id}
@@ -920,7 +932,7 @@ export default function ProfilePage() {
                                 </div>
                                 <div style={{ marginBottom: 12 }}>
                                   <label style={{ fontSize: 12, fontWeight: 700, color: "var(--fg-2)", display: "block", marginBottom: 6 }}>{msg.common.email}</label>
-                                  <input value={editChildEmail} onChange={e => setEditChildEmail(e.target.value)} type="email" autoComplete="off" style={inputStyle} />
+                                  <input value={editChildEmail} onChange={e => setEditChildEmail(e.target.value)} type="email" autoComplete="off" style={inputStyle} placeholder={isManagedEmail(c.email) ? t.managedGiveEmail : undefined} />
                                 </div>
                                 {editChildError && (
                                   <div style={{ fontSize: 13, color: "var(--danger)", background: "var(--tint-danger)", border: "1px solid var(--border-danger)", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>{editChildError}</div>

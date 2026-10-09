@@ -49,6 +49,8 @@ export const landing: Messages["landing"] = {
     privacyPolicy: "Integritetspolicy",
   },
   upgrade: {
+    afterTrial: "När provperioden slutar pausas barnens vyer, läxor & prov, aktiviteter, sysslor och önskelistor. Inget raderas – allt kommer tillbaka när ni uppgraderar. Vi mejlar 3 dagar innan.",
+    afterTrialFree: "Har ni redan provat? Inget har raderats – barnens saker kommer tillbaka så fort ni har Pro.",
     couldNotStart: "Kunde inte starta provperioden",
     trialStarted: "Din provperiod på 14 dagar har startat – allt är upplåst.",
     requested: "Tack! Vi har fått din förfrågan och mejlar dig så fort Pro är på.",

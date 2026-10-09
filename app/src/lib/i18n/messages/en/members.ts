@@ -1,4 +1,10 @@
 export const members = {
+  noLoginLabel: "No email of their own — I'll look after the profile",
+  noLoginHint: "For younger children. They don't log in; you see and tick things for them. You can give them their own login later.",
+  noLoginHelp: "The profile works for chores, school, activities and the calendar straight away. Add an email under Settings → Child accounts when they're ready for their own login.",
+  addManaged: "Add child",
+  childAddedManaged: (name: string) => `✓ ${name} is added. You look after the profile — add school, activities and chores for them.`,
+  managedSuffix: " · managed by you",
   roles: { OWNER: "Owner", PARENT: "Parent", ADULT: "Adult", CHILD: "Child", MEMBER: "Member" } as Record<string, string>,
   title: "Family members",
   loading: "Loading family…",

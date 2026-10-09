@@ -14,6 +14,28 @@ export const activityFeeds: Messages["activityFeeds"] = {
   how1: "Öppna klubbens eller lagets app eller webb – t.ex. Laget.se, Spond, SportAdmin, IdrottOnline, eller en Google/Outlook-kalender som tränaren delar.",
   how2: "Leta efter ”Prenumerera”, ”Exportera kalender”, ”iCal” eller ”Lägg till i kalender”.",
   how3: "Kopiera länken (den börjar ofta med webcal:// eller slutar på .ics) och klistra in den här. En länk per lag eller aktivitet – upp till tre per barn.",
+  sources: [
+    { name: "Spond", steps: [
+      "Spond har ingen länk att kopiera – appen lägger in händelserna i en kalender i telefonen. Skapa en ny kalender i Google Kalender, t.ex. ”Leo – Spond”.",
+      "I Spond-appen: tryck på din profilbild → Kalenderinställningar → välj den kalendern för barnets grupp.",
+      "Följ sedan ”Google Kalender” nedan för att kopiera kalenderns hemliga iCal-adress och klistra in den här.",
+    ] },
+    { name: "Google Kalender", steps: [
+      "Öppna calendar.google.com på en dator → Inställningar (kugghjulet) → klicka på kalendern till vänster.",
+      "Scrolla till ”Integrera kalender” och kopiera ”Hemlig adress i iCal-format”.",
+      "Klistra in den här. Den som har adressen kan läsa kalendern, så dela den inte på andra ställen.",
+    ] },
+    { name: "Outlook", steps: [
+      "På outlook.com: Inställningar → Kalender → Delade kalendrar → Publicera en kalender.",
+      "Välj kalendern, välj ”Kan visa all information” och tryck Publicera.",
+      "Kopiera ICS-länken och klistra in den här.",
+    ] },
+    { name: "Laget.se, SportAdmin, IdrottOnline", steps: [
+      "Öppna lagets kalender på webben (inte bara i appen) och leta efter ”Prenumerera”, ”Exportera”, ”iCal” eller en kalenderikon.",
+      "Hittar du den inte? Fråga lagledaren efter kalenderns prenumerationslänk – många klubbar har en.",
+      "Finns ingen länk alls? Lägg in händelserna i en Google-kalender från klubbens app och använd ”Google Kalender” ovan.",
+    ] },
+  ],
   linkWarning: (name) => `Den som har länken kan se kalendern. Vi sparar den bara på vår server – den visas aldrig i familjen, inte heller för ${name}.`,
   connectAndFetch: "Koppla & hämta",
   fetching: "Hämtar…",

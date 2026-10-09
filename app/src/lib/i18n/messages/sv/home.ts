@@ -1,6 +1,25 @@
 import type { Messages } from "../en";
 
 export const home: Messages["home"] = {
+  guide: {
+    title: "Kom igång",
+    progress: (done, total) => `${done} av ${total} klart`,
+    childTitle: "Lägg till dina barn",
+    childBody: "Varje barn får sin egen vecka. Ingen mejl? Kryssa i ”Har ingen egen mejl” och sköt profilen själv.",
+    childBodyPro: "Barn, skola och aktiviteter ingår i Pro. Prova gratis i 14 dagar – inget kort behövs.",
+    childCta: "Lägg till barn",
+    startTrial: "Starta gratis provperiod",
+    adultTitle: "Bjud in den andra vuxna",
+    adultBody: "Dela kalender, inköpslista och påminnelser. Du väljer vad som är privat.",
+    adultCta: "Skicka inbjudan",
+    schoolTitle: "Koppla SchoolSoft",
+    schoolBody: "Läxor och prov kommer in av sig själva, en gång per dag, i varje barns egen vy.",
+    schoolCta: "Koppla skolan",
+    clubTitle: "Koppla lagets kalender",
+    clubBody: "Träningar och matcher från Laget.se, Spond med flera, med tid och plats.",
+    clubCta: "Koppla kalender",
+    hide: "Dölj guiden",
+  },
   thinking: "Reminder for Simplicity tänker…",
   familyPhotoAria: "Familjebild – byt den under Familjemedlemmar",
   planPro: "⚡ Pro",

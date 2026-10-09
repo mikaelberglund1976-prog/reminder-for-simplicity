@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import StartGuide from "@/components/StartGuide";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -564,6 +565,11 @@ export default function DashboardPage() {
               <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--accent)" }}>{t.add}</span>
             </Link>
           </div>
+        )}
+
+        {/* 2026-10-09: start guide for a new family (persona review). */}
+        {hasHousehold && (
+          <StartGuide members={householdMembers} userId={session?.user?.id} plan={plan?.plan ?? null} />
         )}
 
         {/* Quick actions — "What would you like to do?" row, borrowed from the

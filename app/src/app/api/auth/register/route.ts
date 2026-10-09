@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendPendingApprovalEmail, sendAdminApprovalRequestEmail } from "@/lib/email";
+import { REQUIRE_SIGNUP_APPROVAL } from "@/lib/signupGate";
 import { passwordSchema } from "@/lib/passwordSchema";
 import { sendVerification } from "@/lib/verification";
 import { findPendingInvite } from "@/lib/invites";
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     // 2026-09-29: someone a family has invited (child or adult) doesn't need
     // admin approval — they join that family at their first sign-in.
     const invited = !!(await findPendingInvite(data.email));
-    const preApproved = isAdmin || invited;
+    const preApproved = isAdmin || invited || !REQUIRE_SIGNUP_APPROVAL;
     const user = await prisma.user.create({
       data: {
         name: data.name,

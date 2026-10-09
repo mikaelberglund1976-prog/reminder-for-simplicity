@@ -16,6 +16,7 @@ import { compressImage } from "@/lib/imageCompress";
 import { headerUrl, removeAvatar, removeHeader, uploadAvatar, uploadHeader, useFamilyMedia } from "@/lib/familyMedia";
 import { useI18n } from "@/lib/i18n/client";
 import LanguageSetting from "@/components/LanguageSetting";
+import { isManagedEmail } from "@/lib/managedProfileClient";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -46,6 +47,7 @@ export default function FamilyMembersPage() {
   const [addKind, setAddKind] = useState<"child" | "adult" | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [noLogin, setNoLogin] = useState(false);
   const [adultRole, setAdultRole] = useState<"PARENT" | "ADULT">("PARENT");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,19 +108,20 @@ export default function FamilyMembersPage() {
   }
 
   function openAdd(kind: "child" | "adult") {
-    setAddKind(kind); setName(""); setEmail(""); setError(null); setNeedsUpgrade(false); setFlash(null); setGuardianOk(false);
+    setAddKind(kind); setName(""); setEmail(""); setError(null); setNeedsUpgrade(false); setFlash(null); setGuardianOk(false); setNoLogin(false);
   }
 
   async function submitAdd(e: React.FormEvent) {
     e.preventDefault();
     const em = email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setError(t.enterValidEmail); return; }
+    const managed = addKind === "child" && noLogin;
+    if (!managed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setError(t.enterValidEmail); return; }
     if (addKind === "child" && !name.trim()) { setError(t.enterName); return; }
     if (addKind === "child" && !guardianOk) { setError(t.tickGuardian); return; }
     setBusy(true); setError(null); setNeedsUpgrade(false);
     try {
       const res = addKind === "child"
-        ? await fetch("/api/family/child-profiles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim(), email: em, guardianConsent: guardianOk }) })
+        ? await fetch("/api/family/child-profiles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(managed ? { name: name.trim(), noLogin: true, guardianConsent: guardianOk } : { name: name.trim(), email: em, guardianConsent: guardianOk }) })
         : await fetch("/api/household/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, role: adultRole }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -127,7 +130,9 @@ export default function FamilyMembersPage() {
         return;
       }
       setFlash(addKind === "child"
-        ? d.existingAccount
+        ? d.managed
+          ? t.childAddedManaged(name.trim())
+          : d.existingAccount
           ? t.childExisting(em, name.trim())
           : t.childAdded(name.trim(), em)
         : t.inviteSent(em));
@@ -285,6 +290,7 @@ export default function FamilyMembersPage() {
                       </div>
                       <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>
                         {t.roles[m.role] ?? m.role}
+                        {m.role === "CHILD" && isManagedEmail(m.user.email) && <span>{t.managedSuffix}</span>}
                         {m.role === "CHILD" && consents[m.userId] && <span>{t.guardianConfirmed}</span>}
                         {m.role === "CHILD" && !consents[m.userId] && canConsent && (
                           <>
@@ -373,9 +379,19 @@ export default function FamilyMembersPage() {
                             <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.namePlaceholder} autoComplete="off" style={inp} autoFocus />
                           </>
                         )}
-                        <label style={lbl}>{msg.common.email}</label>
-                        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="off"
-                          placeholder={addKind === "child" ? t.childEmailPlaceholder : t.adultEmailPlaceholder} style={inp} autoFocus={addKind === "adult"} />
+                        {addKind === "child" && (
+                          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, color: "var(--fg)", lineHeight: 1.45, marginBottom: 12, cursor: "pointer" }}>
+                            <input type="checkbox" checked={noLogin} onChange={(e) => setNoLogin(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1, flexShrink: 0, accentColor: "var(--accent)" }} />
+                            <span><strong>{t.noLoginLabel}</strong><br /><span style={{ color: "var(--muted)" }}>{t.noLoginHint}</span></span>
+                          </label>
+                        )}
+                        {!(addKind === "child" && noLogin) && (
+                          <>
+                            <label style={lbl}>{msg.common.email}</label>
+                            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="off"
+                              placeholder={addKind === "child" ? t.childEmailPlaceholder : t.adultEmailPlaceholder} style={inp} autoFocus={addKind === "adult"} />
+                          </>
+                        )}
                         {addKind === "adult" && (
                           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                             {([["PARENT", t.roles.PARENT], ["ADULT", t.otherAdult]] as const).map(([v, l]) => (
@@ -395,7 +411,7 @@ export default function FamilyMembersPage() {
                         )}
                         <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, marginBottom: 12 }}>
                           {addKind === "child"
-                            ? t.childHelp
+                            ? (noLogin ? t.noLoginHelp : t.childHelp)
                             : t.adultHelp}
                         </div>
                         {error && (
@@ -405,7 +421,7 @@ export default function FamilyMembersPage() {
                         )}
                         <div style={{ display: "flex", gap: 8 }}>
                           <button type="submit" disabled={busy} style={{ flex: 1, background: "var(--ink)", color: "#fff", border: "none", borderRadius: 50, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT, opacity: busy ? 0.6 : 1 }}>
-                            {busy ? msg.common.sending : addKind === "child" ? t.addAndInvite : t.sendInvite}
+                            {busy ? msg.common.sending : addKind === "child" ? (noLogin ? t.addManaged : t.addAndInvite) : t.sendInvite}
                           </button>
                           <button type="button" onClick={() => setAddKind(null)} style={{ padding: "13px 18px", borderRadius: 50, background: "var(--surface-3)", border: "none", fontSize: 13, fontWeight: 700, color: "var(--fg-2)", cursor: "pointer", fontFamily: FONT }}>
                             {msg.common.cancel}

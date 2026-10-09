@@ -6,6 +6,7 @@ import { hasPro } from "@/lib/entitlements";
 import { sendAccountSetup } from "@/lib/verification";
 import { sendHouseholdInviteEmail } from "@/lib/email";
 import { recordConsent } from "@/lib/consent";
+import { newManagedEmail, isManagedEmail } from "@/lib/managedProfile";
 
 const ADULT_ROLES = ["OWNER", "PARENT", "ADULT"];
 
@@ -26,8 +27,11 @@ export async function POST(req: Request) {
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "Name required" }, { status: 400 });
     }
-    const email = emailInput?.trim().toLowerCase();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // 2026-10-09: `noLogin: true` (or no email at all) → a managed profile the
+    // parents look after; the child doesn't log in (lib/managedProfile.ts).
+    const managed = body?.noLogin === true || (!emailInput || !String(emailInput).trim());
+    const email = managed ? newManagedEmail() : emailInput?.trim().toLowerCase();
+    if (!email || (!managed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) || (!managed && isManagedEmail(email))) {
       return NextResponse.json({ error: "A valid email is required — the child gets a link there to confirm it and choose a password." }, { status: 400 });
     }
 
@@ -161,6 +165,13 @@ export async function POST(req: Request) {
     }
 
     await recordConsent(createdUser.id, membership.householdId, session.user.id).catch((e) => console.error("Consent record failed:", e));
+
+    if (managed) {
+      return NextResponse.json(
+        { managed: true, setupSent: false, id: createdUser.id, name: createdUser.name, householdId: membership.householdId },
+        { status: 201 }
+      );
+    }
 
     const parent = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } });
     let setupSent = true;

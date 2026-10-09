@@ -1,6 +1,12 @@
 import type { Messages } from "../en";
 
 export const members: Messages["members"] = {
+  noLoginLabel: "Har ingen egen mejl – jag sköter profilen",
+  noLoginHint: "För yngre barn. Barnet loggar inte in; du ser och bockar av åt hen. Du kan ge barnet en egen inloggning senare.",
+  noLoginHelp: "Profilen fungerar direkt för sysslor, skola, aktiviteter och kalendern. Lägg till en mejl under Inställningar → Barnkonton när barnet är redo för egen inloggning.",
+  addManaged: "Lägg till barn",
+  childAddedManaged: (name) => `✓ ${name} är tillagd. Du sköter profilen – lägg till skola, aktiviteter och sysslor åt hen.`,
+  managedSuffix: " · sköts av dig",
   roles: { OWNER: "Ägare", PARENT: "Förälder", ADULT: "Vuxen", CHILD: "Barn", MEMBER: "Medlem" },
   title: "Familjemedlemmar",
   loading: "Laddar familjen…",

@@ -105,4 +105,11 @@ export const emails: Messages["emails"] = {
     on: "Pro är nu på för din familj.",
     unlocked: "Barn, sysslor, läxor & prov, önskelistor, aktiviteter och fler inköpslistor är nu upplåsta.",
   },
+  trialEnding: {
+    subject: (days) => `Er gratis provperiod slutar om ${days} dagar – Reminder for Simplicity`,
+    ends: (date) => `Familjens gratis provperiod av Pro slutar <strong>${date}</strong>.`,
+    after: "Efter det pausas barnens vyer, läxor & prov, aktiviteter, sysslor och önskelistor. Inget raderas – allt kommer tillbaka så fort ni uppgraderar.",
+    keeps: "Påminnelser, kalendern, kalendersynk och en delad inköpslista är fortsatt gratis.",
+    button: "Se planerna",
+  },
 };

@@ -479,6 +479,11 @@ export default function ShoppingListPage() {
     setScanning(false);
   }
 
+  // 2026-10-09 (persona review): BarcodeDetector is missing in Safari on
+  // iPhone, so the Scan tab is only shown where scanning actually works.
+  const [canScan, setCanScan] = useState(false);
+  useEffect(() => { setCanScan(typeof window !== "undefined" && "BarcodeDetector" in window); }, []);
+
   async function startScan() {
     setScanError(null);
     setScanStatus(null);
@@ -950,7 +955,7 @@ export default function ShoppingListPage() {
                 ["recent", t.tabs.recent],
                 ["categories", t.tabs.categories],
                 ["scan", t.tabs.scan],
-              ] as const).map(([key, label]) => (
+              ] as const).filter(([key]) => key !== "scan" || canScan).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => { if (key !== "scan") stopScan(); setAddTab(key); }}

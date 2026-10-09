@@ -6,6 +6,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { sendAdminApprovalRequestEmail } from "@/lib/email";
+import { REQUIRE_SIGNUP_APPROVAL } from "@/lib/signupGate";
 import { checkRateLimit, recordFailedAttempt, clearRateLimit } from "@/lib/rateLimit";
 import { EMAIL_NOT_VERIFIED_MESSAGE, ACCOUNT_DELETED_MESSAGE } from "@/lib/verification";
 import { autoJoinPendingInvite, findPendingInvite } from "@/lib/invites";
@@ -78,7 +79,11 @@ providers.push(
       if (!user.emailVerified) {
         throw new Error(EMAIL_NOT_VERIFIED_MESSAGE);
       }
-      if (!user.approved) {
+      if (!user.approved && !REQUIRE_SIGNUP_APPROVAL) {
+        // 2026-10-09: gate is off — anyone still waiting from the testing
+        // phase is let in (and marked approved) at their next sign-in.
+        await prisma.user.update({ where: { id: user.id }, data: { approved: true, approvedAt: new Date() } });
+      } else if (!user.approved) {
         // 2026-09-29: someone a family has invited (e.g. a child who signed
         // up before the parent added them) doesn't wait for admin approval —
         // the jwt callback joins them to the family right after this.
@@ -150,8 +155,8 @@ export const authOptions: NextAuthOptions = {
               email: user.email,
               name: user.name ?? null,
               emailVerified: new Date(),
-              approved: isAdmin,
-              approvedAt: isAdmin ? new Date() : null,
+              approved: isAdmin || !REQUIRE_SIGNUP_APPROVAL,
+              approvedAt: isAdmin || !REQUIRE_SIGNUP_APPROVAL ? new Date() : null,
               // password is null for Google users
             },
           });
@@ -181,6 +186,9 @@ export const authOptions: NextAuthOptions = {
         // Block sign-in for accounts that haven't been approved yet. This
         // covers both the brand-new account just created above and any
         // existing-but-still-pending account trying to sign in again.
+        if (!dbUser.approved && !REQUIRE_SIGNUP_APPROVAL) {
+          dbUser = await prisma.user.update({ where: { id: dbUser.id }, data: { approved: true, approvedAt: new Date() } });
+        }
         if (!dbUser.approved) {
           if (isNewUser) {
             sendAdminApprovalRequestEmail({

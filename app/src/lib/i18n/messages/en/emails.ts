@@ -104,4 +104,11 @@ export const emails = {
     on: "Pro is now active for your family.",
     unlocked: "Children, chores, homework & tests, wishlists, activities and more shopping lists are all unlocked.",
   },
+  trialEnding: {
+    subject: (days: number) => `Your free trial ends in ${days} days – Reminder for Simplicity`,
+    ends: (date: string) => `Your family's free Pro trial ends on <strong>${date}</strong>.`,
+    after: "After that, the children's views, homework & tests, activities, chores and wishlists pause. Nothing is deleted — it all comes back the moment you upgrade.",
+    keeps: "Reminders, the calendar, calendar sync and one shared shopping list stay free.",
+    button: "See plans",
+  },
 };

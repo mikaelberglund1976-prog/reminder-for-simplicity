@@ -1,4 +1,6 @@
 export const profile = {
+  managedNoLogin: "Managed by the family — no login of their own",
+  managedGiveEmail: "Add an email to give them their own login",
   currencies: { SEK: "SEK — Swedish Krona", EUR: "EUR — Euro", USD: "USD — US Dollar", GBP: "GBP — British Pound", NOK: "NOK — Norwegian Krone", DKK: "DKK — Danish Krone" } as Record<string, string>,
   deleteChildConfirm: (name: string) => `Delete ${name}'s account? They'll be removed from the family and can't log in. The data is kept 60 days and can be restored on request.`,
   theirEmail: "their email",

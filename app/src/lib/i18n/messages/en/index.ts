@@ -21,6 +21,7 @@ import { newBooking } from "./newBooking";
 import { plans } from "./plans";
 import { profile } from "./profile";
 import { pwa } from "./pwa";
+import { push } from "./push";
 import { reminderDetail } from "./reminderDetail";
 import { reminderForm } from "./reminderForm";
 import { reminders } from "./reminders";
@@ -53,6 +54,7 @@ export const en = {
   plans,
   profile,
   pwa,
+  push,
   reminderDetail,
   reminderForm,
   reminders,

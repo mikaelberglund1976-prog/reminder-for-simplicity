@@ -1,4 +1,4 @@
-// Reminder for Simplicity – service worker (v2, 2026-10-04)
+// Reminder for Simplicity – service worker (v3, 2026-10-09: + push notifications)
 //
 // What it does:
 //  - Pages (HTML): always fetched from the network, NEVER cached. That keeps
@@ -11,7 +11,7 @@
 // Bump CACHE when this file changes; old caches (incl. v1, which cached pages)
 // are deleted on activate.
 
-const CACHE = "rfs-v2";
+const CACHE = "rfs-v3";
 const PRECACHE = [
   "/offline.html",
   "/manifest.json",
@@ -77,4 +77,38 @@ self.addEventListener("fetch", (e) => {
       )
     );
   }
+});
+
+// 2026-10-09: web push. Every push carries its own encrypted JSON
+// { title, body, url, tag } (lib/webPush.ts). iOS requires that every push
+// shows a notification, so a broken payload still shows a generic one.
+self.addEventListener("push", (e) => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (_) { data = {}; }
+  const title = data.title || "Reminder for Simplicity";
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: data.tag || undefined,
+      data: { url: data.url || "/dashboard" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "/dashboard";
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if (new URL(c.url).origin === self.location.origin && "focus" in c) {
+          c.navigate(url);
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });

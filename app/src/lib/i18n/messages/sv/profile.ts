@@ -1,6 +1,8 @@
 import type { Messages } from "../en";
 
 export const profile: Messages["profile"] = {
+  managedNoLogin: "Sköts av familjen – ingen egen inloggning",
+  managedGiveEmail: "Lägg till en mejl för att ge egen inloggning",
   currencies: { SEK: "SEK – svenska kronor", EUR: "EUR – euro", USD: "USD – amerikanska dollar", GBP: "GBP – brittiska pund", NOK: "NOK – norska kronor", DKK: "DKK – danska kronor" },
   deleteChildConfirm: (name) => `Radera kontot för ${name}? Hen tas bort ur familjen och kan inte logga in. Uppgifterna sparas i 60 dagar och kan återställas på begäran.`,
   theirEmail: "hens e-post",

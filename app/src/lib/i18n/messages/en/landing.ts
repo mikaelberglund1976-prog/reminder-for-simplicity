@@ -48,6 +48,8 @@ export const landing = {
     privacyPolicy: "Privacy Policy",
   },
   upgrade: {
+    afterTrial: "When the trial ends: the children's views, homework & tests, activities, chores and wishlists pause. Nothing is deleted — it all comes back when you upgrade. We email you 3 days before.",
+    afterTrialFree: "Already used the trial? Nothing was deleted — the children's things come back as soon as you have Pro.",
     couldNotStart: "Could not start the trial",
     trialStarted: "Your 14-day trial has started — everything is unlocked.",
     requested: "Thanks! We've got your request and will email you as soon as Pro is on.",

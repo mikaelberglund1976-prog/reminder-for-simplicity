@@ -118,6 +118,12 @@ export default function UpgradePage() {
               {access.plan === "TRIAL" && t.trialLeft(access.trialDaysLeft)}
               {access.plan === "FREE" && (access.proRequested ? t.proRequested : access.trialUsed ? t.trialUsed : t.tryPro)}
             </div>
+            {/* 2026-10-09 (persona review): say what happens when the trial ends. */}
+            {(access.plan === "TRIAL" || (access.plan === "FREE" && access.trialUsed)) && (
+              <div style={{ fontSize: 12.5, marginTop: 10, opacity: 0.85, lineHeight: 1.5 }}>
+                {access.plan === "TRIAL" ? t.afterTrial : t.afterTrialFree}
+              </div>
+            )}
           </div>
         )}
 

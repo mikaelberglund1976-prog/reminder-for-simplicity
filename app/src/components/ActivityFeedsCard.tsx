@@ -147,9 +147,20 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
                     {showGuide ? "▾" : "▸"} {t.howTo}
                   </button>
                   {showGuide && (
-                    <ol style={{ margin: "8px 0 10px", paddingLeft: 20, listStyle: "decimal", fontSize: 12.5, color: "var(--fg-2)", lineHeight: 1.55 }}>
-                      <li>{t.how1}</li><li>{t.how2}</li><li>{t.how3}</li>
-                    </ol>
+                    <div style={{ margin: "8px 0 10px", fontSize: 12.5, color: "var(--fg-2)", lineHeight: 1.55 }}>
+                      <ol style={{ margin: "0 0 8px", paddingLeft: 20, listStyle: "decimal" }}>
+                        <li>{t.how1}</li><li>{t.how2}</li><li>{t.how3}</li>
+                      </ol>
+                      {/* 2026-10-09: per-source help (persona review — a parent can get stuck at step 1). */}
+                      {t.sources.map((src) => (
+                        <details key={src.name} style={{ borderTop: "1px solid var(--border)", padding: "6px 0" }}>
+                          <summary style={{ cursor: "pointer", fontWeight: 700, color: "var(--fg)" }}>{src.name}</summary>
+                          <ol style={{ margin: "6px 0 2px", paddingLeft: 20, listStyle: "decimal" }}>
+                            {src.steps.map((st, i) => <li key={i}>{st}</li>)}
+                          </ol>
+                        </details>
+                      ))}
+                    </div>
                   )}
                   <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t.labelPlaceholder} maxLength={40}
                     style={{ ...inputStyle, marginTop: 10, marginBottom: 4 }} />

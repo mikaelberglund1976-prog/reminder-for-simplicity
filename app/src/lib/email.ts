@@ -2,8 +2,22 @@ import { Resend } from "resend";
 import { getLocaleForEmail } from "@/lib/i18n/server";
 import { getMessages } from "@/lib/i18n/messages";
 import { DATE_LOCALES, type Locale } from "@/lib/i18n/config";
+import { isManagedEmail } from "@/lib/managedProfile";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resendClient = new Resend(process.env.RESEND_API_KEY);
+
+// 2026-10-09: never send to a managed child profile's placeholder address
+// (lib/managedProfile.ts) — it can't receive mail and would only bounce.
+type SendArgs = Parameters<typeof resendClient.emails.send>[0];
+const resend = {
+  emails: {
+    send: async (args: SendArgs) => {
+      const to = (Array.isArray(args.to) ? args.to : [args.to]).filter((a) => !isManagedEmail(a));
+      if (to.length === 0) return { data: null, error: null };
+      return resendClient.emails.send({ ...args, to } as SendArgs);
+    },
+  },
+};
 
 const FROM = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
 const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -741,4 +755,19 @@ export async function sendProGrantedEmail({ to, name, until, locale }: { to: str
     greeting: t.hi(name?.split(" ")[0] ?? t.there),
     lines: [until ? t.proGranted.until(d(until)) : t.proGranted.on, t.proGranted.unlocked],
   }), "pro granted");
+}
+
+
+// 2026-10-09 (persona review): heads-up 3 days before the trial ends.
+export async function sendTrialEndingEmail({ to, name, expiresAt, daysLeft, locale }: { to: string; name: string | null; expiresAt: Date; daysLeft: number; locale?: Locale }) {
+  const { t, d } = await lang(to, locale);
+  const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://assistiq.se";
+  await sendSimple(to, t.trialEnding.subject(daysLeft), simpleEmailHtml({
+    htmlLang: t.htmlLang,
+    icon: "⏳",
+    greeting: t.hi(name?.split(" ")[0] ?? t.there),
+    lines: [t.trialEnding.ends(d(expiresAt)), t.trialEnding.after, t.trialEnding.keeps],
+    buttonText: t.trialEnding.button,
+    buttonUrl: `${APP_URL}/upgrade`,
+  }), "trial ending");
 }

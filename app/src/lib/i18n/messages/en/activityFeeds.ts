@@ -13,6 +13,28 @@ export const activityFeeds = {
   how1: "Open the club's or team's app or website — e.g. Laget.se, Spond, SportAdmin, IdrottOnline, or a Google/Outlook calendar the coach shares.",
   how2: "Look for “Subscribe”, “Export calendar”, “iCal” or “Add to calendar”.",
   how3: "Copy the link (it often starts with webcal:// or ends with .ics) and paste it here. One link per team or activity — up to three per child.",
+  sources: [
+    { name: "Spond", steps: [
+      "Spond has no link to copy — it writes events into a calendar on your phone. In Google Calendar, create a new calendar, e.g. “Leo – Spond”.",
+      "In the Spond app: tap your profile picture → Calendar settings → pick that calendar for the child's group.",
+      "Then follow “Google Calendar” below to copy that calendar's secret iCal address and paste it here.",
+    ] },
+    { name: "Google Calendar", steps: [
+      "On a computer, open calendar.google.com → Settings (gear) → click the calendar on the left.",
+      "Scroll to “Integrate calendar” and copy “Secret address in iCal format”.",
+      "Paste it here. Anyone with the address can read the calendar, so don't share it elsewhere.",
+    ] },
+    { name: "Outlook", steps: [
+      "On outlook.com: Settings → Calendar → Shared calendars → Publish a calendar.",
+      "Pick the calendar, choose “Can view all details”, tap Publish.",
+      "Copy the ICS link and paste it here.",
+    ] },
+    { name: "Laget.se, SportAdmin, IdrottOnline", steps: [
+      "Open the team's calendar on the web (not only in the app) and look for “Subscribe”, “Export”, “iCal” or a calendar icon.",
+      "Can't find it? Ask the team leader for the calendar's subscription link — many clubs have one.",
+      "No link at all? Add the events to a Google calendar from the club's app and use “Google Calendar” above.",
+    ] },
+  ] as { name: string; steps: string[] }[],
   linkWarning: (name: string) => `Anyone with the link can see that calendar. We keep it on our server only — it's never shown in the family, including to ${name}.`,
   connectAndFetch: "Connect & fetch",
   fetching: "Fetching…",
