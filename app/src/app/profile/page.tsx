@@ -16,6 +16,7 @@ import { DEFAULT_NAV_APPS, CHILD_NAV_APPS, parseNavTabs } from "@/lib/navTabs";
 import { useI18n } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/messages";
 import LanguageSetting from "@/components/LanguageSetting";
+import HomePrefsSettings from "@/components/HomePrefsSettings";
 
 type HouseholdMember = {
   id: string;
@@ -589,6 +590,15 @@ export default function ProfilePage() {
               <Hint>{t.bottomNavHint(bottomNavApps.length)}</Hint>
             </Field>
           </Card>
+
+          {/* 2026-10-09: what Home shows (adults — a child has their own Home). */}
+          {profile && !profile.isChildProfile && (
+            <div id="home-settings" style={{ scrollMarginTop: 16 }}>
+              <Card title={msg.homePrefs.cardTitle}>
+                <HomePrefsSettings />
+              </Card>
+            </div>
+          )}
 
           {/* ── Calendar sync ── */}
           {/* Outbound-only ICS feed: reminders, chores and trainings visible

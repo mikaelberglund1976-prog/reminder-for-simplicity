@@ -174,6 +174,18 @@ export const serverErrors: Record<string, string> = {
   "SchoolSoft didn't answer in time": "SchoolSoft svarade inte i tid",
   "Child no longer in the family — link removed": "Barnet är inte längre med i familjen – länken är borttagen",
   "Sync failed": "Synken misslyckades",
+  // Activity calendars (2026-10-09)
+  "Paste the calendar link": "Klistra in kalenderlänken",
+  "Couldn't load calendar links": "Kunde inte ladda kalenderlänkarna",
+  "Max 3 calendar links per child": "Max 3 kalenderlänkar per barn",
+  "The link points to an address we can't fetch": "Länken pekar på en adress vi inte kan hämta från",
+  "Couldn't find that calendar address": "Hittade inte kalenderns adress",
+  "The link redirected somewhere we can't follow": "Länken skickade vidare till något vi inte kan följa",
+  "The link redirected too many times": "Länken skickade vidare för många gånger",
+  "The calendar link no longer exists — get a new one": "Kalenderlänken finns inte längre – hämta en ny",
+  "The calendar is private — get a link that can be shared": "Kalendern är privat – hämta en länk som går att dela",
+  "The calendar answered {n}": "Kalendern svarade {n}",
+  "The calendar didn't answer in time": "Kalendern svarade inte i tid",
   // Ideas
   "Title is required": "Rubrik krävs",
   "Title required": "Rubrik krävs",

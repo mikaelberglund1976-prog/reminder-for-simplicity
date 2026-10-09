@@ -21,6 +21,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import Avatar from "@/components/Avatar";
 import { getOccurrencesInRange, dateKey, type RecurringItem } from "@/lib/recurrence";
 import { formatTimeRange } from "@/lib/timeFormat";
 import { useI18n } from "@/lib/i18n/client";
@@ -92,6 +93,7 @@ type Reminder = {
   recurrence: "ONCE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
   amount: number | null; currency: string | null;
   startTime?: string | null; endTime?: string | null;
+  assignedTo?: string | null; userId?: string;
 };
 
 type Chore = {
@@ -118,7 +120,12 @@ type CalendarEntry = {
   short: string;
   // 2026-10-07: "HH:MM" start (for sorting) — null = all day.
   startTime: string | null;
+  // 2026-10-09: whose it is (for the per-person filter) — null = no one.
+  personId: string | null;
 };
+
+type Person = { id: string; name: string; role: string };
+const PEOPLE_KEY = "rfs:calendar-people";
 
 // "17:30 · Activity · Ella" — time first when the item has one.
 function withTime(time: string, rest: string) { return time ? `${time} · ${rest}` : rest; }
@@ -141,6 +148,22 @@ export default function CalendarPage() {
   const [trainings, setTrainings] = useState<Chore[]>([]);
   const [schoolItems, setSchoolItems] = useState<Chore[]>([]);
   const [loading, setLoading] = useState(true);
+  // 2026-10-09 (Mikael: "om man har flera barn måste man kunna filtrera på
+  // barnen separat i kalendern"): one chip per family member; pick one or
+  // several. Nothing picked = everyone. Remembered on this device.
+  const [people, setPeople] = useState<Person[]>([]);
+  const [selectedPeople, setSelectedPeople] = useState<Set<string>>(() => {
+    try { const v = JSON.parse(localStorage.getItem(PEOPLE_KEY) ?? "[]"); return new Set(Array.isArray(v) ? v.filter((x: unknown) => typeof x === "string") : []); } catch { return new Set(); }
+  });
+  function savePeople(next: Set<string>) {
+    setSelectedPeople(next);
+    try { localStorage.setItem(PEOPLE_KEY, JSON.stringify(Array.from(next))); } catch { /* private mode */ }
+  }
+  function togglePerson(id: string) {
+    const next = new Set(selectedPeople);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    savePeople(next);
+  }
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
   const [currentMonth, setCurrentMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState<Date>(today);
@@ -235,12 +258,19 @@ export default function CalendarPage() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [remindersRes, choresRes, trainingsRes, schoolRes] = await Promise.all([
+      const [remindersRes, choresRes, trainingsRes, schoolRes, householdRes] = await Promise.all([
         fetch("/api/reminders").then((r) => (r.ok ? r.json() : [])).catch(() => []),
         fetch("/api/family/chores?category=CHORE").then((r) => (r.ok ? r.json() : { chores: [] })).catch(() => ({ chores: [] })),
         fetch("/api/family/chores?category=TRAINING").then((r) => (r.ok ? r.json() : { chores: [] })).catch(() => ({ chores: [] })),
         fetch("/api/family/chores?category=SCHOOL").then((r) => (r.ok ? r.json() : { chores: [] })).catch(() => ({ chores: [] })),
+        fetch("/api/household").then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ]);
+      const members = (householdRes?.household?.members ?? []) as { userId: string; role: string; user: { name: string | null; email: string } }[];
+      const list: Person[] = members.map((m) => ({ id: m.userId, role: m.role, name: m.user.name?.split(" ")[0] ?? m.user.email.split("@")[0] }));
+      list.sort((a, b) => (a.role === "CHILD" ? 0 : 1) - (b.role === "CHILD" ? 0 : 1));
+      setPeople(list);
+      // Forget remembered people who are no longer in the family.
+      setSelectedPeople((prev) => new Set(Array.from(prev).filter((id) => list.some((p) => p.id === id))));
       setReminders(Array.isArray(remindersRes) ? remindersRes : []);
       setChores(Array.isArray(choresRes?.chores) ? choresRes.chores : []);
       setTrainings(Array.isArray(trainingsRes?.chores) ? trainingsRes.chores : []);
@@ -284,6 +314,7 @@ export default function CalendarPage() {
           subtitle: withTime(formatTimeRange(r), `${msg.reminders.categories[r.category] ?? r.category}${r.recurrence !== "ONCE" ? " · " + msg.reminders.recurrence[r.recurrence] : ""}`),
           short: chipWithTime(r.startTime, r.name),
           startTime: r.startTime ?? null,
+          personId: r.assignedTo ?? r.userId ?? null,
         });
         map.set(key, list);
       }
@@ -295,7 +326,7 @@ export default function CalendarPage() {
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: c.id, name: c.name, kind: "chore", color: CHORE_COLOR, subtitle: `${t.chore} · ${who}`, short: c.name, startTime: null });
+        list.push({ occDate: occ, id: c.id, name: c.name, kind: "chore", color: CHORE_COLOR, subtitle: `${t.chore} · ${who}`, short: c.name, startTime: null, personId: c.assignedUser?.id ?? null });
         map.set(key, list);
       }
     }
@@ -306,7 +337,7 @@ export default function CalendarPage() {
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: tr.id, name: tr.name, kind: "training", color: TRAINING_COLOR, subtitle: withTime(formatTimeRange(tr), `${t.activity} · ${who}`), short: chipWithTime(tr.startTime, tr.name), startTime: tr.startTime ?? null });
+        list.push({ occDate: occ, id: tr.id, name: tr.name, kind: "training", color: TRAINING_COLOR, subtitle: withTime(formatTimeRange(tr), `${t.activity} · ${who}`), short: chipWithTime(tr.startTime, tr.name), startTime: tr.startTime ?? null, personId: tr.assignedUser?.id ?? null });
         map.set(key, list);
       }
     }
@@ -328,6 +359,7 @@ export default function CalendarPage() {
           subtitle: withTime(formatTimeRange(s), `${kindWord} · ${who}${s.completedAt ? t.doneSuffix : ""}`),
           short: chipWithTime(s.startTime, `${isTest ? "🧪" : "📝"} ${s.subject || s.name}`),
           startTime: s.startTime ?? null,
+          personId: s.assignedUser?.id ?? null,
         });
         map.set(key, list);
       }
@@ -352,14 +384,15 @@ export default function CalendarPage() {
   // separate from entriesByDay itself so toggling a filter never has to
   // re-run the (more expensive) occurrence expansion above.
   const visibleEntriesByDay = useMemo(() => {
-    if (hiddenKinds.size === 0) return entriesByDay;
+    const byPerson = selectedPeople.size > 0 && !isChildView;
+    if (hiddenKinds.size === 0 && !byPerson) return entriesByDay;
     const map = new Map<string, CalendarEntry[]>();
     for (const [key, list] of Array.from(entriesByDay.entries())) {
-      const filtered = list.filter((e) => !hiddenKinds.has(e.kind));
+      const filtered = list.filter((e) => !hiddenKinds.has(e.kind) && (!byPerson || (e.personId !== null && selectedPeople.has(e.personId))));
       if (filtered.length > 0) map.set(key, filtered);
     }
     return map;
-  }, [entriesByDay, hiddenKinds]);
+  }, [entriesByDay, hiddenKinds, selectedPeople, isChildView]);
 
   const selectedEntries = visibleEntriesByDay.get(dateKey(selectedDate)) ?? [];
 
@@ -436,6 +469,24 @@ export default function CalendarPage() {
               </div>
               <button onClick={() => goToMonth(1)} aria-label={t.nextMonth} style={navBtnStyle}><IcRight /></button>
             </div>
+
+            {/* 2026-10-09: per-person filter (not for a child — they only see their own). */}
+            {!isChildView && people.length > 1 && (
+              <div className="rfs-hscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 -20px 10px", padding: "2px 20px 4px" }}>
+                <button onClick={() => savePeople(new Set())} aria-pressed={selectedPeople.size === 0} style={{ ...personChip(selectedPeople.size === 0), paddingLeft: 12 }}>
+                  {t.everyone}
+                </button>
+                {people.map((p) => {
+                  const active = selectedPeople.has(p.id);
+                  return (
+                    <button key={p.id} onClick={() => togglePerson(p.id)} aria-pressed={active} style={personChip(active)}>
+                      <Avatar userId={p.id} name={p.name} size={20} />
+                      {p.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Type filter / color legend — 2026-07-28 */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
@@ -719,3 +770,13 @@ const navBtnStyle: React.CSSProperties = {
   width: 32, height: 32, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface)",
   color: "var(--fg-2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
 };
+
+function personChip(active: boolean): React.CSSProperties {
+  return {
+    flex: "0 0 auto", display: "flex", alignItems: "center", gap: 6, padding: "5px 12px 5px 6px", minHeight: 32,
+    borderRadius: 50, cursor: "pointer", fontFamily: FONT, fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap",
+    border: active ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
+    background: active ? "var(--tint-accent)" : "var(--surface)",
+    color: active ? "var(--accent-strong)" : "var(--fg-2)",
+  };
+}

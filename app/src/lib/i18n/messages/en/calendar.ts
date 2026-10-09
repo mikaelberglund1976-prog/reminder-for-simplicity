@@ -2,6 +2,8 @@ export const calendar = {
   kinds: { reminder: "Reminders", chore: "Chores", training: "Activities", homework: "Homework", test: "Tests" } as Record<string, string>,
   addKinds: { reminder: "Reminder", chore: "Chore", training: "Activity", school: "Homework or test" } as Record<string, string>,
   unassigned: "Unassigned",
+  everyone: "Everyone",
+  filterPeople: "Show for",
   chore: "Chore",
   activity: "Activity",
   test: "Test",

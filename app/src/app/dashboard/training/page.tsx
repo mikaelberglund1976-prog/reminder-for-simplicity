@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import Avatar from "@/components/Avatar";
+import ActivityFeedsCard from "@/components/ActivityFeedsCard";
 import { useI18n, useM } from "@/lib/i18n/client";
 import { weekdayName } from "@/lib/i18n/format";
 import type { Messages } from "@/lib/i18n/messages";
@@ -30,6 +31,9 @@ type TrainingItem = {
   startTime?: string | null;
   endTime?: string | null;
   assignedUser: { id: string; name: string | null; email: string } | null;
+  // 2026-10-09: came from a club calendar link (+ that link's name).
+  imported?: boolean;
+  source?: string | null;
 };
 
 type TrialInfo = {
@@ -81,6 +85,7 @@ export default function TrainingPage() {
   const [items, setItems] = useState<TrainingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -150,8 +155,23 @@ export default function TrainingPage() {
   // 2026-09-28 (rows 43/46): activities can belong to anyone — show every
   // child, plus each adult who has at least one.
   const allMembers = trial.householdMembers ?? trial.childMembers.map((c) => ({ ...c, role: "CHILD" }));
+  // 2026-10-09: activities from club calendars are one item per training /
+  // match — listed separately per person, upcoming only, nearest first.
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const importedByChild = new Map<string, TrainingItem[]>();
+  for (const item of items) {
+    if (!item.imported) continue;
+    if (!item.date || new Date(item.date).getTime() < todayStart.getTime() - 12 * 3600000) continue;
+    const key = item.assignedUser?.id ?? "unknown";
+    if (!importedByChild.has(key)) importedByChild.set(key, []);
+    importedByChild.get(key)!.push(item);
+  }
+  for (const list of Array.from(importedByChild.values())) {
+    list.sort((a: TrainingItem, b: TrainingItem) => (a.date ?? "").slice(0, 10).localeCompare((b.date ?? "").slice(0, 10)) || timeSortKey(a).localeCompare(timeSortKey(b)));
+  }
   const byChild = new Map<string, TrainingItem[]>();
   for (const item of items) {
+    if (item.imported) continue;
     const key = item.assignedUser?.id ?? "unknown";
     if (!byChild.has(key)) byChild.set(key, []);
     byChild.get(key)!.push(item);
@@ -161,12 +181,12 @@ export default function TrainingPage() {
   }
   const children = [
     ...allMembers.filter((m) => m.role === "CHILD"),
-    ...allMembers.filter((m) => m.role !== "CHILD" && (byChild.get(m.id)?.length ?? 0) > 0),
+    ...allMembers.filter((m) => m.role !== "CHILD" && ((byChild.get(m.id)?.length ?? 0) > 0 || (importedByChild.get(m.id)?.length ?? 0) > 0)),
   ];
   // 2026-10-04: activities for no one (or someone who left the family) were
   // never listed, so they couldn't be removed.
   const memberIds = new Set(allMembers.map((m) => m.id));
-  const orphanList = items.filter((i) => !i.assignedUser?.id || !memberIds.has(i.assignedUser.id)).sort((a, b) => a.name.localeCompare(b.name));
+  const orphanList = items.filter((i) => !i.imported && (!i.assignedUser?.id || !memberIds.has(i.assignedUser.id))).sort((a, b) => a.name.localeCompare(b.name));
   if (orphanList.length > 0) {
     byChild.set("__orphans", orphanList);
     children.push({ id: "__orphans", name: t.notAssigned, role: "ORPHAN" } as (typeof children)[number]);
@@ -193,6 +213,9 @@ export default function TrainingPage() {
         {t.add}
       </Link>
 
+      {/* 2026-10-09: club calendars per child (adults only — hides itself otherwise). */}
+      <ActivityFeedsCard onChanged={load} />
+
       {children.length === 0 && (
         <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
           {t.noneYet1}<strong>{t.add}</strong>{t.noneYet2}
@@ -201,13 +224,46 @@ export default function TrainingPage() {
 
       {children.map(child => {
         const list = byChild.get(child.id) ?? [];
+        const fromCal = importedByChild.get(child.id) ?? [];
+        const isOpen = expanded.has(child.id);
+        const shownCal = isOpen ? fromCal : fromCal.slice(0, 4);
         return (
           <div key={child.id} style={{ marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
               {child.id !== "__orphans" && <Avatar userId={child.id} name={child.name} size={22} />}
-              {child.name} · {list.length}
+              {child.name} · {list.length + fromCal.length}
             </div>
-            {list.length === 0 ? (
+            {fromCal.length > 0 && (
+              <div style={{ marginBottom: list.length ? 10 : 0 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--subtle)", margin: "0 2px 6px" }}>🔗 {msg.activityFeeds.upcomingFromCalendars}</div>
+                <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+                  {shownCal.map((item, i) => (
+                    <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)" }}>
+                      <Link href={`/dashboard/family/new?type=training&edit=${item.id}`} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
+                          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {formatWhen(item, msg, locale)}{item.note ? ` · ${item.note}` : ""}
+                          </div>
+                        </div>
+                        <span style={{ color: "var(--faint)", display: "flex", flexShrink: 0 }}><IcChevRight /></span>
+                      </Link>
+                      <button onClick={() => handleDelete(item.id)} disabled={deletingId === item.id} aria-label={msg.common.remove}
+                        style={{ background: "none", border: "none", color: "var(--faint)", cursor: deletingId === item.id ? "wait" : "pointer", padding: 6, display: "flex" }}>
+                        <IcTrash />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {fromCal.length > 4 && (
+                  <button onClick={() => setExpanded((prev) => { const n = new Set(prev); if (n.has(child.id)) n.delete(child.id); else n.add(child.id); return n; })}
+                    style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "8px 2px", fontFamily: FONT }}>
+                    {isOpen ? msg.activityFeeds.showFewer : msg.activityFeeds.showAll(fromCal.length)}
+                  </button>
+                )}
+              </div>
+            )}
+            {list.length === 0 && fromCal.length > 0 ? null : list.length === 0 ? (
               <div style={{ fontSize: 13, color: "var(--subtle)", padding: "8px 2px" }}>{t.noneBooked}</div>
             ) : (
               <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>

@@ -9,7 +9,9 @@ import AdSlot from "@/components/AdSlot";
 import Avatar from "@/components/Avatar";
 import { getMe } from "@/lib/me";
 import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
-import { withNextDate } from "@/lib/recurrence";
+import { withNextDate, getOccurrencesInRange, dateKey, type RecurringItem } from "@/lib/recurrence";
+import { normalizeHomePrefs, type HomePrefs } from "@/lib/homePrefs";
+import { formatTimeRange } from "@/lib/timeFormat";
 import { useI18n } from "@/lib/i18n/client";
 import { relativeDay } from "@/lib/i18n/relative";
 import type { Messages } from "@/lib/i18n/messages";
@@ -21,6 +23,20 @@ type SchoolItem = {
   schoolKind: "HOMEWORK" | "TEST" | "OTHER" | null; completedAt: string | null;
   assignedUser: { id: string; name: string | null; email: string } | null;
   startTime?: string | null;
+};
+
+// 2026-10-09: activities for "Next up per child".
+type ActivityItem = {
+  id: string; name: string; date: string; note: string | null;
+  recurrence: "ONCE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+  choreRecurrenceDays: string | null;
+  assignedUser: { id: string; name: string | null; email: string } | null;
+  startTime?: string | null; endTime?: string | null;
+};
+
+type NextUpEntry = {
+  key: string; id: string; kind: "TEST" | "HOMEWORK" | "OTHER" | "ACTIVITY";
+  title: string; day: Date; startTime: string | null; endTime: string | null; href: string;
 };
 
 type Reminder = {
@@ -289,6 +305,9 @@ export default function DashboardPage() {
   const [familySummary, setFamilySummary] = useState<{ childId: string; childName: string; total: number; done: number; pending: number }[]>([]);
   // 2026-09-28 (test round, row 39): upcoming tests & homework per child.
   const [schoolItems, setSchoolItems] = useState<SchoolItem[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  // 2026-10-09: what this person wants on Home (Settings → Home).
+  const [prefs, setPrefs] = useState<HomePrefs>(() => normalizeHomePrefs(null));
   // 2026-09-28 (row 38): don't render the adult home at all until we know
   // this isn't a child (they're sent to their own "My week").
   const [roleChecked, setRoleChecked] = useState(false);
@@ -307,6 +326,7 @@ export default function DashboardPage() {
       if (me?.preferredCurrency) setCurrency(me.preferredCurrency);
       setRoleChecked(true);
       fetchReminders(); fetchHousehold(); fetchFamilyData();
+      fetch("/api/profile/home-prefs").then((r) => (r.ok ? r.json() : null)).then((d) => { if (d?.prefs) setPrefs(normalizeHomePrefs(d.prefs)); }).catch(() => {});
     });
   }, [status]);
 
@@ -351,7 +371,11 @@ export default function DashboardPage() {
       if (!trialRes.ok) return;
       const trialData = await trialRes.json();
       if (trialData.trialActive || trialData.isPro) {
-        const [weekRes, schoolRes] = await Promise.all([fetch("/api/family/week"), fetch("/api/family/chores?category=SCHOOL")]);
+        const [weekRes, schoolRes, actRes] = await Promise.all([fetch("/api/family/week"), fetch("/api/family/chores?category=SCHOOL"), fetch("/api/family/chores?category=TRAINING")]);
+        if (actRes.ok) {
+          const ad = await actRes.json();
+          setActivities(ad.chores ?? []);
+        }
         if (weekRes.ok) {
           const weekData = await weekRes.json();
           setFamilySummary(weekData.summary ?? []);
@@ -414,22 +438,45 @@ export default function DashboardPage() {
   }));
   const pendingApprovals = familySummary.reduce((s, c) => s + c.pending, 0);
 
-  // 2026-10-03 (Mikael): Home only shows each child's nearest tests (next
-  // three weeks) — homework and everything else lives on the School page.
-  const schoolByPerson = (() => {
-    const horizon = 21;
-    const open = schoolItems
-      .filter((i) => i.schoolKind === "TEST" && !i.completedAt && getDaysUntil(i.date) >= 0 && getDaysUntil(i.date) <= horizon)
-      .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date));
-    const map = new Map<string, { id: string; name: string; items: SchoolItem[] }>();
-    for (const it of open) {
-      const id = it.assignedUser?.id ?? "?";
-      const name = it.assignedUser?.name?.split(" ")[0] ?? it.assignedUser?.email?.split("@")[0] ?? t.someone;
-      if (!map.has(id)) map.set(id, { id, name, items: [] });
-      map.get(id)!.items.push(it);
+  // 2026-10-09 (Mikael: "man borde se de närmaste aktiviteterna per barn –
+  // prov, uppgifter och träningar eller matcher"): per child, the next few
+  // things coming up — tests, homework, activities (and optionally other
+  // school events), in date/time order. What's included and how many is
+  // chosen under Settings → Home. Replaces the tests-only section.
+  const nextUpByChild = (() => {
+    const children = householdMembers.filter((m) => m.role === "CHILD" && !prefs.hiddenChildren.includes(m.userId));
+    if (children.length === 0) return [];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const horizon = new Date(today); horizon.setDate(horizon.getDate() + 14);
+    const testHorizon = new Date(today); testHorizon.setDate(testHorizon.getDate() + 21);
+    const nowHm = `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`;
+    const byChild = new Map<string, NextUpEntry[]>(children.map((c) => [c.userId, []]));
+    for (const it of schoolItems) {
+      const list = it.assignedUser ? byChild.get(it.assignedUser.id) : undefined;
+      if (!list || it.completedAt) continue;
+      const kind = it.schoolKind ?? "OTHER";
+      if (kind === "TEST" ? !prefs.perChild.tests : kind === "HOMEWORK" ? !prefs.perChild.homework : !prefs.perChild.schoolOther) continue;
+      const day = new Date(it.date); day.setHours(0, 0, 0, 0);
+      if (day < today || day > (kind === "TEST" ? testHorizon : horizon)) continue;
+      list.push({ key: `s-${it.id}`, id: it.id, kind, title: it.subject ? `${it.subject} · ${it.name}` : it.name, day, startTime: it.startTime ?? null, endTime: null, href: "/dashboard/school" });
     }
-    return Array.from(map.values());
+    if (prefs.perChild.activities) {
+      for (const a of activities) {
+        const list = a.assignedUser ? byChild.get(a.assignedUser.id) : undefined;
+        if (!list) continue;
+        for (const occ of getOccurrencesInRange(a as unknown as RecurringItem, today, horizon)) {
+          // Today's activity that's already over isn't "next up".
+          if (dateKey(occ) === dateKey(today) && (a.endTime ?? a.startTime) && (a.endTime ?? a.startTime)! < nowHm) continue;
+          list.push({ key: `a-${a.id}-${dateKey(occ)}`, id: a.id, kind: "ACTIVITY", title: a.name, day: occ, startTime: a.startTime ?? null, endTime: a.endTime ?? null, href: `/dashboard/family/new?type=training&edit=${a.id}` });
+        }
+      }
+    }
+    return children.map((c) => {
+      const items = (byChild.get(c.userId) ?? []).sort((x, y) => x.day.getTime() - y.day.getTime() || (x.startTime ?? "00:00").localeCompare(y.startTime ?? "00:00"));
+      return { id: c.userId, name: c.user.name?.split(" ")[0] ?? c.user.email.split("@")[0], items };
+    });
   })();
+  const show = prefs.sections;
 
   if (status === "loading" || loading || !roleChecked) {
     return (
@@ -501,7 +548,7 @@ export default function DashboardPage() {
 
         {/* 2026-09-28 (rows 40 + 44): the family at a glance — photos, and
             adding someone is one tap from Home instead of buried in Settings. */}
-        {hasHousehold && (
+        {hasHousehold && show.family && (
           <div className="rfs-hscroll" style={{ display: "flex", gap: 14, overflowX: "auto", margin: "0 -20px 22px", padding: "2px 20px 4px" }}>
             {householdMembers.map((m) => {
               const first = m.user.name?.split(" ")[0] ?? m.user.email.split("@")[0];
@@ -522,6 +569,7 @@ export default function DashboardPage() {
         {/* Quick actions — "What would you like to do?" row, borrowed from the
             reference app: the most common jobs one tap away, horizontally
             scrollable so the row never wraps on a phone. */}
+        {show.quick && (<>
         <SectionTitle>{t.whatToDo}</SectionTitle>
         <div className="rfs-hscroll" style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 24px", padding: "2px 20px 4px", scrollSnapType: "x proximity", scrollPaddingInline: 20 }}>
           {QUICK_ACTIONS.map((qa) => (
@@ -541,12 +589,13 @@ export default function DashboardPage() {
             </Link>
           ))}
         </div>
+        </>)}
 
         {/* Coming up — horizontal cards for the next 7 days (overdue first).
             Replaces both the old "Needs your attention" list (which repeated
             the same rows as the main list below) and the "IQ Spotlight" card. */}
         {/* 2026-10-04 (Mikael): empty sections aren't shown. */}
-        {attentionItems.length > 0 && (<>
+        {show.comingUp && attentionItems.length > 0 && (<>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
           <SectionTitle inline>{t.comingUp}</SectionTitle>
           <Link href="/dashboard/calendar" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{t.calendarLink}</Link>
@@ -586,44 +635,42 @@ export default function DashboardPage() {
         )}
         </>)}
 
-        {/* 2026-09-28 (test round, row 39): a parent sees every child's
-            upcoming tests and homework right on Home. */}
-        {schoolByPerson.length > 0 && (
+        {/* 2026-10-09: next up per child — tests, homework, activities. */}
+        {show.perChild && nextUpByChild.length > 0 && (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-              <SectionTitle inline>{t.upcomingTests}</SectionTitle>
-              <Link href="/dashboard/school" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{t.allLink}</Link>
+              <SectionTitle inline>{msg.homePrefs.nextUpTitle}</SectionTitle>
+              <Link href="/profile#home-settings" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{msg.homePrefs.customize}</Link>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-              {schoolByPerson.map((p) => (
-                <Link key={p.id} href="/dashboard/school" style={{ display: "block", textDecoration: "none", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              {nextUpByChild.map((p) => (
+                <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: p.items.length ? 6 : 0 }}>
                     <Avatar userId={p.id} name={p.name} size={28} />
                     <span style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>
-                      {t.testsCount(p.items.length)}
-                    </span>
+                    {p.items.length === 0 && <span style={{ fontSize: 12, color: "var(--subtle)" }}>{msg.homePrefs.nothingSoon}</span>}
                   </div>
-                  {p.items.slice(0, 2).map((it) => {
-                    const d = getDaysUntil(it.date);
-                    const isTest = it.schoolKind === "TEST";
+                  {p.items.slice(0, prefs.perChildCount).map((it) => {
+                    const d = getDaysUntil(it.day.toISOString());
+                    const badge = it.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
+                      : it.kind === "HOMEWORK" ? { bg: "var(--tint-school)", fg: "var(--school)", label: msg.homePrefs.kindHomework }
+                      : it.kind === "ACTIVITY" ? { bg: "var(--tint-warning)", fg: "#D85A30", label: msg.homePrefs.kindActivity }
+                      : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool };
+                    const time = formatTimeRange(it);
                     return (
-                      <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: "1px solid var(--border-soft)" }}>
-                        <span style={{
-                          fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0,
-                          background: isTest ? "var(--tint-danger)" : "var(--tint-school)", color: isTest ? "var(--danger)" : "var(--school)",
-                        }}>{msg.reminders.schoolKinds[it.schoolKind ?? "OTHER"] ?? msg.reminders.schoolKinds.OTHER}</span>
-                        <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {it.subject ? `${it.subject} · ` : ""}{it.name}
+                      <Link key={it.key} href={it.href} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderTop: "1px solid var(--border-soft)", textDecoration: "none" }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0, background: badge.bg, color: badge.fg }}>{badge.label}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.title}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0, color: d <= 0 ? "var(--warning)" : "var(--muted)", textAlign: "right" }}>
+                          {d === 0 ? msg.common.today : d === 1 ? msg.common.tomorrow : it.day.toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" })}{time ? ` ${time}` : ""}
                         </span>
-                        <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0, color: d < 0 ? "var(--danger)" : d <= 1 ? "var(--warning)" : "var(--muted)" }}>
-                          {d < 0 ? msg.reminders.overdue : d === 0 ? msg.common.today : d === 1 ? msg.common.tomorrow : formatDate(it.date, dateLocale)}{it.startTime ? ` ${it.startTime}` : ""}
-                        </span>
-                      </div>
+                      </Link>
                     );
                   })}
-                  {p.items.length > 2 && <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>{t.moreOnSchool(p.items.length - 2)}</div>}
-                </Link>
+                  {p.items.length > prefs.perChildCount && (
+                    <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>{msg.homePrefs.moreSoon(p.items.length - prefs.perChildCount)}</div>
+                  )}
+                </div>
               ))}
             </div>
           </>
@@ -634,7 +681,7 @@ export default function DashboardPage() {
         {/* Overview tiles — three honest numbers. "Needs attention" used to
             count only overdue items while the list above said "4 items";
             it's now labelled for what it is. */}
-        {reminders.length > 0 && (
+        {show.stats && reminders.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
           <StatCard icon={<IcBell />} iconColor="var(--accent)" iconBg="var(--tint-accent)" value={totalActive} label={t.statActive} />
           <StatCard icon={<IcAlert />} iconColor="var(--danger)" iconBg="var(--tint-danger)" value={passedCount} label={t.statOverdue} />
@@ -647,7 +694,7 @@ export default function DashboardPage() {
         )}
 
         {/* Family progress — only when there's something to show. */}
-        {familyCardRows.length > 0 && (
+        {show.chores && familyCardRows.length > 0 && (
           <Link href="/dashboard/family" style={{
             display: "block", textDecoration: "none", background: "var(--surface)", border: "1px solid var(--border)",
             borderRadius: 18, padding: "14px 16px", marginBottom: 12, boxShadow: "var(--shadow)",
@@ -673,7 +720,7 @@ export default function DashboardPage() {
         )}
 
         {/* 2026-10-04: hidden until there is something to list (New reminder is in the quick actions + the floating button). */}
-        {reminders.length > 0 && (<>
+        {show.reminders && reminders.length > 0 && (<>
         <div id="all-reminders" style={{ scrollMarginTop: 16 }} />
         <SectionTitle>{t.allReminders}</SectionTitle>
 

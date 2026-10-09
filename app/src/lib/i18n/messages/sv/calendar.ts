@@ -4,6 +4,8 @@ export const calendar: Messages["calendar"] = {
   kinds: { reminder: "Påminnelser", chore: "Sysslor", training: "Aktiviteter", homework: "Läxor", test: "Prov" },
   addKinds: { reminder: "Påminnelse", chore: "Syssla", training: "Aktivitet", school: "Läxa eller prov" },
   unassigned: "Ingen ansvarig",
+  everyone: "Alla",
+  filterPeople: "Visa för",
   chore: "Syssla",
   activity: "Aktivitet",
   test: "Prov",

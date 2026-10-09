@@ -2,6 +2,7 @@
 import type { Messages } from "../en";
 import { account } from "./account";
 import { activities } from "./activities";
+import { activityFeeds } from "./activityFeeds";
 import { auth } from "./auth";
 import { calendar } from "./calendar";
 import { childHome } from "./childHome";
@@ -10,6 +11,7 @@ import { common } from "./common";
 import { components } from "./components";
 import { emails } from "./emails";
 import { home } from "./home";
+import { homePrefs } from "./homePrefs";
 import { ideas } from "./ideas";
 import { landing } from "./landing";
 import { language } from "./language";
@@ -32,6 +34,7 @@ import { wishlist } from "./wishlist";
 export const sv: Messages = {
   account,
   activities,
+  activityFeeds,
   auth,
   calendar,
   childHome,
@@ -40,6 +43,7 @@ export const sv: Messages = {
   components,
   emails,
   home,
+  homePrefs,
   ideas,
   landing,
   language,

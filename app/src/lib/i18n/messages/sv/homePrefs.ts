@@ -1,0 +1,29 @@
+import type { Messages } from "../en";
+
+export const homePrefs: Messages["homePrefs"] = {
+  cardTitle: "Startsidan",
+  intro: "Välj vad din startsida ska visa. Gäller bara dig.",
+  sections: {
+    family: "Familjens bilder",
+    quick: "Snabbval",
+    comingUp: "På gång (påminnelser, 7 dagar)",
+    perChild: "Närmast per barn",
+    stats: "Översiktssiffror",
+    chores: "Sysslor den här veckan",
+    reminders: "Listan med alla påminnelser",
+  },
+  perChildTitle: "I ”Närmast per barn”",
+  kinds: { tests: "Prov", homework: "Läxor & uppgifter", activities: "Aktiviteter (träningar, matcher)", schoolOther: "Övriga skolhändelser" },
+  countLabel: "Hur många per barn",
+  childrenLabel: "Barn som visas",
+  saved: "Sparat",
+  reset: "Återställ standard",
+  nextUpTitle: "Närmast per barn",
+  nothingSoon: "Inget på gång",
+  moreSoon: (n) => `+${n} till på gång`,
+  kindTest: "Prov",
+  kindHomework: "Läxa",
+  kindActivity: "Aktivitet",
+  kindSchool: "Skola",
+  customize: "Anpassa",
+};

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { markActivityImport } from "@/lib/activityFeeds";
 import { findReminderFor } from "@/lib/reminderAccess";
 import { getTimes, timesFromBody, setTime } from "@/lib/reminderTimes";
 
@@ -57,6 +58,8 @@ export async function DELETE(
     where: { id: params.id },
     data: { isActive: false },
   });
+  // 2026-10-09: a removed calendar-imported activity stays removed on the next sync.
+  await markActivityImport(params.id, "hidden");
 
   return NextResponse.json({ success: true });
 }

@@ -4,6 +4,7 @@ import { addDays, addWeeks, addMonths, addYears } from "date-fns";
 import { purgeExpiredAccounts } from "@/lib/accountDeletion";
 import { purgeOrphanMedia } from "@/lib/media";
 import { importedIds, syncAllFeeds } from "@/lib/schoolFeeds";
+import { activityImportInfo, syncAllActivityFeeds } from "@/lib/activityFeeds";
 
 function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -43,6 +44,15 @@ export async function runReminderCron() {
     log.push(`SchoolSoft sync ERROR: ${String(err)}`);
   }
 
+  // 2026-10-09: activity calendar links (up to 3 per child), once a day.
+  try {
+    const af = await syncAllActivityFeeds();
+    if (af.synced || af.failed) log.push(`Activity feeds: ${af.synced} synced, ${af.failed} failed`);
+  } catch (err) {
+    console.error("Activity feed sync failed:", err);
+    log.push(`Activity feed sync ERROR: ${String(err)}`);
+  }
+
   const reminders = await prisma.reminder.findMany({
     // 2026-09-27: skip reminders owned by soft-deleted accounts.
     where: { isActive: true, user: { deletedAt: null } },
@@ -52,6 +62,9 @@ export async function runReminderCron() {
   // Imported SchoolSoft items email only the child — otherwise the parent who
   // connected the link would get one email per homework for every child.
   const imported = await importedIds(reminders.filter((r) => r.category === "SCHOOL").map((r) => r.id));
+  // Imported activities (every training/match from a club calendar) send no
+  // emails — that would be one per training to the adult who connected it.
+  const importedActivities = await activityImportInfo(reminders.filter((r) => r.category === "TRAINING").map((r) => r.id));
 
   log.push(`Today: ${todayStr}`);
   log.push(`Active reminders: ${reminders.length}`);
@@ -93,6 +106,7 @@ export async function runReminderCron() {
     log.push(`[${reminder.name}] date=${toDateStr(new Date(reminder.date))} daysBefore=${reminder.reminderDaysBefore} sendOn=${sendDateStr} match=${isToday}`);
 
     if (!isToday) { skipped++; continue; }
+    if (importedActivities.has(reminder.id)) { skipped++; continue; }
 
     // 2026-09-27: homework/tests already ticked off don't need a reminder.
     if (reminder.category === "SCHOOL" && reminder.completedAt) { skipped++; continue; }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTimes, setTime, timesFromBody } from "@/lib/reminderTimes";
+import { markActivityImport } from "@/lib/activityFeeds";
 
 // 2026-10-07 (Mikael: "när man går in på alla aktiviteter kunna uppdatera
 // dem"): edit an existing activity (TRAINING) or chore (CHORE). Before this
@@ -85,6 +86,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ? await prisma.reminder.update({ where: { id: item.id }, data })
       : item;
     if (time) await setTime(item.id, time);
+    // 2026-10-09: an activity from a calendar link that's changed here is no
+    // longer overwritten by the next sync.
+    if (item.category === "TRAINING") await markActivityImport(item.id, "edited");
     const t = (await getTimes([item.id])).get(item.id);
     return NextResponse.json({ ...updated, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null });
   } catch (err) {
