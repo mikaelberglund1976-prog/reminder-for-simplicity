@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendReminderEmail, sendTrialEndingEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/webPush";
+import { getTimes } from "@/lib/reminderTimes";
 import { hasPro } from "@/lib/entitlements";
 import { getLocaleForUser } from "@/lib/i18n/server";
 import { getMessages } from "@/lib/i18n/messages";
@@ -69,6 +70,9 @@ export async function runReminderCron() {
   // Imported activities (every training/match from a club calendar) send no
   // emails — that would be one per training to the adult who connected it.
   const importedActivities = await activityImportInfo(reminders.filter((r) => r.category === "TRAINING").map((r) => r.id));
+
+  // 2026-10-09: times of day for the emails and pushes ("Tandläkare 14:30").
+  const times = await getTimes(reminders.map((r) => r.id));
 
   log.push(`Today: ${todayStr}`);
   log.push(`Active reminders: ${reminders.length}`);
@@ -144,6 +148,7 @@ export async function runReminderCron() {
         note: reminder.note,
         reminderId: reminder.id,
         category: reminder.category,
+        time: times.get(reminder.id)?.startTime ?? null,
       });
 
       await prisma.reminderLog.create({
@@ -158,7 +163,8 @@ export async function runReminderCron() {
       for (const uid of Array.from(pushIds)) {
         const pm = getMessages(await getLocaleForUser(uid)).push;
         const days = reminder.reminderDaysBefore;
-        const when = days <= 0 ? pm.today : days === 1 ? pm.tomorrow : pm.inDays(days);
+        const at = times.get(reminder.id)?.startTime;
+        const when = (days <= 0 ? pm.today : days === 1 ? pm.tomorrow : pm.inDays(days)) + (at ? ` ${at}` : "");
         const amount = reminder.amount ? `${reminder.amount} ${reminder.currency ?? ""}`.trim() : null;
         await sendPushToUser(uid, {
           title: reminder.name,

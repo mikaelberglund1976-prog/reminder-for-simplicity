@@ -3,7 +3,11 @@
 export const homePrefs = {
   cardTitle: "Home",
   intro: "Choose what your start page shows. Only affects you.",
+  todayTitle: "Today",
+  todayEmptyDone: "All done for today",
+  kindReminder: "Reminder",
   sections: {
+    today: "Today — the whole family, in time order",
     family: "Family photos row",
     quick: "Quick actions",
     comingUp: "Coming up (reminders, next 7 days)",

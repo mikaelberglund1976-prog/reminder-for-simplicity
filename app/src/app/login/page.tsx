@@ -55,7 +55,7 @@ export default function LoginPage() {
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
     setError("");
-    await signIn("google", { callbackUrl: "/dashboard" });
+    await signIn("google", { callbackUrl: safeCallback() });
   }
 
   async function resendVerification() {
@@ -76,8 +76,18 @@ export default function LoginPage() {
       setResendState("idle");
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      router.push(safeCallback());
     }
+  }
+
+  // 2026-10-09: go back to where the person was headed (e.g. /gifts or
+  // /join-household?token=…). Only same-site paths — never another host.
+  function safeCallback(): string {
+    try {
+      const cb = new URLSearchParams(window.location.search).get("callbackUrl");
+      if (cb && cb.startsWith("/") && !cb.startsWith("//") && !cb.startsWith("/\\")) return cb;
+    } catch { /* ignore */ }
+    return "/dashboard";
   }
 
   return (

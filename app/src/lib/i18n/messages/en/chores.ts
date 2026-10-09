@@ -1,4 +1,16 @@
 export const chores = {
+  stars: {
+    thisWeek: "stars this week",
+    total: "stars in total",
+    streak: "weeks in a row",
+    earned: (amount: number, per: number) => `Pocket money this week: ${amount} kr (${per} kr per star)`,
+    lastWeek: (amount: number) => `last week ${amount} kr`,
+    perStarLabel: "Pocket money per star",
+    perStarUnit: "kr per star (0 = off)",
+    setPerStar: "+ Pocket money per star",
+    changePerStar: (n: number) => `Pocket money: ${n} kr per star — change`,
+    plusOne: "⭐ +1 star!",
+  },
   removeConfirm: (name: string) => `Remove "${name}"?`,
   loading: "Loading family…",
   family: "Family",

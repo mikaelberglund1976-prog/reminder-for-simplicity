@@ -10,6 +10,7 @@ import HamburgerMenu from "@/components/HamburgerMenu";
 import ListAccessPanel, { type ListMemberOption } from "@/components/ListAccessPanel";
 import { useI18n, useM } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/messages";
+import WishlistSharePanel from "@/components/WishlistSharePanel";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -553,6 +554,9 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
           }}
         />
       )}
+
+      {/* 2026-10-09: share this child's wishlist with relatives (guest accounts). */}
+      {activeChild && <WishlistSharePanel childId={activeChild} childName={(children.find(([id]) => id === activeChild)?.[1] ?? "").split(" ")[0]} />}
 
       <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 14, lineHeight: 1.5 }}>
         {t.adultsOnly}

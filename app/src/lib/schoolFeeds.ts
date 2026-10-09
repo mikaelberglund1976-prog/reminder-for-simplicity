@@ -15,6 +15,8 @@
 // child, on School and on Home exactly like hand-made ones.
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { getTimes, setTime } from "@/lib/reminderTimes";
+import { parseWall } from "@/lib/activityFeeds";
 
 export const SYNC_EVERY_MS = 20 * 60 * 60 * 1000; // daily cron; 20h so a slightly early run still syncs
 export const MANUAL_SYNC_MIN_MS = 10 * 60 * 1000; // "Sync now" at most every 10 minutes
@@ -72,7 +74,18 @@ export function maskUrl(url: string) {
 export type ParsedEntry = {
   uid: string; summary: string; description: string | null; categories: string[];
   date: Date; kind: "HOMEWORK" | "TEST" | "OTHER"; subject: string | null; isTodo: boolean;
+  /** 2026-10-09: wall-clock start "HH:MM" in Stockholm, null = all day. */
+  time: string | null;
 };
+
+// 2026-10-09: keep the lesson time for tests and events (e.g. "Prov 08:20").
+// Deadlines at 00:00/23:59 and to-dos carry no useful time.
+function entryTime(prop: { value: string } | undefined, isTodo: boolean): string | null {
+  if (!prop || isTodo) return null;
+  const w = parseWall(prop.value);
+  if (!w?.time || w.time === "00:00" || w.time === "23:59") return null;
+  return w.time;
+}
 
 function unescapeText(v: string) {
   return v.replace(/\\n/gi, "\n").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\").trim();
@@ -145,7 +158,7 @@ export function parseIcs(text: string): ParsedEntry[] {
           const hay = [summary, categories.join(" ")].join(" ");
           const kind: ParsedEntry["kind"] = TEST_RE.test(hay) ? "TEST"
             : (type === "VTODO" || HOMEWORK_RE.test(hay) || HOMEWORK_RE.test(description ?? "")) ? "HOMEWORK" : "OTHER";
-          out.push({ uid: uid.trim().slice(0, 500), summary: summary.slice(0, 200), description: description ? description.slice(0, 1000) : null, categories, date, kind, subject: guessSubject(summary, categories.join(" "), description), isTodo: type === "VTODO" });
+          out.push({ uid: uid.trim().slice(0, 500), summary: summary.slice(0, 200), description: description ? description.slice(0, 1000) : null, categories, date, kind, subject: guessSubject(summary, categories.join(" "), description), isTodo: type === "VTODO", time: entryTime(dateProp, type === "VTODO") });
         }
       }
       cur = null; type = null; continue;
@@ -220,10 +233,12 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
         const r = await prisma.reminder.findUnique({ where: { id: imp.reminderId }, select: { id: true, isActive: true, name: true, date: true, schoolKind: true, subject: true, note: true } });
         if (!r || !r.isActive) continue;
         const changed = r.name !== e.summary || r.date.getTime() !== e.date.getTime() || r.schoolKind !== e.kind || r.subject !== e.subject || (r.note ?? null) !== e.description;
+        const oldTime = (await getTimes([r.id])).get(r.id)?.startTime ?? null;
+        if (oldTime !== e.time) await setTime(r.id, { startTime: e.time });
         if (changed) {
           await prisma.reminder.update({ where: { id: r.id }, data: { name: e.summary, date: e.date, schoolKind: e.kind, subject: e.subject, note: e.description } });
           updated++;
-        }
+        } else if (oldTime !== e.time) updated++;
         continue;
       }
       const created = await prisma.reminder.create({
@@ -235,6 +250,7 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
         select: { id: true },
       });
       await prisma.$executeRaw`INSERT INTO "school_imports" ("reminderId", "childId", "uid") VALUES (${created.id}, ${feed.childId}, ${e.uid}) ON CONFLICT DO NOTHING`;
+      if (e.time) await setTime(created.id, { startTime: e.time });
       added++;
     }
 

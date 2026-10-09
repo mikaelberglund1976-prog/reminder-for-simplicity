@@ -1,6 +1,18 @@
 import type { Messages } from "../en";
 
 export const chores: Messages["chores"] = {
+  stars: {
+    thisWeek: "stjärnor i veckan",
+    total: "stjärnor totalt",
+    streak: "veckor i rad",
+    earned: (amount, per) => `Veckopeng hittills: ${amount} kr (${per} kr per stjärna)`,
+    lastWeek: (amount) => `förra veckan ${amount} kr`,
+    perStarLabel: "Veckopeng per stjärna",
+    perStarUnit: "kr per stjärna (0 = av)",
+    setPerStar: "+ Veckopeng per stjärna",
+    changePerStar: (n) => `Veckopeng: ${n} kr per stjärna – ändra`,
+    plusOne: "⭐ +1 stjärna!",
+  },
   removeConfirm: (name) => `Ta bort ”${name}”?`,
   loading: "Laddar familjen…",
   family: "Familj",

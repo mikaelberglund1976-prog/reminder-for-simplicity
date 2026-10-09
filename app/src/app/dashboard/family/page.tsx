@@ -8,6 +8,7 @@ import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import DeletionRequestsCard from "@/components/DeletionRequestsCard";
 import { useM } from "@/lib/i18n/client";
+import StarSummary from "@/components/StarSummary";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -53,6 +54,7 @@ export default function FamilyPage() {
   const router = useRouter();
   const msg = useM();
   const t = msg.chores;
+  const [starsKey, setStarsKey] = useState(0);
 
   const [trial, setTrial] = useState<TrialInfo | null>(null);
   const [summary, setSummary] = useState<ChildSummary[]>([]);
@@ -133,6 +135,7 @@ export default function FamilyPage() {
       await fetch(`/api/family/chores/${choreId}/complete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
       await fetchSummary();
       await fetchStats();
+      setStarsKey((k) => k + 1);
     } catch (e) { console.error(e); }
     finally { setApprovingId(null); }
   }
@@ -147,6 +150,7 @@ export default function FamilyPage() {
       });
       await fetchSummary();
       await fetchStats();
+      setStarsKey((k) => k + 1);
     } catch (e) { console.error(e); }
     finally { setApprovingId(null); }
   }
@@ -304,6 +308,9 @@ export default function FamilyPage() {
               </div>
             ))}
           </div>
+
+          {/* 2026-10-09: stars, streak and optional pocket money. */}
+          <StarSummary userId={viewChild.childId} refreshKey={starsKey} showSetting />
 
           {/* Chore list */}
           {viewChild.chores.map((chore, i) => {

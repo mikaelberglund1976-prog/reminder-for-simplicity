@@ -23,6 +23,7 @@ import { useI18n } from "@/lib/i18n/client";
 import { weekdayName } from "@/lib/i18n/format";
 import type { Messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/i18n/config";
+import StarSummary from "@/components/StarSummary";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -61,6 +62,8 @@ function ChildViewContent() {
   const media = useFamilyMedia();
   const { m: msg, locale, dateLocale, err } = useI18n();
   const t = msg.childHome;
+  const [starsKey, setStarsKey] = useState(0);
+  const [cheer, setCheer] = useState(false);
   const myId = session?.user?.id;
   const childId = searchParams.get("id") ?? myId;
   const isOwn = !!myId && childId === myId;
@@ -154,7 +157,12 @@ function ChildViewContent() {
     setToggling(choreId);
     try {
       const res = await fetch(`/api/family/chores/${choreId}/complete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
-      if (res.ok) await fetchChores();
+      if (res.ok) {
+        const d = await res.json().catch(() => ({}));
+        if (d.done && d.status !== "PENDING_APPROVAL") { setCheer(true); setTimeout(() => setCheer(false), 1800); }
+        await fetchChores();
+        setStarsKey((k) => k + 1);
+      }
     } catch (e) { console.error(e); }
     finally { setToggling(null); }
   }
@@ -302,6 +310,10 @@ function ChildViewContent() {
             </div>
           ) : (
             <>
+              {chores.length > 0 && <StarSummary userId={childId} refreshKey={starsKey} />}
+              {cheer && (
+                <div role="status" style={{ textAlign: "center", fontSize: 15, fontWeight: 800, color: "var(--warning)", marginBottom: 8 }}>{msg.chores.stars.plusOne}</div>
+              )}
               {chores.length > 0 && (
                 <div style={{ height: 6, background: "var(--surface-3)", borderRadius: 3, overflow: "hidden", marginBottom: 10 }}>
                   <div style={{ height: "100%", width: `${pct}%`, background: pct === 100 ? "var(--success)" : "var(--accent-bg)", borderRadius: 3, transition: "width 0.4s" }} />

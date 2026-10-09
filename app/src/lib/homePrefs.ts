@@ -3,7 +3,7 @@
 // Settings → Home. Client-safe (no server imports) — storage is in
 // lib/homePrefsStore.ts, the API in /api/profile/home-prefs.
 
-export const HOME_SECTIONS = ["family", "quick", "comingUp", "perChild", "stats", "chores", "reminders"] as const;
+export const HOME_SECTIONS = ["family", "today", "quick", "comingUp", "perChild", "stats", "chores", "reminders"] as const;
 export type HomeSection = (typeof HOME_SECTIONS)[number];
 
 export const PER_CHILD_KINDS = ["tests", "homework", "activities", "schoolOther"] as const;
@@ -21,7 +21,7 @@ export type HomePrefs = {
 export const PER_CHILD_COUNTS = [2, 3, 5] as const;
 
 export const DEFAULT_HOME_PREFS: HomePrefs = {
-  sections: { family: true, quick: true, comingUp: true, perChild: true, stats: true, chores: true, reminders: true },
+  sections: { family: true, today: true, quick: true, comingUp: true, perChild: true, stats: true, chores: true, reminders: true },
   perChild: { tests: true, homework: true, activities: true, schoolOther: false },
   perChildCount: 3,
   hiddenChildren: [],

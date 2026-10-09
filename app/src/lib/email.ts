@@ -57,8 +57,11 @@ export async function sendReminderEmail({
   reminderId,
   category,
   locale,
+  time,
 }: {
   locale?: Locale;
+  /** 2026-10-09: wall-clock time "HH:MM" (null/undefined = all day). */
+  time?: string | null;
   to: string;
   name: string | null;
   reminderName: string;
@@ -71,7 +74,7 @@ export async function sendReminderEmail({
 }) {
   const { l, t, d } = await lang(to, locale);
   const firstName = name?.split(" ")[0] ?? t.there;
-  const formattedDate = d(date);
+  const formattedDate = time ? `${d(date)}, ${time}` : d(date);
   const daysLeft = Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const dashboardUrl = `${APP_URL}/dashboard/${reminderId}`;
   const icon = category ? (CATEGORY_ICONS[category] ?? "🔔") : "🔔";
@@ -109,7 +112,7 @@ export async function sendReminderEmail({
   const { error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: `${icon} ${reminderName} — ${daysLabel}`,
+    subject: `${icon} ${reminderName} — ${daysLabel}${time ? ` ${time}` : ""}`,
     html: `
 <!DOCTYPE html>
 <html lang="${t.htmlLang}">
@@ -770,4 +773,18 @@ export async function sendTrialEndingEmail({ to, name, expiresAt, daysLeft, loca
     buttonText: t.trialEnding.button,
     buttonUrl: `${APP_URL}/upgrade`,
   }), "trial ending");
+}
+
+
+// 2026-10-09: a relative is invited to a child's wishlist (lib/wishlistGuests.ts).
+export async function sendWishlistShareEmail({ to, inviterName, childName, locale }: { to: string; inviterName: string; childName: string; locale?: Locale }) {
+  const { t } = await lang(to, locale);
+  await sendSimple(to, t.wishShare.subject(childName), simpleEmailHtml({
+    htmlLang: t.htmlLang,
+    icon: "🎁",
+    greeting: t.hi(t.there),
+    lines: [t.wishShare.body(inviterName, childName), t.wishShare.login(to)],
+    buttonText: t.wishShare.button,
+    buttonUrl: `${APP_URL}/gifts`,
+  }), "wishlist share");
 }

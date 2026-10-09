@@ -111,4 +111,10 @@ export const emails = {
     keeps: "Reminders, the calendar, calendar sync and one shared shopping list stay free.",
     button: "See plans",
   },
+  wishShare: {
+    subject: (child: string) => `${child}'s wishlist has been shared with you`,
+    body: (inviter: string, child: string) => `${inviter} has shared <strong>${child}'s wishlist</strong> with you. You can see the wishes and reserve one, so nobody buys the same thing — ${child} never sees who reserved what.`,
+    login: (email: string) => `Log in or create a free account with <strong>${email}</strong> to open it.`,
+    button: "Open the wishlist",
+  },
 };

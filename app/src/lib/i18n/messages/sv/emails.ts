@@ -112,4 +112,10 @@ export const emails: Messages["emails"] = {
     keeps: "Påminnelser, kalendern, kalendersynk och en delad inköpslista är fortsatt gratis.",
     button: "Se planerna",
   },
+  wishShare: {
+    subject: (child) => `${child}s önskelista har delats med dig`,
+    body: (inviter, child) => `${inviter} har delat <strong>${child}s önskelista</strong> med dig. Du ser önskningarna och kan reservera en, så att ingen köper samma sak – ${child} ser aldrig vem som har reserverat vad.`,
+    login: (email) => `Logga in eller skapa ett gratis konto med <strong>${email}</strong> för att öppna den.`,
+    button: "Öppna önskelistan",
+  },
 };

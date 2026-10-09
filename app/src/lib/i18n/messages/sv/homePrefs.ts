@@ -3,7 +3,11 @@ import type { Messages } from "../en";
 export const homePrefs: Messages["homePrefs"] = {
   cardTitle: "Startsidan",
   intro: "Välj vad din startsida ska visa. Gäller bara dig.",
+  todayTitle: "I dag",
+  todayEmptyDone: "Allt klart för i dag",
+  kindReminder: "Påminnelse",
   sections: {
+    today: "I dag – hela familjen i tidsordning",
     family: "Familjens bilder",
     quick: "Snabbval",
     comingUp: "På gång (påminnelser, 7 dagar)",

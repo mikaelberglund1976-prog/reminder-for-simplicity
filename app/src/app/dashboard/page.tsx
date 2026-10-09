@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import StartGuide from "@/components/StartGuide";
+import GiftSharesCard from "@/components/GiftSharesCard";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -477,6 +478,30 @@ export default function DashboardPage() {
       return { id: c.userId, name: c.user.name?.split(" ")[0] ?? c.user.email.split("@")[0], items };
     });
   })();
+  // 2026-10-09 (persona review — Jonas: "who goes where at 17?"): today for
+  // the whole family in time order — activities, tests/homework due today and
+  // reminders. Timed items first; finished ones are dimmed.
+  const todayRows = (() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const key = dateKey(today);
+    const nowHm = `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`;
+    const first = (u: { name: string | null; email: string } | null | undefined) => (u ? u.name?.split(" ")[0] ?? u.email.split("@")[0] : null);
+    const rows: { key: string; startTime: string | null; endTime: string | null; title: string; who: string | null; kind: "ACTIVITY" | "TEST" | "HOMEWORK" | "OTHER" | "REMINDER"; href: string; done: boolean }[] = [];
+    for (const a of activities) {
+      if (getOccurrencesInRange(a as unknown as RecurringItem, today, today).length === 0) continue;
+      const end = a.endTime ?? a.startTime ?? null;
+      rows.push({ key: `a-${a.id}`, startTime: a.startTime ?? null, endTime: a.endTime ?? null, title: a.name, who: first(a.assignedUser), kind: "ACTIVITY", href: `/dashboard/family/new?type=training&edit=${a.id}`, done: !!end && end < nowHm });
+    }
+    for (const it of schoolItems) {
+      if (dateKey(new Date(it.date)) !== key) continue;
+      rows.push({ key: `s-${it.id}`, startTime: it.startTime ?? null, endTime: null, title: it.subject ? `${it.subject} · ${it.name}` : it.name, who: first(it.assignedUser), kind: it.schoolKind ?? "OTHER", href: "/dashboard/school", done: !!it.completedAt });
+    }
+    for (const r of reminders) {
+      if (dateKey(new Date(r.date)) !== key) continue;
+      rows.push({ key: `r-${r.id}`, startTime: r.startTime ?? null, endTime: null, title: r.name, who: null, kind: "REMINDER", href: `/dashboard/${r.id}`, done: false });
+    }
+    return rows.sort((x, y) => (x.startTime ? 0 : 1) - (y.startTime ? 0 : 1) || (x.startTime ?? "").localeCompare(y.startTime ?? "") || x.title.localeCompare(y.title));
+  })();
   const show = prefs.sections;
 
   if (status === "loading" || loading || !roleChecked) {
@@ -567,9 +592,42 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* 2026-10-09: wishlists other families have shared with me. */}
+        <GiftSharesCard />
+
         {/* 2026-10-09: start guide for a new family (persona review). */}
         {hasHousehold && (
           <StartGuide members={householdMembers} userId={session?.user?.id} plan={plan?.plan ?? null} />
+        )}
+
+        {/* 2026-10-09: today for the whole family. */}
+        {show.today && todayRows.length > 0 && (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+              <SectionTitle inline>{msg.homePrefs.todayTitle}</SectionTitle>
+              {todayRows.every((r) => r.done) && <span style={{ fontSize: 12, fontWeight: 700, color: "var(--success)" }}>{msg.homePrefs.todayEmptyDone}</span>}
+            </div>
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 14px", boxShadow: "var(--shadow)", marginBottom: 24 }}>
+              {todayRows.map((r, i) => {
+                const badge = r.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
+                  : r.kind === "HOMEWORK" ? { bg: "var(--tint-school)", fg: "var(--school)", label: msg.homePrefs.kindHomework }
+                  : r.kind === "ACTIVITY" ? { bg: "var(--tint-warning)", fg: "#D85A30", label: msg.homePrefs.kindActivity }
+                  : r.kind === "REMINDER" ? { bg: "var(--tint-accent)", fg: "var(--accent)", label: msg.homePrefs.kindReminder }
+                  : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool };
+                const time = formatTimeRange(r);
+                return (
+                  <Link key={r.key} href={r.href} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", textDecoration: "none", opacity: r.done ? 0.45 : 1 }}>
+                    <span style={{ width: 74, flexShrink: 0, fontSize: 13, fontWeight: 800, color: time ? "var(--fg)" : "var(--subtle)", fontVariantNumeric: "tabular-nums" }}>{time || msg.common.today}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: r.done && r.kind !== "ACTIVITY" ? "line-through" : "none" }}>{r.title}</span>
+                      {r.who && <span style={{ display: "block", fontSize: 12, color: "var(--muted)", marginTop: 1 }}>{r.who}</span>}
+                    </span>
+                    <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0, background: badge.bg, color: badge.fg }}>{badge.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Quick actions — "What would you like to do?" row, borrowed from the
