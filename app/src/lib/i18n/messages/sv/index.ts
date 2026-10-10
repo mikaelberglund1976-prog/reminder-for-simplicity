@@ -14,6 +14,7 @@ import { gifts } from "./gifts";
 import { home } from "./home";
 import { homePrefs } from "./homePrefs";
 import { ideas } from "./ideas";
+import { intake } from "./intake";
 import { landing } from "./landing";
 import { language } from "./language";
 import { members } from "./members";
@@ -48,6 +49,7 @@ export const sv: Messages = {
   home,
   homePrefs,
   ideas,
+  intake,
   landing,
   language,
   members,

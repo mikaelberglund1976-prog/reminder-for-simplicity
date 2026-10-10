@@ -175,6 +175,7 @@ const HOME_LIST_LIMIT = 5;
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
 function IcCart()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 6H5.6"/></svg>; }
+function IcCamera()  { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>; }
 function IcSchool()  { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12.5V17c0 1.5 2.5 3 6 3s6-1.5 6-3v-4.5"/></svg>; }
 function IcChecklist() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="m4 6 1 1 2-2"/><path d="m4 12 1 1 2-2"/><path d="m4 18 1 1 2-2"/></svg>; }
 function IcGift()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="8" width="18" height="4"/><rect x="4" y="12" width="16" height="9"/><path d="M12 8v13M12 8c-1.5-3-5-3-5-1s2 1 5 1zM12 8c1.5-3 5-3 5-1s-2 1-5 1z"/></svg>; }
@@ -185,6 +186,7 @@ function IcBellPlus() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d
 const QUICK_ACTIONS: { label: keyof Messages["home"]["quick"]; href: string; Icon: () => React.ReactElement; color: string; tint: string; pro?: boolean }[] = [
   { label: "newReminder",  href: "/dashboard/new",                 Icon: IcBellPlus,  color: "var(--accent)",  tint: "var(--tint-accent)" },
   { label: "shoppingList", href: "/dashboard/family/shopping-list", Icon: IcCart,      color: "var(--success)", tint: "var(--tint-success)" },
+  { label: "scan",          href: "/dashboard/intake",               Icon: IcCamera,    color: "var(--violet)",  tint: "var(--tint-accent)", pro: true },
   { label: "homework", href: "/dashboard/school",           Icon: IcSchool,    color: "var(--accent)",  tint: "var(--tint-accent)" , pro: true },
   { label: "chores",        href: "/dashboard/family",               Icon: IcChecklist, color: "var(--warning)", tint: "var(--tint-warning)" , pro: true },
   { label: "wishlists",     href: "/dashboard/wishlist",             Icon: IcGift,      color: "var(--danger)",  tint: "var(--tint-danger)" , pro: true },

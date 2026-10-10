@@ -87,6 +87,7 @@ export function PrivacyEn() {
           <><b>Supabase</b> — database, stored in Frankfurt, Germany (EU).</>,
           <><b>Vercel</b> — hosting; the app runs in Frankfurt (EU). Vercel is a US company.</>,
           <><b>Resend</b> — sends our emails; US company. Transfers outside the EU rely on the EU–US Data Privacy Framework or the EU standard contractual clauses.</>,
+          <><b>Anthropic</b> — only when an adult chooses to scan a newsletter, a note or a school email. The picture or PDF is sent to Anthropic's AI service (USA) to be read and is not stored by us; no names or other data from the app are sent with it. Anthropic does not train its models on it. The transfer relies on the EU standard contractual clauses in Anthropic's data processing terms.</>,
           <><b>Google</b> — only if you choose &quot;Continue with Google&quot;. We keep your Google account id, not your Google password or tokens.</>,
           <><b>Open Food Facts</b> (France) — only when you scan a barcode, your browser looks the code up there.</>,
         ]} />

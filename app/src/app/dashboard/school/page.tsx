@@ -57,7 +57,8 @@ function SchoolPageInner() {
 
   const [trial, setTrial] = useState<TrialInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const t = useM().school;
+  const m = useM();
+  const t = m.school;
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -118,6 +119,12 @@ function SchoolPageInner() {
       <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 20 }}>
         {t.intro}
       </div>
+      {/* 2026-10-10: AI intake — scan a newsletter or school email. */}
+      <Link href="/dashboard/intake" style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 14px", marginBottom: 14, textDecoration: "none" }}>
+        <span style={{ fontSize: 22 }}>📸</span>
+        <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: "var(--fg)" }}>{m.intake.schoolCard}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>{m.intake.schoolCardCta} →</span>
+      </Link>
       {/* 2026-10-03: SchoolSoft import per child (adults only — the card hides itself otherwise). */}
       <SchoolSoftCard />
       {members.length === 0 ? (

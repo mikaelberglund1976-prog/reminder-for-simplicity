@@ -130,7 +130,7 @@ const SUBJECT_MAP: [RegExp, string][] = [
   [/\btyska\b/i, "German"],
 ];
 
-function guessSubject(...texts: (string | null | undefined)[]): string | null {
+export function guessSubject(...texts: (string | null | undefined)[]): string | null {
   const t = texts.filter(Boolean).join(" \n ");
   for (const [re, s] of SUBJECT_MAP) if (re.test(t)) return s;
   return null;

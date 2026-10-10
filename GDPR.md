@@ -34,6 +34,7 @@ Gemensamt för alla rader: lagras i Supabase (eu-central-1, Frankfurt); appens s
 | 9 | Idétavlan | Förslag och röster | Inloggade | Titel, text, namn, röster | Berättigat intresse | Supabase, Vercel | Som #1 |
 | 10 | Egen reklam | Visa och rapportera annonser | Gratis-vuxna (inga personuppgifter sparas) | Bara totalsiffror visningar/klick | Berättigat intresse | Supabase | Så länge annonsen finns |
 | 11 | Administration (inkl. "View as" i egen familj sedan 2026-10-03, loggas) | Support, beviljning av Pro, återställning | Alla | Allt ovan, läsbart för admin i `/admin` | Berättigat intresse / avtal | – | – |
+| 12 | AI-intag (skanna veckobrev/skolmejl, 2026-10-10) | Läsa av datum ur ett dokument som en vuxen själv väljer att skanna | Vuxna (dokumentet kan nämna barn) | Bild/PDF i minnet under ett anrop; förslag som föräldern granskar | Avtal med föräldern | Anthropic (USA, SCC i DPA, ingen träning), Vercel | Bilden sparas inte; sparade poster som #4 |
 
 **Inte behandlat:** personnummer, adress, ålder, betalkortsuppgifter (kommer via Stripe senare → ny rad), spårning/analys, tredjepartsreklam.
 
@@ -66,6 +67,7 @@ Gemensamt för alla rader: lagras i Supabase (eu-central-1, Frankfurt); appens s
 
 **Kräver Mikael (beslut eller inloggning):**
 - [ ] Bolag som personuppgiftsansvarig (lanseringslistan rad 9–11) → uppdatera `/privacy` §1.
+- [ ] AI-intag: skapa Anthropic API-konto, acceptera villkoren (DPA ingår), be om nollagring, gör en kort konsekvensbedömning (DPIA) innan `ANTHROPIC_API_KEY` sätts i Vercel.
 - [ ] Godkänn biträdesavtal (DPA) i Supabase, Vercel och Resend; spara PDF:erna i projektmappen (rad 17).
 - [ ] Kontrollera i Supabase hur länge backuper sparas; skriv det här och i `/privacy` §5.
 - [ ] Kontrollera att `RESEND_FROM_EMAIL` är en adress på assistiq.se.

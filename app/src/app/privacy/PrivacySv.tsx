@@ -70,6 +70,7 @@ export function PrivacySv() {
         <><b>Supabase</b> – databas, lagrad i Frankfurt, Tyskland (EU).</>,
         <><b>Vercel</b> – drift; appen körs i Frankfurt (EU). Vercel är ett amerikanskt företag.</>,
         <><b>Resend</b> – skickar våra mejl; amerikanskt företag. Överföringar utanför EU sker med stöd av EU–US Data Privacy Framework eller EU:s standardavtalsklausuler.</>,
+        <><b>Anthropic</b> – bara när en vuxen själv väljer att skanna ett veckobrev, en lapp eller ett skolmejl. Bilden eller PDF:en skickas till Anthropics AI-tjänst (USA) för att läsas av och sparas inte hos oss; inga namn eller andra uppgifter från appen skickas med. Anthropic tränar inte sina modeller på uppgifterna. Överföringen sker med stöd av EU:s standardavtalsklausuler i Anthropics personuppgiftsbiträdesavtal.</>,
         <><b>Google</b> – bara om du väljer &quot;Fortsätt med Google&quot;. Vi sparar ditt Google-konto-id, inte ditt Google-lösenord eller dina tokens.</>,
         <><b>Open Food Facts</b> (Frankrike) – bara när du skannar en streckkod slår din webbläsare upp koden där.</>,
       ]} />
