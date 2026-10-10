@@ -2,6 +2,7 @@
 
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
+**Uppdaterad igen:** 2026-10-10 – punkt 42–43: releaserna 7–10 okt (klockslag, närmast per barn, klubbkalendrar, måstelistan, stjärnor/släktdelning, AI-intag) införda i loggen, och Lotuvi-varumärket live utom namnet – ljust läge, ikoner, figur och mörkt läge "Sage First" (se `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`). Alla md-filer synkade.
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
 **Uppdaterad igen:** 2026-10-04 (sen kväll) – punkt 41: PWA-installation på mobilen + namnfrågan uppsatt (se `RELEASE_2026-10-04c.md`).
 **Uppdaterad igen:** 2026-10-04 (kväll) – punkt 40: svenska + flerspråksstöd, språk per familj (se `RELEASE_2026-10-04b.md`) – live.
@@ -815,3 +816,23 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [ ] Klicktest `TEST_VERIFICATION.md` §15.
 - [ ] Nästa: webb-push-notiser.
 - [ ] **Namnbeslut:** Reminder for Simplicity eller Assistiq (eller "Assistiq Familj") – se överst i `LAUNCH_CHECKLIST.md`.
+
+## 42. Releaser 7–10 okt (live) – se respektive `RELEASE_*.md`
+- [x] **7 okt** – klockslag på aktiviteter, påminnelser och skola; aktiviteter och sysslor går att redigera (`RELEASE_2026-10-07.md`).
+- [x] **9 okt** – Närmast per barn på Hem, klubbkalendrar (3 per barn), kalenderfilter per person, Inställningar → Startsidan (`RELEASE_2026-10-09.md`).
+- [x] **9 okt (b)** – måstelistan: admin-godkännandet av, barn utan mejl, Kom igång-guide, webb-push, mejl före provslut (`RELEASE_2026-10-09b.md`).
+- [x] **9 okt (c)** – stjärnor för sysslor + veckopeng, dela önskelista med släkten, "I dag" på Hem, klockslag i SchoolSoft och mejl (`RELEASE_2026-10-09c.md`).
+- [x] **10 okt** – AI-intag: skanna veckobrev/skolmejl (`RELEASE_2026-10-10.md`). Avstängt tills `ANTHROPIC_API_KEY` finns i Vercel.
+- [ ] Klicktest av respektive "Att testa på mobilen" (`TEST_VERIFICATION.md` §16–§20).
+- [ ] Kvar för Mikael: egen avsändardomän i Resend, beslut Stripe/märkt beta, beslut ett barn med skolsynk i Free, `ANTHROPIC_API_KEY`.
+
+## 43. Lotuvi-varumärket testas live – allt utom namnet (2026-10-10)
+- [x] Beslut (Mikael): testa Lotuvi-riktlinjerna live utom namnet; appen får färgerna, startsidan figuren, ikonerna byts.
+- [x] Ljust läge (Lotuvi Family): cream, mörkblå text, korall-accent `#C24F26` (peach klarar inte vit text). Ikoner + favicon = Lotuvi-symbolen, logomärket på publika sidor, figuren på startsidan. `RELEASE_2026-10-10b.md`.
+- [x] Mörkt läge "Sage First" enligt riktlinjer v0.3: mint-primär, coral sekundär, grön-charcoal ytor. Ny token `--on-accent` (ingen inskriven vit text på accentknappar), `--premium` för Pro-chippet. `RELEASE_2026-10-10c.md`.
+- [ ] Klicktest `TEST_VERIFICATION.md` §21 (ljust + mörkt).
+- [ ] Produktionslogga i vektor (ÖPPET i riktlinjerna) – ersätt `public/brand/*_v0.1.*` och ikonerna.
+- [ ] Mejlens färger (`lib/email.ts`) till Lotuvi.
+- [ ] Knappar 10–14 px hörn i stället för "piller" (riktlinjen) – kräver genomgång av inline-knappar.
+- [ ] Namnbeslut (Lotuvi är arbetsnamn): varumärkes-clearance, domän, sociala handles – se `LAUNCH_CHECKLIST.md` överst.
+

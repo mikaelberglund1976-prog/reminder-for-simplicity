@@ -1,4 +1,5 @@
 # Roadmap – Reminder for Simplicity
+**Uppdaterad igen:** 2026-10-10 – Fas 1.11 (releaserna 7–10 okt) och Fas 1.12 (Lotuvi-varumärket live utom namnet, inkl. mörkt läge "Sage First") tillagda.
 **Uppdaterad igen:** 2026-10-04 (kväll) – appen på svenska och engelska, språk väljs per familj av familjens admin, förberett för fler språk (Fas 1.10). Se `RELEASE_2026-10-04b.md`.
 **Uppdaterad igen:** 2026-10-04 – mobiltestets fynd 4 okt åtgärdade och live (Fas 1.9): delade poster går att öppna, nästa datum överallt, barnens egen bottenmeny, städad Home, Free/Pro på ett ställe, ny publik startsida och "See how it works". Kalendersynk fortsatt Free. Se `RELEASE_2026-10-04.md`.
 **Uppdaterad igen:** 2026-09-29 – mobiltestets 13 fynd åtgärdade (familjefoton, Family members-sida, startsida per roll, prov/läxor per barn, radera listor m.m.), barn med eget konto/Google kan gå med i familjen, och GDPR-åtgärder live (`/privacy` publicerad, data i EU, vårdnadshavarens bekräftelse). Se ny sektion "Fas 1.7", `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`.
@@ -132,6 +133,20 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] Språk per familj, ändras av familjens admin (Family members / Settings); ny familj ärver grundarens språk; startsidan säger att appen finns på svenska (ingen väljare där)
 - [ ] Klicktest (`TEST_VERIFICATION.md` §14) och juristläsning av svenska `/privacy`
 - [ ] **Senare:** fler språk (norska, danska, finska, tyska) – recept i `RELEASE_2026-10-04b.md`; butikstexter i App Store/Google Play per språk
+
+## Fas 1.11 – Vardagen på riktigt (7–10 okt 2026, LIVE)
+- [x] Klockslag på aktiviteter/påminnelser/skola, redigera aktiviteter och sysslor (`RELEASE_2026-10-07.md`)
+- [x] Närmast per barn på Hem, klubbkalendrar (3 per barn), kalenderfilter per person, anpassa Hem (`RELEASE_2026-10-09.md`)
+- [x] Öppen registrering, barn utan mejl, Kom igång-guide, webb-push, mejl före provslut (`RELEASE_2026-10-09b.md`)
+- [x] Stjärnor + veckopeng, dela önskelista med släkten, "I dag" på Hem (`RELEASE_2026-10-09c.md`)
+- [x] AI-intag av veckobrev/skolmejl – byggt, väntar på `ANTHROPIC_API_KEY` (`RELEASE_2026-10-10.md`)
+- [ ] **Senare:** steg 2 i AI-intaget – vidarebefordrat mejl
+
+## Fas 1.12 – Lotuvi-varumärket (2026-10-10, LIVE utom namnet)
+- [x] Ljust läge Lotuvi Family, ikoner/favicon, logomärke, figur på startsidan (`RELEASE_2026-10-10b.md`)
+- [x] Mörkt läge "Sage First" enligt riktlinjer v0.3, tokens `--on-accent` och `--premium` (`RELEASE_2026-10-10c.md`)
+- [ ] Namnbyte efter clearance, produktionslogga, mejlfärger, knappradie (se `LAUNCH_CHECKLIST.md`)
+- [ ] **Senare:** Lotuvi Sport-temat (blå) när sportappen flyttar in under samma varumärke
 
 ## USP:ar och prioritet inför användartester (2026-07-28)
 

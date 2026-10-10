@@ -20,7 +20,7 @@ De två plattformarna är **inte symmetriska**. Android/Google Play är en rimli
 
 ## 2. Nuläget i vår kodbas (bättre grund än väntat)
 
-- ✅ `public/manifest.json` finns redan – namn, ikoner **192×192 och 512×512 med `maskable`-stöd**, standalone-läge, tema/bakgrundsfärg. Precis vad Google Play kräver för ikonresurser.
+- ✅ `public/manifest.json` finns redan – namn, ikoner **192×192 och 512×512 med `maskable`-stöd**, standalone-läge, tema/bakgrundsfärg. Precis vad Google Play kräver för ikonresurser. *(2026-10-10: ikonerna visar Lotuvi-symbolen – tillfällig rasterversion; inför en store-listning behövs produktionsloggan i vektor och en ikon i 1024×1024, se `BRAND.md`.)*
 - ✅ `public/sw.js` finns redan och är registrerad i `layout.tsx` – cachar app-skalet (`/`, `/dashboard`, `/login`, `/register`) för snabbare laddning och viss offline-funktion. Passerar troligen grundkraven för en PWA, men cachar inte faktisk data (reminders/listor) – bara sidskalet.
 - ❌ Ingen `assetlinks.json` (Digital Asset Links) – krävs av Google Play för att verifiera att appen och webbplatsen ägs av samma part (TWA-kravet).
 - ❌ Ingen native/hybrid-app-kod alls – varken Capacitor, React Native eller motsvarande. Det finns inget att skicka till Apple idag.

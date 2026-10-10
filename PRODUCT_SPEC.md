@@ -1,5 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.22 | **Uppdaterad:** 2026-10-04 | **Ägare:** Mikael Berglund
+**Version:** 2.23 | **Uppdaterad:** 2026-10-10 | **Ägare:** Mikael Berglund
+**Not (2026-10-10, live):** §9 punkt 8 tillagd – utseendet följer Lotuvi-riktlinjerna v0.3 (namnet oförändrat), System/Ljust/Mörkt med "Sage First" i mörkt. Funktionerna från 7–10 okt (klockslag, närmast per barn, klubbkalendrar, Kom igång-guide, webb-push, stjärnor, släktdelning, "I dag", AI-intag) beskrivs i `RELEASE_2026-10-07.md` … `RELEASE_2026-10-10.md`. Se `BRAND.md`, `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`.
 **Not (2026-10-04, live):** 4b.42 (mobiltestets fynd 4 okt) tillagd; 4b.10 och §7.4 uppdaterade – barn väljer egen bottenmeny (standard Home, Calendar, School, Activities), återkommande poster visar nästa datum, Free/Pro samlat i `lib/plans.ts`, kalendersynk fortsatt Free. Se `RELEASE_2026-10-04.md`.
 **Not (2026-09-29, live):** 4b.36 (mobiltestets fynd), 4b.37 (barn med eget konto/Google) och 4b.38 (GDPR) tillagda; 4b.28 och §10 uppdaterade – integritetsmeddelandet är publicerat. Se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`.
 **Not (2026-09-28, live):** §7.4 tillagd – ny Free/Pro-gräns, 14 dagars provperiod, Pro-förfrågan/admin-beviljning, förberedd betalning och reklam. Ersätter delar av §7.1 och hela §7.3 (7-dagars trial). Se `RELEASE_2026-09-28.md`.
@@ -663,6 +664,7 @@ Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar me
 5. **Snabbval framför formulär** – välj "Netflix" istället för att skriva
 6. **Visa värde innan vi ber om något** *(tillagd 2026-08-02, se `COMPETITOR_ANALYSIS_TASKAPPS.md`)* – ny användare ska hinna uppleva kärnvärdet (en tillagd påminnelse/vara) innan konto-konfiguration, familjeinbjudan eller ett eventuellt framtida betalflöde tvingas fram. Motsatsen till Do Habits-mönstret (hård paywall innan en enda funktion testats).
 7. **Gamification i små, billiga doser** *(tillagd 2026-08-02)* – enkla mikro-belöningar (t.ex. en visuell bekräftelse vid första avklarade posten) bygger vana utan att kräva ny infrastruktur. Se 4b.30 för konkreta kandidater.
+8. **Ett varumärke, tre teman** *(2026-10-10)* – utseendet följer Lotuvi-riktlinjerna (v0.3, Family-uttrycket). System (standard) / Ljust / Mörkt per enhet; mörkt läge är samma produkt med andra tokenvärden ("Sage First": mint-primär). Alla färger via tokens i `globals.css` – aldrig inskriven `white`/`black`/hex i komponenter; text på accentytor använder `--on-accent`. Se `BRAND.md` §3/§6.
 
 ---
 

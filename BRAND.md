@@ -1,9 +1,9 @@
 # Brand Guide – Reminder for Simplicity
 **Version:** 1.2 | **Skapad:** 2026-03-31 | **Färgpalett uppdaterad:** 2026-07-26 | **Nav/ikon-sektion omskriven:** 2026-07-28, nuläge tillagt 2026-10-04 (anpassningsbar bottenmeny + fullständig hamburgermeny + kalenderns typfärger, se `TODO.md` 19/20)
 
-> 🧪 **Lotuvi-test live (2026-10-10):** Färger, ikoner, logomärke och figur följer nu Lotuvi_Brand_Product_Guidelines_v0.1 (Family-uttrycket) – namnet är oförändrat. Sanningskällan för färger är `app/src/app/globals.css`; paletten i avsnitt 3 nedan är den tidigare (indigo) och gäller inte längre. Se `RELEASE_2026-10-10b.md`.
+> 🧪 **Lotuvi-test live (2026-10-10):** Färger, ikoner, logomärke, figur och mörkt läge följer nu *Lotuvi_Brand_Product_Guidelines_v0.3* (Family-uttrycket). **Namnet är oförändrat** ("Reminder for Simplicity"). Sanningskällan för färger är `app/src/app/globals.css`; §3 och §6 nedan beskriver nuläget. Se `RELEASE_2026-10-10b.md` (ljust, ikoner, figur) och `RELEASE_2026-10-10c.md` (mörkt läge "Sage First").
 
-> ✅ **Färgpalett löst (2026-07-26):** Tidigare fanns tre olika accentfärger i `BRAND.md`, `RFS-Product-Direction.md` och `globals.css`. Mikael valde paletten från `RFS-Product-Direction.md` (accent `#4A5FD5`) som sanningskälla. Den är nu genomförd i `globals.css` och samtliga `.tsx`-filer i `app/src`. Paletten nedan är uppdaterad i enlighet med detta.
+> 🗄️ *Historik:* **Färgpalett löst (2026-07-26):** Tidigare fanns tre olika accentfärger i `BRAND.md`, `RFS-Product-Direction.md` och `globals.css`. Mikael valde paletten från `RFS-Product-Direction.md` (accent `#4A5FD5`) som sanningskälla. Den är nu genomförd i `globals.css` och samtliga `.tsx`-filer i `app/src`. (Ersatt av Lotuvi-paletten 2026-10-10.)
 
 ---
 
@@ -41,26 +41,31 @@
 
 ## 3. Visuell identitet
 
-### Färgpalett
+### Färgpalett – ljust läge (Lotuvi Family, 2026-10-10)
+Alla värden är RIKTNING enligt riktlinjerna och ändras **bara** i `globals.css` (tokens). Hårdkoda aldrig hex, `white` eller `black` i komponenter.
 ```
-Bakgrund:      #F5F4F0  (varm off-white – lugn, premium)
-Yta/kort:      #FFFFFF
-Text:          #1C1C28  (nästintill svart – läsbarhet)
-Dämpad text:   #7C7C8A  (subtext, labels)
-Accent:        #4A5FD5  (lugnt indigo – primära knappar, länkar)
-Accent hover:  #3A4FC5
-Kant/border:   #E4E3DE
-Framgång:      #2A9D6F
-Varning:       #E5873A
-Fel:           #D94F4F
+Token              Värde      Roll
+--background       #FAF7F2    Sidbakgrund (cream)
+--surface          #FFFFFF    Kort/ytor
+--surface-3        #F4EFE8    Upphöjd/tryckt yta
+--fg               #142B3A    Primär text (Lotuvi text-primary)
+--muted            #5F6E79    Sekundär text (4,9:1 på cream)
+--border           #ECE6DD    Diskreta kanter
+--ink              #142B3A    Mörka fyllda knappar, hero-kort
+--accent           #B5451F    Accent som text/länk (5,1:1 på cream)
+--accent-bg        #C24F26    Fyllda primärknappar, FAB (vit text 4,7:1)
+--on-accent        #FFFFFF    Text/ikon PÅ --accent-bg
+--brand-peach      #FF8F61    Family-primary – bara ytor/illustration (vit text 2,25:1 = underkänt)
+--accent-2         #FF8F61    Sekundär varm accent, sparsamt
+--premium          #8A6516    Pro/premium-status (på --tint-premium #F8EED8)
+--success          #1E7D52 · --warning #B45309 · --danger #D94F4F
+```
+Kalender-/typfärger (oförändrade, funktionella): syssla `#0E9F8E`, aktivitet `#D85A30`, läxa `#3730A3`, prov `#B42318`, påminnelse `#5A6B78`.
 
-Kalender-/typfärger (tillagda 2026-07-28, se BRAND.md 4b nedan):
-Chores:        #0E9F8E  (teal)
-Training:      #D85A30  (koral)
-School:        #3730A3  (indigo)
-  Läxa/prov-typer (2026-09-27, SchoolSection): Läxa #3730A3 på #EEF0FC · Prov #B42318 på #FDECEA · Övrigt #4B5563 på #F1F1EE
-Reminders:     #5A6080  (neutral blågrå, för att inte konkurrera med accentfärgen)
-```
+### Logomärke, ikoner och figur
+- **Symbol:** tre blad (grön, peach, blå), ingen text. Tillfällig rasterfil `app/public/brand/Lotuvi_Symbol_v0.1.png`, används via `components/BrandMark.tsx`. Rita aldrig om symbolen i kod – byt filen när produktionsloggan finns (ÖPPET).
+- **Appikoner/favicon:** `app/public/icons/` (192/512, maskable, apple-touch, favicon-32) + `app/public/favicon.ico` – symbolen på vit bakgrund.
+- **Figuren (companion):** `app/public/brand/Lotuvi_Companion_Lotu_v0.1.webp`, i en cream-cirkel (`<Companion />`). Används på startsidan; enligt riktlinjerna även för onboarding, tomma lägen och glädjeögonblick – inte på varje skärm eller vid allvarliga fel. Samma bild i ljust och mörkt.
 
 ### Typografi
 - **Rubriker:** Inter Bold (alt: Geist Sans)
@@ -68,7 +73,7 @@ Reminders:     #5A6080  (neutral blågrå, för att inte konkurrera med accentf�
 - **Kod/datum:** Geist Mono
 
 ### Spacing & Form
-- Rundade hörn (border-radius: 12px för kort, 8px för knappar)
+- Rundade hörn: kort 12–16 px (`--radius-md/lg`). Knappar är fortfarande "piller"; riktlinjen säger 10–14 px – ej genomfört än.
 - Generös whitespace – aldrig trångt
 - Subtila skuggor (box-shadow: 0 2px 8px rgba(0,0,0,0.08))
 
@@ -111,7 +116,7 @@ I marknadsföringstexter (startsida, feature-pills, `/features`) används därem
 
 **Hamburgermenyn innehåller sedan 2026-07-28 alla sidor, inte bara Family/Settings/Admin/Sign out** – den är tänkt som den fullständiga åtkomstpunkten oavsett vad som är valt i bottenmenyn: Reminders, Calendar, Shopping list, Wishlist, Chores, Training, School, Ideas & voting, Settings, (Admin, villkorat), Sign out. Samma linjeikon-stil som bottenmenyn, inte emoji.
 
-**Kalenderns typfärger** (filterchips och prickar i månadsvyn, se `PRODUCT_SPEC.md` 4b.25) är den enda platsen i appen som använder en egen liten färgpalett per innehållstyp snarare än accentfärgen – se paletten i §3 ovan (Chores teal, Training koral, School indigo, Reminders neutral blågrå). Vald medvetet för att vara urskiljbara som prickar i en liten kalenderruta utan att konkurrera med huvudaccentfärgen `#4A5FD5`.
+**Kalenderns typfärger** (filterchips och prickar i månadsvyn, se `PRODUCT_SPEC.md` 4b.25) är den enda platsen i appen som använder en egen liten färgpalett per innehållstyp snarare än accentfärgen – se paletten i §3 ovan (Chores teal, Training koral, School indigo, Reminders neutral blågrå). Vald medvetet för att vara urskiljbara som prickar i en liten kalenderruta utan att konkurrera med accentfärgen (`--accent`).
 
 ---
 
@@ -173,25 +178,30 @@ Mikael at Reminder for Simplicity
 
 ---
 
-## 6. Mörkt läge (tillagt 2026-09-27, se `UI_REVIEW_2026-09-27.md`)
+## 6. Mörkt läge – Lotuvi Family Dark "Sage First" (2026-10-10, riktlinjer v0.3 §09)
 
-Tre val per enhet: Auto (följer telefonen, standard) / Light / Dark. Alla färger går via variabler i `app/src/app/globals.css` – använd `var(--surface)`, `var(--fg)`, `var(--accent)` osv., aldrig hårdkodade hex-färger i nya sidor.
+Tre val per enhet: **System** (standard, följer `prefers-color-scheme`) / Ljust / Mörkt – ett aktivt val sparas och vinner över systemet (`lib/theme.ts`). Mörkt läge är samma produkt och informationshierarki, bara andra tokenvärden.
 
 ```
-Mörk palett:
-Bakgrund:      #0E1220  (djup marinblå)
-Yta/kort:      #171C2B
-Text:          #EEF0F7
-Dämpad text:   #9AA1B5
-Kant/border:   #283047
-Accent (text): #8E9CFF  (ljusare indigo – samma varumärke)
-Accent (knapp):#5468E0  (vit text ovanpå)
-Framgång:      #4FD69C · Varning: #F5B056 · Fel: #FF7B7B
+Token              Värde                    Roll
+--background       #0F1412                  surface-page (grön-charcoal, inte svart)
+--surface          #1A2020                  surface-card
+--surface-3        #263030                  upphöjd/tryckt yta
+--fg               #F3F5F4                  text-primary
+--muted            #A7B0AC                  text-secondary (7,4:1 på kort)
+--border           #2A3230                  border-subtle
+--accent/-bg       #6EE7B7                  family-dark-primary: vald nav, FAB, primärknappar, länkar
+--on-accent        #0F1412                  mörk text på mint (12:1)
+--accent-2         #FF7D66                  coral – sekundär, sparsamt
+--premium          #E8C987                  Pro-chip (champagne), ej mint
+--success #6EE7B7 · --warning #F5B056 · --danger #FF7B7B
+theme-color        #0F1412
 ```
+Regel: text på en fylld accentyta använder alltid `var(--on-accent)` – vit i ljust, mörk i mörkt. Släpp aldrig in `#fff` på `--accent-bg`.
 
 ## 7. Bilder, avatarer och färgkoder (tillagt 2026-09-29)
 
-- **Avatarer:** personens foto om det finns (rund, `object-fit: cover`), annars förbokstav i vitt på en färg som är stabil per person: `#4A5FD5`, `#C4367A`, `#1E7D52`, `#D85A30`, `#6A44CC`, `#0E9F8E`, `#B45309`, `#3730A3` (`components/Avatar.tsx`).
+- **Avatarer:** personens foto om det finns (rund, `object-fit: cover`), annars förbokstav i vitt på en färg som är stabil per person: `#C24F26`, `#C4367A`, `#1E7D52`, `#D85A30`, `#6A44CC`, `#0E9F8E`, `#B45309`, `#3730A3` (`components/Avatar.tsx`).
 - **Familjefoto:** överst på Home, 150 px högt, rundade hörn (22 px), beskärs med `cover`.
 - **Tjänstelogotyper** (Netflix, Spotify …) visas som initialer i tjänstens egen färg – vi hämtar inga logotyper från externa tjänster (GDPR, se `GDPR.md`).
 - **Kalenderns typfärger:** påminnelse `#5A6080` (kategorifärg per post), syssla `#0E9F8E`, aktivitet `#D85A30`, läxa `#3730A3` 📝, prov `#B4235A` 🧪.

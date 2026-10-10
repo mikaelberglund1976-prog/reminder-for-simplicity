@@ -1,6 +1,8 @@
 # Reminder for Simplicity — Product Direction Document
 *MVP Edition · April 2026*
 
+> ⚠️ **Färger och logomärke ersatta (2026-10-10):** indigo-paletten (`#4A5FD5`) nedan gäller inte längre. Appen följer Lotuvi-riktlinjerna v0.3 (Family-uttrycket, ljust + mörkt "Sage First") – se `BRAND.md` §3 och §6. Övriga UX-principer i dokumentet gäller fortfarande.
+
 ---
 
 ## 1. Executive Summary

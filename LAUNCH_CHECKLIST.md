@@ -2,7 +2,7 @@
 
 **Syfte:** en enda, avdubblerad, omprioriterad lista över allt som återstår innan produkten är "helt klar" för bred lansering. Ersätter inte `TODO.md` (som förblir den kronologiska arbetsloggen/historiken) utan sitter ovanpå den – det här dokumentet är **den aktuella sanningen om vad som är kvar**, `TODO.md` är **hur vi kom hit**.
 **Metod:** allt `- [ ]` extraherat ur `TODO.md` (punkt 1–25), `PRODUCT_SPEC.md`, `ROADMAP.md`, `OPERATIONS.md`, `APP_STORE_READINESS.md`, dubbletter slagna ihop, omgrupperat i faser efter vad som faktiskt blockerar vad.
-**Senast synkad:** 2026-10-04 (sen kväll) – PWA-installation + namnfrågan uppsatt (`RELEASE_2026-10-04c.md`, `TODO.md` punkt 41). Före det: 2026-10-04 (kväll) – svenska + flerspråksstöd LIVE, språk per familj (`RELEASE_2026-10-04b.md`, `TODO.md` punkt 40). Före det: 2026-10-04 – mobiltestets fynd 4 okt LIVE (`RELEASE_2026-10-04.md`, `TODO.md` punkt 39). Före det: 2026-10-03 – barnets startsida, radera medlemmar, Home först, SchoolSoft-import LIVE (`RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`, `TODO.md` punkt 36–37). Före det: 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
+**Senast synkad:** 2026-10-10 – Lotuvi-varumärket live utom namnet (ljust, ikoner, figur, mörkt "Sage First"; `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`, `TODO.md` punkt 43) och releaserna 7–10 okt införda (`TODO.md` punkt 42). Före det: 2026-10-04 (sen kväll) – PWA-installation + namnfrågan uppsatt (`RELEASE_2026-10-04c.md`, `TODO.md` punkt 41). Före det: 2026-10-04 (kväll) – svenska + flerspråksstöd LIVE, språk per familj (`RELEASE_2026-10-04b.md`, `TODO.md` punkt 40). Före det: 2026-10-04 – mobiltestets fynd 4 okt LIVE (`RELEASE_2026-10-04.md`, `TODO.md` punkt 39). Före det: 2026-10-03 – barnets startsida, radera medlemmar, Home först, SchoolSoft-import LIVE (`RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`, `TODO.md` punkt 36–37). Före det: 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
 **Obs:** den gemensamma lanseringslistan för alla Assistiq-appar (namn, bolag, webb, GDPR, betalning) finns i Claude Docs ("Genomlysning: Assistiq inför kommersiell lansering", fliken Todo-lista). Den här filen är appens egen tekniska checklista.
 **Uppdatera detta dokument** när en punkt blir klar (bocka av `- [x]`) eller när prioritet ändras – det tappar sitt värde annars.
 
@@ -10,8 +10,17 @@
 
 ## Först: ett obesvarat beslut som påverkar allt nedan
 
-- [ ] **Appens namn: behålla "Reminder for Simplicity" eller byta (t.ex. till Assistiq)?** (Mikael 2026-10-04.) Domänen är redan `assistiq.se` och ikonen är ett A-märke, medan appen heter Reminder for Simplicity. Att kolla innan beslut: (1) ska Assistiq vara paraplymärket/bolaget för flera appar (sportappen m.fl.) eller namnet på just den här appen – t.ex. "Assistiq" rakt av, eller "Assistiq Familj/Family"; (2) varumärkessök hos PRV + EUIPO (klass 9 och 42); (3) ledigt namn i App Store/Google Play och som `.com`; (4) fungerar på både svenska och engelska. Styr: `manifest.json` (name/short_name), `layout.tsx` (title, appleWebApp.title), mejlavsändare, sajttexter, `BRAND.md`. Hör ihop med rad 1–8 i den gemensamma lanseringslistan.
+- [ ] **Appens namn: behålla "Reminder for Simplicity" eller byta?** (Mikael 2026-10-04; *uppdaterat 2026-10-10:* Assistiq = bolag/paraply, appen får eget engelskt namn. **Lotuvi** är arbetsnamnet i varumärkesriktlinjerna och utseendet testas redan live – ikonen är nu Lotuvi-symbolen, men namnet är inte bytt och inte clearat.) Domänen är `assistiq.se`. Att kolla innan beslut: (1) ska Assistiq vara paraplymärket/bolaget för flera appar (sportappen m.fl.) eller namnet på just den här appen – t.ex. "Assistiq" rakt av, eller "Assistiq Familj/Family"; (2) varumärkessök hos PRV + EUIPO (klass 9 och 42); (3) ledigt namn i App Store/Google Play och som `.com`; (4) fungerar på både svenska och engelska. Styr: `manifest.json` (name/short_name), `layout.tsx` (title, appleWebApp.title), mejlavsändare, sajttexter, `BRAND.md`. Hör ihop med rad 1–8 i den gemensamma lanseringslistan.
 - [ ] **Fas 1-beta eller fortsätt bygga Fas 2 rakt av?** (öppnat i `TODO.md` punkt 8/12, aldrig besvarat.) Påverkar om Fas A nedan ska göras *innan* riktiga externa användare, eller om ni redan kör med riktiga användare och det är mer akut än det ser ut.
+
+---
+
+**Varumärke (Lotuvi, riktlinjer v0.3) – 2026-10-10:**
+- [x] Färger ljust + mörkt ("Sage First"), ikoner/favicon, logomärke och figur live – namnet oförändrat (`BRAND.md`).
+- [ ] Varumärkes-clearance för Lotuvi (PRV/EUIPO/USPTO), domän och sociala handles – innan namnet byts.
+- [ ] Produktionslogga i vektor + slutlig ikonfamilj (ersätter tillfälliga filer i `public/brand/`).
+- [ ] Mejlens färger och knapparnas hörnradie enligt riktlinjen.
+- [ ] Klicktest ljust + mörkt (`TEST_VERIFICATION.md` §21).
 
 ---
 

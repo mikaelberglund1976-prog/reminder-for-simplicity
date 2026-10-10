@@ -1,5 +1,5 @@
 # Test & Verifiering – öppna punkter
-**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-10-04 (§13 = mobiltestets fynd 4 okt) – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
+**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-10-10 (§16–§20 = releaserna 7–10 okt, §21 = Lotuvi ljust + mörkt; §15 steg 2 och 5: ikonen är nu Lotuvi-symbolen) · tidigare 2026-10-04 (§13 = mobiltestets fynd 4 okt) – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
 
 Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader utan `[x]` betyder "inte verifierat".
 
@@ -164,13 +164,44 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 ## 15. PWA – installera på mobilen (2026-10-04)
 **iPhone (Safari):**
 1. Öppna www.assistiq.se → efter ~2 s visas "Lägg till på hemskärmen" med 3 steg.
-2. Dela → Lägg till på hemskärmen → (Öppna som webbapp på) → Lägg till. Ikonen ska vara A-märket.
+2. Dela → Lägg till på hemskärmen → (Öppna som webbapp på) → Lägg till. Ikonen ska vara Lotuvi-symbolen (tre blad) – *ändrad 2026-10-10*; redan installerad app kan behöva läggas till igen.
 3. Öppna från ikonen: ingen Safari-ram, hamnar på Home (eller login första gången). Logga in en gång – stäng appen helt och öppna igen: fortfarande inloggad.
 4. Inne i den installerade appen ska rutan aldrig visas.
 **Android (Chrome):**
-5. Öppna sajten → rutan "Lägg till på mobilen" med knappen Installera → systemdialogen → ikon på hemskärmen (rund/ovanlig form ska inte klippa A-märket).
+5. Öppna sajten → rutan "Lägg till på mobilen" med knappen Installera → systemdialogen → ikon på hemskärmen (rund/ovanlig form ska inte klippa bladen).
 6. Långtryck på ikonen: genvägarna Shopping list och New reminder.
 **Båda:**
 7. "Inte nu"/"Stäng" → rutan syns inte igen på 14 dagar.
 8. Flygplansläge → öppna appen → offlinesidan "Ingen anslutning" i stället för webbläsarens felsida.
 9. Logga ut → logga in som annan användare: ingen data från förra användaren syns (sidor cachas inte längre).
+
+## 16. Klockslag + redigera (2026-10-07) – se `RELEASE_2026-10-07.md` "Att testa på mobilen"
+- [ ] Aktivitet med tid 17:30–19:00 syns med tid i listan och kalendern; redigering sparas.
+- [ ] Påminnelse 14:30 och prov 08:20 visar tiden; ICS-prenumerationen lägger dem på rätt klockslag.
+
+## 17. Närmast per barn, klubbkalendrar, filter (2026-10-09) – se `RELEASE_2026-10-09.md`
+- [ ] Klubbkalender kopplad → träningar under barnet, i kalendern och på Hem; egen ändring överlever "Synka nu".
+- [ ] Kalenderfilter per barn; Inställningar → Startsidan döljer valda delar.
+
+## 18. Måstelistan (2026-10-09b) – se `RELEASE_2026-10-09b.md`
+- [ ] Nytt konto kommer in direkt; barn utan mejl; Kom igång-guiden; push + testnotis; kvällsnotis 19:00.
+
+## 19. Stjärnor, släktdelning, "I dag" (2026-10-09c) – se `RELEASE_2026-10-09c.md`
+- [ ] Stjärna vid avbockad syssla; veckopeng; släkten reserverar på `/gifts` och barnet ser inget; "I dag" på Hem.
+
+## 20. AI-intag (2026-10-10) – se `RELEASE_2026-10-10.md` (kräver `ANTHROPIC_API_KEY`)
+- [ ] Fota veckobrev → förslag → spara → syns i kalender/Skola/"I dag". PDF och skärmdump.
+
+## 21. Lotuvi ljust + mörkt (2026-10-10) – se `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`
+**Ljust:**
+- [ ] Startsidan: tre blad + figuren; "Kom igång gratis" korall med vit text.
+- [ ] Hem, kalender, inköpslista: cream bakgrund, mörkblå text, korall på vald flik och +-knappen.
+**Mörkt (Inställningar → Utseende → Mörkt):**
+- [ ] Bakgrund grön-charcoal, kort något ljusare, inte helsvart.
+- [ ] Vald flik i bottenmenyn, +-knappen och primärknappar mint **med mörk text/ikon**.
+- [ ] Kalender: dagens datum mint med mörk siffra; valda snabbval i Ny påminnelse läsbara.
+- [ ] Pro-chippet champagne, inte mint.
+**Båda:**
+- [ ] Auto följer telefonen; ett aktivt val vinner över telefonen och sparas.
+- [ ] Ny hemskärmsikon (tre blad) efter att appen lagts till igen; favicon i webbläsarfliken.
+
