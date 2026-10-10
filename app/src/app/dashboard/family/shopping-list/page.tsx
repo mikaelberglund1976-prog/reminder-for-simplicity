@@ -844,7 +844,7 @@ export default function ShoppingListPage() {
         <span style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", letterSpacing: "0.01em" }}>{t.toBuy}</span>
         {pending.length > 0 && (
           <span style={{
-            background: "var(--accent-bg)", color: "#fff", fontSize: 12, fontWeight: 800,
+            background: "var(--accent-bg)", color: "var(--on-accent)", fontSize: 12, fontWeight: 800,
             borderRadius: 999, padding: "1px 9px", lineHeight: "18px", minWidth: 18, textAlign: "center",
           }}>
             {pending.length}
@@ -925,7 +925,7 @@ export default function ShoppingListPage() {
         style={{
           position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
           width: 52, height: 52, borderRadius: "50%",
-          background: "var(--accent-bg)", color: "#fff", border: "none", cursor: "pointer",
+          background: "var(--accent-bg)", color: "var(--on-accent)", border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 14px rgba(28,28,40,0.35)",
         }}

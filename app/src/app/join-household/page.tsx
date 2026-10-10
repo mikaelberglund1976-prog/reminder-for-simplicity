@@ -133,7 +133,7 @@ function JoinHouseholdContent() {
                   </p>
                   <button
                     onClick={handleJoin}
-                    style={{ width: "100%", padding: "16px", background: "linear-gradient(135deg,var(--accent),var(--accent))", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: FONT, boxShadow: "0 4px 14px rgba(46,94,200,0.3)" }}
+                    style={{ width: "100%", padding: "16px", background: "var(--accent-bg)", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "var(--on-accent)", cursor: "pointer", fontFamily: FONT, boxShadow: "0 4px 14px var(--accent-shadow)" }}
                   >
                     {t.signInToAccept}
                   </button>
@@ -142,7 +142,7 @@ function JoinHouseholdContent() {
                 <button
                   onClick={handleJoin}
                   disabled={joining}
-                  style={{ width: "100%", padding: "16px", background: joining ? "rgba(74,126,224,0.6)" : "linear-gradient(135deg,var(--accent),var(--accent))", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "#fff", cursor: joining ? "not-allowed" : "pointer", fontFamily: FONT, boxShadow: "0 4px 14px rgba(46,94,200,0.3)", transition: "all 0.15s" }}
+                  style={{ width: "100%", padding: "16px", background: joining ? "rgba(74,126,224,0.6)" : "var(--accent-bg)", border: "none", borderRadius: 50, fontSize: 15, fontWeight: 700, color: "var(--on-accent)", cursor: joining ? "not-allowed" : "pointer", fontFamily: FONT, boxShadow: "0 4px 14px var(--accent-shadow)", transition: "all 0.15s" }}
                 >
                   {joining ? t.joining : t.acceptJoin(info.householdName)}
                 </button>

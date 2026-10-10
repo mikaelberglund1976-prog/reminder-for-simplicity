@@ -36,6 +36,10 @@
   --accent-border: #FFCDB6;
   --tint-accent: #FFE9DE;
   --accent-shadow: rgba(194,79,38,0.28);
+  --on-accent: #FFFFFF;      /* text/icons ON --accent-bg (never hardcode white) */
+  --accent-2: #FF8F61;       /* secondary warm accent – sparingly */
+  --premium: #8A6516;        /* Pro/premium status – must not reuse family-primary */
+  --tint-premium: #F8EED8;
   --success: #1E7D52;
   --tint-success: #DDF3E6;
   --warning: #B45309;
@@ -66,35 +70,42 @@
   --content-max-width: 480px;
 }
 
-/* Dark palette — 2026-10-10 Lotuvi: charcoal-based (guidelines §13), warm
-   off-white text, peach brightened for text so it reads on dark. Applied
-   either explicitly (data-theme="dark") or via the OS setting ("System"). */
+/* Dark palette — 2026-10-10 Lotuvi guidelines v0.3 §09 "Family Dark – Sage
+   First" (Mockup A): sage/mint is the primary interaction color in dark
+   (nav, primary actions, FAB, links), coral is a sparing secondary accent,
+   deep green-charcoal surfaces (not pure black). Values are RIKTNING – only
+   change them here. Mint is light, so text ON it is dark (--on-accent).
+   Applied explicitly (data-theme="dark") or via the OS setting ("System"). */
 html[data-theme="dark"] {
-  --brand-peach: #FF9B72;
-  --background: #141619;
-  --surface: #1D2024;
-  --surface-2: #22262B;
-  --surface-3: #2A2E34;
-  --foreground: #F2EFEA;
-  --fg: #F2EFEA;
-  --fg-2: #CFCAC2;
-  --muted: #A39E96;
-  --subtle: #85807A;
-  --faint: #57534E;
-  --border: #33383F;
-  --border-soft: #272B31;
-  --ink: #2E4553;
-  --ink-hover: #385364;
-  --accent: #FFA47F;
-  --accent-bg: #C24F26;
-  --accent-hover: #CF5A2F;
-  --accent-strong: #FFB896;
-  --accent-light: rgba(255,143,97,0.16);
-  --accent-border: rgba(255,143,97,0.4);
-  --tint-accent: rgba(255,143,97,0.16);
-  --accent-shadow: rgba(0,0,0,0.4);
-  --success: #4FD69C;
-  --tint-success: rgba(79,214,156,0.14);
+  --brand-peach: #FF7D66;
+  --background: #0F1412;     /* surface-page */
+  --surface: #1A2020;        /* surface-card */
+  --surface-2: #1F2626;
+  --surface-3: #263030;      /* surface-elevated / pressed */
+  --foreground: #F3F5F4;
+  --fg: #F3F5F4;             /* text-primary */
+  --fg-2: #CDD4D1;
+  --muted: #A7B0AC;          /* text-secondary */
+  --subtle: #86908C;
+  --faint: #4E5855;
+  --border: #2A3230;         /* border-subtle */
+  --border-soft: #222A28;
+  --ink: #2A3533;            /* dark filled (secondary) buttons */
+  --ink-hover: #33403D;
+  --accent: #6EE7B7;         /* family-dark-primary as text/border/link */
+  --accent-bg: #6EE7B7;      /* family-dark-primary as filled bg (FAB, primary actions) */
+  --accent-hover: #8EEDC8;
+  --accent-strong: #9FF2D1;
+  --accent-light: rgba(110,231,183,0.14);
+  --accent-border: rgba(110,231,183,0.38);
+  --tint-accent: rgba(110,231,183,0.14);
+  --accent-shadow: rgba(0,0,0,0.45);
+  --on-accent: #0F1412;      /* dark text on mint (13:1) */
+  --accent-2: #FF7D66;       /* family-dark-secondary coral – sparingly */
+  --premium: #E8C987;        /* champagne */
+  --tint-premium: rgba(232,201,135,0.14);
+  --success: #6EE7B7;
+  --tint-success: rgba(110,231,183,0.14);
   --warning: #F5B056;
   --tint-warning: rgba(245,176,86,0.15);
   --danger: #FF7B7B;
@@ -107,10 +118,10 @@ html[data-theme="dark"] {
   --tint-pink: rgba(242,138,192,0.15);
   --violet: #B79CFF;
   --tint-violet: rgba(183,156,255,0.15);
-  --slate: #A9B3BB;
+  --slate: #A7B0AC;
   --shadow: 0 1px 6px rgba(0,0,0,0.35);
-  --nav-bg: rgba(26,28,32,0.92);
-  --hero-grad: linear-gradient(135deg, #1E2C35 0%, #2E4553 100%);
+  --nav-bg: rgba(22,28,27,0.92);
+  --hero-grad: linear-gradient(135deg, #16201D 0%, #22302C 100%);
   color-scheme: dark;
 }
 
@@ -161,7 +172,7 @@ html[data-view="web"] {
 
   /* Accent pill */
   .btn-accent {
-    @apply inline-flex items-center justify-center bg-[var(--accent-bg)] text-white px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center bg-[var(--accent-bg)] text-[var(--on-accent)] px-6 py-3 rounded-full font-semibold text-[15px] leading-none hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   /* Card */
@@ -199,7 +210,7 @@ html[data-view="web"] {
 
   /* Category pill toggle */
   .pill-active {
-    @apply bg-[var(--accent-bg)] text-white border-transparent shadow-sm;
+    @apply bg-[var(--accent-bg)] text-[var(--on-accent)] border-transparent shadow-sm;
   }
   .pill-inactive {
     @apply bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] hover:bg-[var(--surface-3)] hover:text-[var(--fg)];

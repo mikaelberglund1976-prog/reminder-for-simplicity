@@ -875,9 +875,9 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 const primaryBtn: React.CSSProperties = {
-  background: "linear-gradient(160deg, var(--accent) 0%, var(--accent) 100%)",
+  background: "var(--accent-bg)",
   border: "none",
-  color: "#fff",
+  color: "var(--on-accent)",
   fontSize: 13,
   fontWeight: 700,
   padding: "8px 16px",

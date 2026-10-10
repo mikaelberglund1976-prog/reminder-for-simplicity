@@ -74,7 +74,7 @@ function getBrandInfo(name: string) {
       return { color: BRAND_COLORS[brand], domain: BRAND_DOMAINS[brand] ?? null };
     }
   }
-  return { color: { bg: "var(--accent-bg)", text: "#fff" }, domain: null };
+  return { color: { bg: "var(--accent-bg)", text: "var(--on-accent)" }, domain: null };
 }
 
 type HouseholdMember = { id: string; userId: string; user: { id: string; name: string | null; email: string } };

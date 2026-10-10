@@ -556,7 +556,7 @@ export default function CalendarPage() {
                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
                       <span style={{
                         fontSize: 11.5, fontWeight: isToday ? 800 : 600,
-                        color: isToday ? "#fff" : inMonth ? "var(--fg)" : "var(--faint)",
+                        color: isToday ? "var(--on-accent)" : inMonth ? "var(--fg)" : "var(--faint)",
                         background: isToday ? "var(--accent-bg)" : "transparent",
                         width: 19, height: 19, borderRadius: "50%",
                         display: "flex", alignItems: "center", justifyContent: "center",
@@ -680,7 +680,7 @@ export default function CalendarPage() {
         style={{
           position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
           width: 52, height: 52, borderRadius: "50%",
-          background: "var(--accent-bg)", color: "#fff", border: "none", cursor: "pointer",
+          background: "var(--accent-bg)", color: "var(--on-accent)", border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 14px rgba(28,28,40,0.35)",
         }}

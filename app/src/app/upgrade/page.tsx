@@ -182,6 +182,6 @@ function btn(primary: boolean): React.CSSProperties {
     width: "100%", padding: "16px", borderRadius: 50, fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
     border: primary ? "none" : "1.5px solid var(--border)",
     background: primary ? "var(--accent-bg)" : "var(--surface)",
-    color: primary ? "#fff" : "var(--fg)",
+    color: primary ? "var(--on-accent)" : "var(--fg)",
   };
 }

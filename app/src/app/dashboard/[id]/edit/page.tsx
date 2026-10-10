@@ -43,7 +43,7 @@ function pillStyle(active: boolean): React.CSSProperties {
     display: "inline-flex", alignItems: "center", padding: "9px 16px", borderRadius: 50,
     border: active ? "none" : "1.5px solid var(--border)", fontSize: 13, fontWeight: 600,
     cursor: "pointer", background: active ? "var(--accent-bg)" : "var(--surface)",
-    color: active ? "#fff" : "var(--muted)", transition: "all 0.15s", fontFamily: FONT,
+    color: active ? "var(--on-accent)" : "var(--muted)", transition: "all 0.15s", fontFamily: FONT,
   };
 }
 
@@ -244,7 +244,7 @@ export default function EditReminderPage() {
                   padding: "9px 18px", borderRadius: 50, border: "none", fontSize: 13, fontWeight: 600,
                   cursor: "pointer", fontFamily: FONT,
                   background: form.recurrence === rec.value ? "var(--accent-bg)" : "transparent",
-                  color: form.recurrence === rec.value ? "#fff" : "var(--muted)",
+                  color: form.recurrence === rec.value ? "var(--on-accent)" : "var(--muted)",
                   transition: "all 0.15s",
                 }}>
                   {msg.reminders.recurrence[rec.value]}

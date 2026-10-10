@@ -42,7 +42,7 @@ export default function AvatarPicker({ userId, name, size = 56, showRemove = fal
         <Avatar userId={userId} name={name} size={size} />
         <span style={{
           position: "absolute", right: -2, bottom: -2, width: badge, height: badge, borderRadius: "50%",
-          background: "var(--accent-bg)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+          background: "var(--accent-bg)", color: "var(--on-accent)", display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 0 0 2px var(--surface)",
         }}>
           <svg width={Math.round(badge * 0.6)} height={Math.round(badge * 0.6)} viewBox="0 0 24 24" {...STR}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>

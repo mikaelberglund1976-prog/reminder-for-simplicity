@@ -91,7 +91,7 @@ export default function UpgradeGate({ feature, description, emoji = "⚡", compa
 
 const primary: React.CSSProperties = {
   display: "inline-flex", alignItems: "center", justifyContent: "center",
-  background: "var(--accent-bg)", color: "#fff", border: "none", borderRadius: 50,
+  background: "var(--accent-bg)", color: "var(--on-accent)", border: "none", borderRadius: 50,
   padding: "14px 28px", fontSize: 15, fontWeight: 700, cursor: "pointer",
   textDecoration: "none", fontFamily: FONT, minWidth: 240,
 };

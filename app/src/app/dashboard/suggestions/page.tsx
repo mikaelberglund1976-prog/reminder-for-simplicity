@@ -177,7 +177,7 @@ export default function SuggestionsPage() {
               flexShrink: 0, borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
               border: filter === f.key ? "none" : "1px solid var(--border)",
               background: filter === f.key ? "var(--accent-bg)" : "var(--surface)",
-              color: filter === f.key ? "#fff" : "var(--fg-2)",
+              color: filter === f.key ? "var(--on-accent)" : "var(--fg-2)",
             }}>
               {f.label}
             </button>
@@ -200,7 +200,7 @@ export default function SuggestionsPage() {
                   flex: 1, borderRadius: 10, padding: "9px 0", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
                   border: category === c ? "none" : "1.5px solid var(--border)",
                   background: category === c ? "var(--accent-bg)" : "var(--surface)",
-                  color: category === c ? "#fff" : "var(--muted)",
+                  color: category === c ? "var(--on-accent)" : "var(--muted)",
                 }}>
                   {c === "NEW_FEATURE" ? t.newFeature : t.improvement}
                 </button>

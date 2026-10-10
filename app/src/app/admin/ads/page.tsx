@@ -135,7 +135,7 @@ export default function AdminAdsPage() {
           </div>
           {error && <div style={{ color: "var(--danger)", fontSize: 13, marginBottom: 10 }}>{error}</div>}
           <div style={{ display: "flex", gap: 10 }}>
-            <button type="submit" disabled={saving} style={{ flex: 1, padding: 13, borderRadius: 50, border: "none", background: "var(--accent-bg)", color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: FONT }}>
+            <button type="submit" disabled={saving} style={{ flex: 1, padding: 13, borderRadius: 50, border: "none", background: "var(--accent-bg)", color: "var(--on-accent)", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: FONT }}>
               {saving ? "Saving…" : editing ? "Save changes" : "Create ad"}
             </button>
             {editing && (

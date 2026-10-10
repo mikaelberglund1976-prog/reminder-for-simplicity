@@ -127,7 +127,7 @@ export default function InstallPrompt() {
             {mode === "android" && (
               <button onClick={install} style={{
                 font: "inherit", fontSize: 14, fontWeight: 600, padding: "8px 16px", borderRadius: 10, border: 0,
-                background: "var(--accent)", color: "#fff", cursor: "pointer",
+                background: "var(--accent-bg)", color: "var(--on-accent)", cursor: "pointer",
               }}>{t.install}</button>
             )}
             <button onClick={dismiss} style={{

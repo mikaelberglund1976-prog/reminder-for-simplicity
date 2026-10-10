@@ -279,7 +279,7 @@ export default function FamilyMembersPage() {
                     >
                       <Avatar userId={m.userId} name={display} size={46} />
                       {canPhoto && (
-                        <span style={{ position: "absolute", right: -3, bottom: -3, width: 22, height: 22, borderRadius: "50%", background: "var(--accent-bg)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 0 2px var(--surface)" }}>
+                        <span style={{ position: "absolute", right: -3, bottom: -3, width: 22, height: 22, borderRadius: "50%", background: "var(--accent-bg)", color: "var(--on-accent)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 0 2px var(--surface)" }}>
                           <IcCamera />
                         </span>
                       )}

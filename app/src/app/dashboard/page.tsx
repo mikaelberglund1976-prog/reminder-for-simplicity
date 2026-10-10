@@ -124,7 +124,7 @@ function getBrandInfo(name: string) {
       return { color: BRAND_COLORS[brand], domain: BRAND_DOMAINS[brand] ?? null };
     }
   }
-  return { color: { bg: "var(--accent-bg)", text: "#fff" }, domain: null };
+  return { color: { bg: "var(--accent-bg)", text: "var(--on-accent)" }, domain: null };
 }
 
 function getDaysUntil(dateStr: string) {
@@ -546,8 +546,8 @@ export default function DashboardPage() {
               {plan && hasHousehold && (
                 <Link href="/upgrade" style={{
                   fontSize: 11, fontWeight: 800, textDecoration: "none", padding: "3px 9px", borderRadius: 50,
-                  background: plan.plan === "FREE" ? "var(--surface-3)" : "var(--tint-accent)",
-                  color: plan.plan === "FREE" ? "var(--muted)" : "var(--accent)",
+                  background: plan.plan === "FREE" ? "var(--surface-3)" : "var(--tint-premium)",
+                  color: plan.plan === "FREE" ? "var(--muted)" : "var(--premium)",
                 }}>
                   {plan.plan === "PRO" ? t.planPro : plan.plan === "TRIAL" ? t.planTrial(plan.trialDaysLeft) : t.planFree}
                 </Link>
@@ -648,7 +648,7 @@ export default function DashboardPage() {
               <span style={{ position: "relative", width: 40, height: 40, borderRadius: 12, background: qa.tint, color: qa.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <qa.Icon />
                 {qa.pro && plan?.plan === "FREE" && (
-                  <span style={{ position: "absolute", top: -6, right: -14, fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 6, background: "var(--accent-bg)", color: "#fff" }}>{t.pro}</span>
+                  <span style={{ position: "absolute", top: -6, right: -14, fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 6, background: "var(--accent-bg)", color: "var(--on-accent)" }}>{t.pro}</span>
                 )}
               </span>
               <span style={{ fontSize: 13, fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>{t.quick[qa.label]}</span>
@@ -826,7 +826,7 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 40, marginBottom: 12 }}>&#128237;</div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 6 }}>{t.noReminders}</div>
                 <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24 }}>{t.noRemindersBody}</div>
-                <Link href="/dashboard/new" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "var(--accent-bg)", color: "#fff", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+                <Link href="/dashboard/new" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "var(--accent-bg)", color: "var(--on-accent)", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
                   {t.addFirst}
                 </Link>
               </div>
@@ -871,7 +871,7 @@ export default function DashboardPage() {
       <Link href="/dashboard/new" aria-label={t.addReminderAria} style={{
         position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
         width: 52, height: 52, borderRadius: "50%",
-        background: "var(--accent-bg)", color: "#fff",
+        background: "var(--accent-bg)", color: "var(--on-accent)",
         display: "flex", alignItems: "center", justifyContent: "center",
         boxShadow: "0 4px 16px rgba(26,35,64,0.28)", textDecoration: "none",
       }}>

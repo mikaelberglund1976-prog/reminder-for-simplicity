@@ -237,7 +237,7 @@ export default function Home() {
           flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
           padding: "17px", borderRadius: 50,
           background: "var(--accent-bg)", border: "none",
-          fontSize: 16, fontWeight: 700, color: "#fff",
+          fontSize: 16, fontWeight: 700, color: "var(--on-accent)",
           textDecoration: "none", boxShadow: "0 6px 18px var(--accent-shadow)",
         }}>
           {t.getStarted}

@@ -54,7 +54,7 @@ export default function FeaturesPage() {
         <section style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 10 }}>
           {STEPS.map((s) => (
             <div key={s.n} style={{ display: "flex", gap: 14, alignItems: "flex-start", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
-              <span style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--accent-bg)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }}>{s.n}</span>
+              <span style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--accent-bg)", color: "var(--on-accent)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }}>{s.n}</span>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "var(--fg)", marginBottom: 3 }}>{s.title}</div>
                 <div style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.5 }}>{s.text}</div>
@@ -88,7 +88,7 @@ export default function FeaturesPage() {
       </main>
 
       <div style={{ padding: "36px 20px 20px", display: "flex", gap: 12, maxWidth: "var(--content-max-width)", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-        <Link href="/register" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", borderRadius: 50, background: "var(--accent-bg)", fontSize: 16, fontWeight: 700, color: "#fff", textDecoration: "none", boxShadow: "0 6px 18px var(--accent-shadow)" }}>
+        <Link href="/register" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", borderRadius: 50, background: "var(--accent-bg)", fontSize: 16, fontWeight: 700, color: "var(--on-accent)", textDecoration: "none", boxShadow: "0 6px 18px var(--accent-shadow)" }}>
           {m.landing.getStarted}
         </Link>
         <Link href="/login" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", borderRadius: 50, background: "var(--surface)", border: "1.5px solid var(--border)", fontSize: 16, fontWeight: 700, color: "var(--fg)", textDecoration: "none" }}>

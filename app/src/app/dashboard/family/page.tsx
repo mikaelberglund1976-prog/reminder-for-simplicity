@@ -437,7 +437,7 @@ export default function FamilyPage() {
         <Link href="/dashboard/family/new" aria-label={t.addChore} style={{
           position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
           width: 52, height: 52, borderRadius: "50%",
-          background: "var(--accent-bg)", color: "#fff",
+          background: "var(--accent-bg)", color: "var(--on-accent)",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 14px rgba(28,28,40,0.35)", textDecoration: "none",
         }}>

@@ -999,7 +999,7 @@ export default function ProfilePage() {
                       : access?.proRequested ? t.proRequested : access?.canStartTrial ? t.tryPro : t.freeIncludes}
                 </div>
               </div>
-              <Link href="/upgrade" style={{ flexShrink: 0, background: access?.plan === "PRO" ? "var(--surface-3)" : "var(--accent-bg)", color: access?.plan === "PRO" ? "var(--fg)" : "#fff", borderRadius: 50, padding: "10px 16px", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+              <Link href="/upgrade" style={{ flexShrink: 0, background: access?.plan === "PRO" ? "var(--surface-3)" : "var(--accent-bg)", color: access?.plan === "PRO" ? "var(--fg)" : "var(--on-accent)", borderRadius: 50, padding: "10px 16px", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
                 {access?.plan === "PRO" ? t.seePlan : t.seePlans}
               </Link>
             </div>

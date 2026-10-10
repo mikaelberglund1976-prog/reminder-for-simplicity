@@ -294,7 +294,7 @@ function NewBookingContent() {
                       <span style={{
                         width: 22, height: 22, borderRadius: 6, flexShrink: 0,
                         border: on ? "none" : "1.5px solid var(--border)", background: on ? "var(--accent-bg)" : "transparent",
-                        color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800,
+                        color: "var(--on-accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800,
                       }}>{on ? "✓" : ""}</span>
                     </button>
                   );
@@ -341,7 +341,7 @@ function NewBookingContent() {
                         style={{
                           width: 42, height: 42, borderRadius: "50%", fontSize: 12, fontWeight: 700,
                           background: active ? "var(--accent-bg)" : "var(--surface)",
-                          color: active ? "#fff" : "var(--fg-2)",
+                          color: active ? "var(--on-accent)" : "var(--fg-2)",
                           border: active ? "none" : "1.5px solid var(--border)",
                           cursor: "pointer", fontFamily: FONT,
                         }}>
@@ -364,7 +364,7 @@ function NewBookingContent() {
                       style={{
                         width: 42, height: 42, borderRadius: "50%", fontSize: 12, fontWeight: 700,
                         background: active ? "var(--accent-bg)" : "var(--surface)",
-                        color: active ? "#fff" : "var(--fg-2)",
+                        color: active ? "var(--on-accent)" : "var(--fg-2)",
                         border: active ? "none" : "1.5px solid var(--border)",
                         cursor: "pointer", fontFamily: FONT,
                       }}>
