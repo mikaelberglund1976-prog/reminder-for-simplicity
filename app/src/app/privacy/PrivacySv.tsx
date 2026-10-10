@@ -39,7 +39,7 @@ export function PrivacySv() {
             <tr><td style={cell}>Din familj och varje persons roll</td><td style={cell}>För att dela listor och kalender med rätt personer</td><td style={cell}>Avtal</td></tr>
             <tr><td style={cell}>Påminnelser (med belopp och kategorier du väljer), inköpslistor, önskelistor, sysslor, aktiviteter, läxor och prov</td><td style={cell}>För att visa dem och mejla de påminnelser du bett om</td><td style={cell}>Avtal</td></tr>
             <tr><td style={cell}>Födelsedagar ni lägger in: namn, dag och månad, och årtal bara om ni vill (för ”fyller 13”) – familjemedlemmar, släkt, kompisar eller husdjur</td><td style={cell}>För att visa dem i kalendern och påminna familjen – släktingar som ett barns önskelista delats med får också barnets födelsedagspåminnelse</td><td style={cell}>Avtal</td></tr>
-            <tr><td style={cell}>Ett barns kalenderlänk från SchoolSoft, och de läxor, prov och skolhändelser som hämtas därifrån en gång om dagen</td><td style={cell}>För att visa barnets skolsaker i appen – bara om en vuxen kopplar in den</td><td style={cell}>Avtal (kan kopplas bort när som helst)</td></tr>
+            <tr><td style={cell}>Ett barns kalenderlänkar från SchoolSoft eller Studybee, och de läxor, prov och skolhändelser som hämtas därifrån en gång om dagen</td><td style={cell}>För att visa barnets skolsaker i appen – bara om en vuxen kopplar in den</td><td style={cell}>Avtal (kan kopplas bort när som helst)</td></tr>
             <tr><td style={cell}>Profilbilder och en familjebild</td><td style={cell}>För att visa vem som är vem – bara om du lägger in dem</td><td style={cell}>Samtycke (kan tas bort när som helst)</td></tr>
             <tr><td style={cell}>Bekräftad e-post, godkännande av nya konton, begäran om radering</td><td style={cell}>För att hålla kontona säkra</td><td style={cell}>Berättigat intresse</td></tr>
             <tr><td style={cell}>Idéer &amp; röster</td><td style={cell}>Den gemensamma idétavlan – ditt namn visas för andra användare</td><td style={cell}>Berättigat intresse</td></tr>
@@ -62,7 +62,7 @@ export function PrivacySv() {
         "Vuxna i familjen kan se vad ett barn har, och en förälder kan radera ett barns konto.",
         "Barn ser aldrig reklam.",
         "Ett barns bild visas bara inom familjen.",
-        "Om en vuxen kopplar in ett barns SchoolSoft-kalender sparas länken bara på vår server – ingen i familjen, inte heller barnet, kan se den. Bara vuxna kan koppla in, ändra eller ta bort den.",
+        "Om en vuxen kopplar in ett barns skolkalender (SchoolSoft eller Studybee) sparas länken bara på vår server – ingen i familjen, inte heller barnet, kan se den. Bara vuxna kan koppla in, ändra eller ta bort den.",
       ]} />
 
       <H>4. Vilka som hjälper oss driva appen</H>

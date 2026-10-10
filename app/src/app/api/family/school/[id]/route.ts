@@ -29,7 +29,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   // 2026-10-03: SchoolSoft items — only an adult removes them (a child could
   // otherwise make a test disappear), and a removed one stays removed.
   const isImported = (await importedIds([res.item.id])).has(res.item.id);
-  if (isImported && res.role === "CHILD") return NextResponse.json({ error: "Ask a parent to remove things from SchoolSoft" }, { status: 403 });
+  if (isImported && res.role === "CHILD") return NextResponse.json({ error: "Ask a parent to remove things from the school calendar" }, { status: 403 });
   await prisma.reminder.update({ where: { id: res.item.id }, data: { isActive: false } });
   if (isImported) await markImport(res.item.id, "hidden");
   return NextResponse.json({ success: true });

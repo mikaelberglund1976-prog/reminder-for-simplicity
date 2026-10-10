@@ -109,7 +109,7 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 Nya, rent additiva tabeller skapas av appen vid första användning med `CREATE TABLE IF NOT EXISTS` – ingen `db push` och ingen tillfällig migreringsväg behövs:
 - `media_images` (profilbilder och familjefoto) – `app/src/lib/media.ts`
 - `parental_consents` (vårdnadshavarens bekräftelse) – `app/src/lib/consent.ts`
-- `school_feeds` och `school_imports` (SchoolSoft-import, 2026-10-03) – `app/src/lib/schoolFeeds.ts`
+- `school_feeds` och `school_imports` (SchoolSoft-import, 2026-10-03; sedan 2026-10-10 flera länkar per barn: kolumnerna `school_feeds.provider` och `school_imports.feedId`, unika indexet på `childId` ersatt av `(childId, url)`, allt skapas automatiskt) – `app/src/lib/schoolFeeds.ts`
 Mönstret passar bara nya tabeller. Nya kolumner i befintliga tabeller görs fortfarande enligt 5b.
 
 ### 5b. Databasändringar i produktion (lärdom 2026-09-28)

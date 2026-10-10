@@ -24,7 +24,7 @@ export const school = {
   emailDayBefore: "You'll get an email reminder the day before.",
   done: (n: number) => `Done · ${n}`,
   subject: "Subject",
-  fromSchoolSoftEdit: "From SchoolSoft — after you save, SchoolSoft won't overwrite your changes.",
+  fromPlatformEdit: (name: string) => `From ${name} — after you save, ${name} won't overwrite your changes.`,
   markNotDone: "Mark as not done",
   markDone: "Mark as done",
   tapToChange: "Tap to change",

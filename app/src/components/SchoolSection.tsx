@@ -28,8 +28,10 @@ export type SchoolItem = {
   // 2026-10-07: optional time ("prov kl 08:20")
   startTime?: string | null;
   assignedUser: { id: string; name: string | null; email: string } | null;
-  // 2026-10-03: came from the child's SchoolSoft link
+  // 2026-10-03: came from one of the child's school links
   imported?: boolean;
+  // 2026-10-10: which platform ("SchoolSoft", "Studybee")
+  source?: string | null;
 };
 
 // Labels: messages.school.kinds[kind]
@@ -84,7 +86,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
-  // 2026-10-03: the SchoolSoft card on the School page asks for a reload after a sync/reset.
+  // 2026-10-03: the school-link card on the School page asks for a reload after a sync/reset.
   useEffect(() => {
     const h = () => { load(); };
     window.addEventListener("rfs:school-reload", h);
@@ -187,7 +189,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
   const renderList = (list: SchoolItem[]) => (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)", marginBottom: 10 }}>
       {list.map((item, i) => {
-        // A child can't remove or rewrite what came from SchoolSoft — a parent can.
+        // A child can't remove or rewrite what came from a school link — a parent can.
         const adultView = mode === "overview";
         const canChange = adultView || !item.imported;
         return <Row key={item.id} item={item} first={i === 0} busy={busy === item.id} showOwner={adultView && members.length > 1}
@@ -369,7 +371,7 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
           <input type="date" value={eDate} onChange={e => setEDate(e.target.value)} style={{ ...input, flex: 1 }} aria-label={msg.common.date} />
         </div>
         <input type="time" value={eTime} step={300} onChange={e => setETime(e.target.value)} style={input} aria-label={t.timeOptional} title={t.timeOptional} />
-        {item.imported && <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.4 }}>{t.fromSchoolSoftEdit}</div>}
+        {item.imported && <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.4 }}>{t.fromPlatformEdit(item.source ?? "SchoolSoft")}</div>}
         <div style={{ display: "flex", gap: 8 }}>
           <button type="button" onClick={() => setEditing(false)} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--background)", border: "1.5px solid var(--border)", color: "var(--fg-2)", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>{msg.common.cancel}</button>
           <button type="submit" disabled={busy || !eName.trim()} style={{ flex: 1, padding: "10px", borderRadius: 12, background: "var(--school-bg)", border: "none", color: "#fff", fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT, opacity: busy ? 0.6 : 1 }}>{msg.common.save}</button>
@@ -397,7 +399,7 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
           {" · "}{new Date(item.date).toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" })}
           {item.startTime ? ` ${item.startTime}` : ""}
           {showOwner && item.assignedUser?.name ? ` · ${item.assignedUser.name}` : ""}
-          {item.imported && <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, padding: "1px 6px", borderRadius: 6, background: "var(--tint-success)", color: "var(--success)" }}>SchoolSoft</span>}
+          {item.imported && <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, padding: "1px 6px", borderRadius: 6, background: "var(--tint-success)", color: "var(--success)" }}>{item.source ?? "SchoolSoft"}</span>}
         </div>
         {item.note && !isDone && <div style={{ fontSize: 12, color: "var(--subtle)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.note}</div>}
       </div>

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPro } from "@/lib/entitlements";
-import { importedIds } from "@/lib/schoolFeeds";
+import { importSources } from "@/lib/schoolFeeds";
 import { activityImportInfo } from "@/lib/activityFeeds";
 import { withTimes, timesFromBody, setTime } from "@/lib/reminderTimes";
 
@@ -89,10 +89,11 @@ export async function GET(req: Request) {
     // 2026-10-07: time of day (activities/school), see lib/reminderTimes.ts.
     const chores = await withTimes(rawChores);
 
-    // 2026-10-03: mark items that came from SchoolSoft.
+    // 2026-10-03: mark items that came from a school link; 2026-10-10: + which
+    // platform ("SchoolSoft", "Studybee") for the badge.
     if (category === "SCHOOL") {
-      const imp = await importedIds(chores.map((c) => c.id));
-      return NextResponse.json({ chores: chores.map((c) => ({ ...c, imported: imp.has(c.id) })), weekStart, access: isPro ? "PRO" : "TRIAL" });
+      const src = await importSources(chores.map((c) => c.id));
+      return NextResponse.json({ chores: chores.map((c) => ({ ...c, imported: src.has(c.id), source: src.get(c.id) ?? null })), weekStart, access: isPro ? "PRO" : "TRIAL" });
     }
     // 2026-10-09: mark activities that came from a calendar link (+ its name).
     if (category === "TRAINING") {

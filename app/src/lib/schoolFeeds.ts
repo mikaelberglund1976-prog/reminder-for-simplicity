@@ -13,6 +13,12 @@
 //                    removed it, so a sync doesn't bring it back.
 // Imported items are ordinary school items otherwise — they show up for the
 // child, on School and on Home exactly like hand-made ones.
+//
+// 2026-10-10: a child can have more than one school link (Mikael's daughter
+// has both SchoolSoft and Studybee). school_feeds is now one row per LINK
+// (max MAX_FEEDS_PER_CHILD per child) with a `provider`, and school_imports
+// remembers which link (`feedId`) brought each item in. Rows from before this
+// change get their feedId filled in from the child's SchoolSoft link.
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getTimes, setTime } from "@/lib/reminderTimes";
@@ -24,6 +30,26 @@ const PAST_DAYS = 14;
 const FUTURE_DAYS = 120;
 const MAX_BYTES = 3 * 1024 * 1024;
 const MAX_ITEMS = 400;
+export const MAX_FEEDS_PER_CHILD = 3;
+
+// ── Providers ───────────────────────────────────────────────────────────────
+// Only these hosts are fetched (the server fetches whatever is pasted, so an
+// open URL would let anyone make our server call arbitrary addresses).
+export type ProviderId = "schoolsoft" | "studybee";
+export const PROVIDERS: Record<ProviderId, { label: string; hosts: string[] }> = {
+  schoolsoft: { label: "SchoolSoft", hosts: ["schoolsoft.se"] },
+  studybee: { label: "Studybee", hosts: ["studybee.io", "studybee.se"] },
+};
+function providerForHost(hostname: string): ProviderId | null {
+  const host = hostname.toLowerCase();
+  for (const [id, p] of Object.entries(PROVIDERS) as [ProviderId, (typeof PROVIDERS)[ProviderId]][]) {
+    if (p.hosts.some((h) => host === h || host.endsWith("." + h))) return id;
+  }
+  return null;
+}
+export function providerLabel(id: string | null | undefined): string {
+  return PROVIDERS[(id ?? "schoolsoft") as ProviderId]?.label ?? "SchoolSoft";
+}
 
 let ensured: Promise<void> | null = null;
 export function ensureSchoolFeedTables(): Promise<void> {
@@ -32,42 +58,45 @@ export function ensureSchoolFeedTables(): Promise<void> {
       await prisma.$executeRawUnsafe(
         `CREATE TABLE IF NOT EXISTS "school_feeds" ("id" TEXT NOT NULL, "householdId" TEXT NOT NULL, "childId" TEXT NOT NULL, "url" TEXT NOT NULL, "createdById" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "lastSyncAt" TIMESTAMP(3), "lastStatus" TEXT, "lastCount" INTEGER, CONSTRAINT "school_feeds_pkey" PRIMARY KEY ("id"))`
       );
-      await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "school_feeds_childId_key" ON "school_feeds"("childId")`);
+      // 2026-10-10: several links per child — drop the one-per-child index.
+      await prisma.$executeRawUnsafe(`ALTER TABLE "school_feeds" ADD COLUMN IF NOT EXISTS "provider" TEXT NOT NULL DEFAULT 'schoolsoft'`);
+      await prisma.$executeRawUnsafe(`DROP INDEX IF EXISTS "school_feeds_childId_key"`);
+      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "school_feeds_childId_idx" ON "school_feeds"("childId")`);
+      await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "school_feeds_child_url_key" ON "school_feeds"("childId", "url")`);
       await prisma.$executeRawUnsafe(
         `CREATE TABLE IF NOT EXISTS "school_imports" ("reminderId" TEXT NOT NULL, "childId" TEXT NOT NULL, "uid" TEXT NOT NULL, "edited" BOOLEAN NOT NULL DEFAULT false, "hidden" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "school_imports_pkey" PRIMARY KEY ("reminderId"))`
       );
       await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "school_imports_child_uid_key" ON "school_imports"("childId", "uid")`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "school_imports" ADD COLUMN IF NOT EXISTS "feedId" TEXT`);
+      // Imports from before 2026-10-10 all came from the child's SchoolSoft link.
+      await prisma.$executeRawUnsafe(`UPDATE "school_imports" i SET "feedId" = f."id" FROM "school_feeds" f WHERE i."feedId" IS NULL AND f."childId" = i."childId" AND f."provider" = 'schoolsoft'`);
     })().catch((err) => { ensured = null; throw err; });
   }
   return ensured;
 }
 
 export type FeedRow = {
-  id: string; householdId: string; childId: string; url: string; createdById: string;
+  id: string; householdId: string; childId: string; url: string; createdById: string; provider: string;
   createdAt: Date; lastSyncAt: Date | null; lastStatus: string | null; lastCount: number | null;
 };
-type ImportRow = { reminderId: string; childId: string; uid: string; edited: boolean; hidden: boolean };
+type ImportRow = { reminderId: string; childId: string; uid: string; edited: boolean; hidden: boolean; feedId: string | null };
 
 // ── Link validation ─────────────────────────────────────────────────────────
-// Only SchoolSoft links are fetched (the server fetches whatever is pasted,
-// so an open URL would let anyone make our server call arbitrary addresses).
-export function normalizeFeedUrl(raw: unknown): { url: string } | { error: string } {
-  if (typeof raw !== "string" || !raw.trim()) return { error: "Paste the link from SchoolSoft" };
+export function normalizeFeedUrl(raw: unknown): { url: string; provider: ProviderId } | { error: string } {
+  if (typeof raw !== "string" || !raw.trim()) return { error: "Paste the link from the school platform" };
   let s = raw.trim();
   if (s.toLowerCase().startsWith("webcal://")) s = "https://" + s.slice(9);
   let u: URL;
   try { u = new URL(s); } catch { return { error: "That doesn't look like a link" }; }
   if (u.protocol !== "https:") return { error: "The link must start with https://" };
-  const host = u.hostname.toLowerCase();
-  if (host !== "schoolsoft.se" && !host.endsWith(".schoolsoft.se")) {
-    return { error: "Only SchoolSoft links (…schoolsoft.se) can be connected for now" };
-  }
+  const provider = providerForHost(u.hostname);
+  if (!provider) return { error: "Only SchoolSoft and Studybee links can be connected for now" };
   if (s.length > 2000) return { error: "The link is too long" };
-  return { url: u.toString() };
+  return { url: u.toString(), provider };
 }
 
 export function maskUrl(url: string) {
-  try { return new URL(url).hostname; } catch { return "schoolsoft.se"; }
+  try { return new URL(url).hostname; } catch { return ""; }
 }
 
 // ── iCalendar parsing (VEVENT + VTODO) ──────────────────────────────────────
@@ -114,7 +143,8 @@ const HOMEWORK_RE = /\b(läxa|läxan|läxor|hemläxa|uppgift(en)?|inlämning(en)
 
 // SchoolSoft subject names (Swedish) → the app's subject list.
 const SUBJECT_MAP: [RegExp, string][] = [
-  [/\b(matematik|matte)\b/i, "Maths"],
+  [/\b(matematik|matte)\b/i, "Maths"], [/\bMa\b/, "Maths"], // Studybee: "Ma nivå 2b"
+
   [/\b(svenska som andraspråk|svenska)\b/i, "Swedish"],
   [/\bengelska\b/i, "English"],
   [/\b(biologi|fysik|kemi|naturorientering|teknik)\b/i, "Science"], [/\bNO\b/, "Science"],
@@ -156,8 +186,10 @@ export function parseIcs(text: string): ParsedEntry[] {
           const description = get("DESCRIPTION") ? unescapeText(get("DESCRIPTION")!) : null;
           const categories = (get("CATEGORIES") ?? "").split(",").map((c) => unescapeText(c)).filter(Boolean);
           const hay = [summary, categories.join(" ")].join(" ");
+          // Studybee marks assignments in the UID ("studybee-assignment-…").
+          const isAssignment = /(^|[-_])assignment[-_]/i.test(uid);
           const kind: ParsedEntry["kind"] = TEST_RE.test(hay) ? "TEST"
-            : (type === "VTODO" || HOMEWORK_RE.test(hay) || HOMEWORK_RE.test(description ?? "")) ? "HOMEWORK" : "OTHER";
+            : (type === "VTODO" || isAssignment || HOMEWORK_RE.test(hay) || HOMEWORK_RE.test(description ?? "")) ? "HOMEWORK" : "OTHER";
           out.push({ uid: uid.trim().slice(0, 500), summary: summary.slice(0, 200), description: description ? description.slice(0, 1000) : null, categories, date, kind, subject: guessSubject(summary, categories.join(" "), description), isTodo: type === "VTODO", time: entryTime(dateProp, type === "VTODO") });
         }
       }
@@ -176,19 +208,20 @@ export function parseIcs(text: string): ParsedEntry[] {
 
 // ── Fetch + sync ────────────────────────────────────────────────────────────
 async function fetchFeed(url: string): Promise<string> {
+  const provider = providerForHost(new URL(url).hostname);
+  if (!provider) throw new Error("Only SchoolSoft and Studybee links can be connected for now");
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 12_000);
   try {
     const res = await fetch(url, { signal: ctrl.signal, redirect: "follow", headers: { Accept: "text/calendar, */*" }, cache: "no-store" });
-    if (!res.ok) throw new Error(res.status === 404 || res.status === 410 ? "SchoolSoft says the link no longer exists — create a new one" : `SchoolSoft answered ${res.status}`);
-    const finalHost = new URL(res.url || url).hostname.toLowerCase();
-    if (finalHost !== "schoolsoft.se" && !finalHost.endsWith(".schoolsoft.se")) throw new Error("The link redirected away from SchoolSoft");
+    if (!res.ok) throw new Error(res.status === 404 || res.status === 410 ? "The school platform says the link no longer exists — create a new one" : `The school platform answered ${res.status}`);
+    if (providerForHost(new URL(res.url || url).hostname) !== provider) throw new Error("The link redirected away from the school platform");
     const text = await res.text();
     if (text.length > MAX_BYTES) throw new Error("The calendar is too big");
     if (!/BEGIN:VCALENDAR/i.test(text)) throw new Error("The link didn't return a calendar");
     return text;
   } catch (err) {
-    if ((err as Error)?.name === "AbortError") throw new Error("SchoolSoft didn't answer in time");
+    if ((err as Error)?.name === "AbortError") throw new Error("The school platform didn't answer in time");
     throw err;
   } finally { clearTimeout(t); }
 }
@@ -219,7 +252,11 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
     const to = new Date(now.getTime() + FUTURE_DAYS * 86400000);
     const inWindow = entries.filter((e) => e.date >= from && e.date <= to).slice(0, MAX_ITEMS);
 
-    const existing = await prisma.$queryRaw<ImportRow[]>`SELECT "reminderId", "childId", "uid", "edited", "hidden" FROM "school_imports" WHERE "childId" = ${feed.childId}`;
+    // All of the child's imports: an item another of the child's links already
+    // brought in is left to that link (no duplicates if two feeds overlap).
+    await prisma.$executeRaw`UPDATE "school_imports" SET "feedId" = ${feed.id} WHERE "childId" = ${feed.childId} AND "feedId" = ${"orphan:" + feed.provider}`;
+    const existing: ImportRow[] = await prisma.$queryRaw<ImportRow[]>`SELECT "reminderId", "childId", "uid", "edited", "hidden", "feedId" FROM "school_imports" WHERE "childId" = ${feed.childId}`;
+    const mine = (r: ImportRow) => r.feedId === feed.id || (r.feedId === null && feed.provider === "schoolsoft");
     const byUid = new Map(existing.map((r) => [r.uid, r]));
     const seen = new Set<string>();
     let added = 0, updated = 0, removed = 0;
@@ -229,7 +266,7 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
       seen.add(e.uid);
       const imp = byUid.get(e.uid);
       if (imp) {
-        if (imp.hidden || imp.edited) continue;
+        if (!mine(imp) || imp.hidden || imp.edited) continue;
         const r = await prisma.reminder.findUnique({ where: { id: imp.reminderId }, select: { id: true, isActive: true, name: true, date: true, schoolKind: true, subject: true, note: true } });
         if (!r || !r.isActive) continue;
         const changed = r.name !== e.summary || r.date.getTime() !== e.date.getTime() || r.schoolKind !== e.kind || r.subject !== e.subject || (r.note ?? null) !== e.description;
@@ -249,33 +286,33 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
         },
         select: { id: true },
       });
-      await prisma.$executeRaw`INSERT INTO "school_imports" ("reminderId", "childId", "uid") VALUES (${created.id}, ${feed.childId}, ${e.uid}) ON CONFLICT DO NOTHING`;
+      await prisma.$executeRaw`INSERT INTO "school_imports" ("reminderId", "childId", "uid", "feedId") VALUES (${created.id}, ${feed.childId}, ${e.uid}, ${feed.id}) ON CONFLICT DO NOTHING`;
       if (e.time) await setTime(created.id, { startTime: e.time });
       added++;
     }
 
-    // Gone from SchoolSoft (cancelled or moved out) → remove it here too, unless
+    // Gone from the feed (cancelled or moved out) → remove it here too, unless
     // someone edited it in the app, ticked it off, or it's already in the past.
     for (const imp of existing) {
-      if (seen.has(imp.uid) || imp.edited || imp.hidden) continue;
+      if (!mine(imp) || seen.has(imp.uid) || imp.edited || imp.hidden) continue;
       const r = await prisma.reminder.findUnique({ where: { id: imp.reminderId }, select: { id: true, isActive: true, date: true, completedAt: true } });
       if (!r || !r.isActive || r.completedAt || r.date < now || r.date > to) continue;
       await prisma.reminder.update({ where: { id: r.id }, data: { isActive: false } });
       removed++;
     }
 
-    const total = await importedCount(feed.childId);
+    const total = await importedCount(feed.id);
     result = { ok: true, added, updated, removed, total, status: "ok" };
   } catch (err) {
     console.error("School feed sync failed:", feed.id, err);
-    result = { ok: false, added: 0, updated: 0, removed: 0, total: await importedCount(feed.childId).catch(() => 0), status: err instanceof Error ? err.message : "Sync failed" };
+    result = { ok: false, added: 0, updated: 0, removed: 0, total: await importedCount(feed.id).catch(() => 0), status: err instanceof Error ? err.message : "Sync failed" };
   }
   await prisma.$executeRaw`UPDATE "school_feeds" SET "lastSyncAt" = ${now}, "lastStatus" = ${result.status}, "lastCount" = ${result.total} WHERE "id" = ${feed.id}`;
   return result;
 }
 
-export async function importedCount(childId: string): Promise<number> {
-  const rows = await prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*)::bigint AS n FROM "school_imports" i JOIN "reminders" r ON r."id" = i."reminderId" WHERE i."childId" = ${childId} AND i."hidden" = false AND r."isActive" = true`;
+export async function importedCount(feedId: string): Promise<number> {
+  const rows = await prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*)::bigint AS n FROM "school_imports" i JOIN "reminders" r ON r."id" = i."reminderId" WHERE i."feedId" = ${feedId} AND i."hidden" = false AND r."isActive" = true`;
   return Number(rows[0]?.n ?? 0);
 }
 
@@ -292,38 +329,49 @@ export async function syncAllFeeds(): Promise<{ synced: number; failed: number }
   return { synced, failed };
 }
 
-export async function getFeedForChild(childId: string): Promise<FeedRow | null> {
+export async function getFeed(feedId: string): Promise<FeedRow | null> {
   await ensureSchoolFeedTables();
-  const rows = await prisma.$queryRaw<FeedRow[]>`SELECT * FROM "school_feeds" WHERE "childId" = ${childId} LIMIT 1`;
+  const rows = await prisma.$queryRaw<FeedRow[]>`SELECT * FROM "school_feeds" WHERE "id" = ${feedId} LIMIT 1`;
   return rows[0] ?? null;
 }
 
 export async function listFeeds(householdId: string): Promise<FeedRow[]> {
   await ensureSchoolFeedTables();
-  return prisma.$queryRaw<FeedRow[]>`SELECT * FROM "school_feeds" WHERE "householdId" = ${householdId}`;
+  return prisma.$queryRaw<FeedRow[]>`SELECT * FROM "school_feeds" WHERE "householdId" = ${householdId} ORDER BY "createdAt" ASC`;
 }
 
-export async function saveFeed(householdId: string, childId: string, url: string, createdById: string): Promise<FeedRow> {
+/** Add a link for a child (the same link again just re-syncs it). */
+export async function saveFeed(householdId: string, childId: string, url: string, provider: ProviderId, createdById: string): Promise<FeedRow | { error: string }> {
   await ensureSchoolFeedTables();
+  const same = await prisma.$queryRaw<FeedRow[]>`SELECT * FROM "school_feeds" WHERE "childId" = ${childId} AND "url" = ${url} LIMIT 1`;
+  if (same[0]) return same[0];
+  const count = await prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*)::bigint AS n FROM "school_feeds" WHERE "childId" = ${childId}`;
+  if (Number(count[0]?.n ?? 0) >= MAX_FEEDS_PER_CHILD) return { error: "Max 3 school links per child" };
   const id = randomUUID();
-  await prisma.$executeRaw`INSERT INTO "school_feeds" ("id", "householdId", "childId", "url", "createdById") VALUES (${id}, ${householdId}, ${childId}, ${url}, ${createdById})
-    ON CONFLICT ("childId") DO UPDATE SET "url" = EXCLUDED."url", "householdId" = EXCLUDED."householdId", "createdById" = EXCLUDED."createdById", "lastSyncAt" = NULL, "lastStatus" = NULL`;
-  return (await getFeedForChild(childId))!;
+  await prisma.$executeRaw`INSERT INTO "school_feeds" ("id", "householdId", "childId", "url", "createdById", "provider") VALUES (${id}, ${householdId}, ${childId}, ${url}, ${createdById}, ${provider}) ON CONFLICT DO NOTHING`;
+  return (await getFeed(id)) ?? { error: "Couldn't save the link" };
 }
 
-/** "Remove everything imported" — hand-made items are untouched. */
-export async function clearImported(childId: string): Promise<number> {
+/** "Remove everything imported" from one link — hand-made items are untouched. */
+export async function clearImported(feedId: string): Promise<number> {
   await ensureSchoolFeedTables();
-  const n = await prisma.$executeRaw`UPDATE "reminders" SET "isActive" = false WHERE "id" IN (SELECT "reminderId" FROM "school_imports" WHERE "childId" = ${childId}) AND "isActive" = true`;
-  await prisma.$executeRaw`DELETE FROM "school_imports" WHERE "childId" = ${childId}`;
+  const n = await prisma.$executeRaw`UPDATE "reminders" SET "isActive" = false WHERE "id" IN (SELECT "reminderId" FROM "school_imports" WHERE "feedId" = ${feedId}) AND "isActive" = true`;
+  await prisma.$executeRaw`DELETE FROM "school_imports" WHERE "feedId" = ${feedId}`;
   // Next "Sync now" should run right away after a reset.
-  await prisma.$executeRaw`UPDATE "school_feeds" SET "lastSyncAt" = NULL, "lastCount" = 0 WHERE "childId" = ${childId}`;
+  await prisma.$executeRaw`UPDATE "school_feeds" SET "lastSyncAt" = NULL, "lastCount" = 0 WHERE "id" = ${feedId}`;
   return n;
 }
 
-export async function deleteFeed(childId: string) {
+/** Disconnect one link. What it imported stays (and stops updating) unless cleared first. */
+export async function deleteFeed(feedId: string) {
   await ensureSchoolFeedTables();
-  await prisma.$executeRaw`DELETE FROM "school_feeds" WHERE "childId" = ${childId}`;
+  // Kept items are parked as "orphan:<provider>" — a link from the same
+  // platform connected later for the child takes them back over (as before
+  // 2026-10-10), a link from another platform leaves them alone.
+  const f = await getFeed(feedId);
+  const parked = `orphan:${f?.provider ?? "schoolsoft"}`;
+  await prisma.$executeRaw`UPDATE "school_imports" SET "feedId" = ${parked} WHERE "feedId" = ${feedId}`;
+  await prisma.$executeRaw`DELETE FROM "school_feeds" WHERE "id" = ${feedId}`;
 }
 
 // ── Helpers used by the school item routes ─────────────────────────────────
@@ -336,6 +384,19 @@ export async function importedIds(ids: string[]): Promise<Set<string>> {
   } catch (err) {
     console.error("importedIds failed:", err);
     return new Set();
+  }
+}
+
+/** Imported item id → platform name ("SchoolSoft", "Studybee") for the badge. */
+export async function importSources(ids: string[]): Promise<Map<string, string>> {
+  if (!ids.length) return new Map();
+  try {
+    await ensureSchoolFeedTables();
+    const rows: { reminderId: string; provider: string | null }[] = await prisma.$queryRaw<{ reminderId: string; provider: string | null }[]>`SELECT i."reminderId", COALESCE(f."provider", CASE WHEN i."feedId" LIKE 'orphan:%' THEN substring(i."feedId" from 8) END) AS "provider" FROM "school_imports" i LEFT JOIN "school_feeds" f ON f."id" = i."feedId" WHERE i."reminderId" = ANY(${ids}::text[])`;
+    return new Map(rows.map((r) => [r.reminderId, providerLabel(r.provider)]));
+  } catch (err) {
+    console.error("importSources failed:", err);
+    return new Map();
   }
 }
 

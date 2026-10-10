@@ -26,7 +26,7 @@ export const school: Messages["school"] = {
   emailDayBefore: "Du får en påminnelse via mejl dagen innan.",
   done: (n) => `Klara · ${n}`,
   subject: "Ämne",
-  fromSchoolSoftEdit: "Från SchoolSoft – när du sparar skriver SchoolSoft inte över dina ändringar.",
+  fromPlatformEdit: (name) => `Från ${name} – när du sparar skriver ${name} inte över dina ändringar.`,
   markNotDone: "Markera som inte klar",
   markDone: "Markera som klar",
   tapToChange: "Tryck för att ändra",

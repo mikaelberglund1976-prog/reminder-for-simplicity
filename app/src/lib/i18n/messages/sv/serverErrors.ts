@@ -174,6 +174,17 @@ export const serverErrors: Record<string, string> = {
   "SchoolSoft didn't answer in time": "SchoolSoft svarade inte i tid",
   "Child no longer in the family — link removed": "Barnet är inte längre med i familjen – länken är borttagen",
   "Sync failed": "Synken misslyckades",
+  // School links, several per child (2026-10-10)
+  "Only an adult can manage calendar links": "Bara en vuxen kan hantera kalenderlänkar",
+  "Ask a parent to remove things from the school calendar": "Be en förälder ta bort saker från skolkalendern",
+  "Paste the link from the school platform": "Klistra in länken från skolplattformen",
+  "Only SchoolSoft and Studybee links can be connected for now": "Bara länkar från SchoolSoft och Studybee kan kopplas in än så länge",
+  "Couldn't load school links": "Kunde inte ladda skollänkarna",
+  "Max 3 school links per child": "Max 3 skollänkar per barn",
+  "The school platform says the link no longer exists — create a new one": "Skolplattformen säger att länken inte finns längre – skapa en ny",
+  "The school platform answered {n}": "Skolplattformen svarade {n}",
+  "The link redirected away from the school platform": "Länken skickade vidare bort från skolplattformen",
+  "The school platform didn't answer in time": "Skolplattformen svarade inte i tid",
   // Activity calendars (2026-10-09)
   "Paste the calendar link": "Klistra in kalenderlänken",
   "Couldn't load calendar links": "Kunde inte ladda kalenderlänkarna",
