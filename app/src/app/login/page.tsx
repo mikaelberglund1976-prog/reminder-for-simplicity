@@ -264,8 +264,8 @@ export default function LoginPage() {
       {/* Decorative wave at bottom */}
       <div className="rfs-deco" style={{ position: "absolute", bottom: 0, left: 0, right: 0, pointerEvents: "none", lineHeight: 0 }}>
         <svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", display: "block" }}>
-          <ellipse cx="340" cy="200" rx="260" ry="130" fill="#E4E7FB" opacity="0.45" />
-          <ellipse cx="180" cy="220" rx="220" ry="110" fill="#E4E7FB" opacity="0.5" />
+          <ellipse cx="340" cy="200" rx="260" ry="130" fill="var(--tint-accent)" opacity="0.45" />
+          <ellipse cx="180" cy="220" rx="220" ry="110" fill="var(--tint-accent)" opacity="0.5" />
           <ellipse cx="420" cy="240" rx="180" ry="100" fill="#C5DCFC" opacity="0.3" />
         </svg>
       </div>

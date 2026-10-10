@@ -1,6 +1,8 @@
 # Brand Guide – Reminder for Simplicity
 **Version:** 1.2 | **Skapad:** 2026-03-31 | **Färgpalett uppdaterad:** 2026-07-26 | **Nav/ikon-sektion omskriven:** 2026-07-28, nuläge tillagt 2026-10-04 (anpassningsbar bottenmeny + fullständig hamburgermeny + kalenderns typfärger, se `TODO.md` 19/20)
 
+> 🧪 **Lotuvi-test live (2026-10-10):** Färger, ikoner, logomärke och figur följer nu Lotuvi_Brand_Product_Guidelines_v0.1 (Family-uttrycket) – namnet är oförändrat. Sanningskällan för färger är `app/src/app/globals.css`; paletten i avsnitt 3 nedan är den tidigare (indigo) och gäller inte längre. Se `RELEASE_2026-10-10b.md`.
+
 > ✅ **Färgpalett löst (2026-07-26):** Tidigare fanns tre olika accentfärger i `BRAND.md`, `RFS-Product-Direction.md` och `globals.css`. Mikael valde paletten från `RFS-Product-Direction.md` (accent `#4A5FD5`) som sanningskälla. Den är nu genomförd i `globals.css` och samtliga `.tsx`-filer i `app/src`. Paletten nedan är uppdaterad i enlighet med detta.
 
 ---

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { PRO_PRICE } from "@/lib/plans";
 import { useM } from "@/lib/i18n/client";
+import { BrandMark, Companion } from "@/components/BrandMark";
 
 // 2026-10-04 (Mikael, phone test item 9): a clear "Log in" (there was only
 // "Get started"), copy and pills that match the app as it is now (kids'
@@ -26,7 +27,7 @@ export default function Home() {
         padding: "18px 20px 0", boxSizing: "border-box",
       }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <span style={{ width: 30, height: 30, borderRadius: 9, background: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>🔔</span>
+          <BrandMark size={30} />
           <span style={{ fontWeight: 700, fontSize: 14.5, color: "var(--fg)" }}>Reminder for Simplicity</span>
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
@@ -40,8 +41,11 @@ export default function Home() {
       <main style={{
         flex: 1, display: "flex", flexDirection: "column",
         alignItems: "center", textAlign: "center",
-        padding: "40px 24px 0",
+        padding: "28px 24px 0",
       }}>
+
+        {/* Companion (2026-10-10, Lotuvi brand test) */}
+        <div style={{ marginBottom: 20 }}><Companion size={150} /></div>
 
         {/* Title */}
         <h1 style={{
@@ -234,7 +238,7 @@ export default function Home() {
           padding: "17px", borderRadius: 50,
           background: "var(--accent-bg)", border: "none",
           fontSize: 16, fontWeight: 700, color: "#fff",
-          textDecoration: "none", boxShadow: "0 6px 18px rgba(74,95,213,0.28)",
+          textDecoration: "none", boxShadow: "0 6px 18px var(--accent-shadow)",
         }}>
           {t.getStarted}
         </Link>

@@ -3,33 +3,41 @@
 @tailwind utilities;
 
 :root {
-  /* ── Theme tokens (2026-09-27) ──────────────────────────────────────────
-     Every color in the app goes through these variables, so light/dark is
-     one attribute flip on <html> (see lib/theme.ts). Light values are the
-     BRAND.md palette; dark values are tuned for the same roles.          */
-  --background: #F5F4F0;
+  /* ── Theme tokens ───────────────────────────────────────────────────────
+     2026-10-10: Lotuvi Family palette (brand guidelines v0.1, colors are
+     RIKTNING = may still change → only ever change them HERE). Name of the
+     app is NOT changed yet. Every color in the app goes through these
+     variables, so light/dark is one attribute flip on <html> (lib/theme.ts).
+     Contrast: peach #FF8F61 fails WCAG with white text (2.25:1), so filled
+     buttons use a deeper coral (--accent-bg, 4.7:1) and peach is kept for
+     tints, icons and illustration (--brand-peach).                       */
+  --brand-peach: #FF8F61;    /* Lotuvi Family primary – decorative only */
+  --brand-blue: #087BEA;     /* Lotuvi Sport primary – not used in Family */
+  --brand-green: #7FB069;
+  --background: #FAF7F2;
   --surface: #FFFFFF;
-  --surface-2: #FAF9F5;
-  --surface-3: #F0F3F8;
-  --foreground: #1C1C28;
-  --fg: #1C1C28;
-  --fg-2: #4B5563;
-  --muted: #7C7C8A;
-  --subtle: #9CA3AF;
-  --faint: #C0C5D0;
-  --border: #E4E3DE;
-  --border-soft: #F0F3F8;
-  --ink: #1C1C28;            /* dark filled buttons / hero cards */
-  --ink-hover: #2C2C36;
-  --accent: #4A5FD5;         /* accent as text / border */
-  --accent-bg: #4A5FD5;      /* accent as filled background (white text on top) */
-  --accent-hover: #3A4FC5;
-  --accent-strong: #3A4FC5;
-  --accent-light: #E4E7FB;
-  --accent-border: #C7CDF5;
-  --tint-accent: #E4E7FB;
+  --surface-2: #FDFBF8;
+  --surface-3: #F4EFE8;
+  --foreground: #142B3A;
+  --fg: #142B3A;
+  --fg-2: #3E5260;
+  --muted: #5F6E79;
+  --subtle: #98A3AB;
+  --faint: #C5CCD1;
+  --border: #ECE6DD;
+  --border-soft: #F4EFE8;
+  --ink: #142B3A;            /* dark filled buttons / hero cards */
+  --ink-hover: #1F3B4D;
+  --accent: #B5451F;         /* accent as text / border (5.1:1 on cream) */
+  --accent-bg: #C24F26;      /* accent as filled background (white text, 4.7:1) */
+  --accent-hover: #AC4420;
+  --accent-strong: #A33D1B;
+  --accent-light: #FFE9DE;
+  --accent-border: #FFCDB6;
+  --tint-accent: #FFE9DE;
+  --accent-shadow: rgba(194,79,38,0.28);
   --success: #1E7D52;
-  --tint-success: #D4F4E6;
+  --tint-success: #DDF3E6;
   --warning: #B45309;
   --tint-warning: #FFF3CC;
   --danger: #D94F4F;
@@ -42,10 +50,13 @@
   --tint-pink: #FFE8F5;
   --violet: #6A44CC;
   --tint-violet: #EDE8FF;
-  --slate: #5A6080;
-  --shadow: 0 1px 6px rgba(0,0,0,0.05);
+  --slate: #5A6B78;
+  --shadow: 0 1px 6px rgba(20,43,58,0.05);
   --nav-bg: rgba(255,255,255,0.92);
-  --hero-grad: linear-gradient(135deg, #1C1C28 0%, #2E3A6E 100%);
+  --hero-grad: linear-gradient(135deg, #142B3A 0%, #24475C 100%);
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   color-scheme: light;
 
   /* Content column width. Every page centers its content at this width via
@@ -55,31 +66,33 @@
   --content-max-width: 480px;
 }
 
-/* Dark palette — deep navy like the reference app, brand indigo kept as the
-   accent (brightened so it reads on dark). Applied either explicitly
-   (data-theme="dark") or via the OS setting when the person chose "System". */
+/* Dark palette — 2026-10-10 Lotuvi: charcoal-based (guidelines §13), warm
+   off-white text, peach brightened for text so it reads on dark. Applied
+   either explicitly (data-theme="dark") or via the OS setting ("System"). */
 html[data-theme="dark"] {
-  --background: #0E1220;
-  --surface: #171C2B;
-  --surface-2: #1C2233;
-  --surface-3: #232A3D;
-  --foreground: #EEF0F7;
-  --fg: #EEF0F7;
-  --fg-2: #C3C8D6;
-  --muted: #9AA1B5;
-  --subtle: #7C8499;
-  --faint: #525A70;
-  --border: #283047;
-  --border-soft: #222838;
-  --ink: #34406C;
-  --ink-hover: #3E4B7D;
-  --accent: #8E9CFF;
-  --accent-bg: #5468E0;
-  --accent-hover: #6377EA;
-  --accent-strong: #AAB5FF;
-  --accent-light: rgba(124,142,255,0.16);
-  --accent-border: rgba(124,142,255,0.4);
-  --tint-accent: rgba(124,142,255,0.16);
+  --brand-peach: #FF9B72;
+  --background: #141619;
+  --surface: #1D2024;
+  --surface-2: #22262B;
+  --surface-3: #2A2E34;
+  --foreground: #F2EFEA;
+  --fg: #F2EFEA;
+  --fg-2: #CFCAC2;
+  --muted: #A39E96;
+  --subtle: #85807A;
+  --faint: #57534E;
+  --border: #33383F;
+  --border-soft: #272B31;
+  --ink: #2E4553;
+  --ink-hover: #385364;
+  --accent: #FFA47F;
+  --accent-bg: #C24F26;
+  --accent-hover: #CF5A2F;
+  --accent-strong: #FFB896;
+  --accent-light: rgba(255,143,97,0.16);
+  --accent-border: rgba(255,143,97,0.4);
+  --tint-accent: rgba(255,143,97,0.16);
+  --accent-shadow: rgba(0,0,0,0.4);
   --success: #4FD69C;
   --tint-success: rgba(79,214,156,0.14);
   --warning: #F5B056;
@@ -94,10 +107,10 @@ html[data-theme="dark"] {
   --tint-pink: rgba(242,138,192,0.15);
   --violet: #B79CFF;
   --tint-violet: rgba(183,156,255,0.15);
-  --slate: #A3AAC4;
+  --slate: #A9B3BB;
   --shadow: 0 1px 6px rgba(0,0,0,0.35);
-  --nav-bg: rgba(20,25,40,0.92);
-  --hero-grad: linear-gradient(135deg, #1B2240 0%, #2B3770 100%);
+  --nav-bg: rgba(26,28,32,0.92);
+  --hero-grad: linear-gradient(135deg, #1E2C35 0%, #2E4553 100%);
   color-scheme: dark;
 }
 

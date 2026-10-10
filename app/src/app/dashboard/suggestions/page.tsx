@@ -14,7 +14,7 @@ function IcBack() { return <svg width={20} height={20} viewBox="0 0 24 24" {...S
 function IcPlus() { return <svg width={18} height={18} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>; }
 function IcUp({ filled }: { filled: boolean }) {
   return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill={filled ? "#4A5FD5" : "none"} stroke={filled ? "#4A5FD5" : "currentColor"} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={16} height={16} viewBox="0 0 24 24" fill={filled ? "var(--accent)" : "none"} stroke={filled ? "var(--accent)" : "currentColor"} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="18 15 12 9 6 15" />
     </svg>
   );
