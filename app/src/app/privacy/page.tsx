@@ -4,6 +4,7 @@ import { getMessages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/i18n/config";
 import { PrivacyEn } from "./PrivacyEn";
 import { PrivacySv } from "./PrivacySv";
+import { BrandMark } from "@/components/BrandMark";
 
 // 2026-09-29: the privacy notice, published (replaces the 2026-07-28
 // scaffold). Written from the GDPR review in the project ("GDPR-genomgång:
@@ -37,7 +38,7 @@ export default function PrivacyPage() {
         maxWidth: 760, margin: "0 auto", width: "100%", padding: "24px 20px 0", boxSizing: "border-box",
       }}>
         <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔔</div>
+          <BrandMark size={32} />
           <span style={{ fontWeight: 700, fontSize: 16, color: "var(--fg)" }}>Reminder for Simplicity</span>
         </Link>
         <Link href="/login" style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>{m.common.logIn}</Link>

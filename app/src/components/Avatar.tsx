@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { avatarUrl, useFamilyMedia } from "@/lib/familyMedia";
 
-const PALETTE = ["#4A5FD5", "#C4367A", "#1E7D52", "#D85A30", "#6A44CC", "#0E9F8E", "#B45309", "#3730A3"];
+const PALETTE = ["#C24F26", "#C4367A", "#1E7D52", "#D85A30", "#6A44CC", "#0E9F8E", "#B45309", "#3730A3"];
 
 function colorFor(id: string) {
   let h = 0;

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/client";
+import { BrandMark } from "@/components/BrandMark";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
@@ -80,7 +81,7 @@ function JoinHouseholdContent() {
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,var(--accent),var(--accent))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🔔</div>
+            <BrandMark size={40} />
             <span style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", letterSpacing: "-0.5px" }}>Reminder for Simplicity</span>
           </div>
         </div>

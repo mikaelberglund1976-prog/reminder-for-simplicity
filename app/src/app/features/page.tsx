@@ -4,6 +4,7 @@ import { PLAN_ROWS, PRO_PRICE, type PlanRow } from "@/lib/plans";
 import { TRIAL_DAYS } from "@/lib/entitlements";
 import { useM } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/messages";
+import { BrandMark } from "@/components/BrandMark";
 
 // 2026-10-04 (Mikael, phone test item 9): "See how it works" rewritten to
 // match the app as it is now — child accounts with their own week, homework
@@ -31,7 +32,7 @@ export default function FeaturesPage() {
         padding: "20px 20px 0", boxSizing: "border-box",
       }}>
         <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔔</div>
+          <BrandMark size={32} />
           <span style={{ fontWeight: 700, fontSize: 15, color: "var(--fg)" }}>Reminder for Simplicity</span>
         </Link>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
@@ -87,7 +88,7 @@ export default function FeaturesPage() {
       </main>
 
       <div style={{ padding: "36px 20px 20px", display: "flex", gap: 12, maxWidth: "var(--content-max-width)", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-        <Link href="/register" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", borderRadius: 50, background: "var(--accent-bg)", fontSize: 16, fontWeight: 700, color: "#fff", textDecoration: "none", boxShadow: "0 6px 18px rgba(74,95,213,0.28)" }}>
+        <Link href="/register" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", borderRadius: 50, background: "var(--accent-bg)", fontSize: 16, fontWeight: 700, color: "#fff", textDecoration: "none", boxShadow: "0 6px 18px var(--accent-shadow)" }}>
           {m.landing.getStarted}
         </Link>
         <Link href="/login" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", borderRadius: 50, background: "var(--surface)", border: "1.5px solid var(--border)", fontSize: 16, fontWeight: 700, color: "var(--fg)", textDecoration: "none" }}>

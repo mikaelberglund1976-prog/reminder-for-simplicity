@@ -11,7 +11,7 @@
 // Bump CACHE when this file changes; old caches (incl. v1, which cached pages)
 // are deleted on activate.
 
-const CACHE = "rfs-v3";
+const CACHE = "rfs-v4"; // v4 2026-10-10: Lotuvi icons
 const PRECACHE = [
   "/offline.html",
   "/manifest.json",
