@@ -26,6 +26,8 @@ import { getOccurrencesInRange, dateKey, type RecurringItem } from "@/lib/recurr
 import { formatTimeRange } from "@/lib/timeFormat";
 import { useI18n } from "@/lib/i18n/client";
 import { weekdayName } from "@/lib/i18n/format";
+import { kindColor, personColor, DEFAULT_KIND_COLORS } from "@/lib/familyColors";
+import { useFamilyColors, saveFamilyColorsRemote } from "@/lib/familyColorsClient";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -46,24 +48,24 @@ const CATEGORY_COLOR: Record<string, string> = {
   CONTRACT: "#C06010", HEALTH: "#C44444", BILL: "#6A44CC", OTHER: "#5A6080",
 };
 
-const CHORE_COLOR = "#0E9F8E";
+const CHORE_COLOR = DEFAULT_KIND_COLORS.chore;
 // Matches the mockup shown to Mikael 2026-07-28: coral for Training, so it
 // reads as a distinct "kind" from both reminders and chores at a glance.
-const TRAINING_COLOR = "#D85A30";
+const TRAINING_COLOR = DEFAULT_KIND_COLORS.training;
 // School is its own section (not routed through general Reminders — see
 // /dashboard/school and /dashboard/family/child), but still shows up here
 // since everything syncs to the calendar. Indigo, matching the mockup.
-const SCHOOL_COLOR = "#3730A3";
+const SCHOOL_COLOR = DEFAULT_KIND_COLORS.homework;
 // 2026-09-28 (test round, row 41): tests and homework were the same indigo
 // and only told apart by a tiny emoji. A test is now its own kind with its
 // own colour (crimson — "this one matters"), its own filter chip and a 🧪
 // marker in the grid (homework gets 📝).
-const TEST_COLOR = "#B4235A";
+const TEST_COLOR = DEFAULT_KIND_COLORS.test;
 
 // Reminders span multiple category colors (see CATEGORY_COLOR above), so the
 // filter/legend chip for that kind uses a neutral swatch rather than any one
 // category's color — it represents "reminders as a kind", not a category.
-const REMINDER_KIND_COLOR = "#5A6080";
+const REMINDER_KIND_COLOR = DEFAULT_KIND_COLORS.reminder;
 
 // Labels: messages.calendar.kinds
 const KIND_META: Record<CalendarEntry["kind"], { color: string; emoji: string }> = {
@@ -140,6 +142,24 @@ export default function CalendarPage() {
   const router = useRouter();
   const { m: msg, locale, dateLocale } = useI18n();
   const t = msg.calendar;
+  // 2026-10-10: the family's own colours (Settings → Colours, Pro) — per
+  // kind, per person, and whether chips are coloured by kind or by person.
+  const fam = useFamilyColors();
+  const fc = fam.colors;
+  const byPersonColor = fc.calendarBy === "person";
+  function colorOf(e: CalendarEntry): string {
+    if (byPersonColor && e.personId) return personColor(fc, e.personId);
+    // Reminders keep their per-category colour unless the family picked one colour for all reminders.
+    if (e.kind === "reminder") return fc.kinds.reminder ?? e.color;
+    return kindColor(fc, e.kind);
+  }
+  function kindSwatch(kind: CalendarEntry["kind"] | AddKind): string {
+    return kindColor(fc, kind === "school" ? "homework" : kind);
+  }
+  async function setColorBy(by: "kind" | "person") {
+    if (by === fc.calendarBy) return;
+    try { await saveFamilyColorsRemote({ ...fc, calendarBy: by }); } catch { /* reloaded by the helper */ }
+  }
   const WEEKDAY_HEADERS = WEEKDAY_NUMS.map((n) => weekdayName(locale, n));
 
   const [checkedChild, setCheckedChild] = useState(false);
@@ -501,16 +521,41 @@ export default function CalendarPage() {
                       display: "flex", alignItems: "center", gap: 6,
                       padding: "6px 12px", borderRadius: 50, cursor: "pointer", fontFamily: FONT,
                       border: active ? "1.5px solid transparent" : "1.5px solid var(--border)",
-                      background: active ? `${meta.color}1A` : "var(--surface)",
+                      background: active ? `${kindSwatch(kind)}1A` : "var(--surface)",
                       opacity: active ? 1 : 0.55,
                     }}
                   >
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: active ? meta.color : "var(--subtle)" }}>{t.kinds[kind]}</span>
+                    {byPersonColor
+                      ? <span aria-hidden style={{ fontSize: 11, lineHeight: 1 }}>{meta.emoji}</span>
+                      : <span style={{ width: 8, height: 8, borderRadius: "50%", background: kindSwatch(kind), flexShrink: 0 }} />}
+                    <span style={{ fontSize: 12, fontWeight: 700, color: active ? kindSwatch(kind) : "var(--subtle)" }}>{t.kinds[kind]}</span>
                   </button>
                 );
               })}
             </div>
+
+            {/* 2026-10-10: colour by kind or by person + shortcut to Settings → Colours. */}
+            {!isChildView && fam.loaded && fam.isAdult && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", margin: "-6px 0 14px" }}>
+                {fam.canEdit && (
+                  <div role="radiogroup" aria-label={t.colorBy} style={{ display: "inline-flex", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 50, padding: 2 }}>
+                    {(["kind", "person"] as const).map((by) => {
+                      const on = fc.calendarBy === by;
+                      return (
+                        <button key={by} role="radio" aria-checked={on} onClick={() => setColorBy(by)} style={{
+                          border: "none", borderRadius: 50, padding: "4px 10px", fontSize: 11.5, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
+                          background: on ? "var(--surface)" : "transparent", color: on ? "var(--fg)" : "var(--subtle)",
+                          boxShadow: on ? "0 1px 2px rgba(0,0,0,.08)" : "none",
+                        }}>{by === "kind" ? t.colorByKind : t.colorByPerson}</button>
+                      );
+                    })}
+                  </div>
+                )}
+                <button onClick={() => router.push("/profile#colors")} style={{ background: "none", border: "none", padding: "4px 2px", fontSize: 11.5, fontWeight: 700, color: "var(--accent)", cursor: "pointer", fontFamily: FONT }}>
+                  🎨 {fam.canEdit ? t.editColors : t.ownColorsPro}
+                </button>
+              </div>
+            )}
 
             {/* Weekday header */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", marginBottom: 6 }}>
@@ -572,7 +617,7 @@ export default function CalendarPage() {
                           style={{
                             pointerEvents: touchMode ? "none" : "auto",
                             display: "block", fontSize: 9.5, fontWeight: 700, color: "#fff",
-                            background: e.color, borderRadius: 4, padding: "1.5px 4px",
+                            background: colorOf(e), borderRadius: 4, padding: "1.5px 4px",
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                             opacity: inMonth ? 1 : 0.55,
                           }}
@@ -612,7 +657,7 @@ export default function CalendarPage() {
                         borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", cursor: "pointer",
                       }}
                     >
-                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: e.color, flexShrink: 0 }} />
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: colorOf(e), flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{e.name}</div>
                         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{e.subtitle}</div>
@@ -653,7 +698,7 @@ export default function CalendarPage() {
                               borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", cursor: "pointer",
                             }}
                           >
-                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: e.color, flexShrink: 0 }} />
+                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: colorOf(e), flexShrink: 0 }} />
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--fg)" }}>{e.name}</div>
                               <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{e.subtitle}</div>
@@ -719,7 +764,7 @@ export default function CalendarPage() {
                           cursor: "pointer", fontFamily: FONT, textAlign: "left",
                         }}
                       >
-                        <span style={{ width: 34, height: 34, borderRadius: 10, background: `${meta.color}1A`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                        <span style={{ width: 34, height: 34, borderRadius: 10, background: `${kindSwatch(kind)}1A`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                           {meta.emoji}
                         </span>
                         <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{t.addKinds[kind]}</span>

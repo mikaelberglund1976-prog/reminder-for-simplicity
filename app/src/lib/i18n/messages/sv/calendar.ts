@@ -31,4 +31,9 @@ export const calendar: Messages["calendar"] = {
   step2: (kind) => `Steg 2 av 2 – datum · ${kind}`,
   back: "Tillbaka",
   continue: "Fortsätt",
+  colorBy: "Färg efter",
+  colorByKind: "Typ",
+  colorByPerson: "Person",
+  editColors: "Ändra färger",
+  ownColorsPro: "Egna färger (Pro)",
 };

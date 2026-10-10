@@ -1,0 +1,21 @@
+// 2026-10-10: Settings → Colors (components/FamilyColorsSettings.tsx).
+export const familyColors = {
+  cardTitle: "Colors",
+  intro: "Pick your family's own colors – for each child and for each type. Applies to everyone in the family, in the calendar and on Home.",
+  peopleTitle: "People",
+  kindsTitle: "Types",
+  kinds: { reminder: "Reminders", chore: "Chores", training: "Activities", homework: "Homework", test: "Tests" },
+  reminderHint: "Default: each reminder category keeps its own color.",
+  calendarByTitle: "Calendar colors by",
+  byKind: "Type",
+  byPerson: "Person",
+  byPersonHint: "Each item gets the color of the person it belongs to.",
+  custom: "Custom color",
+  defaultColor: "Default",
+  saved: "Saved",
+  reset: "Reset all colors",
+  featureName: "Your own colors",
+  featureDescription: "Give each child and each type (tests, activities, homework…) its own color in the calendar and on Home.",
+  onlyAdults: "An adult in the family can change the colors.",
+  choose: (what: string) => `Choose color for ${what}`,
+};

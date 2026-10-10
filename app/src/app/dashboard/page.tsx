@@ -11,6 +11,8 @@ import AdSlot from "@/components/AdSlot";
 import Avatar from "@/components/Avatar";
 import { getMe } from "@/lib/me";
 import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
+import { useFamilyColors } from "@/lib/familyColorsClient";
+import type { ColorKind } from "@/lib/familyColors";
 import { withNextDate, getOccurrencesInRange, dateKey, type RecurringItem } from "@/lib/recurrence";
 import { normalizeHomePrefs, type HomePrefs } from "@/lib/homePrefs";
 import { formatTimeRange } from "@/lib/timeFormat";
@@ -318,6 +320,17 @@ export default function DashboardPage() {
   const media = useFamilyMedia();
   const { m: msg, locale, dateLocale } = useI18n();
   const t = msg.home;
+  // 2026-10-10: a type colour the family picked (Settings → Colours) wins over the built-in badge colour.
+  const famColors = useFamilyColors().colors;
+  function familyBadge(kind: string): { bg: string; fg: string; label: string } | null {
+    const map: Record<string, [ColorKind, string]> = {
+      TEST: ["test", msg.homePrefs.kindTest], HOMEWORK: ["homework", msg.homePrefs.kindHomework],
+      ACTIVITY: ["training", msg.homePrefs.kindActivity], REMINDER: ["reminder", msg.homePrefs.kindReminder],
+    };
+    const hit = map[kind];
+    const c = hit && famColors.kinds[hit[0]];
+    return hit && c ? { bg: `${c}1F`, fg: c, label: hit[1] } : null;
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -611,11 +624,11 @@ export default function DashboardPage() {
             </div>
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 14px", boxShadow: "var(--shadow)", marginBottom: 24 }}>
               {todayRows.map((r, i) => {
-                const badge = r.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
+                const badge = familyBadge(r.kind) ?? (r.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
                   : r.kind === "HOMEWORK" ? { bg: "var(--tint-school)", fg: "var(--school)", label: msg.homePrefs.kindHomework }
                   : r.kind === "ACTIVITY" ? { bg: "var(--tint-warning)", fg: "#D85A30", label: msg.homePrefs.kindActivity }
                   : r.kind === "REMINDER" ? { bg: "var(--tint-accent)", fg: "var(--accent)", label: msg.homePrefs.kindReminder }
-                  : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool };
+                  : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool });
                 const time = formatTimeRange(r);
                 return (
                   <Link key={r.key} href={r.href} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", textDecoration: "none", opacity: r.done ? 0.45 : 1 }}>
@@ -718,10 +731,10 @@ export default function DashboardPage() {
                   </div>
                   {p.items.slice(0, prefs.perChildCount).map((it) => {
                     const d = getDaysUntil(it.day.toISOString());
-                    const badge = it.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
+                    const badge = familyBadge(it.kind) ?? (it.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
                       : it.kind === "HOMEWORK" ? { bg: "var(--tint-school)", fg: "var(--school)", label: msg.homePrefs.kindHomework }
                       : it.kind === "ACTIVITY" ? { bg: "var(--tint-warning)", fg: "#D85A30", label: msg.homePrefs.kindActivity }
-                      : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool };
+                      : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool });
                     const time = formatTimeRange(it);
                     return (
                       <Link key={it.key} href={it.href} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderTop: "1px solid var(--border-soft)", textDecoration: "none" }}>

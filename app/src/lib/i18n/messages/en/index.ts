@@ -9,6 +9,7 @@ import { chores } from "./chores";
 import { common } from "./common";
 import { components } from "./components";
 import { emails } from "./emails";
+import { familyColors } from "./familyColors";
 import { gifts } from "./gifts";
 import { home } from "./home";
 import { homePrefs } from "./homePrefs";
@@ -44,6 +45,7 @@ export const en = {
   common,
   components,
   emails,
+  familyColors,
   gifts,
   home,
   homePrefs,

@@ -29,4 +29,9 @@ export const calendar = {
   step2: (kind: string) => `Step 2 of 2 — date · ${kind}`,
   back: "Back",
   continue: "Continue",
+  colorBy: "Color by",
+  colorByKind: "Type",
+  colorByPerson: "Person",
+  editColors: "Edit colors",
+  ownColorsPro: "Your own colors (Pro)",
 };

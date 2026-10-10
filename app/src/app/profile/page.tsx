@@ -17,6 +17,7 @@ import { useI18n } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/messages";
 import LanguageSetting from "@/components/LanguageSetting";
 import HomePrefsSettings from "@/components/HomePrefsSettings";
+import FamilyColorsSettings from "@/components/FamilyColorsSettings";
 import { isManagedEmail } from "@/lib/managedProfileClient";
 import PushCard from "@/components/PushCard";
 
@@ -600,6 +601,15 @@ export default function ProfilePage() {
             <div id="home-settings" style={{ scrollMarginTop: 16 }}>
               <Card title={msg.homePrefs.cardTitle}>
                 <HomePrefsSettings />
+              </Card>
+            </div>
+          )}
+
+          {/* 2026-10-10: the family's own colours per child and per type (Pro). */}
+          {profile && !profile.isChildProfile && (
+            <div id="colors" style={{ scrollMarginTop: 16 }}>
+              <Card title={msg.familyColors.cardTitle}>
+                <FamilyColorsSettings />
               </Card>
             </div>
           )}
