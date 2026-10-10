@@ -10,6 +10,8 @@ import { purgeExpiredAccounts } from "@/lib/accountDeletion";
 import { purgeOrphanMedia } from "@/lib/media";
 import { importedIds, syncAllFeeds } from "@/lib/schoolFeeds";
 import { activityImportInfo, syncAllActivityFeeds } from "@/lib/activityFeeds";
+import { getBirthdayRows } from "@/lib/birthdays";
+import { sendBirthdayReminder, sendBirthdayDayPushes } from "@/lib/birthdayCron";
 
 function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -73,6 +75,11 @@ export async function runReminderCron() {
 
   // 2026-10-09: times of day for the emails and pushes ("Tandläkare 14:30").
   const times = await getTimes(reminders.map((r) => r.id));
+  // 2026-10-10: birthdays added on the Birthdays page (lib/birthdayCron.ts).
+  const bdayRows = await getBirthdayRows(reminders.filter((r) => r.category === "BIRTHDAY").map((r) => r.id)).catch((err) => {
+    console.error("Birthday lookup failed:", err);
+    return new Map() as Awaited<ReturnType<typeof getBirthdayRows>>;
+  });
 
   log.push(`Today: ${todayStr}`);
   log.push(`Active reminders: ${reminders.length}`);
@@ -127,6 +134,23 @@ export async function runReminderCron() {
     if (alreadySent) {
       log.push(`  -> already sent today`);
       skipped++;
+      continue;
+    }
+
+    const bday = reminder.category === "BIRTHDAY" ? bdayRows.get(reminder.id) : undefined;
+    if (bday) {
+      try {
+        const occurrence = addDays(todayStart, reminder.reminderDaysBefore);
+        const to = await sendBirthdayReminder(reminder, bday, occurrence, reminder.reminderDaysBefore);
+        await prisma.reminderLog.create({ data: { reminderId: reminder.id, type: "email" } });
+        await prisma.reminder.update({ where: { id: reminder.id }, data: { lastSentAt: now } });
+        log.push(`  -> birthday reminder to ${to.join(", ") || "(push only)"}`);
+        sent++;
+      } catch (err) {
+        console.error(`Failed to send birthday ${reminder.id}:`, err);
+        log.push(`  -> ERROR: ${String(err)}`);
+        errors++;
+      }
       continue;
     }
 
@@ -202,6 +226,14 @@ export async function runReminderCron() {
       log.push(`  -> ERROR: ${String(err)}`);
       errors++;
     }
+  }
+
+  // 2026-10-10: "🎂 Elsa turns 13 today!" to the family.
+  try {
+    log.push(...(await sendBirthdayDayPushes(now)));
+  } catch (err) {
+    console.error("Birthday day pushes failed:", err);
+    log.push(`Birthday day push ERROR: ${String(err)}`);
   }
 
   // Purchased shopping-list items used to auto-clear ~24h after purchase.

@@ -2,6 +2,7 @@
 
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
+**Uppdaterad igen:** 2026-10-10 (eftermiddag) – punkt 44: födelsedagar (familj, släkt, kompisar och husdjur, gäller alla eller en person), se `RELEASE_2026-10-10d.md`.
 **Uppdaterad igen:** 2026-10-10 – punkt 42–43: releaserna 7–10 okt (klockslag, närmast per barn, klubbkalendrar, måstelistan, stjärnor/släktdelning, AI-intag) införda i loggen, och Lotuvi-varumärket live utom namnet – ljust läge, ikoner, figur och mörkt läge "Sage First" (se `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`). Alla md-filer synkade.
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
 **Uppdaterad igen:** 2026-10-04 (sen kväll) – punkt 41: PWA-installation på mobilen + namnfrågan uppsatt (se `RELEASE_2026-10-04c.md`).
@@ -836,3 +837,11 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [ ] Knappar 10–14 px hörn i stället för "piller" (riktlinjen) – kräver genomgång av inline-knappar.
 - [ ] Namnbeslut (Lotuvi är arbetsnamn): varumärkes-clearance, domän, sociala handles – se `LAUNCH_CHECKLIST.md` överst.
 
+## 44. Födelsedagar (2026-10-10, live) – se `RELEASE_2026-10-10d.md`
+- [x] Utredning: kategorin BIRTHDAY fanns men kopplades inte till person, saknade ålder och egen vy. Beslut: egen sida, Free.
+- [x] Mikael: "kan ju vara kompisar, husdjur" → typerna Familj/Släkt/Kompis/Husdjur/Annan. "intressant för alla eller bara en person" → *Gäller*: hela familjen eller en person.
+- [x] Sidan `/dashboard/birthdays`, API `/api/family/birthdays`, tabellen `birthdays` (skapas automatiskt, inget `db push`).
+- [x] "🎂 Elsa fyller 13" i kalendern, ICS, på Hem och i kvällsnotisen. Påminnelse till vuxna och släkt (önskelistegäster), push på dagen.
+- [x] Integritetstext sv/en + `GDPR.md` rad 4c.
+- [ ] Klicktest `TEST_VERIFICATION.md` §22.
+- [ ] Senare: import från kontakter, kalas-planering.

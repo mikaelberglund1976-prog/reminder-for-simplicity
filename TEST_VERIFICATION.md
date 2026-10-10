@@ -205,3 +205,12 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Auto följer telefonen; ett aktivt val vinner över telefonen och sparas.
 - [ ] Ny hemskärmsikon (tre blad) efter att appen lagts till igen; favicon i webbläsarfliken.
 
+## 22. Födelsedagar (2026-10-10d) – se `RELEASE_2026-10-10d.md`
+- [ ] Meny → Födelsedagar; lägg in ett barn med årtal → "fyller N · om N dagar".
+- [ ] Släkt, Kompis (Gäller: barnet → "Elsas kompis") och Husdjur 🐾 → rätt chip och emoji.
+- [ ] Kalendern: "🎂 Elsa fyller 13" på rätt dag; personfiltret visar den under Elsa.
+- [ ] Födelsedag om 7 dagar → nästa morgon mejl och push till vuxna; barn med önskelista → knapp till önskelistan.
+- [ ] "Gäller: mamma" → syns inte för pappa (Hem, kalender).
+- [ ] Som barn: kan lägga in en kompis, kan inte ändra familjens.
+- [ ] På dagen: push "… i dag! Glöm inte att gratulera 🎉".
+

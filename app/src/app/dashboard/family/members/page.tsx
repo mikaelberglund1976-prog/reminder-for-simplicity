@@ -247,6 +247,12 @@ export default function FamilyMembersPage() {
           </div>
         ) : (
           <>
+            {/* 2026-10-10: birthdays live on their own page. */}
+            <Link href="/dashboard/birthdays" style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--tint-pink)", color: "var(--fg)", borderRadius: 14, padding: "12px 14px", marginBottom: 14, textDecoration: "none", fontSize: 14, fontWeight: 700 }}>
+              <span aria-hidden style={{ fontSize: 18 }}>🎂</span>
+              <span style={{ flex: 1 }}>{msg.birthdays.title}</span>
+              <span style={{ color: "var(--pink)" }}>→</span>
+            </Link>
             {flash && (
               <div style={{ fontSize: 13, color: "var(--success)", background: "var(--tint-success)", borderRadius: 12, padding: "10px 12px", marginBottom: 14, fontWeight: 600, lineHeight: 1.4 }}>
                 {flash}

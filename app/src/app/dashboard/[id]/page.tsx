@@ -473,7 +473,7 @@ export default function ReminderDetailPage() {
 
         {canEdit ? (<>
         {/* Edit button */}
-        <Link href={"/dashboard/" + reminder.id + "/edit"} style={{
+        <Link href={reminder.category === "BIRTHDAY" ? "/dashboard/birthdays" : "/dashboard/" + reminder.id + "/edit"} style={{
           display: "flex", alignItems: "center", justifyContent: "center",
           width: "100%", padding: "17px", borderRadius: 50,
           background: "var(--ink)", border: "none",

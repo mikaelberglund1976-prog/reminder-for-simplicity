@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { getOccurrencesInRange, type RecurringItem } from "@/lib/recurrence";
 import { buildIcsFeed, type IcsEvent } from "@/lib/ics";
 import { getTimes } from "@/lib/reminderTimes";
+import { getBirthdayRows } from "@/lib/birthdays";
+import { birthdayTitle } from "@/lib/birthdayLabel";
+import { getLocaleForUser } from "@/lib/i18n/server";
+import { getMessages } from "@/lib/i18n/messages";
 
 // GET /api/calendar/feed/[token].ics — public, no login. The token itself is
 // the auth (same trust model as List.shareToken / Household.shoppingListShareToken):
@@ -34,6 +38,8 @@ export async function GET(_req: Request, { params }: { params: { token: string }
           isActive: true,
           OR: [
             { userId: user.id },
+            // 2026-10-10: assigned to me = shared with me (as in GET /api/reminders).
+            { householdId: membership.householdId, assignedTo: user.id },
             {
               householdId: membership.householdId,
               visibility: { in: visibleLevels as ("HOUSEHOLD" | "PARENTS")[] },
@@ -69,6 +75,9 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     };
 
     const times = await getTimes(reminders.map((r) => r.id));
+    // 2026-10-10: birthdays get "🎂 Elsa turns 13" in the person's language.
+    const bdays = await getBirthdayRows(reminders.filter((r) => r.category === "BIRTHDAY").map((r) => r.id)).catch(() => new Map());
+    const bm = bdays.size ? getMessages(await getLocaleForUser(user.id)).birthdays : null;
     const events: IcsEvent[] = [];
     for (const r of reminders) {
       const time = times.get(r.id);
@@ -86,6 +95,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
           // the phone's own calendar too.
           title: r.category === "SCHOOL"
             ? `${r.schoolKind === "TEST" ? "🧪 Test" : r.schoolKind === "HOMEWORK" ? "📝 Homework" : "📚 School"}: ${r.subject ? r.subject + " – " : ""}${r.name}`
+            : bm && bdays.has(r.id) ? birthdayTitle(r.name, bdays.get(r.id)!.birthYear, occ, bm, bdays.get(r.id)!.kind)
             : r.name,
           date: occ,
           startTime: time?.startTime ?? null,

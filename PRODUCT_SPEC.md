@@ -479,6 +479,9 @@ Detaljer: `TODO.md` punkt 31.
 ### 4b.43 Svenska + flerspråksstöd (2026-10-04, live)
 Hela appen (utom admin) och alla familjemejl på svenska och engelska. Språket väljs per familj av familjens admin (Family members → Language, eller Settings → Preferences). Ny familj ärver grundarens språk; startsidan och /features följer webbläsarens språk och säger att appen finns på svenska (ingen väljare där); login/register har språkknapp (cookie `rfs_lang`). Arkitektur i `lib/i18n/` – nytt språk = config + kopia av `messages/en` + privacy-text. Se `RELEASE_2026-10-04b.md`.
 
+### 4b.44 Födelsedagar (2026-10-10, live)
+Egen sida *Födelsedagar*. Familjemedlemmar har en rad var. Utanför familjen finns typerna Släkt, Kompis, Husdjur och Annan. Dag och månad krävs, årtal är frivilligt och ger "🎂 Elsa fyller 13". Varje födelsedag **gäller hela familjen eller en person**. Gäller den ett barn ser och påminns även de vuxna. Påminnelse kommer 1 vecka före (valbart) via mejl och push, och på dagen går en push till familjen. Släktingar som barnets önskelista delats med (4b.31) får också påminnelsen. Födelsedagarna syns i kalendern, ICS, Hem och kvällsnotisen. Barn kan lägga in egna kompisar och husdjur. **Free.** Byggt på `Reminder` (BIRTHDAY/YEARLY) + tabellen `birthdays`. Se `RELEASE_2026-10-10d.md`.
+
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
 - [ ] **WhatsApp-påminnelser** – Alternativ kanal till email, högre öppningsgrad

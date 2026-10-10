@@ -39,6 +39,7 @@ export const home = {
     chores: "Chores",
     wishlists: "Wishlists",
     calendar: "Calendar",
+    birthdays: "Birthdays",
     scan: "Scan newsletter",
   },
   pro: "PRO",

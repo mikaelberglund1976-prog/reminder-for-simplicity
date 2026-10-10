@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { withTimes, timesFromBody, setTime } from "@/lib/reminderTimes";
+import { withBirthdays } from "@/lib/birthdays";
 
 const reminderSchema = z.object({
   name: z.string().min(1, "Namn kravs").max(200),
@@ -68,7 +69,8 @@ export async function GET() {
   }
 
   // 2026-10-07: optional time of day, see lib/reminderTimes.ts.
-  return NextResponse.json(await withTimes(reminders));
+  // 2026-10-10: birthdays carry { personId, birthYear, kind } for "turns 13".
+  return NextResponse.json(await withBirthdays(await withTimes(reminders)));
 }
 
 // POST /api/reminders

@@ -3,6 +3,7 @@ import { account } from "./account";
 import { activities } from "./activities";
 import { activityFeeds } from "./activityFeeds";
 import { auth } from "./auth";
+import { birthdays } from "./birthdays";
 import { calendar } from "./calendar";
 import { childHome } from "./childHome";
 import { chores } from "./chores";
@@ -39,6 +40,7 @@ export const en = {
   activities,
   activityFeeds,
   auth,
+  birthdays,
   calendar,
   childHome,
   chores,

@@ -14,6 +14,7 @@ import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
 import { useFamilyColors } from "@/lib/familyColorsClient";
 import type { ColorKind } from "@/lib/familyColors";
 import { withNextDate, getOccurrencesInRange, dateKey, type RecurringItem } from "@/lib/recurrence";
+import { reminderDisplayName, type BirthdayMeta } from "@/lib/birthdayLabel";
 import { normalizeHomePrefs, type HomePrefs } from "@/lib/homePrefs";
 import { formatTimeRange } from "@/lib/timeFormat";
 import { useI18n } from "@/lib/i18n/client";
@@ -59,6 +60,7 @@ type Reminder = {
   assignedTo?: string | null;
   user?: { id: string; name: string | null };
   startTime?: string | null;
+  birthday?: BirthdayMeta | null;
 };
 
 // 2026-10-04: category / recurrence words come from messages.reminders.
@@ -152,6 +154,13 @@ function formatDate(dateStr: string, dateLocale: string) {
 // subscriptions they have) to a US third party. Brand colour + initials now,
 // nothing leaves the app.
 function ServiceLogo({ name }: { name: string }) {
+  // 2026-10-10: birthdays are named "🎂 Elsa turns 13" — show the emoji.
+  const emoji = ["🎂", "🎈", "🐾"].find((e) => name.startsWith(e + " "));
+  if (emoji) {
+    return (
+      <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "var(--tint-pink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }} aria-hidden>{emoji}</div>
+    );
+  }
   const { color } = getBrandInfo(name);
   const initials = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   return (
@@ -182,6 +191,7 @@ function IcSchool()  { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d=
 function IcChecklist() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="m4 6 1 1 2-2"/><path d="m4 12 1 1 2-2"/><path d="m4 18 1 1 2-2"/></svg>; }
 function IcGift()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="8" width="18" height="4"/><rect x="4" y="12" width="16" height="9"/><path d="M12 8v13M12 8c-1.5-3-5-3-5-1s2 1 5 1zM12 8c1.5-3 5-3 5-1s-2 1-5 1z"/></svg>; }
 function IcCalendar() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
+function IcCake() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3M12 8v3M17 8v3"/></svg>; }
 function IcBellPlus() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M12 6v5M9.5 8.5h5"/></svg>; }
 
 // Order = how often the personas reached for them in the review.
@@ -192,6 +202,8 @@ const QUICK_ACTIONS: { label: keyof Messages["home"]["quick"]; href: string; Ico
   { label: "homework", href: "/dashboard/school",           Icon: IcSchool,    color: "var(--accent)",  tint: "var(--tint-accent)" , pro: true },
   { label: "chores",        href: "/dashboard/family",               Icon: IcChecklist, color: "var(--warning)", tint: "var(--tint-warning)" , pro: true },
   { label: "wishlists",     href: "/dashboard/wishlist",             Icon: IcGift,      color: "var(--danger)",  tint: "var(--tint-danger)" , pro: true },
+  // 2026-10-10: birthdays are free.
+  { label: "birthdays",     href: "/dashboard/birthdays",            Icon: IcCake,      color: "var(--pink)",    tint: "var(--tint-pink)" },
   { label: "calendar",      href: "/dashboard/calendar",             Icon: IcCalendar,  color: "var(--fg-2)",    tint: "var(--surface-3)" },
 ];
 
@@ -237,7 +249,7 @@ function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, househo
   const sharedByName = isShared ? (reminder.user?.name?.split(" ")[0] ?? msg.home.someone) : null;
   const ownerMember = reminder.assignedTo ? householdMembers.find(m => m.userId === reminder.assignedTo) : null;
   const ownerName = ownerMember ? (ownerMember.user.name?.split(" ")[0] ?? ownerMember.user.email.split("@")[0]) : null;
-  const isUnassigned = householdMembers.length > 1 && !reminder.assignedTo;
+  const isUnassigned = householdMembers.length > 1 && !reminder.assignedTo && reminder.category !== "BIRTHDAY";
   return (
     <div onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       style={{
@@ -352,7 +364,8 @@ export default function DashboardPage() {
       const res = await fetch("/api/reminders");
       const data = await res.json();
       // 2026-10-04: recurring items show their next date everywhere (as in the calendar).
-      setReminders(Array.isArray(data) ? data.map(withNextDate) : []);
+      // 2026-10-10: birthdays read "🎂 Elsa turns 13" for their next occurrence.
+      setReminders(Array.isArray(data) ? data.map(withNextDate).map((r: Reminder) => ({ ...r, name: reminderDisplayName(r, new Date(r.date), msg.birthdays) })) : []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }

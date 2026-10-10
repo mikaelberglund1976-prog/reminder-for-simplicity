@@ -10,6 +10,7 @@ export const nav: Messages["nav"] = {
   activities: "Aktiviteter",
   school: "Skola",
   familyMembers: "Familjemedlemmar",
+  birthdays: "Födelsedagar",
   ideas: "Idéer & röstning",
   settings: "Inställningar",
   privacy: "Integritet",

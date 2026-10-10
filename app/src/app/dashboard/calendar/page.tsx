@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import Avatar from "@/components/Avatar";
 import { getOccurrencesInRange, dateKey, type RecurringItem } from "@/lib/recurrence";
+import { reminderDisplayName, type BirthdayMeta } from "@/lib/birthdayLabel";
 import { formatTimeRange } from "@/lib/timeFormat";
 import { useI18n } from "@/lib/i18n/client";
 import { weekdayName } from "@/lib/i18n/format";
@@ -96,6 +97,7 @@ type Reminder = {
   amount: number | null; currency: string | null;
   startTime?: string | null; endTime?: string | null;
   assignedTo?: string | null; userId?: string;
+  birthday?: BirthdayMeta | null;
 };
 
 type Chore = {
@@ -328,13 +330,16 @@ export default function CalendarPage() {
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
+        // 2026-10-10: "🎂 Elsa turns 13" — the age for that year's occurrence.
+        const title = reminderDisplayName(r, occ, msg.birthdays);
         list.push({
-          occDate: occ, id: r.id, name: r.name, kind: "reminder",
+          occDate: occ, id: r.id, name: title, kind: "reminder",
           color: CATEGORY_COLOR[r.category] ?? CATEGORY_COLOR.OTHER,
           subtitle: withTime(formatTimeRange(r), `${msg.reminders.categories[r.category] ?? r.category}${r.recurrence !== "ONCE" ? " · " + msg.reminders.recurrence[r.recurrence] : ""}`),
-          short: chipWithTime(r.startTime, r.name),
+          short: chipWithTime(r.startTime, title),
           startTime: r.startTime ?? null,
-          personId: r.assignedTo ?? r.userId ?? null,
+          // A family member's birthday belongs to that person in the person filter.
+          personId: r.birthday?.personId ?? r.assignedTo ?? r.userId ?? null,
         });
         map.set(key, list);
       }

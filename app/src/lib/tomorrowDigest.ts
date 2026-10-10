@@ -4,6 +4,7 @@
 // the "tomorrow" kind selected get one, and only when there is something.
 //  - Adults: every child's tests/homework due tomorrow + everyone's activities.
 //  - Children: their own.
+//  - 2026-10-10: tomorrow's birthdays the person can see ("🎂 Elsa turns 13").
 import { prisma } from "@/lib/prisma";
 import { getOccurrencesInRange, type RecurrenceRule } from "@/lib/recurrence";
 import { getTimes } from "@/lib/reminderTimes";
@@ -11,6 +12,8 @@ import { ensurePushTables, getPushKinds, sendPushToUser } from "@/lib/webPush";
 import { getLocaleForUser } from "@/lib/i18n/server";
 import { getMessages } from "@/lib/i18n/messages";
 import { DATE_LOCALES } from "@/lib/i18n/config";
+import { getBirthdayRows } from "@/lib/birthdays";
+import { birthdayTitle, nextBirthdayDate } from "@/lib/birthdayLabel";
 
 const ADULT = ["OWNER", "PARENT", "ADULT"];
 
@@ -51,7 +54,23 @@ export async function runTomorrowDigest(now = new Date()) {
         if (r.category === "SCHOOL") return !r.completedAt && dayStr(r.date) === tKey;
         return getOccurrencesInRange({ date: r.date.toISOString(), recurrence: r.recurrence as RecurrenceRule, choreRecurrenceDays: r.choreRecurrenceDays }, tomorrow, tomorrow).length > 0;
       });
-      if (due.length === 0) continue;
+      // Birthdays tomorrow that this person sees (same rule as GET /api/reminders).
+      const bdayCandidates = await prisma.reminder.findMany({
+        where: {
+          householdId: member.householdId, isActive: true, category: "BIRTHDAY",
+          OR: [
+            { userId }, { assignedTo: userId },
+            { visibility: { in: (isAdult ? ["HOUSEHOLD", "PARENTS"] : ["HOUSEHOLD"]) as ("HOUSEHOLD" | "PARENTS")[] } },
+          ],
+        },
+        select: { id: true, name: true },
+      });
+      const bdayRows = await getBirthdayRows(bdayCandidates.map((b) => b.id)).catch(() => new Map() as Awaited<ReturnType<typeof getBirthdayRows>>);
+      const bdays = bdayCandidates.filter((b) => {
+        const row = bdayRows.get(b.id);
+        return row && row.personId !== userId && dayStr(nextBirthdayDate(row.birthMonth, row.birthDay, tomorrow)) === tKey;
+      });
+      if (due.length === 0 && bdays.length === 0) continue;
 
       const locale = await getLocaleForUser(userId);
       const m = getMessages(locale);
@@ -64,6 +83,10 @@ export async function runTomorrowDigest(now = new Date()) {
           const who = isAdult && r.assignedTo && r.assignedTo !== userId ? `${nameOf.get(r.assignedTo) || "?"}: ` : "";
           return { sort: time ?? "99:99", text: who + label };
         })
+        .concat(bdays.map((b) => {
+          const row = bdayRows.get(b.id)!;
+          return { sort: "00:00", text: birthdayTitle(b.name, row.birthYear, tomorrow, m.birthdays, row.kind) };
+        }))
         .sort((a, b) => a.sort.localeCompare(b.sort));
       const shown = lines.slice(0, 4).map((l) => l.text);
       if (lines.length > 4) shown.push(m.push.more(lines.length - 4));

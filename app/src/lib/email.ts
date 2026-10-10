@@ -788,3 +788,26 @@ export async function sendWishlistShareEmail({ to, inviterName, childName, local
     buttonUrl: `${APP_URL}/gifts`,
   }), "wishlist share");
 }
+
+
+// 2026-10-10: birthday reminder (PRODUCT_SPEC 4b.33) — to the family's adults,
+// and to relatives the child's wishlist is shared with (button → /gifts).
+// `title` is built per recipient language by the caller ("🎂 Elsa fyller 13").
+export async function sendBirthdayEmail({ to, name, title, date, daysLeft, wishlistUrl, guest = false, locale }: {
+  to: string; name: string | null; title: string; date: Date; daysLeft: number; wishlistUrl?: string | null; guest?: boolean; locale?: Locale;
+}) {
+  const { l, t, d } = await lang(to, locale);
+  const b = getMessages(l).birthdays;
+  const when = daysLeft <= 0 ? t.reminder.dueToday : daysLeft === 1 ? t.reminder.dueTomorrow : t.reminder.dueIn(daysLeft);
+  const lines = [b.emailBody(title, d(date))];
+  if (wishlistUrl) lines.push(b.emailWishlist);
+  await sendSimple(to, b.emailSubject(title, when), simpleEmailHtml({
+    htmlLang: t.htmlLang,
+    icon: title.split(" ")[0] || "🎂",
+    greeting: t.hi(name?.split(" ")[0] ?? t.there),
+    lines,
+    buttonText: wishlistUrl ? b.emailWishlistButton : b.emailButton,
+    buttonUrl: wishlistUrl ?? `${APP_URL}/dashboard/birthdays`,
+    footer: guest ? b.emailGuestWhy : b.emailWhy,
+  }), "birthday");
+}

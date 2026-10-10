@@ -141,6 +141,8 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] Stjärnor + veckopeng, dela önskelista med släkten, "I dag" på Hem (`RELEASE_2026-10-09c.md`)
 - [x] AI-intag av veckobrev/skolmejl – byggt, väntar på `ANTHROPIC_API_KEY` (`RELEASE_2026-10-10.md`)
 - [ ] **Senare:** steg 2 i AI-intaget – vidarebefordrat mejl
+- [x] Födelsedagar: familj, släkt, kompisar och husdjur, "fyller 13", gäller alla eller en person, påminnelse till familjen och släkten, push på dagen. Free (`RELEASE_2026-10-10d.md`)
+- [ ] **Senare:** födelsedagar ur telefonens kontakter, kalas-planering (inbjudan + OSA) kopplad till önskelistan
 
 ## Fas 1.12 – Lotuvi-varumärket (2026-10-10, LIVE utom namnet)
 - [x] Ljust läge Lotuvi Family, ikoner/favicon, logomärke, figur på startsidan (`RELEASE_2026-10-10b.md`)
