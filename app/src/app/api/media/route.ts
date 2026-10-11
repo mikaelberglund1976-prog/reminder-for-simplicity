@@ -20,7 +20,7 @@ export async function GET() {
       ? await prisma.householdMember.findMany({ where: { householdId: membership.householdId }, select: { userId: true, role: true } })
       : [];
     const ids = members.length ? members.map((m) => m.userId) : [session.user.id];
-    const versions = await mediaVersions(membership?.householdId ?? null, ids);
+    const versions = await mediaVersions(membership?.householdId ?? null, ids, session.user.id);
     const isParent = !!membership && PARENT_ROLES.includes(membership.role);
     return NextResponse.json({
       ...versions,
@@ -30,6 +30,6 @@ export async function GET() {
     });
   } catch (err) {
     console.error("Media GET error:", err);
-    return NextResponse.json({ header: null, avatars: {}, canEditHeader: false, canEditAvatarFor: [] });
+    return NextResponse.json({ header: null, myHeader: null, avatars: {}, canEditHeader: false, canEditAvatarFor: [] });
   }
 }

@@ -10,7 +10,7 @@ import HamburgerMenu from "@/components/HamburgerMenu";
 import AdSlot from "@/components/AdSlot";
 import Avatar from "@/components/Avatar";
 import { getMe } from "@/lib/me";
-import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
+import { homeHeaderUrl, useFamilyMedia } from "@/lib/familyMedia";
 import { useFamilyColors } from "@/lib/familyColorsClient";
 import type { ColorKind } from "@/lib/familyColors";
 import { withNextDate, getOccurrencesInRange, dateKey, type RecurringItem } from "@/lib/recurrence";
@@ -183,6 +183,7 @@ function IcDown()    { return <svg width={13} height={13} viewBox="0 0 24 24" {.
 function IcPlus()    { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>; }
 
 const HOME_LIST_LIMIT = 5;
+const HOME_BIRTHDAY_LIMIT = 2;
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
 function IcCart()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 6H5.6"/></svg>; }
@@ -448,7 +449,14 @@ export default function DashboardPage() {
     if (sortBy === "amount_desc") return (b.amount ?? 0) - (a.amount ?? 0);
     return 0;
   });
+  // 2026-10-11 (Mikael): with the whole family's birthdays on, they took over
+  // the list. Home shows only the next two; the Birthdays page has them all.
+  // Picking the "Birthdays" filter still lists every one.
+  const birthdaysSoonest = reminders.filter(r => r.category === "BIRTHDAY").sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date));
+  const shownBirthdayIds = new Set(birthdaysSoonest.slice(0, HOME_BIRTHDAY_LIMIT).map(r => r.id));
+  const hiddenBirthdays = filterCategory === "BIRTHDAY" ? 0 : Math.max(0, birthdaysSoonest.length - HOME_BIRTHDAY_LIMIT);
   const filtered = sorted.filter(r => {
+    if (r.category === "BIRTHDAY" && filterCategory !== "BIRTHDAY" && !shownBirthdayIds.has(r.id)) return false;
     if (filterCategory === "FAMILY")     return r.user && r.user.id !== session?.user?.id;
     if (filterCategory === "UNASSIGNED") return !r.assignedTo;
     if (filterCategory !== "ALL")        return r.category === filterCategory;
@@ -540,6 +548,8 @@ export default function DashboardPage() {
     );
   }
 
+  const homeHeader = homeHeaderUrl(media);
+
   const dropdownStyle = {
     width: "100%", appearance: "none" as const, WebkitAppearance: "none" as const,
     background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 12,
@@ -552,11 +562,13 @@ export default function DashboardPage() {
     <div style={{ minHeight: "100vh", background: "var(--background)", paddingBottom: 24, fontFamily: FONT }}>
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "32px 20px 0" }}>
 
-        {/* 2026-09-28 (test round, row 40): the family's own photo on top. */}
-        {media.header && (
-          <Link href="/dashboard/family/members" aria-label={t.familyPhotoAria} style={{ display: "block", margin: "-12px 0 18px", borderRadius: 22, overflow: "hidden", boxShadow: "var(--shadow)" }}>
+        {/* 2026-09-28 (test round, row 40): the family's own photo on top.
+            2026-10-11: a person's own picture wins over it (Settings → My
+            picture on Home); remove it and the family photo comes back. */}
+        {homeHeader && (
+          <Link href="/profile#home-picture" aria-label={t.familyPhotoAria} style={{ display: "block", margin: "-12px 0 18px", borderRadius: 22, overflow: "hidden", boxShadow: "var(--shadow)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={headerUrl(media.header)} alt="" style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }} />
+            <img src={homeHeader} alt="" style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }} />
           </Link>
         )}
 
@@ -863,6 +875,16 @@ export default function DashboardPage() {
                     isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
                 ))}
                   </div>
+            )}
+
+            {hiddenBirthdays > 0 && (
+              <Link href="/dashboard/birthdays" style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, padding: "12px 16px", borderRadius: 16,
+                background: "var(--surface)", border: "1px solid var(--border)", textDecoration: "none",
+                fontSize: 14, fontWeight: 700, color: "var(--accent)", fontFamily: FONT,
+              }}>
+                <span>🎂 {t.allBirthdays(birthdaysSoonest.length)}</span><span aria-hidden>→</span>
+              </Link>
             )}
 
             {filtered.length > HOME_LIST_LIMIT && (

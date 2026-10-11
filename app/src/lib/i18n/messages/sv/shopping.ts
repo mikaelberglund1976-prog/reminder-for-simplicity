@@ -81,4 +81,11 @@ export const shopping: Messages["shopping"] = {
   publicIntro: "Delad med dig – lägg till, bocka av eller ta bort vad du vill.",
   addAnItem: "Lägg till en vara…",
   madeWith: "Gjord med Reminder for Simplicity",
+  itemOptions: "Val för varan",
+  category: "Kategori",
+  categoryRemembered: (name) => `Nästa gång någon lägger till ”${name}” hamnar den i samma kategori.`,
+  addedByName: (name) => `Tillagd av ${name}`,
+  textSize: "Text",
+  textSizes: { S: "Liten", M: "Normal", L: "Stor", XL: "Extra stor" },
+  storeProgress: (done, total) => `${done} av ${total} i korgen`,
 };

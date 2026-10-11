@@ -59,7 +59,7 @@ export const members: Messages["members"] = {
   sendInvite: "Skicka inbjudan",
   familyPhoto: "Familjebild",
   noFamilyPhoto: "Ingen familjebild än",
-  familyPhotoHint: "Visas överst på Hem för alla i familjen.",
+  familyPhotoHint: "Visas överst på Hem för alla i familjen – den som har valt en egen bild ser sin egen.",
   uploading: "Laddar upp…",
   choosePhoto: "Välj bild",
 };

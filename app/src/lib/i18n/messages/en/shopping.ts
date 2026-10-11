@@ -80,4 +80,12 @@ export const shopping = {
   publicIntro: "Shared with you — add, check off, or remove anything.",
   addAnItem: "Add an item…",
   madeWith: "Made with Reminder for Simplicity",
+  // 2026-10-11: compact list, item sheet and store-mode text size
+  itemOptions: "Item options",
+  category: "Category",
+  categoryRemembered: (name: string) => `Next time someone adds “${name}” it lands in the same category.`,
+  addedByName: (name: string) => `Added by ${name}`,
+  textSize: "Text",
+  textSizes: { S: "Small", M: "Normal", L: "Large", XL: "Extra large" },
+  storeProgress: (done: number, total: number) => `${done} of ${total} in the cart`,
 };

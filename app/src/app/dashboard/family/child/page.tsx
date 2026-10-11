@@ -15,9 +15,10 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SchoolSection from "@/components/SchoolSection";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import Link from "next/link";
 import AvatarPicker from "@/components/AvatarPicker";
 import Avatar from "@/components/Avatar";
-import { headerUrl, useFamilyMedia } from "@/lib/familyMedia";
+import { headerUrl, homeHeaderUrl, useFamilyMedia } from "@/lib/familyMedia";
 import { withNextDate } from "@/lib/recurrence";
 import { useI18n } from "@/lib/i18n/client";
 import { weekdayName } from "@/lib/i18n/format";
@@ -246,13 +247,23 @@ function ChildViewContent() {
       </div>
 
       <main style={{ maxWidth: "var(--content-max-width)", margin: "0 auto", padding: "16px 20px 0" }}>
-        {/* The family photo — same picture as on everyone's Home. */}
-        {media.header && (
-          <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)", marginBottom: 16 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={headerUrl(media.header)} alt="" style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
-          </div>
-        )}
+        {/* The family photo — same picture as on everyone's Home.
+            2026-10-11: on a child's own Home their own picture wins
+            (Settings → My picture on Home). A parent looking at the child's
+            week keeps seeing the family photo. */}
+        {(() => {
+          const src = isOwn ? homeHeaderUrl(media) : media.header ? headerUrl(media.header) : null;
+          if (!src) return null;
+          const img = (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={src} alt="" style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
+          );
+          return isOwn ? (
+            <Link href="/profile#home-picture" style={{ display: "block", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)", marginBottom: 16 }}>{img}</Link>
+          ) : (
+            <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)", marginBottom: 16 }}>{img}</div>
+          );
+        })()}
 
         {/* Overview — what needs doing, at a glance. */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 22 }}>

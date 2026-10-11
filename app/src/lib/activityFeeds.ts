@@ -272,9 +272,14 @@ export function parseActivities(text: string, from: Ymd, to: Ymd): ActivityEntry
   for (const e of events) {
     const p = e.props;
     const uid = p.UID?.value?.trim();
-    const summary = unescapeText(p.SUMMARY?.value ?? "");
+    const rsvp = splitRsvp(unescapeText(p.SUMMARY?.value ?? ""));
+    const summary = rsvp.summary;
     const start = p.DTSTART ? parseWall(p.DTSTART.value) : null;
     if (!uid || !summary || !start) continue;
+    // 2026-10-11 (Mikael): MyClub puts your answer first, e.g. "[Nej] Träning".
+    // A "no" isn't something you're going to, so it isn't imported (one that
+    // was imported earlier is removed on the next sync like any cancelled event).
+    if (rsvp.declined) continue;
     if ((p.STATUS?.value ?? "").toUpperCase() === "CANCELLED") continue;
     if ((p.TRANSP?.value ?? "").toUpperCase() === "TRANSPARENT" && !start.time && /^(v\.|vecka|week)\s*\d+$/i.test(summary)) continue;
     const location = p.LOCATION ? unescapeText(p.LOCATION.value).slice(0, 200) || null : null;
@@ -305,6 +310,18 @@ export function parseActivities(text: string, from: Ymd, to: Ymd): ActivityEntry
   }
   out.sort((a, b) => a.ymd.localeCompare(b.ymd) || (a.startTime ?? "").localeCompare(b.startTime ?? ""));
   return out;
+}
+
+// 2026-10-11 (Mikael): club calendars (MyClub) start the title with the
+// answer — "[Ja] Träning P15". At the start it ate the space where the
+// activity name should be, so it's moved to the end ("Träning P15 [Ja]"),
+// and a "no" marks the event as declined.
+const DECLINED = new Set(["nej", "no", "declined", "avböjt", "avbojt", "kommer inte", "ej"]);
+export function splitRsvp(raw: string): { summary: string; declined: boolean } {
+  const m = /^\s*\[([^\]]{1,15})\]\s*(.+)$/.exec(raw);
+  if (!m) return { summary: raw.trim(), declined: false };
+  const tag = m[1].trim();
+  return { summary: `${m[2].trim()} [${tag}]`, declined: DECLINED.has(tag.toLowerCase()) };
 }
 
 function calendarName(text: string): string | null {
@@ -369,7 +386,17 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
       if (imp) {
         if (imp.hidden || imp.edited) continue;
         const r = rById.get(imp.reminderId);
-        if (!r || !r.isActive) continue;
+        if (!r) continue;
+        if (!r.isActive) {
+          // 2026-10-11: removed earlier by a sync (e.g. answered "Nej" in
+          // MyClub) and now back in the calendar (answer changed) → bring it
+          // back. Deleted in the app = hidden, which was skipped above.
+          if (e.ymd < todayYmd) continue;
+          await prisma.reminder.update({ where: { id: r.id }, data: { isActive: true, name, date, note, assignedTo: feed.childId } });
+          await setTime(r.id, { startTime: e.startTime, endTime: e.endTime });
+          updated++;
+          continue;
+        }
         const t = times.get(r.id);
         const changed = r.name !== name || r.date.getTime() !== date.getTime() || (r.note ?? null) !== note || r.assignedTo !== feed.childId;
         const timeChanged = (t?.startTime ?? null) !== e.startTime || (t?.endTime ?? null) !== e.endTime;

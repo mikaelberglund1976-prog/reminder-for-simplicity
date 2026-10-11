@@ -57,7 +57,7 @@ export const members = {
   sendInvite: "Send invite",
   familyPhoto: "Family photo",
   noFamilyPhoto: "No family photo yet",
-  familyPhotoHint: "Shown at the top of Home for everyone in the family.",
+  familyPhotoHint: "Shown at the top of Home for everyone in the family — anyone who picked their own picture sees theirs.",
   uploading: "Uploading…",
   choosePhoto: "Choose photo",
 };

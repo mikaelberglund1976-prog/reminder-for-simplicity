@@ -21,7 +21,7 @@ export const home: Messages["home"] = {
     hide: "Dölj guiden",
   },
   thinking: "Reminder for Simplicity tänker…",
-  familyPhotoAria: "Familjebild – byt den under Familjemedlemmar",
+  familyPhotoAria: "Startsidans bild – välj en egen i Inställningar",
   planPro: "⚡ Pro",
   planTrial: (days) => `⚡ Provperiod · ${days ?? 0} dagar kvar`,
   planFree: "Gratis · Testa Pro",
@@ -67,6 +67,7 @@ export const home: Messages["home"] = {
   addFirst: "+ Lägg till din första påminnelse",
   showFewer: "Visa färre",
   seeAllCount: (n) => `Visa alla (${n})`,
+  allBirthdays: (n) => `Alla födelsedagar (${n})`,
   addReminder: "+ Lägg till påminnelse",
   addReminderAria: "Lägg till påminnelse",
 };

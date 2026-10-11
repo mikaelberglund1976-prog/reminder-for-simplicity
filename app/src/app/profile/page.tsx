@@ -20,6 +20,7 @@ import HomePrefsSettings from "@/components/HomePrefsSettings";
 import FamilyColorsSettings from "@/components/FamilyColorsSettings";
 import { isManagedEmail } from "@/lib/managedProfileClient";
 import PushCard from "@/components/PushCard";
+import MyHomePicture from "@/components/MyHomePicture";
 
 type HouseholdMember = {
   id: string;
@@ -595,6 +596,15 @@ export default function ProfilePage() {
               <Hint>{t.bottomNavHint(bottomNavApps.length)}</Hint>
             </Field>
           </Card>
+
+          {/* 2026-10-11: everyone's own picture at the top of Home. */}
+          {profile && (
+            <div id="home-picture" style={{ scrollMarginTop: 16 }}>
+              <Card title={msg.homePrefs.myPictureTitle}>
+                <MyHomePicture />
+              </Card>
+            </div>
+          )}
 
           {/* 2026-10-09: what Home shows (adults — a child has their own Home). */}
           {profile && !profile.isChildProfile && (

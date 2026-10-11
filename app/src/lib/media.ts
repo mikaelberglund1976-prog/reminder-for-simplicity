@@ -2,11 +2,15 @@
 // per household and a profile picture per person. See `model MediaImage`.
 import { prisma } from "@/lib/prisma";
 
-export type MediaKind = "avatar" | "header";
+// 2026-10-11: "myheader" = a person's own Home picture (ownerId = userId).
+// It replaces the family header for that person only; removing it brings the
+// family header back.
+export type MediaKind = "avatar" | "header" | "myheader";
 
 export const MAX_BYTES: Record<MediaKind, number> = {
   avatar: 300 * 1024,
   header: 900 * 1024,
+  myheader: 900 * 1024,
 };
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -69,24 +73,27 @@ export async function loadImage(kind: MediaKind, ownerId: string) {
 }
 
 /** Versions (updatedAt, ms) for a household's header + its members' avatars — no image bytes. */
-export async function mediaVersions(householdId: string | null, userIds: string[]) {
+export async function mediaVersions(householdId: string | null, userIds: string[], viewerId?: string) {
   await ensureMediaTable();
   const rows = await prisma.mediaImage.findMany({
     where: {
       OR: [
         ...(householdId ? [{ kind: "header", ownerId: householdId }] : []),
         ...(userIds.length ? [{ kind: "avatar", ownerId: { in: userIds } }] : []),
+        ...(viewerId ? [{ kind: "myheader", ownerId: viewerId }] : []),
       ],
     },
     select: { kind: true, ownerId: true, updatedAt: true },
   });
   const avatars: Record<string, number> = {};
   let header: number | null = null;
+  let myHeader: number | null = null;
   for (const r of rows) {
     if (r.kind === "header") header = r.updatedAt.getTime();
+    else if (r.kind === "myheader") myHeader = r.updatedAt.getTime();
     else avatars[r.ownerId] = r.updatedAt.getTime();
   }
-  return { header, avatars };
+  return { header, myHeader, avatars };
 }
 
 export function imageResponseHeaders(mime: string, length: number): HeadersInit {
@@ -114,5 +121,8 @@ export async function purgeOrphanMedia(): Promise<number> {
   const h = await prisma.$executeRawUnsafe(
     `DELETE FROM "media_images" m WHERE m."kind" = 'header' AND NOT EXISTS (SELECT 1 FROM "households" x WHERE x."id" = m."ownerId")`
   );
-  return a + h;
+  const p = await prisma.$executeRawUnsafe(
+    `DELETE FROM "media_images" m WHERE m."kind" = 'myheader' AND NOT EXISTS (SELECT 1 FROM "users" u WHERE u."id" = m."ownerId")`
+  );
+  return a + h + p;
 }

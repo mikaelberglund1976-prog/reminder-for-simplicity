@@ -7,12 +7,14 @@ import { useEffect, useState } from "react";
 
 export type FamilyMedia = {
   header: number | null;
+  /** 2026-10-11: the viewer's own Home picture; wins over `header` for them. */
+  myHeader: number | null;
   avatars: Record<string, number>;
   canEditHeader: boolean;
   canEditAvatarFor: string[];
 };
 
-const EMPTY: FamilyMedia = { header: null, avatars: {}, canEditHeader: false, canEditAvatarFor: [] };
+const EMPTY: FamilyMedia = { header: null, myHeader: null, avatars: {}, canEditHeader: false, canEditAvatarFor: [] };
 let current: FamilyMedia | null = null;
 let inflight: Promise<FamilyMedia> | null = null;
 let fetchedAt = 0;
@@ -50,6 +52,31 @@ export function avatarUrl(userId: string, version: number) {
 
 export function headerUrl(version: number) {
   return `/api/media/header?v=${version}`;
+}
+
+export function myHeaderUrl(version: number) {
+  return `/api/media/my-header?v=${version}`;
+}
+
+/** The picture Home shows for this person: their own if set, else the family's. */
+export function homeHeaderUrl(m: FamilyMedia): string | null {
+  if (m.myHeader) return myHeaderUrl(m.myHeader);
+  if (m.header) return headerUrl(m.header);
+  return null;
+}
+
+export async function uploadMyHeader(dataUrl: string) {
+  const res = await fetch(`/api/media/my-header`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataUrl }),
+  });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(d.error ?? "Upload failed");
+  await loadFamilyMedia(true);
+}
+
+export async function removeMyHeader() {
+  await fetch(`/api/media/my-header`, { method: "DELETE" });
+  await loadFamilyMedia(true);
 }
 
 export async function uploadAvatar(userId: string, dataUrl: string) {

@@ -131,8 +131,11 @@ function NewBookingContent() {
         setMembers(householdMembers);
         // Pre-select the first child if there is one, else the first member.
         if (!editId) {
+          // 2026-10-11: opened from a person on the Chores page → that person.
+          const pre = searchParams.get("for");
           const firstChild = householdMembers.find((m) => m.role === "CHILD");
-          if (firstChild) setAssignees([firstChild.id]);
+          if (pre && householdMembers.some((m) => m.id === pre)) setAssignees([pre]);
+          else if (firstChild) setAssignees([firstChild.id]);
           else if (householdMembers.length > 0) setAssignees([householdMembers[0].id]);
         }
       }

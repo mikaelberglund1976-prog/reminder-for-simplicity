@@ -2,6 +2,16 @@
 // "Next up per child" section on Home.
 export const homePrefs = {
   cardTitle: "Home",
+  // 2026-10-11: everyone's own Home picture
+  myPictureTitle: "My picture on Home",
+  myPictureHint: "Your own picture at the top of Home — only you see it. Remove it and the family photo comes back.",
+  myPictureHintNoFamily: "Your own picture at the top of Home — only you see it.",
+  myPictureNone: "No picture yet",
+  myPictureFamily: "Showing the family photo",
+  choosePicture: "Choose picture",
+  changePicture: "Change",
+  removePicture: "Remove",
+  uploading: "Uploading…",
   intro: "Choose what your start page shows. Only affects you.",
   todayTitle: "Today",
   todayEmptyDone: "All done for today",

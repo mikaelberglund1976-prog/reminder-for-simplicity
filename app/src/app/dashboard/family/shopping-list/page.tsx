@@ -111,6 +111,22 @@ export default function ShoppingListPage() {
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [addTab, setAddTab] = useState<"recent" | "categories" | "create" | "scan">("recent");
   const [storeMode, setStoreMode] = useState(false);
+  // 2026-10-11: tapping an item opens a small sheet (category, remove, link)
+  // instead of every row carrying its own category dropdown + trash icon —
+  // that per-row chrome is what made the list take so much space.
+  const [sheetItem, setSheetItem] = useState<Item | null>(null);
+  // Store-mode text size, remembered per device.
+  const [storeSize, setStoreSize] = useState<StoreSize>("M");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("rfs.storeTextSize");
+      if (v === "S" || v === "M" || v === "L" || v === "XL") setStoreSize(v);
+    } catch { /* storage unavailable — keep default */ }
+  }, []);
+  function changeStoreSize(v: StoreSize) {
+    setStoreSize(v);
+    try { localStorage.setItem("rfs.storeTextSize", v); } catch { /* ignore */ }
+  }
 
   // Barcode scanning — uses the browser's native BarcodeDetector API only
   // (Chrome/Edge on Android and desktop; no support in Safari/Firefox yet).
@@ -132,6 +148,7 @@ export default function ShoppingListPage() {
     if (status === "authenticated") {
       fetchLists();
       fetchCategories();
+      fetchMembers();
       fetch("/api/family/shopping-list/suggestions")
         .then((r) => r.json())
         .then((d) => setRecent(d.recent ?? []))
@@ -679,6 +696,11 @@ export default function ShoppingListPage() {
   const canDeleteActive = !!activeList && lists.length > 1 && (canEditAccess || (activeList.isMine && !activeIsShared));
 
   const sortedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
+  // 2026-10-11: when a child put something on the list their first name is
+  // shown small in brackets, e.g. "Äpplen (Elsa)". Adults' items show no name.
+  const childNames = new Map(members.filter((mm) => mm.role === "CHILD").map((mm) => [mm.id, (mm.name || "").split(" ")[0]]));
+  const childNameOf = (item: Item) => childNames.get(item.addedBy || item.adder?.id || "") || null;
+  const liveSheetItem = sheetItem ? items.find((i) => i.id === sheetItem.id) ?? null : null;
   const groups: { key: string; label: string; icon: string; items: Item[] }[] = [
     ...sortedCategories.map((c) => ({ key: c.id, label: categoryLabel(c, msg), icon: c.icon, items: sortByName(pending.filter(i => i.categoryId === c.id)) })),
     { key: "unsorted", label: t.unsorted, icon: UNSORTED_ICON, items: sortByName(pending.filter(i => !i.categoryId)) },
@@ -857,15 +879,19 @@ export default function ShoppingListPage() {
           {t.nothingOnList}
         </div>
       ) : (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 16px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 24 }}>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "2px 14px 4px", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 24 }}>
           {groups.map((group, gi) => (
             <div key={group.key}>
+              {/* 2026-10-11: slim category divider (label · count · rule)
+                  instead of a padded header block. */}
               <div style={{
-                fontSize: 11, fontWeight: 800, color: "var(--subtle)", letterSpacing: "0.04em", textTransform: "uppercase",
-                padding: gi === 0 ? "10px 0 4px" : "14px 0 4px", borderTop: gi === 0 ? "none" : "1px solid var(--border-soft)",
+                fontSize: 11, fontWeight: 800, color: "var(--subtle)", letterSpacing: "0.05em", textTransform: "uppercase",
+                padding: gi === 0 ? "8px 0 2px" : "12px 0 2px",
                 display: "flex", alignItems: "center", gap: 6,
               }}>
-                <span>{group.icon}</span>{group.label}
+                <span aria-hidden>{group.icon}</span>{group.label}
+                <span style={{ fontWeight: 600, color: "var(--faint)" }}>{group.items.length}</span>
+                <span style={{ flex: 1, height: 1, background: "var(--border-soft)", marginLeft: 4 }} />
               </div>
               {group.items.map((item, i) => (
                 <ItemRow
@@ -873,11 +899,9 @@ export default function ShoppingListPage() {
                   m={msg}
                   item={item}
                   isFirst={i === 0}
-                  busy={busyId === item.id}
-                  categories={categories}
+                  childName={childNameOf(item)}
                   onToggle={() => togglePurchased(item)}
-                  onRemove={() => removeItem(item.id)}
-                  onCategoryChange={(catId) => changeCategory(item, catId)}
+                  onOpen={() => setSheetItem(item)}
                 />
               ))}
             </div>
@@ -906,7 +930,7 @@ export default function ShoppingListPage() {
           </div>
           <div style={{ background: "rgba(42,157,111,0.06)", borderRadius: 18, border: "1px solid rgba(42,157,111,0.25)", padding: "4px 16px" }}>
             {purchased.map((item, i) => (
-              <ItemRow key={item.id} m={msg} item={item} isFirst={i === 0} busy={busyId === item.id} categories={categories} onToggle={() => togglePurchased(item)} onRemove={() => removeItem(item.id)} onCategoryChange={(catId) => changeCategory(item, catId)} />
+              <ItemRow key={item.id} m={msg} item={item} isFirst={i === 0} childName={childNameOf(item)} onToggle={() => togglePurchased(item)} onOpen={() => setSheetItem(item)} />
             ))}
           </div>
           <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 8, textAlign: "center" }}>
@@ -1101,82 +1125,178 @@ export default function ShoppingListPage() {
 
       {/* Store mode — 2026-07-28: fullscreen, large-text, one-handed view for
           use while actually shopping. */}
-      {storeMode && (
+      {storeMode && (() => {
+        const sz = STORE_SIZES[storeSize];
+        const total = pending.length + purchased.length;
+        const pct = total ? Math.round((purchased.length / total) * 100) : 0;
+        return (
         <div style={{ position: "fixed", inset: 0, background: "var(--background)", zIndex: 39, fontFamily: FONT, overflowY: "auto" }}>
-          <div style={{ position: "sticky", top: 0, background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)" }}>{t.storeMode}</span>
-            <button
-              onClick={() => setStoreMode(false)}
-              style={{ padding: "10px 18px", borderRadius: 50, background: "var(--ink)", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
-            >
-              {msg.common.done}
-            </button>
+          <div style={{ position: "sticky", top: 0, zIndex: 1, background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "12px 16px 10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)" }}>{t.storeMode}</div>
+                <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 1 }}>{t.storeProgress(purchased.length, total)}</div>
+              </div>
+              {/* 2026-10-11: text-size picker so a long list fits on screen
+                  (small) or reads at arm's length (large). Remembered per device. */}
+              <label htmlFor="store-text-size" style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>{t.textSize}</label>
+              <select
+                id="store-text-size"
+                value={storeSize}
+                onChange={(e) => changeStoreSize(e.target.value as StoreSize)}
+                style={{ minHeight: 40, padding: "0 8px", borderRadius: 10, border: "1.5px solid var(--border)", background: "var(--background)", color: "var(--fg)", fontSize: 14, fontWeight: 700, fontFamily: FONT }}
+              >
+                {(["S", "M", "L", "XL"] as const).map((k) => <option key={k} value={k}>{t.textSizes[k]}</option>)}
+              </select>
+              <button
+                onClick={() => setStoreMode(false)}
+                style={{ minHeight: 40, padding: "0 16px", borderRadius: 50, background: "var(--ink)", color: "#fff", border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
+              >
+                {msg.common.done}
+              </button>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: "var(--border-soft)", overflow: "hidden", marginTop: 10 }}>
+              <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent-bg)", borderRadius: 999, transition: "width 0.2s" }} />
+            </div>
           </div>
-          <div style={{ padding: "16px 20px 60px" }}>
+          <div style={{ padding: "4px 16px 60px", maxWidth: "var(--content-max-width)", margin: "0 auto" }}>
             {pending.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtle)", fontSize: 16 }}>{t.nothingLeft}</div>
             ) : (
               groups.map((g) => (
-                <div key={g.key} style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--muted)", marginBottom: 8 }}>{g.icon} {g.label}</div>
-                  <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", overflow: "hidden" }}>
-                    {g.items.map((item, i) => (
+                <div key={g.key}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "var(--subtle)", letterSpacing: "0.05em", textTransform: "uppercase", padding: "12px 0 2px", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span aria-hidden>{g.icon}</span>{g.label}
+                    <span style={{ flex: 1, height: 1, background: "var(--border-soft)", marginLeft: 4 }} />
+                  </div>
+                  {g.items.map((item) => {
+                    const child = childNameOf(item);
+                    return (
                       <button
                         key={item.id}
                         onClick={() => togglePurchased(item)}
                         style={{
-                          width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "18px 18px",
-                          borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", background: "none", border: "none",
-                          borderTopWidth: i === 0 ? 0 : 1, cursor: "pointer", textAlign: "left", fontFamily: FONT,
+                          width: "100%", display: "flex", alignItems: "center", gap: 12, minHeight: sz.row, padding: "4px 2px",
+                          background: "none", border: "none", borderBottom: "1px solid var(--border-soft)",
+                          cursor: "pointer", textAlign: "left", fontFamily: FONT,
                         }}
                       >
-                        <span style={{
-                          width: 28, height: 28, borderRadius: "50%", border: "2px solid var(--accent-border)",
-                          flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                        }} />
-                        <span style={{ fontSize: 18, fontWeight: 700, color: "var(--fg)" }}>
+                        <span style={{ width: sz.box, height: sz.box, borderRadius: "50%", border: "2px solid var(--accent-border)", flexShrink: 0 }} />
+                        <span style={{ fontSize: sz.font, fontWeight: 600, color: "var(--fg)", lineHeight: 1.25 }}>
                           {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
+                          {child && <span style={{ fontSize: "0.7em", fontWeight: 500, color: "var(--subtle)" }}> ({child})</span>}
                         </span>
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               ))
             )}
 
-            {/* 2026-09-28 (test round, row 36): ticked items used to vanish
-                from store mode, so a mis-tap in the shop couldn't be undone.
-                They now drop to the bottom — tap again to put it back. */}
+            {/* 2026-09-28 (test round, row 36): ticked items drop to the
+                bottom — tap again to put it back. 2026-10-11: compact rows. */}
             {purchased.length > 0 && (
-              <div style={{ marginTop: 8 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--success)", marginBottom: 8 }}>{t.inCartStore(purchased.length)}</div>
-                <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", overflow: "hidden", opacity: 0.8 }}>
-                  {purchased.map((item, i) => (
-                    <button
-                      key={item.id}
-                      onClick={() => togglePurchased(item)}
-                      aria-label={t.putBack(item.name)}
-                      style={{
-                        width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "16px 18px",
-                        background: "none", border: "none", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)",
-                        cursor: "pointer", textAlign: "left", fontFamily: FONT,
-                      }}
-                    >
-                      <span style={{
-                        width: 28, height: 28, borderRadius: "50%", background: "#2A9D6F", color: "#fff",
-                        flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>
-                        <svg width={16} height={16} viewBox="0 0 24 24" {...STR} stroke="#fff" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>
-                      </span>
-                      <span style={{ fontSize: 17, fontWeight: 600, color: "var(--subtle)", textDecoration: "line-through", flex: 1 }}>
-                        {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
-                      </span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", flexShrink: 0 }}>{t.undo}</span>
-                    </button>
-                  ))}
+              <div style={{ marginTop: 18, background: "var(--surface)", borderRadius: 14, border: "1px solid var(--border)", padding: "4px 14px" }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--success)", padding: "8px 0 4px", display: "flex", justifyContent: "space-between" }}>
+                  <span>{t.inCartStore(purchased.length)}</span>
+                  <span style={{ fontWeight: 600, color: "var(--muted)" }}>{t.undo}</span>
                 </div>
+                {purchased.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => togglePurchased(item)}
+                    aria-label={t.putBack(item.name)}
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center", gap: 10, minHeight: 40,
+                      background: "none", border: "none", borderTop: "1px solid var(--border-soft)",
+                      cursor: "pointer", textAlign: "left", fontFamily: FONT, padding: "2px 0",
+                    }}
+                  >
+                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#2A9D6F", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width={12} height={12} viewBox="0 0 24 24" {...STR} stroke="#fff" strokeWidth={3}><polyline points="20 6 9 17 4 12"/></svg>
+                    </span>
+                    <span style={{ fontSize: 14.5, fontWeight: 600, color: "var(--subtle)", textDecoration: "line-through" }}>
+                      {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
+                    </span>
+                  </button>
+                ))}
               </div>
             )}
+          </div>
+        </div>
+        );
+      })()}
+
+      {/* 2026-10-11: item sheet — change category in one tap, remove, open link. */}
+      {liveSheetItem && (
+        <div
+          onClick={() => setSheetItem(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.4)", zIndex: 29, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+        >
+          <div
+            role="dialog"
+            aria-label={t.itemOptions}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: "var(--content-max-width)", background: "var(--surface)",
+              borderRadius: "20px 20px 0 0", padding: "10px 18px calc(20px + env(safe-area-inset-bottom, 0px))",
+              fontFamily: FONT, maxHeight: "85vh", overflowY: "auto",
+            }}
+          >
+            <div style={{ width: 40, height: 5, borderRadius: 999, background: "var(--border)", margin: "0 auto 12px" }} />
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--fg)" }}>
+              {liveSheetItem.name}{liveSheetItem.quantity ? ` · ${liveSheetItem.quantity}` : ""}
+            </div>
+            {(liveSheetItem.adder?.name || liveSheetItem.note) && (
+              <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3 }}>
+                {[liveSheetItem.adder?.name ? t.addedByName(liveSheetItem.adder.name) : null, liveSheetItem.note].filter(Boolean).join(" · ")}
+              </div>
+            )}
+
+            {!liveSheetItem.isPurchased && (
+              <>
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: "var(--subtle)", letterSpacing: "0.05em", textTransform: "uppercase", margin: "16px 0 8px" }}>{t.category}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+                  {[...sortedCategories.map((c) => ({ id: c.id as string | null, icon: c.icon, label: categoryLabel(c, msg) })), { id: null, icon: UNSORTED_ICON, label: t.unsorted }].map((c) => {
+                    const selected = (liveSheetItem.categoryId ?? null) === c.id;
+                    return (
+                      <button
+                        key={c.id ?? "none"}
+                        onClick={() => { if (!selected) changeCategory(liveSheetItem, c.id); setSheetItem(null); }}
+                        disabled={busyId === liveSheetItem.id}
+                        aria-pressed={selected}
+                        style={{
+                          minHeight: 44, borderRadius: 12, padding: "0 10px", cursor: "pointer", fontFamily: FONT,
+                          display: "flex", alignItems: "center", gap: 6, textAlign: "left",
+                          fontSize: 14, fontWeight: selected ? 800 : 600,
+                          border: selected ? "2px solid var(--accent)" : "1px solid var(--border)",
+                          background: selected ? "var(--tint-accent)" : "var(--surface)",
+                          color: "var(--fg)",
+                        }}
+                      >
+                        <span aria-hidden>{c.icon}</span>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--subtle)", marginTop: 8, lineHeight: 1.4 }}>{t.categoryRemembered(liveSheetItem.name)}</div>
+              </>
+            )}
+
+            <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
+              {liveSheetItem.url && (
+                <a href={liveSheetItem.url} target="_blank" rel="noreferrer" style={{ flex: 1, minHeight: 46, borderRadius: 12, border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, color: "var(--accent)", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+                  <IcLink /> {t.openLink}
+                </a>
+              )}
+              <button
+                onClick={() => { removeItem(liveSheetItem.id); setSheetItem(null); }}
+                style={{ flex: 1, minHeight: 46, borderRadius: 12, border: "none", background: "var(--tint-danger)", color: "var(--danger)", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+              >
+                <IcTrash /> {t.removeItem}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1184,77 +1304,70 @@ export default function ShoppingListPage() {
   );
 }
 
-function ItemRow({ m, item, isFirst, busy, categories, onToggle, onRemove, onCategoryChange }: {
-  m: Messages; item: Item; isFirst: boolean; busy: boolean; categories: Category[]; onToggle: () => void; onRemove: () => void; onCategoryChange: (categoryId: string | null) => void;
+// 2026-10-11: compact row — circle, name (+ child in brackets), note on a
+// second line only when there is one. Tapping the name opens the item sheet
+// (category / remove / link); the per-row category dropdown and trash icon
+// are gone, which is what made the list so tall.
+function ItemRow({ m, item, isFirst, childName, onToggle, onOpen }: {
+  m: Messages; item: Item; isFirst: boolean; childName: string | null; onToggle: () => void; onOpen: () => void;
 }) {
   return (
     <div style={{
-      display: "flex", alignItems: "flex-start", gap: 12,
+      display: "flex", alignItems: "center", gap: 10, minHeight: 44,
       borderTop: isFirst ? "none" : "1px solid var(--border-soft)",
-      padding: "12px 0",
     }}>
       <button
         onClick={onToggle}
         aria-label={item.isPurchased ? m.shopping.markNotBought : m.shopping.markBought}
         style={{
-          width: 24, height: 24, borderRadius: "50%", flexShrink: 0, marginTop: 1, cursor: "pointer",
-          border: item.isPurchased ? "none" : "2px solid var(--border)",
-          background: item.isPurchased ? "#2A9D6F" : "transparent",
-          display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+          width: 32, height: 40, flexShrink: 0, cursor: "pointer", background: "none", border: "none", padding: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}
       >
-        {item.isPurchased && (
-          <svg width={14} height={14} viewBox="0 0 24 24" {...STR} stroke="#fff"><polyline points="20 6 9 17 4 12"/></svg>
-        )}
+        <span style={{
+          width: 22, height: 22, borderRadius: "50%",
+          border: item.isPurchased ? "none" : "2px solid var(--border)",
+          background: item.isPurchased ? "#2A9D6F" : "transparent",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          {item.isPurchased && (
+            <svg width={13} height={13} viewBox="0 0 24 24" {...STR} stroke="#fff"><polyline points="20 6 9 17 4 12"/></svg>
+          )}
+        </span>
       </button>
 
       {item.imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.imageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0, background: "var(--surface-3)" }} />
-      )}
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: 14, fontWeight: 600,
-          color: item.isPurchased ? "var(--subtle)" : "var(--fg)",
-          textDecoration: item.isPurchased ? "line-through" : "none",
-        }}>
-          {item.name}{item.quantity ? ` · ${item.quantity}` : ""}
-        </div>
-        {item.note && <div style={{ fontSize: 11.5, color: "var(--subtle)", marginTop: 2 }}>{item.note}</div>}
-        {!item.isPurchased && (
-          <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
-            <select
-              value={item.categoryId ?? ""}
-              onChange={(e) => onCategoryChange(e.target.value || null)}
-              disabled={busy}
-              style={{ fontSize: 11, color: "var(--faint)", border: "none", background: "transparent", fontFamily: FONT, cursor: busy ? "not-allowed" : "pointer", padding: 0 }}
-            >
-              <option value="">{UNSORTED_ICON} {m.shopping.unsorted}</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.icon} {categoryLabel(c, m)}</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {item.url && (
-        <a href={item.url} target="_blank" rel="noreferrer" aria-label={m.shopping.openLink} style={{ color: "var(--accent)", padding: 6, flexShrink: 0, display: "flex" }}>
-          <IcLink />
-        </a>
+        <img src={item.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 7, objectFit: "cover", flexShrink: 0, background: "var(--surface-3)" }} />
       )}
 
       <button
-        onClick={onRemove}
-        aria-label={m.shopping.removeItem}
-        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--faint)", padding: 6, flexShrink: 0 }}
+        onClick={onOpen}
+        aria-label={`${item.name} – ${m.shopping.itemOptions}`}
+        style={{ flex: 1, minWidth: 0, minHeight: 40, background: "none", border: "none", padding: "4px 0", textAlign: "left", cursor: "pointer", fontFamily: FONT }}
       >
-        <IcTrash />
+        <div style={{
+          fontSize: 15, fontWeight: 600, lineHeight: 1.3,
+          color: item.isPurchased ? "var(--subtle)" : "var(--fg)",
+          textDecoration: item.isPurchased ? "line-through" : "none",
+        }}>
+          {item.name}{item.quantity ? <span style={{ fontWeight: 500, color: "var(--muted)" }}>{` · ${item.quantity}`}</span> : null}
+          {childName && <span style={{ fontSize: 12, fontWeight: 500, color: "var(--subtle)" }}> ({childName})</span>}
+          {item.url && <span style={{ color: "var(--accent)", marginLeft: 6, verticalAlign: "-1px" }}><IcLink /></span>}
+        </div>
+        {item.note && <div style={{ fontSize: 12, color: "var(--subtle)", marginTop: 1 }}>{item.note}</div>}
       </button>
     </div>
   );
 }
+
+type StoreSize = "S" | "M" | "L" | "XL";
+const STORE_SIZES: Record<StoreSize, { font: number; row: number; box: number }> = {
+  S: { font: 15, row: 42, box: 20 },
+  M: { font: 18, row: 50, box: 24 },
+  L: { font: 22, row: 58, box: 28 },
+  XL: { font: 27, row: 68, box: 32 },
+};
 
 const chipStyle: React.CSSProperties = {
   flexShrink: 0, whiteSpace: "nowrap", background: "var(--surface)", border: "1.5px solid var(--border)",

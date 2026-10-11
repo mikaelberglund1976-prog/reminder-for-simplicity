@@ -2,6 +2,15 @@ import type { Messages } from "../en";
 
 export const homePrefs: Messages["homePrefs"] = {
   cardTitle: "Startsidan",
+  myPictureTitle: "Min bild på startsidan",
+  myPictureHint: "Din egen bild överst på startsidan – bara du ser den. Tar du bort den kommer familjens bild tillbaka.",
+  myPictureHintNoFamily: "Din egen bild överst på startsidan – bara du ser den.",
+  myPictureNone: "Ingen bild än",
+  myPictureFamily: "Visar familjens bild",
+  choosePicture: "Välj bild",
+  changePicture: "Byt",
+  removePicture: "Ta bort",
+  uploading: "Laddar upp…",
   intro: "Välj vad din startsida ska visa. Gäller bara dig.",
   todayTitle: "I dag",
   todayEmptyDone: "Allt klart för i dag",

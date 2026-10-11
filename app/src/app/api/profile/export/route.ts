@@ -42,7 +42,7 @@ export async function GET() {
     // 2026-09-29 (GDPR review): the export now also covers what others
     // created FOR you (homework/tests, chores, activities assigned to you),
     // your chore ticks, ideas & votes, and your profile picture.
-    const [assignedToYou, choreCompletions, suggestions, votes, avatar] = await Promise.all([
+    const [assignedToYou, choreCompletions, suggestions, votes, avatar, ownHeader] = await Promise.all([
       prisma.reminder.findMany({
         where: { assignedTo: userId, NOT: { userId } },
         select: { id: true, name: true, category: true, date: true, recurrence: true, choreRecurrenceDays: true, schoolKind: true, subject: true, note: true, completedAt: true, createdAt: true },
@@ -51,6 +51,7 @@ export async function GET() {
       prisma.suggestion.findMany({ where: { userId }, select: { id: true, title: true, description: true, category: true, status: true, createdAt: true } }),
       prisma.suggestionVote.findMany({ where: { userId }, select: { suggestionId: true, createdAt: true } }),
       loadImage("avatar", userId).catch(() => null),
+      loadImage("myheader", userId).catch(() => null),
     ]);
 
     const exportData = {
@@ -68,6 +69,7 @@ export async function GET() {
       ideasYouPosted: suggestions,
       ideasYouVotedFor: votes,
       profilePicture: avatar ? `data:${avatar.mime};base64,${Buffer.from(avatar.data).toString("base64")}` : null,
+      ownHomePicture: ownHeader ? `data:${ownHeader.mime};base64,${Buffer.from(ownHeader.data).toString("base64")}` : null,
     };
 
     return new NextResponse(JSON.stringify(exportData, null, 2), {

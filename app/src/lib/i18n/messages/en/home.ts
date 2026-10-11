@@ -19,7 +19,7 @@ export const home = {
     hide: "Hide guide",
   },
   thinking: "Reminder for Simplicity is thinking…",
-  familyPhotoAria: "Family photo — change it in Family members",
+  familyPhotoAria: "Home picture — choose your own in Settings",
   planPro: "⚡ Pro",
   planTrial: (days: number | null) => `⚡ Trial · ${days ?? 0}d left`,
   planFree: "Free · Try Pro",
@@ -65,6 +65,7 @@ export const home = {
   addFirst: "+ Add your first reminder",
   showFewer: "Show fewer",
   seeAllCount: (n: number) => `See all (${n})`,
+  allBirthdays: (n: number) => `All birthdays (${n})`,
   addReminder: "+ Add reminder",
   addReminderAria: "Add reminder",
 };

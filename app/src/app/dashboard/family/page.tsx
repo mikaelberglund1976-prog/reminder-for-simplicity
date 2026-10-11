@@ -365,7 +365,7 @@ export default function FamilyPage() {
           {viewChild.chores.length === 0 && (
             <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
               {t.noChoresAssigned}{" "}
-              <Link href="/dashboard/family/new" style={{ color: "var(--accent)", fontWeight: 600 }}>{t.addOne}</Link>
+              <Link href={viewChild ? `/dashboard/family/new?for=${viewChild.childId}` : "/dashboard/family/new"} style={{ color: "var(--accent)", fontWeight: 600 }}>{t.addOne}</Link>
             </div>
           )}
         </div>
@@ -434,7 +434,7 @@ export default function FamilyPage() {
           from the bottom nav/hamburger menu and Profile respectively — this
           page only adds chores now. */}
       {isActive && (
-        <Link href="/dashboard/family/new" aria-label={t.addChore} style={{
+        <Link href={viewChild ? `/dashboard/family/new?for=${viewChild.childId}` : "/dashboard/family/new"} aria-label={t.addChore} style={{
           position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
           width: 52, height: 52, borderRadius: "50%",
           background: "var(--accent-bg)", color: "var(--on-accent)",

@@ -82,10 +82,11 @@ export async function GET() {
     };
   }));
 
-  // Children first (the common case), then adults who have chores.
+  // Children first (the common case), then the adults. 2026-10-11 (Mikael):
+  // everyone in the family can be picked, also adults with no chores yet.
   const summary = [
     ...all.filter((m) => m.role === "CHILD"),
-    ...all.filter((m) => m.role !== "CHILD" && m.total > 0),
+    ...all.filter((m) => m.role !== "CHILD"),
   ];
 
   // 2026-10-04: chores assigned to nobody, or to someone no longer in the
