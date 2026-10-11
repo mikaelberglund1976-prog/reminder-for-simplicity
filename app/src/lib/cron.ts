@@ -12,6 +12,7 @@ import { importedIds, syncAllFeeds } from "@/lib/schoolFeeds";
 import { activityImportInfo, syncAllActivityFeeds } from "@/lib/activityFeeds";
 import { getBirthdayRows } from "@/lib/birthdays";
 import { sendBirthdayReminder, sendBirthdayDayPushes } from "@/lib/birthdayCron";
+import { notifyChanges } from "@/lib/changeWatch";
 
 function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -59,6 +60,10 @@ export async function runReminderCron() {
     console.error("Activity feed sync failed:", err);
     log.push(`Activity feed sync ERROR: ${String(err)}`);
   }
+
+  // 2026-10-11: change watch — push what the syncs above found changed.
+  const changePushes = await notifyChanges();
+  if (changePushes) log.push(`Change watch: ${changePushes} pushes`);
 
   const reminders = await prisma.reminder.findMany({
     // 2026-09-27: skip reminders owned by soft-deleted accounts.

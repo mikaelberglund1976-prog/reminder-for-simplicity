@@ -6,6 +6,8 @@
 //  - Once deleted the person is hidden from the family, but the account is
 //    kept for 60 days so it can be restored if someone gets in touch.
 //  - After 60 days it's removed for real (lib/cron.ts → purgeExpiredAccounts).
+import { deleteChangeDataForUser } from "@/lib/changeWatch";
+import { deletePlanDataForUser } from "@/lib/tomorrowPlan";
 import { prisma } from "@/lib/prisma";
 import { sendAccountDeletedEmail, sendDeletionRequestEmail } from "@/lib/email";
 import { deleteImage } from "@/lib/media";
@@ -172,6 +174,9 @@ export async function purgeAccount(userId: string) {
   // 2026-10-03: a child's SchoolSoft link and import bookkeeping go too.
   await prisma.$executeRaw`DELETE FROM "school_feeds" WHERE "childId" = ${userId}`.catch(() => 0);
   await prisma.$executeRaw`DELETE FROM "school_imports" WHERE "childId" = ${userId}`.catch(() => 0);
+  // 2026-10-11: change watch + tomorrow card (rides, who ticked what).
+  await deleteChangeDataForUser(userId);
+  await deletePlanDataForUser(userId);
 }
 
 export async function purgeExpiredAccounts() {

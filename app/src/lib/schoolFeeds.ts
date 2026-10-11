@@ -23,6 +23,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getTimes, setTime } from "@/lib/reminderTimes";
 import { parseWall } from "@/lib/activityFeeds";
+import { ChangeCollector } from "@/lib/changeWatch";
 
 export const SYNC_EVERY_MS = 20 * 60 * 60 * 1000; // daily cron; 20h so a slightly early run still syncs
 export const MANUAL_SYNC_MIN_MS = 10 * 60 * 1000; // "Sync now" at most every 10 minutes
@@ -260,6 +261,8 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
     const byUid = new Map(existing.map((r) => [r.uid, r]));
     const seen = new Set<string>();
     let added = 0, updated = 0, removed = 0;
+    // 2026-10-11: change watch — moved/new/cancelled tests in the next two weeks.
+    const watch = new ChangeCollector(feed.householdId, feed.childId, providerLabel(feed.provider), !existing.some(mine));
 
     for (const e of inWindow) {
       if (seen.has(e.uid)) continue;
@@ -271,6 +274,7 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
         if (!r || !r.isActive) continue;
         const changed = r.name !== e.summary || r.date.getTime() !== e.date.getTime() || r.schoolKind !== e.kind || r.subject !== e.subject || (r.note ?? null) !== e.description;
         const oldTime = (await getTimes([r.id])).get(r.id)?.startTime ?? null;
+        if (r.schoolKind === "TEST" || e.kind === "TEST") watch.changed(r.id, e.summary, r.date.toISOString().slice(0, 10), e.date.toISOString().slice(0, 10), oldTime, e.time);
         if (oldTime !== e.time) await setTime(r.id, { startTime: e.time });
         if (changed) {
           await prisma.reminder.update({ where: { id: r.id }, data: { name: e.summary, date: e.date, schoolKind: e.kind, subject: e.subject, note: e.description } });
@@ -288,6 +292,7 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
       });
       await prisma.$executeRaw`INSERT INTO "school_imports" ("reminderId", "childId", "uid", "feedId") VALUES (${created.id}, ${feed.childId}, ${e.uid}, ${feed.id}) ON CONFLICT DO NOTHING`;
       if (e.time) await setTime(created.id, { startTime: e.time });
+      if (e.kind === "TEST") watch.added(created.id, e.summary, e.date.toISOString().slice(0, 10), e.time, true);
       added++;
     }
 
@@ -295,11 +300,13 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
     // someone edited it in the app, ticked it off, or it's already in the past.
     for (const imp of existing) {
       if (!mine(imp) || seen.has(imp.uid) || imp.edited || imp.hidden) continue;
-      const r = await prisma.reminder.findUnique({ where: { id: imp.reminderId }, select: { id: true, isActive: true, date: true, completedAt: true } });
+      const r = await prisma.reminder.findUnique({ where: { id: imp.reminderId }, select: { id: true, isActive: true, date: true, completedAt: true, name: true, schoolKind: true } });
       if (!r || !r.isActive || r.completedAt || r.date < now || r.date > to) continue;
       await prisma.reminder.update({ where: { id: r.id }, data: { isActive: false } });
+      if (r.schoolKind === "TEST") watch.removed(r.id, r.name, r.date.toISOString().slice(0, 10), null);
       removed++;
     }
+    await watch.save();
 
     const total = await importedCount(feed.id);
     result = { ok: true, added, updated, removed, total, status: "ok" };
@@ -317,12 +324,13 @@ export async function importedCount(feedId: string): Promise<number> {
 }
 
 /** Daily, from lib/cron.ts — every feed not synced in the last ~day. */
-export async function syncAllFeeds(): Promise<{ synced: number; failed: number }> {
+export async function syncAllFeeds(opts: { maxAgeMs?: number; deadline?: number } = {}): Promise<{ synced: number; failed: number }> {
   await ensureSchoolFeedTables();
-  const cutoff = new Date(Date.now() - SYNC_EVERY_MS);
+  const cutoff = new Date(Date.now() - (opts.maxAgeMs ?? SYNC_EVERY_MS));
   const feeds = await prisma.$queryRaw<FeedRow[]>`SELECT * FROM "school_feeds" WHERE "lastSyncAt" IS NULL OR "lastSyncAt" < ${cutoff} ORDER BY "lastSyncAt" ASC NULLS FIRST LIMIT 200`;
   let synced = 0, failed = 0;
   for (const f of feeds) {
+    if (opts.deadline && Date.now() > opts.deadline) break;
     const r = await syncFeed(f);
     if (r.ok) synced++; else failed++;
   }

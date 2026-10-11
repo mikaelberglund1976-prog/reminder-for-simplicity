@@ -25,6 +25,9 @@ import { weekdayName } from "@/lib/i18n/format";
 import type { Messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/i18n/config";
 import StarSummary from "@/components/StarSummary";
+import QuickAdd from "@/components/QuickAdd";
+import ChangesCard from "@/components/ChangesCard";
+import TomorrowCard from "@/components/TomorrowCard";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -264,6 +267,12 @@ function ChildViewContent() {
             <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)", marginBottom: 16 }}>{img}</div>
           );
         })()}
+
+        {/* 2026-10-11: write it → it lands in the right place; the change
+            watch and tomorrow's checklist — only on the child's own Home. */}
+        {isOwn && <QuickAdd onAdded={() => { fetchChores(); }} />}
+        {isOwn && <ChangesCard />}
+        {isOwn && <TomorrowCard />}
 
         {/* Overview — what needs doing, at a glance. */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 22 }}>

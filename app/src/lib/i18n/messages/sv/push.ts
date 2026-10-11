@@ -13,6 +13,7 @@ export const push: Messages["push"] = {
   turnOff: "Stäng av på den här telefonen",
   kindReminders: "Påminnelser – räkningar, födelsedagar, läxor",
   kindTomorrow: "Kvällsnotis – morgondagens prov, läxor och aktiviteter",
+  kindChanges: "Ändringar – en match flyttad, ett nytt prov, en träning inställd",
   sendTest: "Skicka en test",
   testSent: "Skickad – den bör dyka upp om några sekunder.",
   testFailed: "Nådde inte telefonen. Stäng av och slå på notiser igen.",

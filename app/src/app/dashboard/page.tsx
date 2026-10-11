@@ -3,6 +3,9 @@
 import { useSession } from "next-auth/react";
 import StartGuide from "@/components/StartGuide";
 import GiftSharesCard from "@/components/GiftSharesCard";
+import QuickAdd from "@/components/QuickAdd";
+import ChangesCard from "@/components/ChangesCard";
+import TomorrowCard from "@/components/TomorrowCard";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -612,6 +615,11 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* 2026-10-11: just write it — the app works out where it goes. Then
+            what the school/club calendars changed (the change watch). */}
+        {hasHousehold && <QuickAdd onAdded={() => { fetchReminders(); fetchFamilyData(); }} />}
+        {hasHousehold && <ChangesCard />}
+
         {/* 2026-09-28 (rows 40 + 44): the family at a glance — photos, and
             adding someone is one tap from Home instead of buried in Settings. */}
         {hasHousehold && show.family && (
@@ -669,6 +677,9 @@ export default function DashboardPage() {
             </div>
           </>
         )}
+
+        {/* 2026-10-11: tomorrow as a checklist — bring, rides, clashes. */}
+        {hasHousehold && <TomorrowCard />}
 
         {/* Quick actions — "What would you like to do?" row, borrowed from the
             reference app: the most common jobs one tap away, horizontally

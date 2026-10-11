@@ -24,6 +24,7 @@ import { lookup } from "dns/promises";
 import net from "net";
 import { prisma } from "@/lib/prisma";
 import { getTimes, setTime } from "@/lib/reminderTimes";
+import { ChangeCollector } from "@/lib/changeWatch";
 
 export const MAX_FEEDS_PER_CHILD = 3;
 export const SYNC_EVERY_MS = 20 * 60 * 60 * 1000;
@@ -239,7 +240,7 @@ function expandRule(rule: string, start: Ymd, from: Ymd, to: Ymd): Ymd[] {
 }
 
 /** Every activity in the calendar that falls between `from` and `to`. */
-export function parseActivities(text: string, from: Ymd, to: Ymd): ActivityEntry[] {
+export function parseActivities(text: string, from: Ymd, to: Ymd, declined?: Set<string>): ActivityEntry[] {
   const lines = text.replace(/\r\n/g, "\n").replace(/\n[ \t]/g, "").split("\n");
   const events: { props: Record<string, Prop>; exdates: Ymd[] }[] = [];
   let cur: { props: Record<string, Prop>; exdates: Ymd[] } | null = null;
@@ -286,7 +287,11 @@ export function parseActivities(text: string, from: Ymd, to: Ymd): ActivityEntry
     // 2026-10-11 (Mikael): MyClub puts your answer first, e.g. "[Nej] Träning".
     // A "no" isn't something you're going to, so it isn't imported (one that
     // was imported earlier is removed on the next sync like any cancelled event).
-    if (rsvp.declined) continue;
+    if (rsvp.declined) {
+      // Remember it so the change watch doesn't call it "cancelled".
+      if (uid && start) declined?.add(p["RECURRENCE-ID"] ? `${uid}@${parseWall(p["RECURRENCE-ID"].value)?.ymd ?? start.ymd}` : uid);
+      continue;
+    }
     if ((p.STATUS?.value ?? "").toUpperCase() === "CANCELLED") continue;
     if ((p.TRANSP?.value ?? "").toUpperCase() === "TRANSPARENT" && !start.time && /^(v\.|vecka|week)\s*\d+$/i.test(summary)) continue;
     const location = p.LOCATION ? unescapeText(p.LOCATION.value).slice(0, 200) || null : null;
@@ -370,7 +375,8 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
     const todayYmd = stockholmWall(now).ymd;
     const from = utcToYmd(ymdToUtc(todayYmd) - PAST_DAYS * DAY);
     const to = utcToYmd(ymdToUtc(todayYmd) + FUTURE_DAYS * DAY);
-    const entries = parseActivities(text, from, to).slice(0, MAX_ITEMS);
+    const declined = new Set<string>();
+    const entries = parseActivities(text, from, to, declined).slice(0, MAX_ITEMS);
 
     const existing = await prisma.$queryRaw<ImportRow[]>`SELECT "reminderId", "feedId", "uid", "edited", "hidden" FROM "activity_imports" WHERE "feedId" = ${feed.id}`;
     const byUid = new Map(existing.map((r) => [r.uid, r]));
@@ -382,6 +388,9 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
     const rById = new Map(reminders.map((r) => [r.id, r]));
     const seen = new Set<string>();
     let added = 0, updated = 0, removed = 0;
+    // 2026-10-11: change watch — moved/cancelled/new activities coming up soon.
+    const watch = new ChangeCollector(feed.householdId, feed.childId, feed.label || maskActivityUrl(feed.url), existing.length === 0);
+    const isDeclined = (uid: string) => declined.has(uid) || declined.has(uid.split("@")[0]);
 
     for (const e of entries) {
       if (seen.has(e.uid)) continue;
@@ -407,6 +416,7 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
         const t = times.get(r.id);
         const changed = r.name !== name || r.date.getTime() !== date.getTime() || (r.note ?? null) !== note || r.assignedTo !== feed.childId;
         const timeChanged = (t?.startTime ?? null) !== e.startTime || (t?.endTime ?? null) !== e.endTime;
+        if (r.date.getTime() !== date.getTime() || timeChanged) watch.changed(r.id, name, r.date.toISOString().slice(0, 10), e.ymd, t?.startTime ?? null, e.startTime);
         if (changed) await prisma.reminder.update({ where: { id: r.id }, data: { name, date, note, assignedTo: feed.childId } });
         if (timeChanged) await setTime(r.id, { startTime: e.startTime, endTime: e.endTime });
         if (changed || timeChanged) updated++;
@@ -421,6 +431,8 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
       });
       if (e.startTime) await setTime(created.id, { startTime: e.startTime, endTime: e.endTime });
       await prisma.$executeRaw`INSERT INTO "activity_imports" ("reminderId", "feedId", "childId", "uid") VALUES (${created.id}, ${feed.id}, ${feed.childId}, ${e.uid}) ON CONFLICT DO NOTHING`;
+      // A one-off (match, cup) — new occurrences of a weekly training just roll into the window.
+      if (!e.uid.includes("@")) watch.added(created.id, name, e.ymd, e.startTime, false);
       added++;
     }
 
@@ -433,8 +445,10 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
       const ymd = r.date.toISOString().slice(0, 10);
       if (ymd < todayYmd || ymd > to) continue;
       await prisma.reminder.update({ where: { id: r.id }, data: { isActive: false } });
+      if (!isDeclined(imp.uid)) watch.removed(r.id, r.name, ymd, times.get(r.id)?.startTime ?? null);
       removed++;
     }
+    await watch.save();
 
     const total = await activityImportedCount(feed.id);
     result = { ok: true, added, updated, removed, total, status: "ok" };
@@ -453,12 +467,13 @@ export async function activityImportedCount(feedId: string): Promise<number> {
   return Number(rows[0]?.n ?? 0);
 }
 
-export async function syncAllActivityFeeds(): Promise<{ synced: number; failed: number }> {
+export async function syncAllActivityFeeds(opts: { maxAgeMs?: number; deadline?: number } = {}): Promise<{ synced: number; failed: number }> {
   await ensureActivityFeedTables();
-  const cutoff = new Date(Date.now() - SYNC_EVERY_MS);
+  const cutoff = new Date(Date.now() - (opts.maxAgeMs ?? SYNC_EVERY_MS));
   const feeds = await prisma.$queryRaw<ActivityFeedRow[]>`SELECT * FROM "activity_feeds" WHERE "lastSyncAt" IS NULL OR "lastSyncAt" < ${cutoff} ORDER BY "lastSyncAt" ASC NULLS FIRST LIMIT 200`;
   let synced = 0, failed = 0;
   for (const f of feeds) {
+    if (opts.deadline && Date.now() > opts.deadline) break;
     const r = await syncActivityFeed(f);
     if (r.ok) synced++; else failed++;
   }

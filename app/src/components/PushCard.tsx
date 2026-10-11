@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
-type Kind = "reminders" | "tomorrow";
+type Kind = "reminders" | "tomorrow" | "changes";
 type State = { configured: boolean; publicKey: string | null; devices: number; kinds: Kind[] };
 
 function keyBytes(b64u: string): Uint8Array {
@@ -99,10 +99,10 @@ export default function PushCard() {
       ) : here ? (
         <>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--success)", marginBottom: 12 }}>✓ {t.onHere}</div>
-          {(["reminders", "tomorrow"] as Kind[]).map((k) => (
+          {(["reminders", "tomorrow", "changes"] as Kind[]).map((k) => (
             <label key={k} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13.5, color: "var(--fg)", lineHeight: 1.45, marginBottom: 10, cursor: "pointer" }}>
               <input type="checkbox" checked={!!state?.kinds.includes(k)} onChange={() => toggleKind(k)} style={{ width: 18, height: 18, marginTop: 1, flexShrink: 0, accentColor: "var(--accent)" }} />
-              <span>{k === "reminders" ? t.kindReminders : t.kindTomorrow}</span>
+              <span>{k === "reminders" ? t.kindReminders : k === "tomorrow" ? t.kindTomorrow : t.kindChanges}</span>
             </label>
           ))}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>

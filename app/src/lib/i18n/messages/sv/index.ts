@@ -3,6 +3,7 @@ import type { Messages } from "../en";
 import { account } from "./account";
 import { activities } from "./activities";
 import { activityFeeds } from "./activityFeeds";
+import { assist } from "./assist";
 import { auth } from "./auth";
 import { birthdays } from "./birthdays";
 import { calendar } from "./calendar";
@@ -40,6 +41,7 @@ export const sv: Messages = {
   account,
   activities,
   activityFeeds,
+  assist,
   auth,
   birthdays,
   calendar,

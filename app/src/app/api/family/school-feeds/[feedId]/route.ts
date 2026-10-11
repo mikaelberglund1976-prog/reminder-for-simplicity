@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdult } from "../_auth";
 import { clearImported, deleteFeed, getFeed, MANUAL_SYNC_MIN_MS, syncFeed } from "@/lib/schoolFeeds";
+import { notifyChanges } from "@/lib/changeWatch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -32,6 +33,7 @@ export async function POST(req: Request, { params }: { params: { feedId: string 
         return NextResponse.json({ error: "Just synced — try again in a few minutes" }, { status: 429 });
       }
       const result = await syncFeed(feed);
+      await notifyChanges({ householdId: feed.householdId, skipUserId: a.userId });
       return NextResponse.json({ result });
     }
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

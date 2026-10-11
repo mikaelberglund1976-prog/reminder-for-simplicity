@@ -16,8 +16,8 @@ import { createECDH, createPrivateKey, createCipheriv, hkdfSync, randomBytes, si
 import { prisma } from "@/lib/prisma";
 
 export type PushMessage = { title: string; body: string; url?: string; tag?: string };
-export type PushKind = "reminders" | "tomorrow";
-export const PUSH_KINDS: PushKind[] = ["reminders", "tomorrow"];
+export type PushKind = "reminders" | "tomorrow" | "changes";
+export const PUSH_KINDS: PushKind[] = ["reminders", "tomorrow", "changes"];
 
 const b64u = (b: Buffer) => b.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const fromB64u = (s: string) => Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
@@ -109,12 +109,19 @@ export async function getPushKinds(userId: string): Promise<PushKind[]> {
   await ensurePushTables();
   const rows = await prisma.$queryRawUnsafe<{ kinds: string }[]>(`SELECT "kinds" FROM "push_prefs" WHERE "userId" = $1`, userId);
   if (!rows[0]) return [...PUSH_KINDS]; // default: everything on
-  return rows[0].kinds.split(",").filter((k): k is PushKind => (PUSH_KINDS as string[]).includes(k));
+  const saved = rows[0].kinds.split(",");
+  const kinds = saved.filter((k): k is PushKind => (PUSH_KINDS as string[]).includes(k));
+  // 2026-10-11: "changes" (the change watch) is new — people who saved their
+  // choices before it existed get it on, unless they turned it off ("nochanges").
+  if (!saved.includes("changes") && !saved.includes("nochanges")) kinds.push("changes");
+  return kinds;
 }
 
 export async function setPushKinds(userId: string, kinds: PushKind[]) {
   await ensurePushTables();
-  const clean = PUSH_KINDS.filter((k) => kinds.includes(k)).join(",");
+  const picked: string[] = PUSH_KINDS.filter((k) => kinds.includes(k));
+  if (!picked.includes("changes")) picked.push("nochanges");
+  const clean = picked.join(",");
   await prisma.$executeRawUnsafe(
     `INSERT INTO "push_prefs" ("userId", "kinds", "updatedAt") VALUES ($1, $2, CURRENT_TIMESTAMP)
      ON CONFLICT ("userId") DO UPDATE SET "kinds" = EXCLUDED."kinds", "updatedAt" = CURRENT_TIMESTAMP`,

@@ -14,6 +14,7 @@ import { getMessages } from "@/lib/i18n/messages";
 import { DATE_LOCALES } from "@/lib/i18n/config";
 import { getBirthdayRows } from "@/lib/birthdays";
 import { birthdayTitle, nextBirthdayDate } from "@/lib/birthdayLabel";
+import { buildPlan, cleanupPlanTables } from "@/lib/tomorrowPlan";
 
 const ADULT = ["OWNER", "PARENT", "ADULT"];
 
@@ -88,16 +89,19 @@ export async function runTomorrowDigest(now = new Date()) {
           return { sort: "00:00", text: birthdayTitle(b.name, row.birthYear, tomorrow, m.birthdays, row.kind) };
         }))
         .sort((a, b) => a.sort.localeCompare(b.sort));
-      const shown = lines.slice(0, 4).map((l) => l.text);
+      // 2026-10-11: a clash ("Leo and Elsa at the same time — no ride") goes first.
+      const clashes = isAdult ? ((await buildPlan(userId, m.assist).catch(() => null))?.clashes ?? []) : [];
+      const shown = [...clashes.slice(0, 2).map((c) => `⚠️ ${c}`), ...lines.slice(0, 4).map((l) => l.text)];
       if (lines.length > 4) shown.push(m.push.more(lines.length - 4));
       const day = tomorrow.toLocaleDateString(DATE_LOCALES[locale], { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" });
-      const reached = await sendPushToUser(userId, { title: m.push.tomorrowTitle(day), body: shown.join("\n"), url: "/dashboard/calendar", tag: `tomorrow-${tKey}` }, "tomorrow");
+      const reached = await sendPushToUser(userId, { title: m.push.tomorrowTitle(day), body: shown.join("\n"), url: "/dashboard#tomorrow", tag: `tomorrow-${tKey}` }, "tomorrow");
       if (reached) sent++;
     } catch (err) {
       console.error("Tomorrow digest failed for a user:", err);
       log.push(`ERROR ${String(err)}`);
     }
   }
+  await cleanupPlanTables();
   log.push(`Tomorrow digest ${tKey}: ${sent} of ${users.length} people with push`);
   return { success: true, sent, log };
 }

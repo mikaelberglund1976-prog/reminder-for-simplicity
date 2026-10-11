@@ -4,6 +4,7 @@ import {
   MANUAL_SYNC_MIN_MS, clearActivityImports, deleteActivityFeed, getActivityFeed,
   normalizeActivityUrl, syncActivityFeed, updateActivityFeed,
 } from "@/lib/activityFeeds";
+import { notifyChanges } from "@/lib/changeWatch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -13,7 +14,7 @@ async function own(id: string) {
   if ("error" in a) return { res: NextResponse.json({ error: a.error }, { status: a.status }) } as const;
   const feed = await getActivityFeed(id);
   if (!feed || feed.householdId !== a.householdId) return { res: NextResponse.json({ error: "Not found" }, { status: 404 }) } as const;
-  return { feed } as const;
+  return { feed, userId: a.userId } as const;
 }
 
 // POST /api/family/activity-feeds/[id] { action: "sync" | "clear" }
@@ -27,7 +28,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       if (o.feed.lastSyncAt && Date.now() - new Date(o.feed.lastSyncAt).getTime() < MANUAL_SYNC_MIN_MS) {
         return NextResponse.json({ error: "Just synced — try again in a few minutes" }, { status: 429 });
       }
-      return NextResponse.json({ result: await syncActivityFeed(o.feed) });
+      const result = await syncActivityFeed(o.feed);
+      await notifyChanges({ householdId: o.feed.householdId, skipUserId: o.userId });
+      return NextResponse.json({ result });
     }
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (err) {

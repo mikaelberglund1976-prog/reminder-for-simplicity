@@ -11,6 +11,7 @@ export const push = {
   turnOff: "Turn off on this phone",
   kindReminders: "Reminders — bills, birthdays, homework",
   kindTomorrow: "Evening heads-up — tomorrow's tests, homework and activities",
+  kindChanges: "Changes — a match moved, a new test, a training cancelled",
   sendTest: "Send a test",
   testSent: "Sent — it should show up in a few seconds.",
   testFailed: "Couldn't reach this phone. Turn notifications off and on again.",
