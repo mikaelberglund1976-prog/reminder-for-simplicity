@@ -21,6 +21,7 @@ type Item = {
   categoryId: string | null;
   categoryDef: { id: string; label: string; icon: string; sortOrder: number } | null;
   isPurchased: boolean;
+  purchasedAt?: string | null;
 };
 
 function IcPlus() { return <svg width={20} height={20} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>; }
@@ -100,7 +101,7 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
 
   async function toggle(item: Item) {
     const wasPurchased = item.isPurchased;
-    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: !wasPurchased } : i)));
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: !wasPurchased, purchasedAt: !wasPurchased ? new Date().toISOString() : null } : i)));
     try {
       const res = await fetch(`/api/public/shopping-list/${params.token}/${item.id}`, {
         method: "PATCH",
@@ -141,7 +142,8 @@ export default function PublicShoppingListPage({ params }: { params: { token: st
   }
 
   const pending = items.filter((i) => !i.isPurchased);
-  const purchased = items.filter((i) => i.isPurchased);
+  // 2026-10-11: newest ticked-off item first, like the app's list.
+  const purchased = items.filter((i) => i.isPurchased).sort((a, b) => (b.purchasedAt ?? "").localeCompare(a.purchasedAt ?? ""));
 
   const categoryMap: Record<string, { id: string; label: string; icon: string; sortOrder: number }> = {};
   for (const item of pending) {

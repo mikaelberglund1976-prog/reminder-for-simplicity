@@ -691,7 +691,9 @@ export default function ShoppingListPage() {
   const activeList = lists.find((l) => l.id === activeListId);
   const pending = items.filter(i => !i.isPurchased);
   // Oldest tick first, so the item you just put in the cart lands at the bottom.
-  const purchased = items.filter(i => i.isPurchased).sort((a, b) => (a.purchasedAt ?? "").localeCompare(b.purchasedAt ?? ""));
+  // 2026-10-11 (Mikael): the item you just ticked off goes to the TOP of
+  // "In the basket" (newest first), so you see it land there.
+  const purchased = items.filter(i => i.isPurchased).sort((a, b) => (b.purchasedAt ?? "").localeCompare(a.purchasedAt ?? ""));
   const activeIsShared = !!activeList && (activeList.visibleToAll || activeList.memberIds.length > 0);
   const canDeleteActive = !!activeList && lists.length > 1 && (canEditAccess || (activeList.isMine && !activeIsShared));
 
