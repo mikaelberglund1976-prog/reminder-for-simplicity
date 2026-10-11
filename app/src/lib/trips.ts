@@ -28,7 +28,12 @@ export type TripRow = {
   kind: string; travellers: string | null; vaccine: boolean; homeToAirportMin: number; airportBufferMin: number;
   createdBy: string; createdAt: Date;
 };
-export type FlightData = { flightNo?: string; from?: string; to?: string; depYmd: string; depTime: string; arrTime?: string | null; returnLeg?: boolean };
+// 2026-10-11 (Mikael): timing per flight, and connecting flights (a change on
+// the way — no "leave home", the layover is shown instead).
+export type FlightData = {
+  flightNo?: string; from?: string; to?: string; depYmd: string; depTime: string; arrTime?: string | null; returnLeg?: boolean;
+  arrNextDay?: boolean; connection?: boolean; airportMin?: number; travelMin?: number;
+};
 export type ItemRow = {
   id: string; tripId: string; kind: ItemKind; personId: string | null; label: string; checked: boolean;
   votes: string | null; data: string | null; dueYmd: string | null; reminderId: string | null; createdBy: string; createdAt: Date;
@@ -159,7 +164,7 @@ export async function saveFlightReminder(trip: TripRow, f: FlightData, userId: s
     });
     id = r.id;
   }
-  const arr = f.arrTime && f.arrTime > f.depTime ? f.arrTime : null;
+  const arr = f.arrTime && !f.arrNextDay && f.arrTime > f.depTime ? f.arrTime : null;
   await setTime(id, { startTime: f.depTime, endTime: arr });
   return id;
 }
@@ -198,14 +203,39 @@ export function buildSteps(trip: TripRow, items: ItemRow[], travellers: { id: st
   for (const f of items.filter((x) => x.kind === "FLIGHT")) {
     const d = parseFlight(f);
     if (!d) continue;
+    if (d.connection) continue; // checked in together with the first flight, and you don't leave home
     steps.push({ key: `checkin-${f.id}`, ymd: addDays(d.depYmd, -1), text: t.stepCheckIn(flightTitle(d)), level: "todo", done: f.checked, itemId: f.id });
-    const leave = minusMinutes(d.depTime, trip.airportBufferMin + trip.homeToAirportMin);
+    const leave = leaveFor(trip, d)!;
     steps.push({ key: `leave-${f.id}`, ymd: leave.dayBefore ? addDays(d.depYmd, -1) : d.depYmd, text: t.stepLeave(leave.time, flightTitle(d)), level: "ok", done: false });
   }
   const packs = items.filter((x) => x.kind === "PACK");
   const left = packs.filter((x) => !x.checked).length;
   if (packs.length) steps.push({ key: "pack", ymd: addDays(trip.startYmd, -2), text: left ? t.stepPack(left) : t.stepPacked, level: left ? "todo" : "ok", done: left === 0 });
   return steps.sort((a, b) => a.ymd.localeCompare(b.ymd) || a.key.localeCompare(b.key));
+}
+
+/** "Leave home" for a flight — null for a connecting flight. */
+export function leaveFor(trip: Pick<TripRow, "airportBufferMin" | "homeToAirportMin">, f: FlightData) {
+  if (f.connection) return null;
+  return minusMinutes(f.depTime, (f.airportMin ?? trip.airportBufferMin) + (f.travelMin ?? trip.homeToAirportMin));
+}
+/** Minutes between the previous flight's landing and this one's departure (null if unknown). */
+export function layoverMinutes(prev: FlightData, f: FlightData): number | null {
+  if (!prev.arrTime) return null;
+  const arrYmd = prev.arrNextDay ? addDays(prev.depYmd, 1) : prev.depYmd;
+  const mins = (Date.parse(`${f.depYmd}T${f.depTime}:00Z`) - Date.parse(`${arrYmd}T${prev.arrTime}:00Z`)) / 60000;
+  return Number.isFinite(mins) ? Math.round(mins) : null;
+}
+/** Reads a flight from a request body (POST and PATCH). */
+export function flightFromBody(b: Record<string, unknown>): FlightData | null {
+  if (!isYmd(b.depYmd) || !isHhmm(b.depTime)) return null;
+  const s = (v: unknown, n: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, n) : undefined);
+  const mins = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(600, Math.round(v))) : undefined);
+  return {
+    flightNo: s(b.flightNo, 12), from: s(b.from, 30), to: s(b.to, 30), depYmd: b.depYmd, depTime: b.depTime,
+    arrTime: isHhmm(b.arrTime) ? b.arrTime : null, arrNextDay: !!b.arrNextDay, connection: !!b.connection,
+    airportMin: mins(b.airportMin), travelMin: mins(b.travelMin),
+  };
 }
 
 export function parseFlight(i: ItemRow): FlightData | null {

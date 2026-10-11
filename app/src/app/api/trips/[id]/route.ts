@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tripCtx } from "../_ctx";
 import {
-  TRIP_KINDS, addDays, buildSteps, daysBetween, deleteTrip, getTrip, insertItem, isYmd, minusMinutes, parseFlight,
+  TRIP_KINDS, addDays, buildSteps, daysBetween, deleteTrip, getTrip, insertItem, isYmd, layoverMinutes, leaveFor, parseFlight,
   passportDates, stockholmToday, travellersOf, tripItems,
 } from "@/lib/trips";
 
@@ -22,12 +22,18 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const passports = await passportDates(travellerIds);
   const steps = buildSteps(trip, items, travellers, passports, c.t, c.fmt);
   const today = stockholmToday();
-  const flights = items.filter((i) => i.kind === "FLIGHT").map((i) => {
-    const d = parseFlight(i);
-    if (!d) return null;
-    const leave = minusMinutes(d.depTime, trip.airportBufferMin + trip.homeToAirportMin);
-    return { id: i.id, checked: i.checked, ...d, leave: leave.time, leaveDayBefore: leave.dayBefore };
-  }).filter(Boolean).sort((a, b) => (a!.depYmd + a!.depTime).localeCompare(b!.depYmd + b!.depTime));
+  const parsed = items.filter((i) => i.kind === "FLIGHT").map((i) => ({ i, d: parseFlight(i) })).filter((x) => x.d)
+    .sort((a, b) => (a.d!.depYmd + a.d!.depTime).localeCompare(b.d!.depYmd + b.d!.depTime));
+  const flights = parsed.map(({ i, d }, n) => {
+    const leave = leaveFor(trip, d!);
+    const prev = n > 0 ? parsed[n - 1].d! : null;
+    return {
+      id: i.id, checked: i.checked, ...d!,
+      airportMin: d!.airportMin ?? trip.airportBufferMin, travelMin: d!.travelMin ?? trip.homeToAirportMin,
+      leave: leave?.time ?? null, leaveDayBefore: leave?.dayBefore ?? false,
+      layover: d!.connection && prev ? layoverMinutes(prev, d!) : null, layoverAt: d!.connection ? d!.from ?? prev?.to ?? null : null,
+    };
+  });
   return NextResponse.json({
     trip, me: c.uid, isAdult: c.isAdult, people: c.people, travellers,
     daysTo: daysBetween(today, trip.startYmd), daysLeft: daysBetween(today, trip.endYmd),

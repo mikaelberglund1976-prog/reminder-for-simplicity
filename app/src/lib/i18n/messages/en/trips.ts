@@ -54,6 +54,13 @@ export const trips = {
   timing: (airport: number, travel: number) => `At the airport ${airport} min before · ${travel} min to the airport`,
   airportMin: "At the airport, minutes before",
   travelMin: "Travel to the airport, minutes",
+  connection: "Connecting flight — a change on the way, you don't leave home",
+  arrNextDay: "Lands the day after",
+  layover: (place: string | null, mins: number | null) => `Change${place ? ` in ${place.toUpperCase()}` : ""}${mins !== null && mins >= 0 ? ` · ${Math.floor(mins / 60) ? `${Math.floor(mins / 60)} h ` : ""}${mins % 60} min` : ""}`,
+  shortLayover: "Short change — check that you have time",
+  editFlight: "Change flight",
+  tapToEdit: "Tap a flight to change it.",
+  deleteFlight: "Remove flight",
   checkedIn: "Checked in",
   // packing
   mine: "Mine",

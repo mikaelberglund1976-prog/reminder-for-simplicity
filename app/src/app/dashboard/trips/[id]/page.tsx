@@ -14,7 +14,8 @@ function IcBack() { return <svg width={20} height={20} viewBox="0 0 24 24" {...S
 
 type Person = { id: string; name: string; role: string };
 type Step = { key: string; ymd: string; text: string; level: "ok" | "todo" | "warn" | "bad"; done: boolean; itemId?: string; personId?: string };
-type Flight = { id: string; checked: boolean; flightNo?: string; from?: string; to?: string; depYmd: string; depTime: string; arrTime?: string | null; leave: string; leaveDayBefore: boolean };
+type Flight = { id: string; checked: boolean; flightNo?: string; from?: string; to?: string; depYmd: string; depTime: string; arrTime?: string | null; arrNextDay?: boolean; connection?: boolean; airportMin: number; travelMin: number; leave: string | null; leaveDayBefore: boolean; layover: number | null; layoverAt: string | null };
+type FlightDraft = { id: string | null; flightNo: string; from: string; to: string; depYmd: string; depTime: string; arrTime: string; arrNextDay: boolean; connection: boolean; airportMin: number; travelMin: number };
 type Pack = { id: string; label: string; personId: string | null; checked: boolean };
 type Idea = { id: string; label: string; personId: string; votes: string[] };
 type Trip = { id: string; name: string; destination: string | null; startYmd: string; endYmd: string; kind: string; vaccine: boolean; homeToAirportMin: number; airportBufferMin: number };
@@ -22,7 +23,7 @@ type Data = { trip: Trip; me: string; isAdult: boolean; people: Person[]; travel
 type Tab = "before" | "flights" | "pack" | "ideas";
 
 const card = { background: "var(--surface)", borderRadius: 18, border: "1px solid var(--border)", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" };
-const input = { width: "100%", boxSizing: "border-box" as const, padding: "10px 12px", borderRadius: 12, border: "1.5px solid var(--border)", background: "var(--surface)", color: "var(--fg)", fontSize: 14, fontFamily: FONT };
+const input = { width: "100%", minWidth: 0, boxSizing: "border-box" as const, padding: "10px 12px", borderRadius: 12, border: "1.5px solid var(--border)", background: "var(--surface)", color: "var(--fg)", fontSize: 14, fontFamily: FONT };
 const small = { display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--muted)", margin: "10px 0 5px" };
 const btn = { border: "none", borderRadius: 12, padding: "10px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT } as const;
 const LEVEL = { ok: "var(--success)", todo: "var(--fg)", warn: "#B7791F", bad: "var(--danger)" };
@@ -38,7 +39,7 @@ export default function TripPage() {
   const [tab, setTab] = useState<Tab>("before");
   const [who, setWho] = useState<string>("ALL");
   const [text, setText] = useState("");
-  const [flight, setFlight] = useState<{ flightNo: string; from: string; to: string; depYmd: string; depTime: string; arrTime: string } | null>(null);
+  const [flight, setFlight] = useState<FlightDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -83,7 +84,8 @@ export default function TripPage() {
   async function saveFlight() {
     if (!flight) return;
     setError(null);
-    const r = await items({ kind: "FLIGHT", ...flight });
+    const { id: flightId, ...body } = flight;
+    const r = flightId ? await items({ itemId: flightId, flight: body }, "PATCH") : await items({ kind: "FLIGHT", ...body });
     if (!r.ok) { setError(err((await r.json().catch(() => ({}))).error)); return; }
     setFlight(null);
     load();
@@ -108,6 +110,55 @@ export default function TripPage() {
   for (const p of packShown) { const k = p.personId ?? ""; groups.set(k, [...(groups.get(k) ?? []), p]); }
   const ideas = [...data.ideas].sort((a, b) => b.votes.length - a.votes.length);
   const canEdit = (createdOrPerson: string | null) => data.isAdult || createdOrPerson === data.me;
+  // 2026-10-11: tap a flight to change it. A new flight starts where the last
+  // one landed; the same day as the last landing = a connecting flight.
+  function openFlight(f: Flight | null) {
+    setError(null);
+    if (f) { setFlight({ id: f.id, flightNo: f.flightNo ?? "", from: f.from ?? "", to: f.to ?? "", depYmd: f.depYmd, depTime: f.depTime, arrTime: f.arrTime ?? "", arrNextDay: !!f.arrNextDay, connection: !!f.connection, airportMin: f.airportMin, travelMin: f.travelMin }); return; }
+    const last = data!.flights[data!.flights.length - 1];
+    const lastArr = last ? (last.arrNextDay ? new Date(Date.parse(last.depYmd + "T12:00:00Z") + 86400000).toISOString().slice(0, 10) : last.depYmd) : null;
+    setFlight({ id: null, flightNo: "", from: last?.to ?? "", to: "", depYmd: lastArr ?? data!.trip.startYmd, depTime: "", arrTime: "", arrNextDay: false, connection: !!last, airportMin: data!.trip.airportBufferMin, travelMin: data!.trip.homeToAirportMin });
+  }
+  function setDepDate(ymd: string) {
+    if (!flight) return;
+    const others = data!.flights.filter((x) => x.id !== flight.id && (x.depYmd + x.depTime) < (ymd + (flight.depTime || "23:59")));
+    const prev = others[others.length - 1];
+    const prevArr = prev ? (prev.arrNextDay ? new Date(Date.parse(prev.depYmd + "T12:00:00Z") + 86400000).toISOString().slice(0, 10) : prev.depYmd) : null;
+    setFlight({ ...flight, depYmd: ymd, connection: !flight.id ? prevArr === ymd : flight.connection });
+  }
+  const flightForm = flight && (
+    <div style={{ ...card, padding: 16, marginBottom: 10, border: "1.5px solid var(--accent-border)" }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "var(--fg)", marginBottom: 8 }}>{flight.id ? t.editFlight : t.addFlight}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+        <div><label style={{ ...small, marginTop: 0 }}>{t.flightNo}</label><input style={input} value={flight.flightNo} placeholder="SK123" maxLength={12} onChange={(e) => setFlight({ ...flight, flightNo: e.target.value })} /></div>
+        <div><label style={{ ...small, marginTop: 0 }}>{t.flightFrom}</label><input style={input} value={flight.from} placeholder="ARN" maxLength={30} onChange={(e) => setFlight({ ...flight, from: e.target.value })} /></div>
+        <div><label style={{ ...small, marginTop: 0 }}>{t.flightTo}</label><input style={input} value={flight.to} placeholder="SPU" maxLength={30} onChange={(e) => setFlight({ ...flight, to: e.target.value })} /></div>
+      </div>
+      <label style={small}>{t.depDate}</label><input type="date" style={input} value={flight.depYmd} onChange={(e) => setDepDate(e.target.value)} />
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 8 }}>
+        <div><label style={small}>{t.depTime}</label><input type="time" style={input} value={flight.depTime} onChange={(e) => setFlight({ ...flight, depTime: e.target.value })} /></div>
+        <div><label style={small}>{t.arrTime}</label><input type="time" style={input} value={flight.arrTime} onChange={(e) => setFlight({ ...flight, arrTime: e.target.value })} /></div>
+      </div>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, fontSize: 13, color: "var(--fg-2)", cursor: "pointer" }}>
+        <input type="checkbox" checked={flight.arrNextDay} onChange={(e) => setFlight({ ...flight, arrNextDay: e.target.checked })} style={{ width: 18, height: 18, accentColor: "var(--accent)" }} /> {t.arrNextDay}
+      </label>
+      <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 8, fontSize: 13, color: "var(--fg-2)", cursor: "pointer", lineHeight: 1.4 }}>
+        <input type="checkbox" checked={flight.connection} onChange={(e) => setFlight({ ...flight, connection: e.target.checked })} style={{ width: 18, height: 18, accentColor: "var(--accent)", flexShrink: 0 }} /> {t.connection}
+      </label>
+      {!flight.connection && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div><label style={small}>{t.airportMin}</label><input type="number" inputMode="numeric" min={0} max={600} step={15} style={input} value={flight.airportMin} onChange={(e) => setFlight({ ...flight, airportMin: Number(e.target.value) || 0 })} /></div>
+          <div><label style={small}>{t.travelMin}</label><input type="number" inputMode="numeric" min={0} max={600} step={5} style={input} value={flight.travelMin} onChange={(e) => setFlight({ ...flight, travelMin: Number(e.target.value) || 0 })} /></div>
+        </div>
+      )}
+      {error && <div style={{ color: "var(--danger)", fontSize: 13, fontWeight: 700, marginTop: 10 }}>{error}</div>}
+      <div style={{ display: "flex", gap: 8, marginTop: 14, alignItems: "center" }}>
+        <button type="button" onClick={saveFlight} disabled={!flight.depYmd || !flight.depTime} style={{ ...btn, flex: 1, background: "var(--accent-bg)", color: "var(--on-accent)", opacity: flight.depYmd && flight.depTime ? 1 : 0.5 }}>{t.save}</button>
+        <button type="button" onClick={() => setFlight(null)} style={{ ...btn, background: "var(--surface-3)", color: "var(--fg-2)" }}>{t.cancel}</button>
+      </div>
+      {flight.id && <button type="button" onClick={() => { const fid = flight.id!; setFlight(null); remove(fid); }} style={{ ...btn, background: "none", color: "var(--danger)", padding: "12px 0 0" }}>{t.deleteFlight}</button>}
+    </div>
+  );
   const addRow = (kind: "PACK" | "IDEA" | "TODO", placeholder: string) => (
     <form onSubmit={(e) => { e.preventDefault(); add(kind); }} style={{ display: "flex", gap: 8, marginTop: 10 }}>
       <input value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} aria-label={placeholder} maxLength={120} style={{ ...input, flex: 1, minWidth: 0 }} />
@@ -187,54 +238,40 @@ export default function TripPage() {
 
         {tab === "flights" && (
           <>
-            <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 2px 12px", lineHeight: 1.5 }}>{t.flightsIntro}</p>
+            <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 2px 12px", lineHeight: 1.5 }}>{t.flightsIntro}{data.isAdult && data.flights.length > 0 ? ` ${t.tapToEdit}` : ""}</p>
             {data.flights.map((f) => (
-              <div key={f.id} style={{ ...card, padding: "14px 16px", marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)" }}>✈️ {f.flightNo?.toUpperCase()} {f.from && f.to ? `${f.from.toUpperCase()} → ${f.to.toUpperCase()}` : ""}</span>
-                  {data.isAdult && <button type="button" onClick={() => remove(f.id)} aria-label={m.assist.qaRemove} style={{ border: "none", background: "none", color: "var(--subtle)", fontSize: 18, cursor: "pointer" }}>×</button>}
+              flight?.id === f.id ? <div key={f.id}>{flightForm}</div> : (
+                <div key={f.id}>
+                  {f.connection && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "-2px 0 8px 18px", fontSize: 13, fontWeight: 700, color: f.layover !== null && f.layover < 60 ? "var(--danger)" : "var(--muted)" }}>
+                      <span aria-hidden>⏱</span> {t.layover(f.layoverAt, f.layover)}{f.layover !== null && f.layover < 60 ? ` – ${t.shortLayover}` : ""}
+                    </div>
+                  )}
+                  <div role={data.isAdult ? "button" : undefined} tabIndex={data.isAdult ? 0 : undefined} onClick={() => data.isAdult && openFlight(f)} onKeyDown={(e) => { if (data.isAdult && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openFlight(f); } }}
+                    style={{ ...card, padding: "14px 16px", marginBottom: 10, cursor: data.isAdult ? "pointer" : "default" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)" }}>✈️ {f.flightNo?.toUpperCase()} {f.from && f.to ? `${f.from.toUpperCase()} → ${f.to.toUpperCase()}` : ""}</span>
+                      {data.isAdult && <span aria-hidden style={{ color: "var(--subtle)", fontSize: 13, fontWeight: 700 }}>✎</span>}
+                    </div>
+                    <div style={{ fontSize: 14, color: "var(--fg-2)", marginTop: 4, fontWeight: 600 }}>{day(f.depYmd)} · {f.depTime}{f.arrTime ? ` – ${f.arrTime}${f.arrNextDay ? " (+1)" : ""}` : ""}</div>
+                    {f.leave && (
+                      <>
+                        <div style={{ marginTop: 10, background: "var(--tint-accent)", color: "var(--accent-strong)", borderRadius: 12, padding: "9px 12px", fontSize: 14, fontWeight: 800 }}>🚗 {t.leaveHome(f.leave, f.leaveDayBefore)}</div>
+                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>{t.timing(f.airportMin, f.travelMin)}</div>
+                      </>
+                    )}
+                    {data.isAdult && !f.connection && (
+                      <label onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, fontSize: 13.5, color: "var(--fg)", cursor: "pointer" }}>
+                        <input type="checkbox" checked={f.checked} onChange={() => toggle(f.id, !f.checked)} style={{ width: 18, height: 18, accentColor: "var(--accent)" }} /> {t.checkedIn}
+                      </label>
+                    )}
+                  </div>
                 </div>
-                <div style={{ fontSize: 14, color: "var(--fg-2)", marginTop: 4, fontWeight: 600 }}>{day(f.depYmd)} · {f.depTime}{f.arrTime ? ` – ${f.arrTime}` : ""}</div>
-                <div style={{ marginTop: 10, background: "var(--tint-accent)", color: "var(--accent-strong)", borderRadius: 12, padding: "9px 12px", fontSize: 14, fontWeight: 800 }}>🚗 {t.leaveHome(f.leave, f.leaveDayBefore)}</div>
-                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>{t.timing(trip.airportBufferMin, trip.homeToAirportMin)}</div>
-                {data.isAdult && (
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, fontSize: 13.5, color: "var(--fg)", cursor: "pointer" }}>
-                    <input type="checkbox" checked={f.checked} onChange={() => toggle(f.id, !f.checked)} style={{ width: 18, height: 18, accentColor: "var(--accent)" }} /> {t.checkedIn}
-                  </label>
-                )}
-              </div>
+              )
             ))}
+            {flight && !flight.id && flightForm}
             {data.isAdult && !flight && (
-              <button type="button" onClick={() => setFlight({ flightNo: "", from: "", to: "", depYmd: data.flights.length ? trip.endYmd : trip.startYmd, depTime: "", arrTime: "" })} style={{ ...btn, width: "100%", background: "var(--accent-bg)", color: "var(--on-accent)", padding: 13 }}>+ {t.addFlight}</button>
-            )}
-            {flight && (
-              <div style={{ ...card, padding: 16 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                  <div><label style={{ ...small, marginTop: 0 }}>{t.flightNo}</label><input style={input} value={flight.flightNo} placeholder="SK123" maxLength={12} onChange={(e) => setFlight({ ...flight, flightNo: e.target.value })} /></div>
-                  <div><label style={{ ...small, marginTop: 0 }}>{t.flightFrom}</label><input style={input} value={flight.from} placeholder="ARN" maxLength={30} onChange={(e) => setFlight({ ...flight, from: e.target.value })} /></div>
-                  <div><label style={{ ...small, marginTop: 0 }}>{t.flightTo}</label><input style={input} value={flight.to} placeholder="SPU" maxLength={30} onChange={(e) => setFlight({ ...flight, to: e.target.value })} /></div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: 8 }}>
-                  <div><label style={small}>{t.depDate}</label><input type="date" style={input} value={flight.depYmd} onChange={(e) => setFlight({ ...flight, depYmd: e.target.value })} /></div>
-                  <div><label style={small}>{t.depTime}</label><input type="time" style={input} value={flight.depTime} onChange={(e) => setFlight({ ...flight, depTime: e.target.value })} /></div>
-                  <div><label style={small}>{t.arrTime}</label><input type="time" style={input} value={flight.arrTime} onChange={(e) => setFlight({ ...flight, arrTime: e.target.value })} /></div>
-                </div>
-                {error && <div style={{ color: "var(--danger)", fontSize: 13, fontWeight: 700, marginTop: 10 }}>{error}</div>}
-                <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                  <button type="button" onClick={saveFlight} disabled={!flight.depYmd || !flight.depTime} style={{ ...btn, flex: 1, background: "var(--accent-bg)", color: "var(--on-accent)", opacity: flight.depYmd && flight.depTime ? 1 : 0.5 }}>{t.save}</button>
-                  <button type="button" onClick={() => setFlight(null)} style={{ ...btn, background: "var(--surface-3)", color: "var(--fg-2)" }}>{t.cancel}</button>
-                </div>
-              </div>
-            )}
-            {data.isAdult && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 16 }}>
-                <label style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>{t.airportMin}
-                  <input type="number" min={0} max={600} step={15} defaultValue={trip.airportBufferMin} onBlur={(e) => patchTrip({ airportBufferMin: Number(e.target.value) })} style={{ ...input, marginTop: 5 }} />
-                </label>
-                <label style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>{t.travelMin}
-                  <input type="number" min={0} max={600} step={5} defaultValue={trip.homeToAirportMin} onBlur={(e) => patchTrip({ homeToAirportMin: Number(e.target.value) })} style={{ ...input, marginTop: 5 }} />
-                </label>
-              </div>
+              <button type="button" onClick={() => openFlight(null)} style={{ ...btn, width: "100%", background: "var(--accent-bg)", color: "var(--on-accent)", padding: 13 }}>+ {t.addFlight}</button>
             )}
           </>
         )}

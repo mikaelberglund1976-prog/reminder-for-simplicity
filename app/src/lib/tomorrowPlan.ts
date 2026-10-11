@@ -18,7 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { getOccurrencesInRange, type RecurrenceRule } from "@/lib/recurrence";
 import { getTimes } from "@/lib/reminderTimes";
 import type { Messages } from "@/lib/i18n/messages";
-import { ensureTripTables, flightTitle, minusMinutes, parseFlight, type ItemRow, type TripRow } from "@/lib/trips";
+import { ensureTripTables, flightTitle, leaveFor, parseFlight, type ItemRow, type TripRow } from "@/lib/trips";
 
 const ADULT = ["OWNER", "PARENT", "ADULT"];
 const CLASH_GAP_MIN = 30;
@@ -128,8 +128,8 @@ export async function buildPlan(userId: string, t: Messages["assist"], ymd = tom
       for (const f of flights) {
         const d = parseFlight(f);
         if (!d || d.depYmd !== ymd) continue;
-        const leave = minusMinutes(d.depTime, trip.airportBufferMin + trip.homeToAirportMin);
-        items.push({ reminderId: f.id, title: flightTitle(d), kind: "TRIP", childId: null, who: trip.name, startTime: d.depTime, endTime: d.arrTime ?? null, place: t.leaveHomeShort(leave.time), needsRide: false, driverId: null, driver: null, href: `/dashboard/trips/${trip.id}` });
+        const leave = leaveFor(trip, d);
+        items.push({ reminderId: f.id, title: flightTitle(d), kind: "TRIP", childId: null, who: trip.name, startTime: d.depTime, endTime: d.arrTime ?? null, place: leave ? t.leaveHomeShort(leave.time) : null, needsRide: false, driverId: null, driver: null, href: `/dashboard/trips/${trip.id}` });
       }
     }
   } catch (err) { console.error("Tomorrow plan: trips failed:", err); }

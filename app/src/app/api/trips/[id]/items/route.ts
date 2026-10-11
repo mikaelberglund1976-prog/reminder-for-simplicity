@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tripCtx } from "../../_ctx";
-import { getTrip, insertItem, isHhmm, isYmd, saveFlightReminder, tripItems, type FlightData, type ItemKind } from "@/lib/trips";
+import { flightFromBody, getTrip, insertItem, isYmd, saveFlightReminder, tripItems, type ItemKind } from "@/lib/trips";
 
 // POST   { kind: "PACK"|"IDEA"|"TODO", label, personId?, dueYmd? }  → { id }
 // POST   { kind: "FLIGHT", flightNo?, from?, to?, depYmd, depTime, arrTime? } (adults) → { id }
-// PATCH  { itemId, checked? , vote? , label? }
+// PATCH  { itemId, checked? , vote? , label? } | { itemId, flight: {…} } (adults)
 // DELETE ?itemId=…
 // Children: add ideas and their own packing, vote, tick their own packing.
 export const dynamic = "force-dynamic";
@@ -29,9 +29,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!c.isAdult && (kind === "FLIGHT" || kind === "TODO")) return NextResponse.json({ error: "Only an adult can do that" }, { status: 403 });
 
   if (kind === "FLIGHT") {
-    if (!isYmd(b.depYmd) || !isHhmm(b.depTime)) return NextResponse.json({ error: "Add the date and departure time" }, { status: 400 });
-    const s = (v: unknown, n: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, n) : undefined);
-    const f: FlightData = { flightNo: s(b.flightNo, 12), from: s(b.from, 30), to: s(b.to, 30), depYmd: b.depYmd, depTime: b.depTime, arrTime: isHhmm(b.arrTime) ? b.arrTime : null };
+    const f = flightFromBody(b);
+    if (!f) return NextResponse.json({ error: "Add the date and departure time" }, { status: 400 });
     const reminderId = await saveFlightReminder(trip, f, c.uid, null);
     const id = await insertItem(trip.id, "FLIGHT", f.flightNo ?? "flight", c.uid, { data: f, reminderId });
     return NextResponse.json({ id }, { status: 201 });
@@ -56,6 +55,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const votes = new Set((item.votes ?? "").split(",").filter(Boolean));
     if (b.vote) votes.add(c.uid); else votes.delete(c.uid);
     await prisma.$executeRaw`UPDATE "trip_items" SET "votes" = ${Array.from(votes).join(",") || null} WHERE "id" = ${item.id}`;
+    return NextResponse.json({ ok: true });
+  }
+  // 2026-10-11: edit a flight (tap the card) — the calendar item follows.
+  if (b.flight && typeof b.flight === "object" && item.kind === "FLIGHT") {
+    if (!c.isAdult) return NextResponse.json({ error: "Only an adult can do that" }, { status: 403 });
+    const f = flightFromBody(b.flight);
+    if (!f) return NextResponse.json({ error: "Add the date and departure time" }, { status: 400 });
+    const reminderId = await saveFlightReminder(trip, f, c.uid, item.reminderId);
+    await prisma.$executeRaw`UPDATE "trip_items" SET "data" = ${JSON.stringify(f)}, "label" = ${f.flightNo ?? "flight"}, "reminderId" = ${reminderId} WHERE "id" = ${item.id}`;
     return NextResponse.json({ ok: true });
   }
   const mayEdit = c.isAdult || item.personId === c.uid || (item.kind === "IDEA" && item.createdBy === c.uid);
