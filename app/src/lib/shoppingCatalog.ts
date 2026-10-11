@@ -44,6 +44,10 @@ export const CATALOG_ITEMS: Record<string, string[]> = {
     "Oats", "Honey", "Peanut butter", "Canned beans", "Mustard", "Mayonnaise",
     "Chocolate", "Crackers", "Nuts", "Vinegar", "Stock cubes", "Soy sauce",
   ],
+  drinks: [
+    "Water", "Sparkling water", "Juice", "Orange juice", "Soda", "Cordial",
+    "Beer", "Wine", "Cider", "Energy drink", "Sports drink", "Iced tea",
+  ],
   household: [
     "Toilet paper", "Paper towels", "Dish soap", "Laundry detergent",
     "Trash bags", "Toothpaste", "Shampoo", "Hand soap", "Aluminum foil",

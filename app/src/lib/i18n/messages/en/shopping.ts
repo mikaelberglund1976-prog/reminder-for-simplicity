@@ -2,7 +2,7 @@ export const shopping = {
   // Default category names (households can rename theirs).
   defaultCategories: {
     produce: "Fruit & vegetables", bread: "Bread", dairy: "Dairy", meat_fish: "Meat & fish",
-    frozen: "Frozen", pantry: "Pantry", household: "Household", other: "Other",
+    frozen: "Frozen", pantry: "Pantry", drinks: "Drinks", household: "Household", other: "Other",
   } as Record<string, string>,
   catalog: {
     produce: ["Bananas", "Apples", "Tomatoes", "Cucumber", "Potatoes", "Onion", "Garlic", "Lettuce", "Avocado", "Lemon", "Carrots", "Bell pepper", "Broccoli", "Spinach", "Mushrooms", "Grapes", "Oranges", "Strawberries", "Blueberries", "Cabbage", "Sweet potatoes", "Celery", "Ginger", "Lime"],
@@ -11,6 +11,7 @@ export const shopping = {
     meat_fish: ["Chicken", "Minced meat", "Salmon", "Bacon", "Sausages", "Ground beef", "Pork chops", "Shrimp", "Ham", "Meatballs", "Turkey", "Tuna"],
     frozen: ["Frozen berries", "Ice cream", "Frozen pizza", "Fish sticks", "Frozen vegetables", "French fries", "Frozen shrimp", "Frozen waffles"],
     pantry: ["Pasta", "Rice", "Coffee", "Olive oil", "Sugar", "Flour", "Canned tomatoes", "Ketchup", "Tea", "Salt", "Black pepper", "Cereal", "Oats", "Honey", "Peanut butter", "Canned beans", "Mustard", "Mayonnaise", "Chocolate", "Crackers", "Nuts", "Vinegar", "Stock cubes", "Soy sauce"],
+    drinks: ["Water", "Sparkling water", "Juice", "Orange juice", "Soda", "Cordial", "Beer", "Wine", "Cider", "Energy drink", "Sports drink", "Iced tea"],
     household: ["Toilet paper", "Paper towels", "Dish soap", "Laundry detergent", "Trash bags", "Toothpaste", "Shampoo", "Hand soap", "Aluminum foil", "Cling film", "Batteries", "Light bulbs", "Sponges", "Napkins"],
   } as Record<string, string[]>,
   unsorted: "Unsorted",

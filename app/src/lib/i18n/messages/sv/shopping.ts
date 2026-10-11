@@ -3,7 +3,7 @@ import type { Messages } from "../en";
 export const shopping: Messages["shopping"] = {
   defaultCategories: {
     produce: "Frukt & grönt", bread: "Bröd", dairy: "Mejeri", meat_fish: "Kött & fisk",
-    frozen: "Fryst", pantry: "Skafferi", household: "Hushåll", other: "Övrigt",
+    frozen: "Fryst", pantry: "Skafferi", drinks: "Dryck", household: "Hushåll", other: "Övrigt",
   },
   catalog: {
     produce: ["Bananer", "Äpplen", "Tomater", "Gurka", "Potatis", "Lök", "Vitlök", "Sallad", "Avokado", "Citron", "Morötter", "Paprika", "Broccoli", "Spenat", "Svamp", "Vindruvor", "Apelsiner", "Jordgubbar", "Blåbär", "Vitkål", "Sötpotatis", "Selleri", "Ingefära", "Lime"],
@@ -12,6 +12,7 @@ export const shopping: Messages["shopping"] = {
     meat_fish: ["Kyckling", "Färs", "Lax", "Bacon", "Korv", "Nötfärs", "Fläskkotlett", "Räkor", "Skinka", "Köttbullar", "Kalkon", "Tonfisk"],
     frozen: ["Frysta bär", "Glass", "Fryspizza", "Fiskpinnar", "Frysta grönsaker", "Pommes frites", "Frysta räkor", "Frysta våfflor"],
     pantry: ["Pasta", "Ris", "Kaffe", "Olivolja", "Socker", "Vetemjöl", "Krossade tomater", "Ketchup", "Te", "Salt", "Svartpeppar", "Flingor", "Havregryn", "Honung", "Jordnötssmör", "Bönor på burk", "Senap", "Majonnäs", "Choklad", "Kex", "Nötter", "Ättika", "Buljongtärningar", "Soja"],
+    drinks: ["Vatten", "Kolsyrat vatten", "Juice", "Apelsinjuice", "Läsk", "Saft", "Öl", "Vin", "Cider", "Energidryck", "Sportdryck", "Iste"],
     household: ["Toalettpapper", "Hushållspapper", "Diskmedel", "Tvättmedel", "Soppåsar", "Tandkräm", "Schampo", "Handtvål", "Aluminiumfolie", "Plastfolie", "Batterier", "Glödlampor", "Disksvampar", "Servetter"],
   },
   unsorted: "Osorterat",
