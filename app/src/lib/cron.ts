@@ -13,6 +13,7 @@ import { activityImportInfo, syncAllActivityFeeds } from "@/lib/activityFeeds";
 import { getBirthdayRows } from "@/lib/birthdays";
 import { sendBirthdayReminder, sendBirthdayDayPushes } from "@/lib/birthdayCron";
 import { notifyChanges } from "@/lib/changeWatch";
+import { runTripNudges } from "@/lib/tripNudges";
 
 function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -64,6 +65,10 @@ export async function runReminderCron() {
   // 2026-10-11: change watch — push what the syncs above found changed.
   const changePushes = await notifyChanges();
   if (changePushes) log.push(`Change watch: ${changePushes} pushes`);
+
+  // 2026-10-11: trips — passports, vaccination, check-in, packing.
+  const tripPushes = await runTripNudges();
+  if (tripPushes) log.push(`Trips: ${tripPushes} pushes`);
 
   const reminders = await prisma.reminder.findMany({
     // 2026-09-27: skip reminders owned by soft-deleted accounts.

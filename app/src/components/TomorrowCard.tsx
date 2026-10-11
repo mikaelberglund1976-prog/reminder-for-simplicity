@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
-type Item = { reminderId: string; title: string; kind: "TEST" | "HOMEWORK" | "SCHOOL" | "ACTIVITY"; who: string | null; startTime: string | null; endTime: string | null; place: string | null; needsRide: boolean; driverId: string | null; driver: string | null; href: string };
+type Item = { reminderId: string; title: string; kind: "TEST" | "HOMEWORK" | "SCHOOL" | "ACTIVITY" | "TRIP"; who: string | null; startTime: string | null; endTime: string | null; place: string | null; needsRide: boolean; driverId: string | null; driver: string | null; href: string };
 type Check = { key: string; label: string; checked: boolean; custom: boolean; who: string | null };
 type Plan = { ymd: string; isAdult: boolean; items: Item[]; checks: Check[]; clashes: string[] };
 
@@ -57,6 +57,7 @@ export default function TomorrowCard() {
     HOMEWORK: { bg: "var(--tint-school)", fg: "var(--school)", label: m.homePrefs.kindHomework },
     SCHOOL: { bg: "var(--surface-3)", fg: "var(--muted)", label: m.homePrefs.kindSchool },
     ACTIVITY: { bg: "var(--tint-warning)", fg: "#D85A30", label: m.homePrefs.kindActivity },
+    TRIP: { bg: "var(--tint-accent)", fg: "var(--accent)", label: m.nav.trips },
   };
   const small = { border: "none", borderRadius: 50, padding: "5px 11px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: FONT } as const;
 
@@ -77,7 +78,7 @@ export default function TomorrowCard() {
                 <span style={{ width: 74, flexShrink: 0, fontSize: 13, fontWeight: 800, color: time ? "var(--fg)" : "var(--subtle)", fontVariantNumeric: "tabular-nums" }}>{time || "–"}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.title}</span>
-                  {(it.who || it.place) && <span style={{ display: "block", fontSize: 12, color: "var(--muted)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{[it.who, it.place && `📍 ${it.place}`].filter(Boolean).join(" · ")}</span>}
+                  {(it.who || it.place) && <span style={{ display: "block", fontSize: 12, color: "var(--muted)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{[it.who, it.place && (it.kind === "TRIP" ? it.place : `📍 ${it.place}`)].filter(Boolean).join(" · ")}</span>}
                 </span>
                 <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0, background: k.bg, color: k.fg }}>{k.label}</span>
               </Link>

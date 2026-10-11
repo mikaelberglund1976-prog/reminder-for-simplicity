@@ -34,6 +34,7 @@ import { school } from "./school";
 import { schoolsoft } from "./schoolsoft";
 import { serverErrors } from "./serverErrors";
 import { shopping } from "./shopping";
+import { trips } from "./trips";
 import { wishlist } from "./wishlist";
 
 export const en = {
@@ -72,6 +73,7 @@ export const en = {
   schoolsoft,
   serverErrors,
   shopping,
+  trips,
   wishlist,
 };
 

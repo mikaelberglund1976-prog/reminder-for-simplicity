@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { getOccurrencesInRange, type RecurrenceRule } from "@/lib/recurrence";
 import { getTimes } from "@/lib/reminderTimes";
 import type { Messages } from "@/lib/i18n/messages";
+import { ensureTripTables, flightTitle, minusMinutes, parseFlight, type ItemRow, type TripRow } from "@/lib/trips";
 
 const ADULT = ["OWNER", "PARENT", "ADULT"];
 const CLASH_GAP_MIN = 30;
@@ -39,6 +40,7 @@ export function ensurePlanTables(): Promise<void> {
 }
 
 export const stockholmYmd = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Stockholm", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+const addDaysYmd = (ymd: string, n: number) => new Date(Date.parse(ymd + "T12:00:00Z") + n * 86400000).toISOString().slice(0, 10);
 export const tomorrowYmd = (now = new Date()) => new Date(Date.parse(stockholmYmd(now) + "T12:00:00Z") + 86400000).toISOString().slice(0, 10);
 
 // ── what to bring ───────────────────────────────────────────────────────────
@@ -65,7 +67,7 @@ const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9�
 
 // ── the plan ────────────────────────────────────────────────────────────────
 export type PlanItem = {
-  reminderId: string; title: string; kind: "TEST" | "HOMEWORK" | "SCHOOL" | "ACTIVITY";
+  reminderId: string; title: string; kind: "TEST" | "HOMEWORK" | "SCHOOL" | "ACTIVITY" | "TRIP";
   childId: string | null; who: string | null; startTime: string | null; endTime: string | null; place: string | null;
   needsRide: boolean; driverId: string | null; driver: string | null; href: string;
 };
@@ -101,7 +103,7 @@ export async function buildPlan(userId: string, t: Messages["assist"], ymd = tom
     : [];
   const rideOf = new Map(rides.map((r) => [r.reminderId, r.driverId]));
 
-  const items: PlanItem[] = due.map((r) => {
+  const items: PlanItem[] = due.map((r): PlanItem => {
     const tm = times.get(r.id);
     const place = r.note && /^📍/.test(r.note) ? r.note.replace(/^📍\s*/, "").split("\n")[0] : null;
     const kind: PlanItem["kind"] = r.category === "TRAINING" ? "ACTIVITY" : r.schoolKind === "TEST" ? "TEST" : r.schoolKind === "HOMEWORK" ? "HOMEWORK" : "SCHOOL";
@@ -114,7 +116,24 @@ export async function buildPlan(userId: string, t: Messages["assist"], ymd = tom
       driverId, driver: driverId ? (driverId === userId ? t.me : first.get(driverId) ?? null) : null,
       href: r.category === "TRAINING" ? "/dashboard/training" : "/dashboard/school",
     };
-  }).sort((a, b) => (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99") || a.title.localeCompare(b.title));
+  });
+  // 2026-10-11: flights tomorrow (Trips) — with "leave home at".
+  try {
+    await ensureTripTables();
+    const trips = await prisma.$queryRaw<TripRow[]>`SELECT * FROM "trips" WHERE "householdId" = ${member.householdId} AND "startYmd" <= ${ymd} AND "endYmd" >= ${addDaysYmd(ymd, -1)}`;
+    for (const trip of trips) {
+      const going = (trip.travellers ?? "").split(",").filter(Boolean);
+      if (!isAdult && going.length && !going.includes(userId)) continue;
+      const flights = await prisma.$queryRaw<ItemRow[]>`SELECT * FROM "trip_items" WHERE "tripId" = ${trip.id} AND "kind" = 'FLIGHT'`;
+      for (const f of flights) {
+        const d = parseFlight(f);
+        if (!d || d.depYmd !== ymd) continue;
+        const leave = minusMinutes(d.depTime, trip.airportBufferMin + trip.homeToAirportMin);
+        items.push({ reminderId: f.id, title: flightTitle(d), kind: "TRIP", childId: null, who: trip.name, startTime: d.depTime, endTime: d.arrTime ?? null, place: t.leaveHomeShort(leave.time), needsRide: false, driverId: null, driver: null, href: `/dashboard/trips/${trip.id}` });
+      }
+    }
+  } catch (err) { console.error("Tomorrow plan: trips failed:", err); }
+  items.sort((a, b) => (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99") || a.title.localeCompare(b.title));
 
   // Checklist: derived items + hand-added ones, with their ticked state.
   const stored = await prisma.$queryRaw<{ key: string; label: string; custom: boolean; checked: boolean }[]>`SELECT "key", "label", "custom", "checked" FROM "day_checks" WHERE "householdId" = ${member.householdId} AND "ymd" = ${ymd} ORDER BY "updatedAt" ASC`;

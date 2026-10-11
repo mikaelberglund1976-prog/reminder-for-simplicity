@@ -44,6 +44,7 @@ export const assist: Messages["assist"] = {
   clashSameDriver: (driver, a, b) => `${driver} står på både ${a} och ${b}`,
   ridePushTitle: "Skjutsen är fixad",
   ridePushBody: (driver, who, title, time) => `${driver} skjutsar ${who ? `${who} till ` : ""}${title}${time ? ` ${time}` : ""} i morgon`,
+  leaveHomeShort: (time) => `🚗 Åk hemifrån ${time}`,
   bringGymBag: "Gympapåse",
   bringSwim: "Badkläder och handduk",
   bringLunch: "Matsäck",

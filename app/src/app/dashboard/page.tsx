@@ -6,6 +6,7 @@ import GiftSharesCard from "@/components/GiftSharesCard";
 import QuickAdd from "@/components/QuickAdd";
 import ChangesCard from "@/components/ChangesCard";
 import TomorrowCard from "@/components/TomorrowCard";
+import TripSoonCard from "@/components/TripSoonCard";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -195,6 +196,7 @@ function IcSchool()  { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d=
 function IcChecklist() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="m4 6 1 1 2-2"/><path d="m4 12 1 1 2-2"/><path d="m4 18 1 1 2-2"/></svg>; }
 function IcGift()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="8" width="18" height="4"/><rect x="4" y="12" width="16" height="9"/><path d="M12 8v13M12 8c-1.5-3-5-3-5-1s2 1 5 1zM12 8c1.5-3 5-3 5-1s-2 1-5 1z"/></svg>; }
 function IcCalendar() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
+function IcSuitcase() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M8 11v5M16 11v5"/></svg>; }
 function IcCake() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3M12 8v3M17 8v3"/></svg>; }
 function IcBellPlus() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M12 6v5M9.5 8.5h5"/></svg>; }
 
@@ -208,6 +210,8 @@ const QUICK_ACTIONS: { label: keyof Messages["home"]["quick"]; href: string; Ico
   { label: "wishlists",     href: "/dashboard/wishlist",             Icon: IcGift,      color: "var(--danger)",  tint: "var(--tint-danger)" , pro: true },
   // 2026-10-10: birthdays are free.
   { label: "birthdays",     href: "/dashboard/birthdays",            Icon: IcCake,      color: "var(--pink)",    tint: "var(--tint-pink)" },
+  // 2026-10-11: trips — passports, flights, packing, ideas.
+  { label: "trips",         href: "/dashboard/trips",                Icon: IcSuitcase,  color: "var(--accent)",  tint: "var(--tint-accent)" },
   { label: "calendar",      href: "/dashboard/calendar",             Icon: IcCalendar,  color: "var(--fg-2)",    tint: "var(--surface-3)" },
 ];
 
@@ -619,6 +623,7 @@ export default function DashboardPage() {
             what the school/club calendars changed (the change watch). */}
         {hasHousehold && <QuickAdd onAdded={() => { fetchReminders(); fetchFamilyData(); }} />}
         {hasHousehold && <ChangesCard />}
+        {hasHousehold && <TripSoonCard />}
 
         {/* 2026-09-28 (rows 40 + 44): the family at a glance — photos, and
             adding someone is one tap from Home instead of buried in Settings. */}

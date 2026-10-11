@@ -46,6 +46,7 @@ export const assist = {
   clashSameDriver: (driver: string, a: string, b: string) => `${driver} is down for both ${a} and ${b}`,
   ridePushTitle: "Ride sorted",
   ridePushBody: (driver: string, who: string, title: string, time: string | null) => `${driver} takes ${who ? `${who} to ` : ""}${title}${time ? ` ${time}` : ""} tomorrow`,
+  leaveHomeShort: (time: string) => `🚗 Leave home ${time}`,
   bringGymBag: "Gym bag",
   bringSwim: "Swimwear and towel",
   bringLunch: "Packed lunch",

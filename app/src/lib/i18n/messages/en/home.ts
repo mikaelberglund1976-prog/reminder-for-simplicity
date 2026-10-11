@@ -40,6 +40,7 @@ export const home = {
     wishlists: "Wishlists",
     calendar: "Calendar",
     birthdays: "Birthdays",
+    trips: "Trips",
     scan: "Scan newsletter",
   },
   pro: "PRO",

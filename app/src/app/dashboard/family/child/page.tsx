@@ -28,6 +28,7 @@ import StarSummary from "@/components/StarSummary";
 import QuickAdd from "@/components/QuickAdd";
 import ChangesCard from "@/components/ChangesCard";
 import TomorrowCard from "@/components/TomorrowCard";
+import TripSoonCard from "@/components/TripSoonCard";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -272,6 +273,7 @@ function ChildViewContent() {
             watch and tomorrow's checklist — only on the child's own Home. */}
         {isOwn && <QuickAdd onAdded={() => { fetchChores(); }} />}
         {isOwn && <ChangesCard />}
+        {isOwn && <TripSoonCard />}
         {isOwn && <TomorrowCard />}
 
         {/* Overview — what needs doing, at a glance. */}

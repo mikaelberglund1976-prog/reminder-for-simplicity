@@ -9,6 +9,7 @@ export const nav = {
   school: "School",
   familyMembers: "Family members",
   birthdays: "Birthdays",
+  trips: "Trips",
   ideas: "Ideas & voting",
   settings: "Settings",
   privacy: "Privacy",

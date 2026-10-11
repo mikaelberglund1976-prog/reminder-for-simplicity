@@ -42,6 +42,7 @@ export const home: Messages["home"] = {
     wishlists: "Önskelistor",
     calendar: "Kalender",
     birthdays: "Födelsedagar",
+    trips: "Resor",
     scan: "Skanna veckobrev",
   },
   pro: "PRO",

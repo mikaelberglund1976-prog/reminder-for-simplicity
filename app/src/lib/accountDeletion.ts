@@ -177,6 +177,7 @@ export async function purgeAccount(userId: string) {
   // 2026-10-11: change watch + tomorrow card (rides, who ticked what).
   await deleteChangeDataForUser(userId);
   await deletePlanDataForUser(userId);
+  await prisma.$executeRaw`DELETE FROM "person_docs" WHERE "userId" = ${userId}`.catch(() => 0);
 }
 
 export async function purgeExpiredAccounts() {
