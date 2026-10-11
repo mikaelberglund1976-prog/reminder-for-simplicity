@@ -17,7 +17,7 @@ type Step = { key: string; ymd: string; text: string; level: "ok" | "todo" | "wa
 type Flight = { id: string; checked: boolean; flightNo?: string; from?: string; to?: string; depYmd: string; depTime: string; arrTime?: string | null; arrNextDay?: boolean; connection?: boolean; airportMin: number; travelMin: number; leave: string | null; leaveDayBefore: boolean; layover: number | null; layoverAt: string | null };
 type FlightDraft = { id: string | null; flightNo: string; from: string; to: string; depYmd: string; depTime: string; arrTime: string; arrNextDay: boolean; connection: boolean; airportMin: number; travelMin: number };
 type Pack = { id: string; label: string; personId: string | null; checked: boolean };
-type Idea = { id: string; label: string; personId: string; votes: string[] };
+type Idea = { id: string; label: string; url: string | null; personId: string; votes: string[] };
 type Trip = { id: string; name: string; destination: string | null; startYmd: string; endYmd: string; kind: string; vaccine: boolean; homeToAirportMin: number; airportBufferMin: number };
 type Data = { trip: Trip; me: string; isAdult: boolean; people: Person[]; travellers: Person[]; daysTo: number; daysLeft: number; steps: Step[]; stepsLeft: number; passports: Record<string, string | null>; flights: Flight[]; pack: Pack[]; ideas: Idea[] };
 type Tab = "before" | "flights" | "pack" | "ideas";
@@ -28,6 +28,10 @@ const small = { display: "block", fontSize: 11.5, fontWeight: 700, color: "var(-
 const btn = { border: "none", borderRadius: 12, padding: "10px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT } as const;
 const LEVEL = { ok: "var(--success)", todo: "var(--fg)", warn: "#B7791F", bad: "var(--danger)" };
 const DOT = { ok: "✅", todo: "⬜️", warn: "⚠️", bad: "⛔️" };
+
+function hostOf(url: string) {
+  try { return new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.replace(/^www\./, ""); } catch { return url; }
+}
 
 export default function TripPage() {
   const { status } = useSession();
@@ -41,6 +45,9 @@ export default function TripPage() {
   const [text, setText] = useState("");
   const [flight, setFlight] = useState<FlightDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 2026-10-11 (Mikael): a link on "Want to do" — new idea, or tap one to change it.
+  const [ideaUrlText, setIdeaUrlText] = useState("");
+  const [editIdea, setEditIdea] = useState<{ id: string; label: string; url: string } | null>(null);
 
   const load = useCallback(async () => {
     const r = await fetch(`/api/trips/${id}`);
@@ -57,10 +64,25 @@ export default function TripPage() {
   function pickTab(x: Tab) { setTab(x); setText(""); setError(null); try { localStorage.setItem("rfs-trip-tab", x); } catch { /* ignore */ } }
 
   async function add(kind: "PACK" | "IDEA" | "TODO") {
-    const label = text.trim();
+    let label = text.trim();
+    let url = kind === "IDEA" ? ideaUrlText.trim() : "";
+    // A link pasted into the text field: split it out (and use the site name if nothing else was written).
+    const m2 = kind === "IDEA" && !url ? /(https?:\/\/\S+|www\.\S+)/i.exec(label) : null;
+    if (m2) { url = m2[1]; label = label.replace(m2[1], "").trim() || hostOf(url); }
+    if (!label && url) label = hostOf(url);
     if (!label) return;
-    setText("");
-    await items({ kind, label, personId: kind === "PACK" && who !== "ALL" && who !== "SHARED" ? who : null });
+    setError(null);
+    const r = await items({ kind, label, url: url || undefined, personId: kind === "PACK" && who !== "ALL" && who !== "SHARED" ? who : null });
+    if (!r.ok) { setError(err((await r.json().catch(() => ({}))).error)); return; }
+    setText(""); setIdeaUrlText("");
+    load();
+  }
+  async function saveIdea() {
+    if (!editIdea) return;
+    setError(null);
+    const r = await items({ itemId: editIdea.id, label: editIdea.label, url: editIdea.url.trim() }, "PATCH");
+    if (!r.ok) { setError(err((await r.json().catch(() => ({}))).error)); return; }
+    setEditIdea(null);
     load();
   }
   async function toggle(itemId: string, checked: boolean) {
@@ -315,20 +337,48 @@ export default function TripPage() {
               <div style={{ ...card, padding: "2px 14px" }}>
                 {ideas.map((idea, i) => {
                   const mine = idea.votes.includes(data.me);
+                  const editable = canEdit(idea.personId);
+                  if (editIdea?.id === idea.id) return (
+                    <div key={idea.id} style={{ padding: "12px 0", borderTop: i ? "1px solid var(--border-soft)" : "none" }}>
+                      <input style={input} value={editIdea.label} maxLength={120} aria-label={t.addIdea} onChange={(e) => setEditIdea({ ...editIdea, label: e.target.value })} />
+                      <input style={{ ...input, marginTop: 8 }} value={editIdea.url} placeholder={t.linkPlaceholder} inputMode="url" aria-label={t.linkPlaceholder} onChange={(e) => setEditIdea({ ...editIdea, url: e.target.value })} />
+                      {error && <div style={{ color: "var(--danger)", fontSize: 13, fontWeight: 700, marginTop: 8 }}>{error}</div>}
+                      <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
+                        <button type="button" onClick={saveIdea} disabled={!editIdea.label.trim()} style={{ ...btn, flex: 1, background: "var(--accent-bg)", color: "var(--on-accent)" }}>{t.save}</button>
+                        <button type="button" onClick={() => { setEditIdea(null); setError(null); }} style={{ ...btn, background: "var(--surface-3)", color: "var(--fg-2)" }}>{t.cancel}</button>
+                      </div>
+                      <button type="button" onClick={() => { setEditIdea(null); remove(idea.id); }} style={{ ...btn, background: "none", color: "var(--danger)", padding: "10px 0 0" }}>{m.assist.qaRemove}</button>
+                    </div>
+                  );
                   return (
                     <div key={idea.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 0", borderTop: i ? "1px solid var(--border-soft)" : "none" }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div role={editable ? "button" : undefined} tabIndex={editable ? 0 : undefined} onClick={() => editable && setEditIdea({ id: idea.id, label: idea.label, url: idea.url ?? "" })}
+                        onKeyDown={(e) => { if (editable && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setEditIdea({ id: idea.id, label: idea.label, url: idea.url ?? "" }); } }}
+                        style={{ flex: 1, minWidth: 0, cursor: editable ? "pointer" : "default" }}>
                         <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--fg)" }}>{idea.label}</div>
                         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{nameOf(idea.personId)} · {t.votes(idea.votes.length)}</div>
+                        {idea.url && (
+                          <a href={idea.url} target="_blank" rel="noopener noreferrer nofollow" onClick={(e) => e.stopPropagation()}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 6, fontSize: 12.5, fontWeight: 700, color: "var(--accent)", textDecoration: "none", background: "var(--tint-accent)", borderRadius: 50, padding: "3px 10px", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            🔗 {hostOf(idea.url)} ↗
+                          </a>
+                        )}
                       </div>
                       <button type="button" onClick={() => vote(idea)} aria-pressed={mine} style={{ ...btn, padding: "7px 12px", fontSize: 13, background: mine ? "var(--accent-bg)" : "var(--surface-3)", color: mine ? "var(--on-accent)" : "var(--fg-2)" }}>👍 {idea.votes.length}</button>
-                      {canEdit(idea.personId) && <button type="button" onClick={() => remove(idea.id)} aria-label={m.assist.qaRemove} style={{ border: "none", background: "none", color: "var(--subtle)", fontSize: 18, cursor: "pointer", padding: 2 }}>×</button>}
                     </div>
                   );
                 })}
               </div>
             )}
-            {addRow("IDEA", t.addIdea)}
+            <form onSubmit={(e) => { e.preventDefault(); add("IDEA"); }} style={{ ...card, padding: 12, marginTop: 10 }}>
+              <input value={text} onChange={(e) => setText(e.target.value)} placeholder={t.addIdea} aria-label={t.addIdea} maxLength={300} style={input} />
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <input value={ideaUrlText} onChange={(e) => setIdeaUrlText(e.target.value)} placeholder={t.linkPlaceholder} aria-label={t.linkPlaceholder} inputMode="url" maxLength={1000} style={{ ...input, flex: 1 }} />
+                <button type="submit" disabled={!text.trim() && !ideaUrlText.trim()} style={{ ...btn, background: "var(--accent-bg)", color: "var(--on-accent)", opacity: text.trim() || ideaUrlText.trim() ? 1 : 0.5 }}>{t.add}</button>
+              </div>
+              {error && !editIdea && <div style={{ color: "var(--danger)", fontSize: 13, fontWeight: 700, marginTop: 8 }}>{error}</div>}
+            </form>
+            {ideas.length > 0 && <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 4px 0" }}>{t.tapIdeaToEdit}</p>}
           </>
         )}
 

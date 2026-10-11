@@ -68,6 +68,8 @@ export const trips: Messages["trips"] = {
   addPack: "Lägg till i listan…",
   ideasIntro: "Saker att se och göra där – alla kan lägga till, alla kan rösta.",
   addIdea: "t.ex. Vattenland, båttur…",
+  linkPlaceholder: "Länk (valfritt) – webbsida, karta, biljetter…",
+  tapIdeaToEdit: "Tryck på en idé för att ändra den eller lägga till en länk.",
   vote: "Rösta",
   votes: (n) => (n === 1 ? "1 röst" : `${n} röster`),
   packBase: ["Kläder", "Underkläder & strumpor", "Pyjamas", "Tandborste", "Mobilladdare", "Pass / ID"],

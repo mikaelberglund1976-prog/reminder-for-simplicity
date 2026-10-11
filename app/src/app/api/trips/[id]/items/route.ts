@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tripCtx } from "../../_ctx";
-import { flightFromBody, getTrip, insertItem, isYmd, saveFlightReminder, tripItems, type ItemKind } from "@/lib/trips";
+import { cleanUrl, flightFromBody, getTrip, insertItem, isYmd, saveFlightReminder, tripItems, type ItemKind } from "@/lib/trips";
 
 // POST   { kind: "PACK"|"IDEA"|"TODO", label, personId?, dueYmd? }  → { id }
 // POST   { kind: "FLIGHT", flightNo?, from?, to?, depYmd, depTime, arrTime? } (adults) → { id }
@@ -40,7 +40,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const ids = new Set(c.people.map((p) => p.id));
   let personId = typeof b?.personId === "string" && ids.has(b.personId) ? b.personId : null;
   if (!c.isAdult && kind === "PACK") personId = c.uid;
-  const id = await insertItem(trip.id, kind, label, c.uid, { personId, dueYmd: kind === "TODO" && isYmd(b?.dueYmd) ? b.dueYmd : null });
+  const url = kind === "IDEA" ? cleanUrl(b?.url) : null;
+  const id = await insertItem(trip.id, kind, label, c.uid, { personId, dueYmd: kind === "TODO" && isYmd(b?.dueYmd) ? b.dueYmd : null, data: url ? { url } : null });
   return NextResponse.json({ id }, { status: 201 });
 }
 
@@ -69,6 +70,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const mayEdit = c.isAdult || item.personId === c.uid || (item.kind === "IDEA" && item.createdBy === c.uid);
   if (!mayEdit) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   if (typeof b.checked === "boolean") await prisma.$executeRaw`UPDATE "trip_items" SET "checked" = ${b.checked} WHERE "id" = ${item.id}`;
+  if (b.url !== undefined && item.kind === "IDEA") {
+    const url = cleanUrl(b.url);
+    if (b.url && !url) return NextResponse.json({ error: "That doesn't look like a link" }, { status: 400 });
+    await prisma.$executeRaw`UPDATE "trip_items" SET "data" = ${url ? JSON.stringify({ url }) : null} WHERE "id" = ${item.id}`;
+  }
   if (typeof b.label === "string" && b.label.trim() && item.kind !== "FLIGHT") await prisma.$executeRaw`UPDATE "trip_items" SET "label" = ${b.label.trim().slice(0, 120)} WHERE "id" = ${item.id}`;
   return NextResponse.json({ ok: true });
 }

@@ -238,6 +238,17 @@ export function flightFromBody(b: Record<string, unknown>): FlightData | null {
   };
 }
 
+/** 2026-10-11: a link on an idea ("Vill göra"). http(s) only; "www.x.se" gets https://. */
+export function cleanUrl(v: unknown): string | null {
+  if (typeof v !== "string" || !v.trim()) return null;
+  let s = v.trim();
+  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+  try { const u = new URL(s); return (u.protocol === "https:" || u.protocol === "http:") && u.hostname.includes(".") && s.length <= 1000 ? u.toString() : null; } catch { return null; }
+}
+export function ideaUrl(i: ItemRow): string | null {
+  try { const d = JSON.parse(i.data ?? "null"); return typeof d?.url === "string" ? d.url : null; } catch { return null; }
+}
+
 export function parseFlight(i: ItemRow): FlightData | null {
   try { const d = JSON.parse(i.data ?? "null"); return d && isYmd(d.depYmd) && isHhmm(d.depTime) ? d : null; } catch { return null; }
 }

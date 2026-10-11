@@ -71,6 +71,8 @@ export const trips = {
   // ideas
   ideasIntro: "Things to see and do there — everyone can add, everyone can vote.",
   addIdea: "e.g. Water park, boat trip…",
+  linkPlaceholder: "Link (optional) — website, map, tickets…",
+  tapIdeaToEdit: "Tap an idea to change it or add a link.",
   vote: "Vote",
   votes: (n: number) => (n === 1 ? "1 vote" : `${n} votes`),
   // templates

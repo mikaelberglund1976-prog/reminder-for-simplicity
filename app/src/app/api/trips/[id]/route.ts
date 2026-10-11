@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tripCtx } from "../_ctx";
 import {
-  TRIP_KINDS, addDays, buildSteps, daysBetween, deleteTrip, getTrip, insertItem, isYmd, layoverMinutes, leaveFor, parseFlight,
+  TRIP_KINDS, ideaUrl, addDays, buildSteps, daysBetween, deleteTrip, getTrip, insertItem, isYmd, layoverMinutes, leaveFor, parseFlight,
   passportDates, stockholmToday, travellersOf, tripItems,
 } from "@/lib/trips";
 
@@ -41,7 +41,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     passports: Object.fromEntries(travellerIds.map((id) => [id, passports.get(id) ?? null])),
     flights,
     pack: items.filter((i) => i.kind === "PACK").map((i) => ({ id: i.id, label: i.label, personId: i.personId, checked: i.checked })),
-    ideas: items.filter((i) => i.kind === "IDEA").map((i) => ({ id: i.id, label: i.label, personId: i.createdBy, votes: (i.votes ?? "").split(",").filter(Boolean) })),
+    ideas: items.filter((i) => i.kind === "IDEA").map((i) => ({ id: i.id, label: i.label, url: ideaUrl(i), personId: i.createdBy, votes: (i.votes ?? "").split(",").filter(Boolean) })),
   });
 }
 
