@@ -46,6 +46,13 @@ export function ensureActivityFeedTables(): Promise<void> {
         `CREATE TABLE IF NOT EXISTS "activity_imports" ("reminderId" TEXT NOT NULL, "feedId" TEXT NOT NULL, "childId" TEXT NOT NULL, "uid" TEXT NOT NULL, "edited" BOOLEAN NOT NULL DEFAULT false, "hidden" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "activity_imports_pkey" PRIMARY KEY ("reminderId"))`
       );
       await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "activity_imports_feed_uid_key" ON "activity_imports"("feedId", "uid")`);
+      // 2026-10-11 (Mikael): activities imported before the MyClub fix still
+      // start with the answer ("[JA] Träning") and only change at the next sync
+      // (up to 20 h). Fix them right away: "[Nej]" ones are removed, the rest get
+      // the answer moved last. Idempotent — only touches titles that still start
+      // with a [tag]; titles edited in the app are left alone.
+      await prisma.$executeRawUnsafe(String.raw`UPDATE "reminders" r SET "isActive" = false FROM "activity_imports" i WHERE i."reminderId" = r."id" AND i."edited" = false AND r."isActive" = true AND r."name" ~* '^\s*(?:[^[]{1,40}: )?\[\s*(nej|no|declined|avböjt|avbojt|kommer inte|ej)\s*\]'`);
+      await prisma.$executeRawUnsafe(String.raw`UPDATE "reminders" r SET "name" = left(regexp_replace(r."name", '^\s*((?:[^[]{1,40}: )?)\[([^]]{1,15})\]\s*(.*\S)\s*$', '\1\3 [\2]'), 200) FROM "activity_imports" i WHERE i."reminderId" = r."id" AND i."edited" = false AND r."name" ~ '^\s*(?:[^[]{1,40}: )?\[[^]]{1,15}\]\s*\S'`);
     })().catch((err) => { ensured = null; throw err; });
   }
   return ensured;
