@@ -16,6 +16,14 @@
 //   activity_imports — imported reminder ↔ feed + entry UID. `edited` /
 //                      `hidden` as in school_imports.
 //
+// 2026-10-16 (todo #50, Best4Family comparison): an adult can connect their own
+// calendar the same way (work calendar from Google/Outlook). Same table — the
+// "childId" column is simply the person the calendar belongs to. Differences
+// for an adult's calendar: only that adult manages it, `busyOnly` (default on)
+// imports every event as "Busy" without title or place, it never triggers the
+// change watch, and the Tomorrow card uses it to warn when the person down to
+// drive is busy (lib/tomorrowPlan.ts).
+//
 // Unlike SchoolSoft any calendar host is allowed, so the fetch is guarded:
 // http(s) only, and the host (and every redirect) must resolve to a public
 // address — the server must not be usable to reach internal addresses.
@@ -25,6 +33,8 @@ import net from "net";
 import { prisma } from "@/lib/prisma";
 import { getTimes, setTime } from "@/lib/reminderTimes";
 import { ChangeCollector } from "@/lib/changeWatch";
+import { getLocaleForUser } from "@/lib/i18n/server";
+import { getMessages } from "@/lib/i18n/messages";
 
 export const MAX_FEEDS_PER_CHILD = 3;
 export const SYNC_EVERY_MS = 20 * 60 * 60 * 1000;
@@ -43,6 +53,7 @@ export function ensureActivityFeedTables(): Promise<void> {
         `CREATE TABLE IF NOT EXISTS "activity_feeds" ("id" TEXT NOT NULL, "householdId" TEXT NOT NULL, "childId" TEXT NOT NULL, "url" TEXT NOT NULL, "label" TEXT, "createdById" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "lastSyncAt" TIMESTAMP(3), "lastStatus" TEXT, "lastCount" INTEGER, CONSTRAINT "activity_feeds_pkey" PRIMARY KEY ("id"))`
       );
       await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "activity_feeds_childId_idx" ON "activity_feeds"("childId")`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "activity_feeds" ADD COLUMN IF NOT EXISTS "busyOnly" BOOLEAN NOT NULL DEFAULT false`);
       await prisma.$executeRawUnsafe(
         `CREATE TABLE IF NOT EXISTS "activity_imports" ("reminderId" TEXT NOT NULL, "feedId" TEXT NOT NULL, "childId" TEXT NOT NULL, "uid" TEXT NOT NULL, "edited" BOOLEAN NOT NULL DEFAULT false, "hidden" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "activity_imports_pkey" PRIMARY KEY ("reminderId"))`
       );
@@ -62,6 +73,7 @@ export function ensureActivityFeedTables(): Promise<void> {
 export type ActivityFeedRow = {
   id: string; householdId: string; childId: string; url: string; label: string | null; createdById: string;
   createdAt: Date; lastSyncAt: Date | null; lastStatus: string | null; lastCount: number | null;
+  busyOnly: boolean;
 };
 type ImportRow = { reminderId: string; feedId: string; uid: string; edited: boolean; hidden: boolean };
 
@@ -367,8 +379,11 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
       ?? (await prisma.householdMember.findFirst({ where: { householdId: feed.householdId, role: { in: ["OWNER", "PARENT"] } }, select: { userId: true } }))?.userId
       ?? feed.createdById;
 
+    const isAdultFeed = child.role !== "CHILD";
+    const busyWord = feed.busyOnly ? getMessages(await getLocaleForUser(feed.childId)).activityFeeds.busy : null;
     const text = await fetchCalendar(feed.url);
-    if (!feed.label) {
+    // An adult's calendar name is often their e-mail address — never shown.
+    if (!feed.label && !isAdultFeed) {
       const name = calendarName(text);
       if (name) { feed.label = name; await prisma.$executeRaw`UPDATE "activity_feeds" SET "label" = ${name} WHERE "id" = ${feed.id}`; }
     }
@@ -389,14 +404,15 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
     const seen = new Set<string>();
     let added = 0, updated = 0, removed = 0;
     // 2026-10-11: change watch — moved/cancelled/new activities coming up soon.
-    const watch = new ChangeCollector(feed.householdId, feed.childId, feed.label || maskActivityUrl(feed.url), existing.length === 0);
+    // An adult's own calendar (work) is not family news — no change alerts.
+    const watch = new ChangeCollector(feed.householdId, feed.childId, feed.label || maskActivityUrl(feed.url), existing.length === 0 || isAdultFeed);
     const isDeclined = (uid: string) => declined.has(uid) || declined.has(uid.split("@")[0]);
 
     for (const e of entries) {
       if (seen.has(e.uid)) continue;
       seen.add(e.uid);
-      const name = displayName(e.summary, feed.label);
-      const note = e.location ? `📍 ${e.location}` : null;
+      const name = busyWord ? (feed.label ? `${feed.label}: ${busyWord}` : busyWord) : displayName(e.summary, feed.label);
+      const note = e.location && !busyWord ? `📍 ${e.location}` : null;
       const date = dayDate(e.ymd);
       const imp = byUid.get(e.uid);
       if (imp) {
@@ -497,15 +513,16 @@ export async function countFeedsForChild(childId: string): Promise<number> {
   return Number(rows[0]?.n ?? 0);
 }
 
-export async function createActivityFeed(householdId: string, childId: string, url: string, label: string | null, createdById: string): Promise<ActivityFeedRow> {
+export async function createActivityFeed(householdId: string, childId: string, url: string, label: string | null, createdById: string, busyOnly = false): Promise<ActivityFeedRow> {
   await ensureActivityFeedTables();
   const id = randomUUID();
-  await prisma.$executeRaw`INSERT INTO "activity_feeds" ("id", "householdId", "childId", "url", "label", "createdById") VALUES (${id}, ${householdId}, ${childId}, ${url}, ${label}, ${createdById})`;
+  await prisma.$executeRaw`INSERT INTO "activity_feeds" ("id", "householdId", "childId", "url", "label", "createdById", "busyOnly") VALUES (${id}, ${householdId}, ${childId}, ${url}, ${label}, ${createdById}, ${busyOnly})`;
   return (await getActivityFeed(id))!;
 }
 
-export async function updateActivityFeed(id: string, patch: { url?: string; label?: string | null }) {
+export async function updateActivityFeed(id: string, patch: { url?: string; label?: string | null; busyOnly?: boolean }) {
   await ensureActivityFeedTables();
+  if (patch.busyOnly !== undefined) await prisma.$executeRaw`UPDATE "activity_feeds" SET "busyOnly" = ${patch.busyOnly} WHERE "id" = ${id}`;
   if (patch.url !== undefined) await prisma.$executeRaw`UPDATE "activity_feeds" SET "url" = ${patch.url}, "lastSyncAt" = NULL, "lastStatus" = NULL WHERE "id" = ${id}`;
   if (patch.label !== undefined) await prisma.$executeRaw`UPDATE "activity_feeds" SET "label" = ${patch.label} WHERE "id" = ${id}`;
 }
@@ -536,6 +553,16 @@ export async function activityImportInfo(ids: string[]): Promise<Map<string, str
     for (const r of rows) map.set(r.reminderId, r.label || maskActivityUrl(r.url));
   } catch (err) { console.error("activityImportInfo failed:", err); }
   return map;
+}
+
+/** Which of these came from a calendar shown only as "Busy" (an adult's work calendar). */
+export async function busyOnlyImportIds(ids: string[]): Promise<Set<string>> {
+  if (!ids.length) return new Set();
+  try {
+    await ensureActivityFeedTables();
+    const rows = await prisma.$queryRaw<{ reminderId: string }[]>`SELECT i."reminderId" FROM "activity_imports" i JOIN "activity_feeds" f ON f."id" = i."feedId" WHERE f."busyOnly" = true AND i."reminderId" = ANY(${ids}::text[])`;
+    return new Set(rows.map((r) => r.reminderId));
+  } catch (err) { console.error("busyOnlyImportIds failed:", err); return new Set(); }
 }
 
 export async function markActivityImport(reminderId: string, field: "edited" | "hidden") {

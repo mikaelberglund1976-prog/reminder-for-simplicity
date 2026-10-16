@@ -25,6 +25,7 @@ export const push: Messages["push"] = {
   dueBody: (when, amount) => (amount ? `${when} · ${amount}` : when),
   tomorrowTitle: (day) => `I morgon, ${day}`,
   more: (n) => `+${n} till`,
+  starts: (parts) => `🏫 ${parts}`,
   test: "Prov",
   homework: "Läxa",
 };

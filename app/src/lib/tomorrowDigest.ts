@@ -5,6 +5,7 @@
 //  - Adults: every child's tests/homework due tomorrow + everyone's activities.
 //  - Children: their own.
 //  - 2026-10-10: tomorrow's birthdays the person can see ("🎂 Elsa turns 13").
+//  - 2026-10-16: school start first ("🏫 Elsa 08:20 · Leo 09:10"), see lib/schoolStart.ts.
 import { prisma } from "@/lib/prisma";
 import { getOccurrencesInRange, type RecurrenceRule } from "@/lib/recurrence";
 import { getTimes } from "@/lib/reminderTimes";
@@ -14,7 +15,9 @@ import { getMessages } from "@/lib/i18n/messages";
 import { DATE_LOCALES } from "@/lib/i18n/config";
 import { getBirthdayRows } from "@/lib/birthdays";
 import { birthdayTitle, nextBirthdayDate } from "@/lib/birthdayLabel";
-import { buildPlan, cleanupPlanTables } from "@/lib/tomorrowPlan";
+import { buildPlan, cleanupPlanTables, stockholmYmd } from "@/lib/tomorrowPlan";
+import { addDays, cleanupOverrides } from "@/lib/schoolStart";
+import { busyOnlyImportIds } from "@/lib/activityFeeds";
 
 const ADULT = ["OWNER", "PARENT", "ADULT"];
 
@@ -51,10 +54,13 @@ export async function runTomorrowDigest(now = new Date()) {
         },
         select: { id: true, name: true, category: true, date: true, recurrence: true, choreRecurrenceDays: true, schoolKind: true, subject: true, completedAt: true, assignedTo: true },
       });
-      const due = items.filter((r) => {
+      const dueAll = items.filter((r) => {
         if (r.category === "SCHOOL") return !r.completedAt && dayStr(r.date) === tKey;
         return getOccurrencesInRange({ date: r.date.toISOString(), recurrence: r.recurrence as RecurrenceRule, choreRecurrenceDays: r.choreRecurrenceDays }, tomorrow, tomorrow).length > 0;
       });
+      // 2026-10-16: "Busy" blocks from an adult's work calendar aren't news.
+      const busyOnly = await busyOnlyImportIds(dueAll.filter((r) => r.category === "TRAINING").map((r) => r.id));
+      const due = dueAll.filter((r) => !busyOnly.has(r.id));
       // Birthdays tomorrow that this person sees (same rule as GET /api/reminders).
       const bdayCandidates = await prisma.reminder.findMany({
         where: {
@@ -71,10 +77,13 @@ export async function runTomorrowDigest(now = new Date()) {
         const row = bdayRows.get(b.id);
         return row && row.personId !== userId && dayStr(nextBirthdayDate(row.birthMonth, row.birthDay, tomorrow)) === tKey;
       });
-      if (due.length === 0 && bdays.length === 0) continue;
-
       const locale = await getLocaleForUser(userId);
       const m = getMessages(locale);
+      // 2026-10-16: the plan gives clashes (adults) and school start (everyone).
+      const plan = await buildPlan(userId, m.assist).catch(() => null);
+      const starts = plan?.starts ?? [];
+      if (due.length === 0 && bdays.length === 0 && starts.length === 0) continue;
+
       const times = await getTimes(due.map((r) => r.id));
       const lines = due
         .map((r) => {
@@ -90,8 +99,12 @@ export async function runTomorrowDigest(now = new Date()) {
         }))
         .sort((a, b) => a.sort.localeCompare(b.sort));
       // 2026-10-11: a clash ("Leo and Elsa at the same time — no ride") goes first.
-      const clashes = isAdult ? ((await buildPlan(userId, m.assist).catch(() => null))?.clashes ?? []) : [];
-      const shown = [...clashes.slice(0, 2).map((c) => `⚠️ ${c}`), ...lines.slice(0, 4).map((l) => l.text)];
+      const clashes = isAdult ? (plan?.clashes ?? []) : [];
+      // "🏫 Elsa 08:20 · Leo off (Study day)" — a child just gets their own time.
+      const startLine = starts.length
+        ? m.push.starts(starts.map((s) => `${s.who ? `${s.who} ` : ""}${s.off ? m.assist.tmOff : s.time}${s.note ? ` (${s.note})` : ""}${s.wake && !s.who ? ` · ⏰ ${m.assist.tmWake(s.wake)}` : ""}`).join(" · "))
+        : null;
+      const shown = [...clashes.slice(0, 2).map((c) => `⚠️ ${c}`), ...(startLine ? [startLine] : []), ...lines.slice(0, 4).map((l) => l.text)];
       if (lines.length > 4) shown.push(m.push.more(lines.length - 4));
       const day = tomorrow.toLocaleDateString(DATE_LOCALES[locale], { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" });
       const reached = await sendPushToUser(userId, { title: m.push.tomorrowTitle(day), body: shown.join("\n"), url: "/dashboard#tomorrow", tag: `tomorrow-${tKey}` }, "tomorrow");
@@ -102,6 +115,7 @@ export async function runTomorrowDigest(now = new Date()) {
     }
   }
   await cleanupPlanTables();
+  await cleanupOverrides(addDays(stockholmYmd(), -7));
   log.push(`Tomorrow digest ${tKey}: ${sent} of ${users.length} people with push`);
   return { success: true, sent, log };
 }

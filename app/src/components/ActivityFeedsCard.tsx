@@ -3,6 +3,8 @@
 // 2026-10-09: up to three calendar links per child for activities (club /
 // team calendars). Shown on the Activities page, adults only — the card hides
 // itself for anyone else. Same look and flow as the SchoolSoft card.
+// 2026-10-16: plus the adult's own calendars (work) on top — "Busy" only by
+// default, used by the Tomorrow card's clash warning.
 import { useEffect, useState } from "react";
 import Avatar from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n/client";
@@ -10,8 +12,8 @@ import type { Messages } from "@/lib/i18n/messages";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
-type Feed = { id: string; label: string | null; host: string; lastSyncAt: string | null; lastStatus: string | null; upcoming: number };
-type ChildRow = { childId: string; name: string; feeds: Feed[] };
+type Feed = { id: string; label: string | null; host: string; lastSyncAt: string | null; lastStatus: string | null; upcoming: number; busyOnly?: boolean };
+type ChildRow = { childId: string; name: string; feeds: Feed[]; self?: boolean };
 type SyncResult = { ok: boolean; added: number; updated: number; removed: number; total: number; status: string };
 
 function when(iso: string | null, m: Messages, dateLocale: string) {
@@ -32,6 +34,7 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<{ key: string; text: string; tone: "ok" | "err" } | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+  const [busyOnly, setBusyOnly] = useState(true);
   const { m: i18n, dateLocale, err } = useI18n();
   const t = i18n.activityFeeds;
   const s = i18n.schoolsoft;
@@ -41,7 +44,7 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
       const res = await fetch("/api/family/activity-feeds");
       if (!res.ok) { setHidden(true); return; }
       const d = await res.json();
-      setRows(d.children ?? []);
+      setRows([...(d.me ? [d.me as ChildRow] : []), ...(d.children ?? [])]);
       if (d.max) setMax(d.max);
     } catch { setHidden(true); }
   }
@@ -58,7 +61,7 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
   async function add(childId: string) {
     setBusy(childId); setNote(null);
     try {
-      const res = await fetch("/api/family/activity-feeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ childId, url, label }) });
+      const res = await fetch("/api/family/activity-feeds", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ childId, url, label, busyOnly }) });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) { setNote({ key: childId, text: d.error ? err(d.error) : s.couldNotConnect, tone: "err" }); return; }
       setNote({ key: childId, text: d.result?.ok ? t.connected(resultText(d.result)) : t.savedBut(d.result?.status ? err(d.result.status) : s.syncFailed), tone: d.result?.ok ? "ok" : "err" });
@@ -79,6 +82,17 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
     } finally { setBusy(null); }
   }
 
+  async function toggleBusy(childId: string, feed: Feed) {
+    setBusy(feed.id); setNote(null);
+    try {
+      const res = await fetch(`/api/family/activity-feeds/${encodeURIComponent(feed.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ busyOnly: !feed.busyOnly }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setNote({ key: childId, text: d.error ? err(d.error) : i18n.common.somethingWentWrong, tone: "err" }); return; }
+      if (d.result) setNote({ key: childId, text: resultText(d.result), tone: d.result.ok ? "ok" : "err" });
+      await after();
+    } finally { setBusy(null); }
+  }
+
   async function remove(childId: string, feed: Feed) {
     const clear = window.confirm(t.removeConfirm(feed.label || feed.host));
     setBusy(feed.id); setNote(null);
@@ -91,7 +105,7 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
 
   if (hidden || !rows || rows.length === 0) return null;
   const linkCount = rows.reduce((n, r) => n + r.feeds.length, 0);
-  const childCount = rows.filter((r) => r.feeds.length > 0).length;
+  const childCount = rows.filter((r) => !r.self && r.feeds.length > 0).length;
 
   return (
     <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, marginBottom: 20, fontFamily: FONT, overflow: "hidden" }}>
@@ -113,8 +127,10 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: r.feeds.length ? 8 : 0 }}>
                 <Avatar userId={r.childId} name={r.name} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{r.name}</div>
-                  {r.feeds.length === 0 && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{t.noLinks}</div>}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{r.name}{r.self && <span style={{ fontWeight: 500, color: "var(--subtle)" }}> {t.youSuffix}</span>}</div>
+                  {r.self
+                    ? <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 1, lineHeight: 1.4 }}>{t.myHint}</div>
+                    : r.feeds.length === 0 && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{t.noLinks}</div>}
                 </div>
               </div>
 
@@ -125,9 +141,11 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--fg)" }}>{f.label || f.host}{f.label ? <span style={{ fontWeight: 500, color: "var(--subtle)" }}> · {f.host}</span> : null}</div>
                     <div style={{ fontSize: 11.5, color: failed ? "var(--danger)" : "var(--muted)", marginTop: 2 }}>
                       {failed ? t.lastSyncFailed(err(f.lastStatus!)) : t.upcomingSynced(f.upcoming, when(f.lastSyncAt, i18n, dateLocale))}
+                      {r.self && f.busyOnly && !failed ? ` · ${t.busyOnlyOn}` : ""}
                     </div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                       <button onClick={() => action(r.childId, f, "sync")} disabled={busy === f.id} style={btnSoft}>{busy === f.id ? "…" : t.syncNow}</button>
+                      {r.self && <button onClick={() => toggleBusy(r.childId, f)} disabled={busy === f.id} style={btnSoft}>{f.busyOnly ? t.showTitles : t.hideTitles}</button>}
                       <button onClick={() => action(r.childId, f, "clear")} disabled={busy === f.id} style={btnSoft}>{t.removeImported}</button>
                       <button onClick={() => remove(r.childId, f)} disabled={busy === f.id} style={{ ...btnSoft, color: "var(--danger)" }}>{t.removeLink}</button>
                     </div>
@@ -137,8 +155,8 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
 
               {addFor !== r.childId && (
                 r.feeds.length < max
-                  ? <button onClick={() => { setAddFor(r.childId); setUrl(""); setLabel(""); setNote(null); }} style={{ ...btnSoft, marginTop: 2 }}>{t.addLink(r.feeds.length, max)}</button>
-                  : <div style={{ fontSize: 11.5, color: "var(--subtle)" }}>{t.maxReached(max)}</div>
+                  ? <button onClick={() => { setAddFor(r.childId); setUrl(""); setLabel(""); setBusyOnly(true); setNote(null); }} style={{ ...btnSoft, marginTop: 2 }}>{t.addLink(r.feeds.length, max)}</button>
+                  : <div style={{ fontSize: 11.5, color: "var(--subtle)" }}>{r.self ? t.maxReachedSelf(max) : t.maxReached(max)}</div>
               )}
 
               {addFor === r.childId && (
@@ -167,8 +185,14 @@ export default function ActivityFeedsCard({ onChanged }: { onChanged?: () => voi
                   <div style={{ fontSize: 11, color: "var(--subtle)", marginBottom: 8, lineHeight: 1.4 }}>{t.labelHint}</div>
                   <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder={t.urlPlaceholder} autoComplete="off" autoCapitalize="off" spellCheck={false} inputMode="url"
                     style={{ ...inputStyle, marginBottom: 8 }} />
+                  {r.self && (
+                    <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12.5, color: "var(--fg)", marginBottom: 8, cursor: "pointer", lineHeight: 1.4 }}>
+                      <input type="checkbox" checked={busyOnly} onChange={(e) => setBusyOnly(e.target.checked)} style={{ width: 18, height: 18, accentColor: "var(--accent)", flexShrink: 0 }} />
+                      {t.busyOnly}
+                    </label>
+                  )}
                   <div style={{ fontSize: 11.5, color: "var(--warning)", background: "var(--tint-warning)", borderRadius: 10, padding: "8px 10px", marginBottom: 10, lineHeight: 1.45 }}>
-                    {t.linkWarning(r.name)}
+                    {r.self ? t.myLinkWarning : t.linkWarning(r.name)}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => setAddFor(null)} style={{ ...btnSoft, flex: 1 }}>{i18n.common.cancel}</button>

@@ -1,8 +1,8 @@
 import type { Messages } from "../en";
 
 export const activityFeeds: Messages["activityFeeds"] = {
-  title: "Klubbkalendrar",
-  summaryNone: "Få in träningar & matcher automatiskt",
+  title: "Kopplade kalendrar",
+  summaryNone: "Klubbkalendrar för barnen, jobbkalendern för dig",
   summary: (links, children) => `${links} ${links === 1 ? "länk" : "länkar"} · ${children} ${children === 1 ? "barn" : "barn"} · uppdateras en gång per dag`,
   noLinks: "Ingen kalender kopplad",
   addLink: (n, max) => `+ Lägg till kalender (${n}/${max})`,
@@ -55,4 +55,13 @@ export const activityFeeds: Messages["activityFeeds"] = {
   upcomingFromCalendars: "Från kalendrar",
   showAll: (n) => `Visa alla (${n})`,
   showFewer: "Visa färre",
+  youSuffix: "(du)",
+  myHint: "Din egen kalender, t.ex. jobbet – så varnar ”I morgon” när du ska skjutsa men är upptagen.",
+  busyOnly: "Visa bara som ”Upptagen” (inga titlar eller platser)",
+  busyOnlyOn: "Visas som ”Upptagen”",
+  showTitles: "Visa titlar",
+  hideTitles: "Visa bara ”Upptagen”",
+  busy: "Upptagen",
+  myLinkWarning: "Bara du ser och hanterar den här länken. Med ”Upptagen” påslaget ser familjen när du är upptagen – inte vad det är.",
+  maxReachedSelf: (max) => `Max ${max} kalendrar`,
 };

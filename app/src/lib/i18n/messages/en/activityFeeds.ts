@@ -1,7 +1,7 @@
 // 2026-10-09: calendar links for activities (components/ActivityFeedsCard.tsx).
 export const activityFeeds = {
-  title: "Club calendars",
-  summaryNone: "Get trainings & matches in automatically",
+  title: "Connected calendars",
+  summaryNone: "Club calendars for the kids, your work calendar for you",
   summary: (links: number, children: number) => `${links} link${links === 1 ? "" : "s"} · ${children} child${children === 1 ? "" : "ren"} · updates once a day`,
   noLinks: "No calendar connected",
   addLink: (n: number, max: number) => `+ Add calendar (${n}/${max})`,
@@ -54,4 +54,14 @@ export const activityFeeds = {
   upcomingFromCalendars: "From calendars",
   showAll: (n: number) => `Show all (${n})`,
   showFewer: "Show fewer",
+  // 2026-10-16: an adult's own calendar (work etc.)
+  youSuffix: "(you)",
+  myHint: "Your own calendar, e.g. work — so “Tomorrow” warns when you're down to drive but busy.",
+  busyOnly: "Show only as “Busy” (no titles or places)",
+  busyOnlyOn: "Shown as “Busy”",
+  showTitles: "Show titles",
+  hideTitles: "Show only “Busy”",
+  busy: "Busy",
+  myLinkWarning: "Only you see and manage this link. With “Busy” on, the family sees when you're busy — not what it is.",
+  maxReachedSelf: (max: number) => `Max ${max} calendars`,
 };

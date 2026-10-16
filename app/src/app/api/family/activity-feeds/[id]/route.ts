@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { requireAdult } from "../../school-feeds/_auth";
 import {
   MANUAL_SYNC_MIN_MS, clearActivityImports, deleteActivityFeed, getActivityFeed,
@@ -14,6 +15,11 @@ async function own(id: string) {
   if ("error" in a) return { res: NextResponse.json({ error: a.error }, { status: a.status }) } as const;
   const feed = await getActivityFeed(id);
   if (!feed || feed.householdId !== a.householdId) return { res: NextResponse.json({ error: "Not found" }, { status: 404 }) } as const;
+  // 2026-10-16: an adult's own calendar is managed only by that adult.
+  if (feed.childId !== a.userId) {
+    const owner = await prisma.householdMember.findFirst({ where: { householdId: a.householdId, userId: feed.childId }, select: { role: true } });
+    if (owner && owner.role !== "CHILD") return { res: NextResponse.json({ error: "Not found" }, { status: 404 }) } as const;
+  }
   return { feed, userId: a.userId } as const;
 }
 
@@ -39,13 +45,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 }
 
-// PATCH /api/family/activity-feeds/[id] { label?, url? } — rename, or swap
-// the link (then fetch again).
+// PATCH /api/family/activity-feeds/[id] { label?, url?, busyOnly? } — rename,
+// swap the link, or (own calendar) show events only as "Busy" — then fetch again.
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const o = await own(params.id);
   if ("res" in o) return o.res;
   const body = await req.json().catch(() => ({}));
-  const patch: { url?: string; label?: string | null } = {};
+  const patch: { url?: string; label?: string | null; busyOnly?: boolean } = {};
+  if (typeof body?.busyOnly === "boolean" && o.feed.childId === o.userId) patch.busyOnly = body.busyOnly;
   if (body?.label !== undefined) patch.label = typeof body.label === "string" && body.label.trim() ? body.label.trim().slice(0, 40) : null;
   if (body?.url !== undefined) {
     const n = normalizeActivityUrl(body.url);
@@ -53,7 +60,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     patch.url = n.url;
   }
   await updateActivityFeed(o.feed.id, patch);
-  if (patch.url) {
+  if (patch.url || patch.busyOnly !== undefined) {
     const feed = await getActivityFeed(o.feed.id);
     return NextResponse.json({ result: feed ? await syncActivityFeed(feed) : null });
   }
