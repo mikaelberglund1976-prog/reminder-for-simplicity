@@ -19,6 +19,8 @@ import { getOccurrencesInRange, type RecurrenceRule } from "@/lib/recurrence";
 import { getTimes } from "@/lib/reminderTimes";
 import type { Messages } from "@/lib/i18n/messages";
 import { ensureTripTables, flightTitle, leaveFor, parseFlight, type ItemRow, type TripRow } from "@/lib/trips";
+import { startsOn } from "@/lib/schoolStart";
+import { busyOnlyImportIds } from "@/lib/activityFeeds";
 
 const ADULT = ["OWNER", "PARENT", "ADULT"];
 const CLASH_GAP_MIN = 30;
@@ -72,7 +74,9 @@ export type PlanItem = {
   needsRide: boolean; driverId: string | null; driver: string | null; href: string;
 };
 export type PlanCheck = { key: string; label: string; checked: boolean; custom: boolean; who: string | null };
-export type Plan = { ymd: string; isAdult: boolean; items: PlanItem[]; checks: PlanCheck[]; clashes: string[] };
+// 2026-10-16: when each child starts school, tomorrow (and today, for the morning).
+export type PlanStart = { childId: string; who: string | null; time: string | null; off: boolean; note: string | null; wake: string | null };
+export type Plan = { ymd: string; isAdult: boolean; items: PlanItem[]; checks: PlanCheck[]; clashes: string[]; starts: PlanStart[]; todayStarts: PlanStart[] };
 
 const toMin = (hhmm: string) => +hhmm.slice(0, 2) * 60 + +hhmm.slice(3, 5);
 
@@ -172,7 +176,49 @@ export async function buildPlan(userId: string, t: Messages["assist"], ymd = tom
       }
     }
   }
-  return { ymd, isAdult, items, checks, clashes };
+  // 2026-10-16: an adult's own calendar (e.g. work, lib/activityFeeds.ts) —
+  // warn when the driver is busy, or when nobody is free for a child's ride.
+  if (isAdult) {
+    const adults = people.filter((m) => ADULT.includes(m.role)).map((m) => m.userId);
+    const span = (i: PlanItem) => [toMin(i.startTime!), i.endTime ? toMin(i.endTime) : toMin(i.startTime!) + 60] as const;
+    const busy = items.filter((i) => i.kind === "ACTIVITY" && i.childId && adults.includes(i.childId) && i.startTime);
+    if (busy.length) {
+      const busyAt = (adultId: string, from: number, to: number) =>
+        busy.find((b) => b.childId === adultId && span(b)[0] < to && span(b)[1] > from) ?? null;
+      for (const r of items.filter((i) => i.needsRide)) {
+        // Need to be free from a bit before it starts until it starts (drop-off),
+        // and around when it ends (pick-up).
+        const [s0, e0] = r.endTime ? span(r) : [toMin(r.startTime!), toMin(r.startTime!) + DEFAULT_LENGTH_MIN];
+        const hit = (a: string) => busyAt(a, s0 - CLASH_GAP_MIN, s0) ?? busyAt(a, e0 - 10, e0 + CLASH_GAP_MIN);
+        const label = `${r.who ?? "?"} ${r.startTime}`;
+        if (r.driverId) {
+          const b = hit(r.driverId);
+          if (b) clashes.push(t.clashDriverBusy(r.driver ?? "?", label, `${b.title} ${b.startTime}${b.endTime ? `–${b.endTime}` : ""}`));
+        } else if (adults.length && adults.every((a) => hit(a))) {
+          clashes.push(t.clashNoAdultFree(label));
+        }
+      }
+    }
+  }
+
+  // 2026-10-16: school start per child (adults: every child; a child: themself).
+  let starts: PlanStart[] = [];
+  let todayStarts: PlanStart[] = [];
+  try {
+    const kids = isAdult ? people.filter((m) => m.role === "CHILD").map((m) => m.userId) : member.role === "CHILD" ? [userId] : [];
+    const toPlan = (s: Awaited<ReturnType<typeof startsOn>>[number]): PlanStart => ({ childId: s.childId, who: isAdult ? first.get(s.childId) ?? null : null, time: s.time, off: s.off, note: s.note, wake: s.wake });
+    [starts, todayStarts] = await Promise.all([
+      startsOn(kids, ymd).then((l) => l.map(toPlan)),
+      startsOn(kids, addDaysYmd(ymd, -1)).then((l) => l.map(toPlan)),
+    ]);
+  } catch (err) { console.error("Tomorrow plan: school start failed:", err); }
+
+  // "Busy" blocks from an adult's work calendar are only for the clash check —
+  // the family card doesn't need "Jobb: Upptagen 08–17" twice a day.
+  const hide = await busyOnlyImportIds(items.filter((i) => i.kind === "ACTIVITY").map((i) => i.reminderId));
+  const shown = hide.size ? items.filter((i) => !hide.has(i.reminderId)) : items;
+
+  return { ymd, isAdult, items: shown, checks, clashes, starts, todayStarts };
 }
 
 // ── changes ─────────────────────────────────────────────────────────────────

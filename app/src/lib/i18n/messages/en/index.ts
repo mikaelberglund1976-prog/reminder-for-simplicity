@@ -31,6 +31,7 @@ import { reminderDetail } from "./reminderDetail";
 import { reminderForm } from "./reminderForm";
 import { reminders } from "./reminders";
 import { school } from "./school";
+import { schoolStart } from "./schoolStart";
 import { schoolsoft } from "./schoolsoft";
 import { serverErrors } from "./serverErrors";
 import { shopping } from "./shopping";
@@ -70,6 +71,7 @@ export const en = {
   reminderForm,
   reminders,
   school,
+  schoolStart,
   schoolsoft,
   serverErrors,
   shopping,

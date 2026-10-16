@@ -2,6 +2,7 @@
 
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
+**Uppdaterad igen:** 2026-10-16 – punkt 45: skolstart per barn (I morgon + kvällsnotis) och vuxnas egna kalendrar med krockvarning, från Best4Family-jämförelsen. På gren + PR, inte live. Se `RELEASE_2026-10-16.md`.
 **Uppdaterad igen:** 2026-10-10 (eftermiddag) – punkt 44: födelsedagar (familj, släkt, kompisar och husdjur, gäller alla eller en person), se `RELEASE_2026-10-10d.md`.
 **Uppdaterad igen:** 2026-10-10 – punkt 42–43: releaserna 7–10 okt (klockslag, närmast per barn, klubbkalendrar, måstelistan, stjärnor/släktdelning, AI-intag) införda i loggen, och Lotuvi-varumärket live utom namnet – ljust läge, ikoner, figur och mörkt läge "Sage First" (se `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`). Alla md-filer synkade.
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
@@ -845,3 +846,12 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [x] Integritetstext sv/en + `GDPR.md` rad 4c.
 - [ ] Klicktest `TEST_VERIFICATION.md` §22.
 - [ ] Senare: import från kontakter, kalas-planering.
+
+## 45. Skolstart + vuxnas egna kalendrar (2026-10-16, PR – inte live) – se `RELEASE_2026-10-16.md`
+Från jämförelsen med Best4Familys nyhetsbrev (15 okt) – lanseringslistan rad 49–53.
+- [x] Rad 49 del 1: skolstart per barn (mån–fre, A/B-veckor, väckning, sovmorgon/lediga dagar), i I morgon-kortet, kvällsnotisen och som push vid ändring i dag/i morgon. Föräldrar ser bara starttiden.
+- [ ] Rad 49 del 2: hämta första lektionen från SchoolSoft/Studybee-schemat. **Väntar på en exportlänk med Schema påslaget från Mikael.**
+- [x] Rad 50: vuxnas egna kalendrar (jobb), "Upptagen" som standard, krockvarning "X ska skjutsa men är upptagen" / "alla vuxna upptagna".
+- [ ] Slå ihop PR:en → Vercel publicerar. Klicktest `TEST_VERIFICATION.md` §23.
+- [ ] Beslut Mikael: rad 51 (Koppla Claude/ChatGPT – säkerhetsupplägg), 52 (växelvis boende – hur ska det fungera?), 53 (vad ska vara gratis? – skolstart och resor är öppna för alla just nu).
+

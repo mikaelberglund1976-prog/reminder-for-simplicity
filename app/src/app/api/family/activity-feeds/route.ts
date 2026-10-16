@@ -16,14 +16,27 @@ function cleanLabel(v: unknown): string | null {
 // GET /api/family/activity-feeds — per child: their calendar links (max 3),
 // last sync and how many upcoming activities each brought in. The links
 // themselves never leave the server.
+// 2026-10-16: plus `me` — the signed-in adult's own calendars (work etc.).
+// Only that adult sees and manages them.
 export async function GET() {
   const a = await requireAdult();
   if ("error" in a) return NextResponse.json({ error: a.error }, { status: a.status });
   try {
-    const [children, feeds] = await Promise.all([
+    const [children, feeds, self] = await Promise.all([
       prisma.householdMember.findMany({ where: { householdId: a.householdId, role: "CHILD" }, include: { user: { select: { id: true, name: true, email: true } } } }),
       listActivityFeeds(a.householdId),
+      prisma.user.findUnique({ where: { id: a.userId }, select: { name: true, email: true } }),
     ]);
+    const feedsOf = (personId: string) => Promise.all(feeds.filter((f) => f.childId === personId).map(async (f) => ({
+      id: f.id,
+      label: f.label,
+      host: maskActivityUrl(f.url),
+      lastSyncAt: f.lastSyncAt,
+      lastStatus: f.lastStatus,
+      upcoming: await activityImportedCount(f.id),
+      busyOnly: f.busyOnly,
+    })));
+    const me = { childId: a.userId, name: self?.name ?? self?.email.split("@")[0] ?? "", self: true, feeds: await feedsOf(a.userId) };
     const out = await Promise.all(children.map(async (c) => ({
       childId: c.userId,
       name: c.user.name ?? c.user.email.split("@")[0],
@@ -36,7 +49,7 @@ export async function GET() {
         upcoming: await activityImportedCount(f.id),
       }))),
     })));
-    return NextResponse.json({ children: out, max: MAX_FEEDS_PER_CHILD });
+    return NextResponse.json({ children: out, me, max: MAX_FEEDS_PER_CHILD });
   } catch (err) {
     console.error("Activity feeds GET error:", err);
     return NextResponse.json({ error: "Couldn't load calendar links" }, { status: 500 });
@@ -50,16 +63,18 @@ export async function POST(req: Request) {
   if ("error" in a) return NextResponse.json({ error: a.error }, { status: a.status });
   const body = await req.json().catch(() => ({}));
   const childId = typeof body?.childId === "string" ? body.childId : "";
-  if (!childId || !(await childInFamily(a.householdId, childId))) {
+  // 2026-10-16: an adult may also connect their own calendar (childId = themself).
+  const isSelf = childId === a.userId;
+  if (!childId || (!isSelf && !(await childInFamily(a.householdId, childId)))) {
     return NextResponse.json({ error: "Pick one of your children" }, { status: 400 });
   }
   const n = normalizeActivityUrl(body?.url);
   if ("error" in n) return NextResponse.json({ error: n.error }, { status: 400 });
   try {
     if ((await countFeedsForChild(childId)) >= MAX_FEEDS_PER_CHILD) {
-      return NextResponse.json({ error: "Max 3 calendar links per child" }, { status: 400 });
+      return NextResponse.json({ error: isSelf ? "Max 3 calendar links per person" : "Max 3 calendar links per child" }, { status: 400 });
     }
-    const feed = await createActivityFeed(a.householdId, childId, n.url, cleanLabel(body?.label), a.userId);
+    const feed = await createActivityFeed(a.householdId, childId, n.url, cleanLabel(body?.label), a.userId, isSelf && body?.busyOnly !== false);
     const result = await syncActivityFeed(feed);
     return NextResponse.json({ result, id: feed.id });
   } catch (err) {

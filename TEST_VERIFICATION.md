@@ -214,3 +214,13 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Som barn: kan lägga in en kompis, kan inte ändra familjens.
 - [ ] På dagen: push "… i dag! Glöm inte att gratulera 🎉".
 
+## 23. Skolstart + vuxnas egna kalendrar (2026-10-16) – se `RELEASE_2026-10-16.md`
+- [ ] Skolstart: spara tider för ett barn, A/B för ett annat; "i dag / i morgon" stämmer i kortet.
+- [ ] Sovmorgon i morgon → push till andra vuxna + barnet; I morgon-kortet visar ny tid.
+- [ ] Lov över en helg visas som ett intervall; × tar bort hela.
+- [ ] Kvällsnotisen börjar med "🏫 …".
+- [ ] Barnets inloggning: ser bara sin egen starttid, kan inte ändra (kortet på Skola syns inte).
+- [ ] Egen jobbkalender (Google/Outlook-ICS), "Upptagen": "Jobb: Upptagen" i kalendern, inte i I morgon-listan.
+- [ ] Ta skjuts när du är upptagen → röd krockvarning; ingen skjuts och båda vuxna upptagna → "alla vuxna är upptagna".
+- [ ] Den andra vuxna ser inte din kalenderlänk i "Kopplade kalendrar".
+

@@ -8,6 +8,7 @@ import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import SchoolSection from "@/components/SchoolSection";
 import SchoolSoftCard from "@/components/SchoolSoftCard";
+import SchoolStartCard from "@/components/SchoolStartCard";
 import { useM } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
@@ -127,6 +128,8 @@ function SchoolPageInner() {
       </Link>
       {/* 2026-10-03: SchoolSoft import per child (adults only — the card hides itself otherwise). */}
       <SchoolSoftCard />
+      {/* 2026-10-16: when each child starts — shown in "Tomorrow" (adults only, hides itself otherwise). */}
+      <SchoolStartCard />
       {members.length === 0 ? (
         <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
           {t.addSomeoneFirst}

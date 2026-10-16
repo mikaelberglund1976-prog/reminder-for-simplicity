@@ -44,6 +44,14 @@ export const assist = {
   me: "You",
   clashNoRide: (a: string, b: string) => `${a} and ${b} at about the same time — no ride sorted`,
   clashSameDriver: (driver: string, a: string, b: string) => `${driver} is down for both ${a} and ${b}`,
+  // 2026-10-16: an adult's own calendar (work) vs. a child's activity.
+  clashDriverBusy: (driver: string, item: string, busy: string) => `${driver} is down to drive ${item} but has ${busy}`,
+  clashNoAdultFree: (item: string) => `${item} needs a ride — every adult is busy then`,
+  // 2026-10-16: school start (lib/schoolStart.ts)
+  tmSchoolStart: "School start",
+  tmToday: "Today",
+  tmOff: "no school",
+  tmWake: (time: string) => `wake ${time}`,
   ridePushTitle: "Ride sorted",
   ridePushBody: (driver: string, who: string, title: string, time: string | null) => `${driver} takes ${who ? `${who} to ` : ""}${title}${time ? ` ${time}` : ""} tomorrow`,
   leaveHomeShort: (time: string) => `🚗 Leave home ${time}`,
