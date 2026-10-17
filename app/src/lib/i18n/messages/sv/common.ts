@@ -1,6 +1,7 @@
 import type { Messages } from "../en";
 
 export const common: Messages["common"] = {
+  connectionsTitle: "Kopplingar & import",
   appName: "Reminder for Simplicity",
   save: "Spara",
   saving: "Sparar…",

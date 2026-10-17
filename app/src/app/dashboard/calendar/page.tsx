@@ -206,10 +206,13 @@ export default function CalendarPage() {
     mq.addEventListener?.("change", update);
     return () => mq.removeEventListener?.("change", update);
   }, []);
+  // 2026-10-18 (spec §24): the filters sit behind one compact "Filter" button
+  // instead of permanent chip rows.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   function selectDay(day: Date) {
     setSelectedDate(day);
     if (touchMode) {
-      requestAnimationFrame(() => dayPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      requestAnimationFrame(() => dayPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
     }
   }
 
@@ -498,9 +501,34 @@ export default function CalendarPage() {
               <button onClick={() => goToMonth(1)} aria-label={t.nextMonth} style={navBtnStyle}><IcRight /></button>
             </div>
 
+            {/* 2026-10-18: one compact filter button; the person/type/colour
+                controls open under it. The count says how many filters are on. */}
+            {(() => {
+              const active = (isChildView ? 0 : selectedPeople.size) + hiddenKinds.size;
+              return (
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, margin: "-6px 0 12px" }}>
+                  {active > 0 && !filtersOpen && (
+                    <button onClick={() => { savePeople(new Set()); setHiddenKinds(new Set()); }} style={{ border: "none", background: "none", color: "var(--muted)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+                      {t.clearFilters}
+                    </button>
+                  )}
+                  <button onClick={() => setFiltersOpen((v) => !v)} aria-expanded={filtersOpen} style={{
+                    display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 50, cursor: "pointer", fontFamily: FONT,
+                    border: active > 0 ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
+                    background: active > 0 || filtersOpen ? "var(--tint-accent)" : "var(--surface)",
+                    color: active > 0 ? "var(--accent-strong)" : "var(--fg-2)", fontSize: 12.5, fontWeight: 700,
+                  }}>
+                    <svg width={14} height={14} viewBox="0 0 24 24" {...STR}><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
+                    {t.filter}{active > 0 ? ` · ${active}` : ""}
+                  </button>
+                </div>
+              );
+            })()}
+            {filtersOpen && (
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 12px 2px", marginBottom: 14 }}>
             {/* 2026-10-09: per-person filter (not for a child — they only see their own). */}
             {!isChildView && people.length > 1 && (
-              <div className="rfs-hscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 -20px 10px", padding: "2px 20px 4px" }}>
+              <div className="rfs-hscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 -12px 10px", padding: "2px 12px 4px" }}>
                 <button onClick={() => savePeople(new Set())} aria-pressed={selectedPeople.size === 0} style={{ ...personChip(selectedPeople.size === 0), paddingLeft: 12 }}>
                   {t.everyone}
                 </button>
@@ -565,6 +593,9 @@ export default function CalendarPage() {
               </div>
             )}
 
+              </div>
+            )}
+
             {/* Weekday header */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", marginBottom: 6 }}>
               {WEEKDAY_HEADERS.map((w) => (
@@ -603,7 +634,7 @@ export default function CalendarPage() {
                       padding: "4px 3px 5px", cursor: "pointer",
                       background: isSelected ? "var(--tint-accent)" : inMonth ? "var(--surface)" : "var(--surface-2)",
                       boxShadow: isSelected ? "inset 0 0 0 1.5px var(--accent)" : "none",
-                      fontFamily: FONT, minHeight: 72,
+                      fontFamily: FONT, minHeight: touchMode ? 50 : 72,
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -617,28 +648,39 @@ export default function CalendarPage() {
                         {day.getDate()}
                       </span>
                     </div>
+                    {/* 2026-10-18 (spec §24): on a phone the cell shows dots,
+                        not clipped text — the agenda under the month has the details. */}
+                    {touchMode ? (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center", padding: "2px 1px 0" }} aria-hidden>
+                        {entries.slice(0, 4).map((e, i) => (
+                          <span key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: colorOf(e), opacity: inMonth ? 1 : 0.5 }} />
+                        ))}
+                        {entries.length > 4 && <span style={{ fontSize: 8.5, fontWeight: 800, color: "var(--subtle)", lineHeight: "6px" }}>+</span>}
+                      </div>
+                    ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                      {shown.map((e, i) => (
-                        <span
-                          key={i}
-                          onClick={touchMode ? undefined : (ev) => { ev.stopPropagation(); setSelectedDate(day); openEntry(e); }}
-                          style={{
-                            pointerEvents: touchMode ? "none" : "auto",
-                            display: "block", fontSize: 9.5, fontWeight: 700, color: "#fff",
-                            background: colorOf(e), borderRadius: 4, padding: "1.5px 4px",
-                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                            opacity: inMonth ? 1 : 0.55,
-                          }}
-                        >
-                          {e.short}
-                        </span>
-                      ))}
-                      {overflow > 0 && (
-                        <span style={{ fontSize: 9, fontWeight: 700, color: "var(--subtle)", padding: "0 2px" }}>
-                          {t.more(overflow)}
-                        </span>
-                      )}
+                        {shown.map((e, i) => (
+                          <span
+                            key={i}
+                            onClick={touchMode ? undefined : (ev) => { ev.stopPropagation(); setSelectedDate(day); openEntry(e); }}
+                            style={{
+                              pointerEvents: touchMode ? "none" : "auto",
+                              display: "block", fontSize: 9.5, fontWeight: 700, color: "#fff",
+                              background: colorOf(e), borderRadius: 4, padding: "1.5px 4px",
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                              opacity: inMonth ? 1 : 0.55,
+                            }}
+                          >
+                            {e.short}
+                          </span>
+                        ))}
+                        {overflow > 0 && (
+                          <span style={{ fontSize: 9, fontWeight: 700, color: "var(--subtle)", padding: "0 2px" }}>
+                            {t.more(overflow)}
+                          </span>
+                        )}
                     </div>
+                    )}
                   </div>
                 );
               })}

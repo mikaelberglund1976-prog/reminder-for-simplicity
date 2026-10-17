@@ -1,6 +1,7 @@
 import type { Messages } from "../en";
 
 export const school: Messages["school"] = {
+  overdueTitle: "Försenat",
   kinds: { HOMEWORK: "Läxa", TEST: "Prov", OTHER: "Övrigt" },
   subjects: ["Matematik", "Svenska", "Engelska", "NO", "Biologi", "Fysik", "Kemi", "SO", "Historia", "Geografi", "Religion", "Samhällskunskap", "Teknik", "Musik", "Bild", "Idrott", "Slöjd", "Hemkunskap", "Spanska", "Franska", "Tyska"],
   yesterday: "Igår",

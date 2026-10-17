@@ -183,7 +183,12 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
   }
 
   const byDate = (a: SchoolItem, b: SchoolItem) => (toDateInput(a.date).localeCompare(toDateInput(b.date))) || (a.startTime ?? "99:99").localeCompare(b.startTime ?? "99:99");
-  const upcoming = items.filter(i => !i.completedAt).sort(byDate);
+  // 2026-10-18 (spec §27): Overdue on top — only when there is something —
+  // then what's coming up per child, then Done collapsed.
+  const todayKey = toDateInput(new Date().toISOString());
+  const open = items.filter(i => !i.completedAt).sort(byDate);
+  const overdue = open.filter(i => toDateInput(i.date) < todayKey);
+  const upcoming = open.filter(i => toDateInput(i.date) >= todayKey);
   const done = items.filter(i => i.completedAt).sort((a, b) => byDate(b, a));
 
   const renderList = (list: SchoolItem[]) => (
@@ -223,6 +228,15 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
           {t.title} {upcoming.length > 0 && `· ${upcoming.length}`}
         </div>
       </div>
+
+      {overdue.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--danger)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+            {t.overdueTitle} · {overdue.length}
+          </div>
+          {renderList(overdue)}
+        </div>
+      )}
 
       {mode === "child" && (upcoming.length > 0
         ? renderList(upcoming)

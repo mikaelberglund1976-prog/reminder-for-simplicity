@@ -1,4 +1,5 @@
 import BottomNav from "@/components/BottomNav";
+import WhatsNew from "@/components/WhatsNew";
 
 // Wraps every /dashboard/* route with the persistent bottom tab bar
 // (Reminders / Shopping list / Wishlist) required by P0.4 in the
@@ -13,6 +14,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           padding (pages were written before the nav existed). */}
       <div style={{ paddingBottom: 96 }}>{children}</div>
       <BottomNav />
+      <WhatsNew />
     </>
   );
 }

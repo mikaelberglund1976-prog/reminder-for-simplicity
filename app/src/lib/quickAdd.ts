@@ -93,7 +93,7 @@ const TOOL = {
           properties: {
             type: { type: "string", enum: QUICK_TYPES, description: "SHOPPING = things to buy (one item per thing); TEST = prov/förhör/glosor; HOMEWORK = läxa/inlämning (date = due date); SCHOOL_OTHER = other school event; ACTIVITY = sport/club training, match, lesson outside school; REMINDER = anything else with a date (appointments, calls, bills)." },
             title: { type: "string", description: "Short title in the person's language, max 60 characters. For SHOPPING just the thing ('Mjölk'). For a test: 'Prov i matte'. Don't include the person's name, the day or the time in the title." },
-            date: { type: ["string", "null"], description: "YYYY-MM-DD, resolved against today. A weekday means the next such day (today counts only if a later time today is given). Null for SHOPPING. If no day is given for a non-shopping item, use today." },
+            date: { type: ["string", "null"], description: "YYYY-MM-DD, resolved against today. A weekday means the next such day (today counts only if a later time today is given). Null for SHOPPING. If no day is given for a non-shopping item, return null — never guess a day." },
             startTime: { type: ["string", "null"], description: "HH:MM 24h. '14' or 'kl 14' = 14:00. Null if no time." },
             endTime: { type: ["string", "null"], description: "HH:MM or null." },
             subject: { type: ["string", "null"], description: "School subject for TEST/HOMEWORK if given (e.g. 'Matte'), else null." },
@@ -172,7 +172,8 @@ export function toItems(raw: Raw[], people: { id: string; name: string | null }[
     if (!title) continue;
     let date = type === "SHOPPING" ? null : str(r.date, 10);
     if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)))) date = null;
-    if (type !== "SHOPPING" && !date) date = today;
+    // 2026-10-18 (spec §22): never make up a day — the preview asks "When?".
+    void today;
     let startTime = type === "SHOPPING" ? null : hhmm(r.startTime);
     let endTime = startTime ? hhmm(r.endTime) : null;
     if (type === "TEST" || type === "HOMEWORK") endTime = null;

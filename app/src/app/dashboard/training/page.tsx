@@ -213,8 +213,6 @@ export default function TrainingPage() {
         {t.add}
       </Link>
 
-      {/* 2026-10-09: club calendars per child (adults only — hides itself otherwise). */}
-      <ActivityFeedsCard onChanged={load} />
 
       {children.length === 0 && (
         <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
@@ -307,6 +305,10 @@ export default function TrainingPage() {
           </div>
         );
       })}
+
+      {/* 2026-10-18 (spec §32): what's next first; club calendars (sync admin) below. */}
+      <h2 style={{ fontSize: 12, fontWeight: 800, color: "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.07em", margin: "28px 2px 10px" }}>{msg.common.connectionsTitle}</h2>
+      <ActivityFeedsCard onChanged={load} />
     </Screen>
   );
 }

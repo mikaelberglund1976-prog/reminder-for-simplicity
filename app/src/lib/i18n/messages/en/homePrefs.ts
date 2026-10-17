@@ -24,7 +24,7 @@ export const homePrefs = {
     perChild: "Next up per child",
     stats: "Overview numbers",
     chores: "Chores this week",
-    reminders: "All reminders list",
+    reminders: "Next few reminders (all of them are under Reminders)",
   } as Record<string, string>,
   perChildTitle: "In “Next up per child”",
   kinds: { tests: "Tests", homework: "Homework & assignments", activities: "Activities (trainings, matches)", schoolOther: "Other school events" } as Record<string, string>,

@@ -10,7 +10,6 @@ import TripSoonCard from "@/components/TripSoonCard";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import HamburgerMenu from "@/components/HamburgerMenu";
 import AdSlot from "@/components/AdSlot";
 import Avatar from "@/components/Avatar";
 import { getMe } from "@/lib/me";
@@ -22,10 +21,10 @@ import { reminderDisplayName, type BirthdayMeta } from "@/lib/birthdayLabel";
 import { normalizeHomePrefs, type HomePrefs } from "@/lib/homePrefs";
 import { formatTimeRange } from "@/lib/timeFormat";
 import { useI18n } from "@/lib/i18n/client";
+import { CATEGORY_BADGE, ServiceLogo, StatCard, ReminderRow, getDaysUntil, formatDate, compactAmount, type Reminder, type HouseholdMember } from "@/components/ReminderParts";
 import { relativeDay } from "@/lib/i18n/relative";
 import type { Messages } from "@/lib/i18n/messages";
 
-type HouseholdMember = { id: string; userId: string; role?: string; user: { id: string; name: string | null; email: string } };
 
 type SchoolItem = {
   id: string; name: string; date: string; subject: string | null;
@@ -48,134 +47,6 @@ type NextUpEntry = {
   title: string; day: Date; startTime: string | null; endTime: string | null; href: string;
 };
 
-type Reminder = {
-  id: string;
-  name: string;
-  category: string;
-  date: string;
-  recurrence: string;
-  amount: number | null;
-  currency: string | null;
-  note: string | null;
-  reminderDaysBefore: number;
-  lastSentAt: string | null;
-  userId: string;
-  visibility: string;
-  assignedTo?: string | null;
-  user?: { id: string; name: string | null };
-  startTime?: string | null;
-  birthday?: BirthdayMeta | null;
-};
-
-// 2026-10-04: category / recurrence words come from messages.reminders.
-
-const CATEGORY_BADGE: Record<string, { bg: string; color: string }> = {
-  SUBSCRIPTION: { bg: "var(--tint-accent)", color: "var(--accent-strong)" },
-  BIRTHDAY:     { bg: "var(--tint-pink)", color: "var(--pink)" },
-  INSURANCE:    { bg: "var(--tint-success)", color: "var(--success)" },
-  CONTRACT:     { bg: "var(--tint-warning)", color: "var(--warning)" },
-  HEALTH:       { bg: "var(--tint-danger)", color: "var(--danger)" },
-  BILL:         { bg: "var(--tint-violet)", color: "var(--violet)" },
-  OTHER:        { bg: "var(--border)", color: "var(--slate)" },
-};
-
-const BRAND_COLORS: Record<string, { bg: string; text: string }> = {
-  spotify:   { bg: "#1DB954", text: "#fff" },
-  netflix:   { bg: "#E50914", text: "#fff" },
-  youtube:   { bg: "#FF0000", text: "#fff" },
-  apple:     { bg: "#000000", text: "#fff" },
-  google:    { bg: "#4285F4", text: "#fff" },
-  amazon:    { bg: "#FF9900", text: "#000" },
-  microsoft: { bg: "#00A4EF", text: "#fff" },
-  adobe:     { bg: "#FF0000", text: "#fff" },
-  dropbox:   { bg: "#0061FF", text: "#fff" },
-  slack:     { bg: "#4A154B", text: "#fff" },
-  github:    { bg: "#24292E", text: "#fff" },
-  notion:    { bg: "#000000", text: "#fff" },
-  figma:     { bg: "#F24E1E", text: "#fff" },
-  linkedin:  { bg: "#0A66C2", text: "#fff" },
-  twitter:   { bg: "#1DA1F2", text: "#fff" },
-  discord:   { bg: "#5865F2", text: "#fff" },
-  zoom:      { bg: "#2D8CFF", text: "#fff" },
-  hulu:      { bg: "#1CE783", text: "#000" },
-  disney:    { bg: "#113CCF", text: "#fff" },
-  telia:     { bg: "#990AE3", text: "#fff" },
-};
-
-const BRAND_DOMAINS: Record<string, string> = {
-  spotify:   "spotify.com",
-  netflix:   "netflix.com",
-  youtube:   "youtube.com",
-  apple:     "apple.com",
-  google:    "google.com",
-  amazon:    "amazon.com",
-  microsoft: "microsoft.com",
-  adobe:     "adobe.com",
-  dropbox:   "dropbox.com",
-  slack:     "slack.com",
-  github:    "github.com",
-  notion:    "notion.so",
-  figma:     "figma.com",
-  linkedin:  "linkedin.com",
-  twitter:   "twitter.com",
-  discord:   "discord.com",
-  zoom:      "zoom.us",
-  hulu:      "hulu.com",
-  disney:    "disneyplus.com",
-  telia:     "telia.com",
-};
-
-function getBrandInfo(name: string) {
-  const lower = name.toLowerCase();
-  for (const brand in BRAND_COLORS) {
-    if (lower.includes(brand)) {
-      return { color: BRAND_COLORS[brand], domain: BRAND_DOMAINS[brand] ?? null };
-    }
-  }
-  return { color: { bg: "var(--accent-bg)", text: "var(--on-accent)" }, domain: null };
-}
-
-function getDaysUntil(dateStr: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
-  target.setHours(0, 0, 0, 0);
-  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function formatDate(dateStr: string, dateLocale: string) {
-  const d = new Date(dateStr);
-  const now = new Date();
-  return d.toLocaleDateString(dateLocale, {
-    day: "numeric",
-    month: "short",
-    year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-  });
-}
-
-// 2026-09-29 (GDPR review): logos used to be loaded from logo.clearbit.com
-// straight from the browser, which sent every visitor's IP address (and which
-// subscriptions they have) to a US third party. Brand colour + initials now,
-// nothing leaves the app.
-function ServiceLogo({ name }: { name: string }) {
-  // 2026-10-10: birthdays are named "🎂 Elsa turns 13" — show the emoji.
-  const emoji = ["🎂", "🎈", "🐾"].find((e) => name.startsWith(e + " "));
-  if (emoji) {
-    return (
-      <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "var(--tint-pink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }} aria-hidden>{emoji}</div>
-    );
-  }
-  const { color } = getBrandInfo(name);
-  const initials = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-  return (
-    <div style={{
-      width: 44, height: 44, borderRadius: 14, overflow: "hidden", flexShrink: 0,
-      background: color.bg, display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      <span style={{ color: color.text, fontWeight: 700, fontSize: 15 }}>{initials}</span>
-    </div>
-  );
-}
 
 const SZ = { width: 20, height: 20 };
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -183,8 +54,6 @@ const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, str
 function IcBell()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>; }
 function IcCard()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>; }
 function IcAlert()   { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>; }
-function IcDown()    { return <svg width={13} height={13} viewBox="0 0 24 24" {...STR} strokeWidth={2.5}><polyline points="6 9 12 15 18 9"/></svg>; }
-function IcPlus()    { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>; }
 
 const HOME_LIST_LIMIT = 5;
 const HOME_BIRTHDAY_LIMIT = 2;
@@ -219,112 +88,15 @@ function SectionTitle({ children, inline }: { children: React.ReactNode; inline?
   return <h2 style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)", margin: inline ? 0 : "0 0 10px", letterSpacing: "-0.2px" }}>{children}</h2>;
 }
 
-function compactAmount(n: number) {
-  if (n >= 100000) return Math.round(n / 1000) + "k";
-  if (n >= 10000) return (n / 1000).toFixed(1).replace(".0", "") + "k";
-  return Math.round(n).toLocaleString("sv");
-}
-
-
-function StatCard({ icon, iconColor, iconBg, value, label }: {
-  icon: React.ReactNode; iconColor: string; iconBg: string; value: number | string; label: string;
-}) {
-  return (
-    <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", padding: "14px 12px", boxShadow: "var(--shadow)", height: "100%", boxSizing: "border-box" }}>
-      <div style={{ background: iconBg, borderRadius: 10, padding: 8, color: iconColor, display: "inline-flex", marginBottom: 10 }}>{icon}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: "var(--fg)", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
-    </div>
-  );
-}
-
-const VISIBILITY_CHIP: Record<string, { icon: string; bg: string; color: string }> = {
-  PRIVATE: { icon: "🔒", bg: "var(--background)", color: "var(--muted)" },
-  PARENTS: { icon: "👪", bg: "var(--tint-warning)", color: "var(--warning)" },
-  // HOUSEHOLD isn't shown as a chip — it's the "everyone sees this" default
-  // once you're in a household, so flagging it would just be noise next to
-  // the other badges.
-};
-
-function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, householdMembers = [], hasHousehold = false }: {
-  reminder: Reminder; badge: { bg: string; color: string }; isFirst: boolean; onClick: () => void; currentUserId?: string; householdMembers?: HouseholdMember[]; hasHousehold?: boolean;
-}) {
-  const [hovered, setHovered] = useState(false);
-  const { m: msg, dateLocale } = useI18n();
-  const showAmount = reminder.amount != null && reminder.amount > 0;
-  const showRecurrence = reminder.recurrence !== "ONCE" || showAmount;
-  const isShared = reminder.user && reminder.user.id !== currentUserId;
-  const sharedByName = isShared ? (reminder.user?.name?.split(" ")[0] ?? msg.home.someone) : null;
-  const ownerMember = reminder.assignedTo ? householdMembers.find(m => m.userId === reminder.assignedTo) : null;
-  const ownerName = ownerMember ? (ownerMember.user.name?.split(" ")[0] ?? ownerMember.user.email.split("@")[0]) : null;
-  const isUnassigned = householdMembers.length > 1 && !reminder.assignedTo && reminder.category !== "BIRTHDAY";
-  return (
-    <div onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-        borderTop: isFirst ? "none" : "1px solid var(--border-soft)", cursor: "pointer",
-        background: hovered ? "var(--surface-2)" : "transparent", transition: "background 0.12s",
-      }}>
-      <ServiceLogo name={reminder.name} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{reminder.name}</span>
-          <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 50, fontSize: 11, fontWeight: 600, background: badge.bg, color: badge.color }}>
-            {msg.reminders.categories[reminder.category] ?? reminder.category}
-          </span>
-          {isShared && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "var(--tint-accent)", color: "var(--accent-strong)", gap: 3 }}>
-              👤 {sharedByName}
-            </span>
-          )}
-          {ownerName && !isShared && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "var(--tint-accent)", color: "var(--accent-strong)", gap: 3 }}>
-              👤 {ownerName}
-            </span>
-          )}
-          {isUnassigned && !isShared && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: "var(--background)", color: "var(--subtle)" }}>
-              {msg.common.unassigned}
-            </span>
-          )}
-          {/* Visibility chip — visibility (PRIVATE/HOUSEHOLD/PARENTS) already
-              existed in the schema but was never surfaced to the user. Only
-              shown once there's a household to be private *from* — for a
-              solo user every reminder is trivially private, so the chip
-              would just be noise. HOUSEHOLD itself has no chip (the "seen by
-              everyone" default), see VISIBILITY_CHIP above. */}
-          {hasHousehold && VISIBILITY_CHIP[reminder.visibility] && (
-            <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: VISIBILITY_CHIP[reminder.visibility].bg, color: VISIBILITY_CHIP[reminder.visibility].color, gap: 3 }}>
-              {VISIBILITY_CHIP[reminder.visibility].icon} {msg.reminders.visibility[reminder.visibility]}
-            </span>
-          )}
-        </div>
-        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
-          {formatDate(reminder.date, dateLocale)}{reminder.startTime ? ` · ${reminder.startTime}` : ""}
-          {showAmount && <> &middot; {reminder.amount!.toLocaleString(dateLocale)} {reminder.currency}</>}
-          {showRecurrence && <> &middot; {msg.reminders.recurrence[reminder.recurrence] ?? reminder.recurrence}</>}
-        </div>
-      </div>
-      <div style={{ color: "var(--faint)", flexShrink: 0 }}>
-        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [reminders, setReminders]        = useState<Reminder[]>([]);
   const [loading, setLoading]            = useState(true);
   const [preferredCurrency, setCurrency] = useState("SEK");
-    const [filterCategory, setFilter]      = useState("ALL");
-  const [sortBy, setSort]                = useState("date_asc");
-  // 2026-10-04 (Mikael): a whole family's reminders make a long Home — show
-  // the nearest few, the rest one tap away.
-  const [showAllReminders, setShowAllReminders] = useState(false);
+  // 2026-10-18: filter + sort live on the Reminders page now.
+  const filterCategory = "ALL" as string;
+  const sortBy = "date_asc" as string;
   const [hasHousehold, setHasHousehold]  = useState(false);
   const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
   const [plan, setPlan] = useState<{ plan: "FREE" | "TRIAL" | "PRO"; trialDaysLeft: number | null } | null>(null);
@@ -447,7 +219,6 @@ export default function DashboardPage() {
     }, 0);
 
 
-  const sharedReminders = reminders.filter(r => r.user && r.user.id !== session?.user?.id);
 
   const sorted = [...reminders].sort((a, b) => {
     if (sortBy === "date_asc")    return getDaysUntil(a.date) - getDaysUntil(b.date);
@@ -557,12 +328,6 @@ export default function DashboardPage() {
 
   const homeHeader = homeHeaderUrl(media);
 
-  const dropdownStyle = {
-    width: "100%", appearance: "none" as const, WebkitAppearance: "none" as const,
-    background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 12,
-    padding: "11px 38px 11px 14px", fontSize: 13, fontWeight: 600, color: "var(--fg)",
-    cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", fontFamily: FONT,
-  };
 
 
   return (
@@ -587,14 +352,15 @@ export default function DashboardPage() {
               <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
                 {new Date().toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" })}
               </span>
-              {/* 2026-09-28: plan chip — always one tap from the plans page. */}
-              {plan && hasHousehold && (
+              {/* 2026-10-18 (Home 2.0: "Pro status shouldn't dominate"): the
+                  chip only shows while a trial is counting down — the plan
+                  itself is under Settings → Plan. */}
+              {plan && hasHousehold && plan.plan === "TRIAL" && (
                 <Link href="/upgrade" style={{
                   fontSize: 11, fontWeight: 800, textDecoration: "none", padding: "3px 9px", borderRadius: 50,
-                  background: plan.plan === "FREE" ? "var(--surface-3)" : "var(--tint-premium)",
-                  color: plan.plan === "FREE" ? "var(--muted)" : "var(--premium)",
+                  background: "var(--tint-premium)", color: "var(--premium)",
                 }}>
-                  {plan.plan === "PRO" ? t.planPro : plan.plan === "TRIAL" ? t.planTrial(plan.trialDaysLeft) : t.planFree}
+                  {t.planTrial(plan.trialDaysLeft)}
                 </Link>
               )}
             </div>
@@ -602,7 +368,6 @@ export default function DashboardPage() {
               {t.hi(firstName)}
             </h1>
           </div>
-          <HamburgerMenu />
         </div>
 
         {/* 2026-09-28: no family yet → one clear next step instead of a
@@ -683,6 +448,47 @@ export default function DashboardPage() {
           </>
         )}
 
+        {/* 2026-10-09: next up per child — tests, homework, activities. */}
+        {show.perChild && nextUpByChild.length > 0 && (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+              <SectionTitle inline>{msg.homePrefs.nextUpTitle}</SectionTitle>
+              <Link href="/profile#home-settings" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{msg.homePrefs.customize}</Link>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+              {nextUpByChild.map((p) => (
+                <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: p.items.length ? 6 : 0 }}>
+                    <Avatar userId={p.id} name={p.name} size={28} />
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
+                    {p.items.length === 0 && <span style={{ fontSize: 12, color: "var(--subtle)" }}>{msg.homePrefs.nothingSoon}</span>}
+                  </div>
+                  {p.items.slice(0, prefs.perChildCount).map((it) => {
+                    const d = getDaysUntil(it.day.toISOString());
+                    const badge = familyBadge(it.kind) ?? (it.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
+                      : it.kind === "HOMEWORK" ? { bg: "var(--tint-school)", fg: "var(--school)", label: msg.homePrefs.kindHomework }
+                      : it.kind === "ACTIVITY" ? { bg: "var(--tint-warning)", fg: "#D85A30", label: msg.homePrefs.kindActivity }
+                      : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool });
+                    const time = formatTimeRange(it);
+                    return (
+                      <Link key={it.key} href={it.href} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderTop: "1px solid var(--border-soft)", textDecoration: "none" }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0, background: badge.bg, color: badge.fg }}>{badge.label}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.title}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0, color: d <= 0 ? "var(--warning)" : "var(--muted)", textAlign: "right" }}>
+                          {d === 0 ? msg.common.today : d === 1 ? msg.common.tomorrow : it.day.toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" })}{time ? ` ${time}` : ""}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                  {p.items.length > prefs.perChildCount && (
+                    <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>{msg.homePrefs.moreSoon(p.items.length - prefs.perChildCount)}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         {/* 2026-10-11: tomorrow as a checklist — bring, rides, clashes. */}
         {hasHousehold && <TomorrowCard />}
 
@@ -755,47 +561,6 @@ export default function DashboardPage() {
         )}
         </>)}
 
-        {/* 2026-10-09: next up per child — tests, homework, activities. */}
-        {show.perChild && nextUpByChild.length > 0 && (
-          <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-              <SectionTitle inline>{msg.homePrefs.nextUpTitle}</SectionTitle>
-              <Link href="/profile#home-settings" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{msg.homePrefs.customize}</Link>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-              {nextUpByChild.map((p) => (
-                <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: p.items.length ? 6 : 0 }}>
-                    <Avatar userId={p.id} name={p.name} size={28} />
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
-                    {p.items.length === 0 && <span style={{ fontSize: 12, color: "var(--subtle)" }}>{msg.homePrefs.nothingSoon}</span>}
-                  </div>
-                  {p.items.slice(0, prefs.perChildCount).map((it) => {
-                    const d = getDaysUntil(it.day.toISOString());
-                    const badge = familyBadge(it.kind) ?? (it.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
-                      : it.kind === "HOMEWORK" ? { bg: "var(--tint-school)", fg: "var(--school)", label: msg.homePrefs.kindHomework }
-                      : it.kind === "ACTIVITY" ? { bg: "var(--tint-warning)", fg: "#D85A30", label: msg.homePrefs.kindActivity }
-                      : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool });
-                    const time = formatTimeRange(it);
-                    return (
-                      <Link key={it.key} href={it.href} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderTop: "1px solid var(--border-soft)", textDecoration: "none" }}>
-                        <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0, background: badge.bg, color: badge.fg }}>{badge.label}</span>
-                        <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.title}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0, color: d <= 0 ? "var(--warning)" : "var(--muted)", textAlign: "right" }}>
-                          {d === 0 ? msg.common.today : d === 1 ? msg.common.tomorrow : it.day.toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" })}{time ? ` ${time}` : ""}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                  {p.items.length > prefs.perChildCount && (
-                    <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>{msg.homePrefs.moreSoon(p.items.length - prefs.perChildCount)}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
         <AdSlot placement="home" style={{ marginBottom: 20 }} />
 
         {/* Overview tiles — three honest numbers. "Needs attention" used to
@@ -805,7 +570,7 @@ export default function DashboardPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
           <StatCard icon={<IcBell />} iconColor="var(--accent)" iconBg="var(--tint-accent)" value={totalActive} label={t.statActive} />
           <StatCard icon={<IcAlert />} iconColor="var(--danger)" iconBg="var(--tint-danger)" value={passedCount} label={t.statOverdue} />
-          <button onClick={() => { setSort("amount_desc"); setShowAllReminders(true); document.getElementById("all-reminders")?.scrollIntoView({ behavior: "smooth" }); }}
+          <button onClick={() => router.push("/dashboard/reminders")}
             style={{ all: "unset", cursor: "pointer", display: "block" }} aria-label={t.reviewCosts}>
             <StatCard icon={<IcCard />} iconColor="var(--success)" iconBg="var(--tint-success)"
               value={yearlyTotal > 0 ? compactAmount(yearlyTotal) : "—"} label={`${t.perYear}${yearlyTotal > 0 ? " · " + preferredCurrency : ""}`} />
@@ -839,108 +604,24 @@ export default function DashboardPage() {
           </Link>
         )}
 
-        {/* 2026-10-04: hidden until there is something to list (New reminder is in the quick actions + the floating button). */}
+        {/* 2026-10-18 (Home 2.0): the full list moved to the Reminders page
+            (/dashboard/reminders, in More). Home keeps — when turned on under
+            Settings → Home — just the next few, one tap from all of them. */}
         {show.reminders && reminders.length > 0 && (<>
-        <div id="all-reminders" style={{ scrollMarginTop: 16 }} />
-        <SectionTitle>{t.allReminders}</SectionTitle>
-
-        {/* Section content */}
-        <>
-            {/* Filters */}
-            <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-              <div style={{ position: "relative", flex: 1 }}>
-                <select value={filterCategory} onChange={e => setFilter(e.target.value)} style={dropdownStyle}>
-                  <option value="ALL">{t.allReminders}</option>
-                  {hasHousehold && sharedReminders.length > 0 && (
-                    <option value="FAMILY">{t.familyShared}</option>
-                  )}
-                  {hasHousehold && (
-                    <option value="UNASSIGNED">{t.unassigned}</option>
-                  )}
-                  {["SUBSCRIPTION", "BIRTHDAY", "INSURANCE", "CONTRACT", "HEALTH", "BILL", "OTHER"].map((c) => (
-                    <option key={c} value={c}>{msg.reminders.categoriesPlural[c]}</option>
-                  ))}
-                </select>
-                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted)" }}><IcDown /></div>
-              </div>
-              <div style={{ position: "relative", flex: 1 }}>
-                <select value={sortBy} onChange={e => setSort(e.target.value)} style={dropdownStyle}>
-                  <option value="date_asc">{t.sort.date_asc}</option>
-                  <option value="date_desc">{t.sort.date_desc}</option>
-                  <option value="name_asc">{t.sort.name_asc}</option>
-                  <option value="amount_desc">{t.sort.amount_desc}</option>
-                </select>
-                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted)" }}><IcDown /></div>
-              </div>
-            </div>
-
-            {/* List */}
-            {filtered.length === 0 ? (
-              <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)", padding: "48px 24px", textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>&#128237;</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 6 }}>{t.noReminders}</div>
-                <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24 }}>{t.noRemindersBody}</div>
-                <Link href="/dashboard/new" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: "var(--accent-bg)", color: "var(--on-accent)", borderRadius: 50, padding: "12px 28px", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
-                  {t.addFirst}
-                </Link>
-              </div>
-            ) : (
-              <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.05)", marginBottom: 12 }}>
-                {(showAllReminders ? filtered : filtered.slice(0, HOME_LIST_LIMIT)).map((r, i) => (
-                  <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
-                    isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
-                ))}
-                  </div>
-            )}
-
-            {hiddenBirthdays > 0 && (
-              <Link href="/dashboard/birthdays" style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, padding: "12px 16px", borderRadius: 16,
-                background: "var(--surface)", border: "1px solid var(--border)", textDecoration: "none",
-                fontSize: 14, fontWeight: 700, color: "var(--accent)", fontFamily: FONT,
-              }}>
-                <span>🎂 {t.allBirthdays(birthdaysSoonest.length)}</span><span aria-hidden>→</span>
-              </Link>
-            )}
-
-            {filtered.length > HOME_LIST_LIMIT && (
-              <button onClick={() => setShowAllReminders(v => !v)} style={{
-                display: "block", width: "100%", marginBottom: 12, padding: "13px", borderRadius: 16,
-                background: "var(--surface)", border: "1px solid var(--border)", cursor: "pointer",
-                fontSize: 14, fontWeight: 700, color: "var(--accent)", fontFamily: FONT,
-              }}>
-                {showAllReminders ? t.showFewer : t.seeAllCount(filtered.length)}
-              </button>
-            )}
-
-            {/* Add reminder (hidden when the empty state above already offers it) */}
-            {filtered.length > 0 && (
-            <Link href="/dashboard/new" style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: "100%", background: "var(--surface)", border: "1.5px dashed var(--border)",
-              borderRadius: 16, padding: "15px", fontSize: 14, fontWeight: 600,
-              color: "var(--muted)", textDecoration: "none", boxSizing: "border-box",
-            }}>
-              {t.addReminder}
-            </Link>
-            )}
-          </>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+            <SectionTitle inline>{msg.nav.reminders}</SectionTitle>
+            <Link href="/dashboard/reminders" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{t.seeAllCount(reminders.length)}</Link>
+          </div>
+          <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "var(--shadow)", marginBottom: 24 }}>
+            {filtered.slice(0, HOME_LIST_LIMIT).map((r, i) => (
+              <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER}
+                isFirst={i === 0} onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={session?.user?.id} householdMembers={householdMembers} hasHousehold={hasHousehold} />
+            ))}
+          </div>
         </>)}
 
       </main>
 
-      {/* Floating "add reminder" button — sits just above the shared bottom tab bar
-          (see app/dashboard/layout.tsx + components/BottomNav.tsx) instead of living
-          inside its own nav row, so the two don't stack on top of each other. */}
-      <Link href="/dashboard/new" aria-label={t.addReminderAria} style={{
-        position: "fixed", right: 20, bottom: "calc(env(safe-area-inset-bottom, 0px) + 92px)", zIndex: 19,
-        width: 52, height: 52, borderRadius: "50%",
-        background: "var(--accent-bg)", color: "var(--on-accent)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        boxShadow: "0 4px 16px rgba(26,35,64,0.28)", textDecoration: "none",
-      }}>
-        <IcPlus />
-      </Link>
     </div>
   );
 }

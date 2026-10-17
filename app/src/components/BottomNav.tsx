@@ -7,6 +7,7 @@ import { hasNewSince } from "@/lib/listBadges";
 import { getMe } from "@/lib/me";
 import { DEFAULT_NAV_APPS, parseNavTabs } from "@/lib/navTabs";
 import { useM } from "@/lib/i18n/client";
+import MoreSheet from "@/components/MoreSheet";
 import type { Messages } from "@/lib/i18n/messages";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
@@ -23,6 +24,9 @@ function IcGift()  { return <svg width={22} height={22} viewBox="0 0 24 24" {...
 function IcCalendar() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
 function IcChecklist() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="m4 6 1 1 2-2"/><path d="m4 12 1 1 2-2"/><path d="m4 18 1 1 2-2"/></svg>; }
 function IcTraining() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><path d="M6.5 6.5 17.5 17.5"/><path d="m21 3-3.5 3.5"/><path d="M17.5 6.5 21 3"/><path d="m3 21 3.5-3.5"/><path d="M6.5 17.5 3 21"/><rect x="15" y="15" width="5" height="5" rx="1.5" transform="rotate(45 17.5 17.5)"/><rect x="4" y="4" width="5" height="5" rx="1.5" transform="rotate(45 6.5 6.5)"/></svg>; }
+function IcCake() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3M12 8v3M17 8v3"/></svg>; }
+function IcSuitcase() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>; }
+function IcMore() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>; }
 function IcSchool() { return <svg width={22} height={22} viewBox="0 0 24 24" {...STR}><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12.5V17c0 1.5 2.5 3 6 3s6-1.5 6-3v-4.5"/></svg>; }
 
 type TabDef = {
@@ -41,8 +45,9 @@ const HOME_TAB: TabDef = {
     key: "home", href: "/dashboard", label: "home", icon: IcHome,
     // Anything under /dashboard that isn't one of the other apps counts as
     // "Reminders" — covers the root list plus create/edit reminder screens.
-    match: (p) => p.startsWith("/dashboard") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/wishlist")
-      && !p.startsWith("/dashboard/calendar") && !p.startsWith("/dashboard/family") && !p.startsWith("/dashboard/training") && !p.startsWith("/dashboard/school"),
+    // 2026-10-18: only Home itself and the screens opened from it.
+    match: (p) => p === "/dashboard" || p === "/dashboard/new" || p === "/dashboard/intake" || /^\/dashboard\/[^/]+(\/edit)?$/.test(p)
+      && !["calendar", "wishlist", "training", "school", "reminders", "birthdays", "trips", "family", "suggestions"].includes(p.split("/")[2]),
   };
 
 const APP_TABS: Record<string, TabDef> = {
@@ -52,6 +57,9 @@ const APP_TABS: Record<string, TabDef> = {
   chores: { key: "chores", href: "/dashboard/family", label: "chores", icon: IcChecklist, match: (p) => p.startsWith("/dashboard/family") && !p.startsWith("/dashboard/family/shopping-list") && !p.startsWith("/dashboard/family/members") },
   training: { key: "training", href: "/dashboard/training", label: "activities", icon: IcTraining, match: (p) => p.startsWith("/dashboard/training") },
   school: { key: "school", href: "/dashboard/school", label: "school", icon: IcSchool, match: (p) => p.startsWith("/dashboard/school") },
+  reminders: { key: "reminders", href: "/dashboard/reminders", label: "reminders", icon: IcBell, match: (p) => p.startsWith("/dashboard/reminders") },
+  birthdays: { key: "birthdays", href: "/dashboard/birthdays", label: "birthdays", icon: IcCake, match: (p) => p.startsWith("/dashboard/birthdays") },
+  trips: { key: "trips", href: "/dashboard/trips", label: "trips", icon: IcSuitcase, match: (p) => p.startsWith("/dashboard/trips") },
 };
 
 // 2026-09-28 (row 38): a child's Home is their own week.
@@ -71,6 +79,10 @@ export default function BottomNav() {
   const [badges, setBadges] = useState<{ shoppingList: boolean; wishlist: boolean }>({ shoppingList: false, wishlist: false });
   const [appKeys, setAppKeys] = useState<string[]>(DEFAULT_APP_TABS);
   const [isChild, setIsChild] = useState(false);
+  // 2026-10-18 (Navigation 2.0): "More" is always the rightmost tab — the
+  // app's full catalogue, replacing the ☰ menu in each page header.
+  const [moreOpen, setMoreOpen] = useState(false);
+  useEffect(() => { setMoreOpen(false); }, [pathname]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,6 +129,7 @@ export default function BottomNav() {
   // person's own pick (2026-07-28).
   // 2026-10-03: Home is always first (leftmost); the rest is the person's pick.
   const tabs: TabDef[] = [isChild ? CHILD_HOME_TAB : HOME_TAB, ...appKeys.map((k) => APP_TABS[k]).filter(Boolean)];
+  const onPicked = tabs.some((tab) => tab.match(pathname));
 
   return (
     // Outer element only handles fixed positioning across the full viewport —
@@ -166,7 +179,24 @@ export default function BottomNav() {
             </Link>
           );
         })}
+        <button
+          type="button"
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+          aria-haspopup="dialog"
+          style={{
+            flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+            padding: "8px 0 7px", border: "none", borderRadius: 22, cursor: "pointer",
+            background: moreOpen || !onPicked ? "var(--tint-accent)" : "transparent",
+            color: moreOpen || !onPicked ? "var(--accent)" : "var(--subtle)",
+            fontFamily: FONT, transition: "background .15s, color .15s",
+          }}
+        >
+          <span style={{ display: "flex" }}><IcMore /></span>
+          <span style={{ fontSize: 11, fontWeight: moreOpen || !onPicked ? 800 : 600, whiteSpace: "nowrap" }}>{m.nav.more}</span>
+        </button>
       </div>
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} isChild={isChild} />
     </nav>
   );
 }

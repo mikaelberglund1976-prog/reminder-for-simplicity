@@ -37,6 +37,7 @@ import { serverErrors } from "./serverErrors";
 import { shopping } from "./shopping";
 import { trips } from "./trips";
 import { wishlist } from "./wishlist";
+import { whatsNew } from "./whatsNew";
 
 export const sv: Messages = {
   account,
@@ -76,4 +77,5 @@ export const sv: Messages = {
   shopping,
   trips,
   wishlist,
+  whatsNew,
 };

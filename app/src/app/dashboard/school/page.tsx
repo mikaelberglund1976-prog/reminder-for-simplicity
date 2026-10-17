@@ -119,6 +119,17 @@ function SchoolPageInner() {
       <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 20 }}>
         {t.intro}
       </div>
+      {members.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
+          {t.addSomeoneFirst}
+        </div>
+      ) : (
+        <SchoolSection mode="overview" members={members} initialDate={dateFromQuery} />
+      )}
+
+      {/* 2026-10-18 (spec §27): you come here for the school week — links,
+          sync and the newsletter scan are administration, so they sit below. */}
+      <h2 style={{ fontSize: 12, fontWeight: 800, color: "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.07em", margin: "28px 2px 10px" }}>{m.common.connectionsTitle}</h2>
       {/* 2026-10-10: AI intake — scan a newsletter or school email. */}
       <Link href="/dashboard/intake" style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 14px", marginBottom: 14, textDecoration: "none" }}>
         <span style={{ fontSize: 22 }}>📸</span>
@@ -127,13 +138,6 @@ function SchoolPageInner() {
       </Link>
       {/* 2026-10-03: SchoolSoft import per child (adults only — the card hides itself otherwise). */}
       <SchoolSoftCard />
-      {members.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "20px 0", color: "var(--subtle)", fontSize: 13 }}>
-          {t.addSomeoneFirst}
-        </div>
-      ) : (
-        <SchoolSection mode="overview" members={members} initialDate={dateFromQuery} />
-      )}
     </Screen>
   );
 }

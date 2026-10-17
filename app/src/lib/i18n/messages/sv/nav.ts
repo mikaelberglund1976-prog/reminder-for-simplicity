@@ -17,4 +17,8 @@ export const nav: Messages["nav"] = {
   privacy: "Integritet",
   admin: "Admin",
   reminders: "Påminnelser",
+  more: "Mer",
+  groupPlanning: "Planering",
+  groupFamily: "Familjen",
+  groupApp: "App",
 };

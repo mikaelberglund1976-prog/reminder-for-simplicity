@@ -21,7 +21,11 @@ export type HomePrefs = {
 export const PER_CHILD_COUNTS = [2, 3, 5] as const;
 
 export const DEFAULT_HOME_PREFS: HomePrefs = {
-  sections: { family: true, today: true, quick: true, comingUp: true, perChild: true, stats: true, chores: true, reminders: true },
+  // 2026-10-18 (Home 2.0): quick-action carousel, the three numbers and the
+  // reminder list are off by default (they live on the Reminders page now).
+  // Someone who already saved their own choice keeps it — saved prefs hold
+  // every section, so only people who never chose get the simpler Home.
+  sections: { family: true, today: true, quick: false, comingUp: true, perChild: true, stats: false, chores: true, reminders: false },
   perChild: { tests: true, homework: true, activities: true, schoolOther: false },
   perChildCount: 3,
   hiddenChildren: [],

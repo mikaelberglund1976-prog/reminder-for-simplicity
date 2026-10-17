@@ -14,7 +14,11 @@ import {
 
 // 2026-10-11: the "just write it" row on Home (lib/quickAdd.ts).
 // POST { text }            → { items, people, lists, ai } — a preview, nothing saved
-// POST { action: "save", items } → { saved, shopping, other }
+// POST { action: "save", items } → { saved, shopping, other, created }
+// POST { action: "undo", created } → takes back what that save just added
+// 2026-10-18 (spec §21–23): plain shopping words are "high confidence" — the
+// client adds them straight away and offers Undo. Nothing gets a made-up day:
+// without one the preview asks "When?" and save refuses it.
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 const ADULT = ["OWNER", "PARENT", "ADULT"];
@@ -45,6 +49,7 @@ export async function POST(req: Request) {
   if (!c) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   if (body?.action === "save") return save(c, body);
+  if (body?.action === "undo") return undo(c, body);
 
   const text = typeof body?.text === "string" ? body.text.trim().slice(0, 500) : "";
   if (!text) return NextResponse.json({ error: "Write something first" }, { status: 400 });
@@ -56,7 +61,7 @@ export async function POST(req: Request) {
   if (local) {
     const listId = matchList(local.listText, c.lists, c.defaultListId);
     const items: QuickItem[] = local.items.map((title) => ({ type: "SHOPPING", title, date: null, startTime: null, endTime: null, subject: null, whoText: null, listText: local!.listText, personId: null, listId }));
-    return NextResponse.json({ ...base, items, ai: false });
+    return NextResponse.json({ ...base, items, ai: false, confident: true });
   }
 
   if (!quickAiConfigured()) {
@@ -66,8 +71,8 @@ export async function POST(req: Request) {
       const listId = matchList(plain.listText, c.lists, c.defaultListId);
       return NextResponse.json({ ...base, ai: false, items: plain.items.map((title) => ({ type: "SHOPPING", title, date: null, startTime: null, endTime: null, subject: null, whoText: null, listText: plain.listText, personId: null, listId })) });
     }
-    // Without the AI, anything that isn't plain shopping becomes a reminder for today, to adjust.
-    const items: QuickItem[] = [{ type: "REMINDER", title: text.slice(0, 80), date: stockholmToday(), startTime: null, endTime: null, subject: null, whoText: null, listText: null, personId: null, listId: null }];
+    // Without the AI, anything that isn't plain shopping becomes a reminder — the person picks the day.
+    const items: QuickItem[] = [{ type: "REMINDER", title: text.slice(0, 80), date: null, startTime: null, endTime: null, subject: null, whoText: null, listText: null, personId: null, listId: null }];
     return NextResponse.json({ ...base, items, ai: false });
   }
   if ((await quickUsage(c.m.householdId)) >= QUICK_LIMIT_PER_MONTH) {
@@ -95,6 +100,15 @@ async function save(c: Ctx, body: { items?: unknown }) {
   const memberIds = new Set(c.people.map((p) => p.id));
   const listIds = new Set(c.lists.map((l) => l.id));
   let shopping = 0, other = 0, locked = 0;
+  const created: { shopping: string[]; reminders: string[] } = { shopping: [], reminders: [] };
+  let listId0: string | null = null;
+  // Nothing without a day gets saved (spec §22) — the preview asks first.
+  for (const it of items as Record<string, unknown>[]) {
+    const type = String(it?.type);
+    if (type !== "SHOPPING" && !(typeof it?.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(it.date))) {
+      return NextResponse.json({ error: "Pick a day first" }, { status: 400 });
+    }
+  }
 
   for (const it of items as Record<string, unknown>[]) {
     const type: QuickType = (QUICK_TYPES as string[]).includes(String(it?.type)) ? (it.type as QuickType) : "REMINDER";
@@ -105,7 +119,9 @@ async function save(c: Ctx, body: { items?: unknown }) {
       const listId = typeof it.listId === "string" && listIds.has(it.listId) ? it.listId : c.defaultListId;
       if (!listId) { locked++; continue; }
       const categoryId = await resolveCategoryId(c.m.householdId, title);
-      await prisma.shoppingListItem.create({ data: { name: title, listId, householdId: c.m.householdId, addedBy: c.uid, categoryId } });
+      const row = await prisma.shoppingListItem.create({ data: { name: title, listId, householdId: c.m.householdId, addedBy: c.uid, categoryId }, select: { id: true } });
+      created.shopping.push(row.id);
+      listId0 ??= listId;
       shopping++;
       continue;
     }
@@ -149,7 +165,19 @@ async function save(c: Ctx, body: { items?: unknown }) {
       }
     }
     if (startTime) await setTime(id, { startTime, endTime });
+    created.reminders.push(id);
     other++;
   }
-  return NextResponse.json({ saved: shopping + other, shopping, other, locked });
+  const listName = listId0 ? c.lists.find((l) => l.id === listId0)?.name ?? null : null;
+  return NextResponse.json({ saved: shopping + other, shopping, other, locked, created, listName });
+}
+
+// Undo right after a quick add: only what this person added in the last 15 minutes.
+async function undo(c: Ctx, body: { created?: unknown }) {
+  const cr = (body.created ?? {}) as { shopping?: unknown; reminders?: unknown };
+  const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 20) : []);
+  const since = new Date(Date.now() - 15 * 60 * 1000);
+  const shop = await prisma.shoppingListItem.deleteMany({ where: { id: { in: ids(cr.shopping) }, householdId: c.m.householdId, addedBy: c.uid, createdAt: { gte: since } } });
+  const rem = await prisma.reminder.updateMany({ where: { id: { in: ids(cr.reminders) }, userId: c.uid, createdAt: { gte: since } }, data: { isActive: false } });
+  return NextResponse.json({ undone: shop.count + rem.count });
 }

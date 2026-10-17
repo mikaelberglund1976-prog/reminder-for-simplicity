@@ -15,4 +15,8 @@ export const nav = {
   privacy: "Privacy",
   admin: "Admin",
   reminders: "Reminders",
+  more: "More",
+  groupPlanning: "Planning",
+  groupFamily: "Family",
+  groupApp: "App",
 };

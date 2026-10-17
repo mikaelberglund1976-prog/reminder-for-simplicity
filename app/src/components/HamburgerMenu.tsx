@@ -33,7 +33,15 @@ function IcLogout() { return <svg width={17} height={17} viewBox="0 0 24 24" {..
 // the top-right corner of a page header, as a flex sibling next to the title
 // (not a separately fixed element), so it can't collide with header text on
 // narrow screens the way an independently-positioned floating button could.
+// 2026-10-18 (Navigation 2.0): retired — everything it listed is in "More",
+// the rightmost tab of the bottom nav (components/MoreSheet.tsx). Every page
+// that used it sits under /dashboard and has the bottom nav, so it renders
+// nothing; the old menu is kept below (OldHamburgerMenu) only for reference.
 export default function HamburgerMenu() {
+  return null;
+}
+
+export function OldHamburgerMenu() {
   const { data: session } = useSession();
   const me = useMe();
   const m = useM();

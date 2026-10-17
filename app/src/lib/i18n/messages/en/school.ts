@@ -1,4 +1,5 @@
 export const school = {
+  overdueTitle: "Overdue",
   kinds: { HOMEWORK: "Homework", TEST: "Test", OTHER: "Other" } as Record<string, string>,
   subjects: ["Maths", "Swedish", "English", "Science", "History", "Geography", "Religion", "Civics", "Music", "Art", "PE", "Spanish", "French", "German"],
   yesterday: "Yesterday",

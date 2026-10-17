@@ -1,6 +1,8 @@
 // Swedish for the English error texts the API answers with (see lib/i18n/errors.ts).
 // A number in a message is written as {n}. Texts missing here are shown in English.
 export const serverErrors: Record<string, string> = {
+  // Quick add (2026-10-18)
+  "Pick a day first": "Välj en dag först",
   // Login / accounts
   "Your account is pending admin approval.": "Ditt konto väntar på att godkännas av en administratör.",
   "Please confirm your email first — check your inbox for the link.": "Bekräfta din e-post först – titta i inkorgen efter länken.",

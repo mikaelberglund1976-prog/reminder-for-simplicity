@@ -1,4 +1,5 @@
 export const common = {
+  connectionsTitle: "Connections & import",
   appName: "Reminder for Simplicity",
   save: "Save",
   saving: "Saving…",

@@ -9,16 +9,20 @@
 //                                          implicit first, "reminders" was Home
 // No backfill needed — legacy values are converted on read.
 
-export const NAV_APPS = ["calendar", "shopping-list", "wishlist", "chores", "training", "school"] as const;
+// 2026-10-18 (Navigation 2.0): Home | 3 picks | More. Reminders, Birthdays and
+// Trips can be picked too. Exactly 3 are shown; a person who had picked 4
+// before keeps their first 3 in the bar (the 4th is always under More) — the
+// saved value itself is never rewritten until they change it.
+export const NAV_APPS = ["calendar", "shopping-list", "wishlist", "chores", "training", "school", "reminders", "birthdays", "trips"] as const;
 export type NavApp = (typeof NAV_APPS)[number];
 
 export const DEFAULT_NAV_APPS: NavApp[] = ["calendar", "shopping-list", "school"];
 // 2026-10-04 (Mikael): a child who hasn't picked anything gets
 // Home, Calendar, School, Activities. Chores live on the child's Home.
 export const DEFAULT_CHILD_NAV_APPS: NavApp[] = ["calendar", "school", "training"];
-export const CHILD_NAV_APPS: NavApp[] = ["calendar", "shopping-list", "wishlist", "training", "school"];
+export const CHILD_NAV_APPS: NavApp[] = ["calendar", "shopping-list", "wishlist", "training", "school", "birthdays", "trips"];
 export const MIN_NAV_APPS = 3;
-export const MAX_NAV_APPS = 4;
+export const MAX_NAV_APPS = 3;
 
 function isNavApp(k: string): k is NavApp {
   return (NAV_APPS as readonly string[]).includes(k);

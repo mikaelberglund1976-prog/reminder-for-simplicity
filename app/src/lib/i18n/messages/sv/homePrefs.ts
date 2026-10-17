@@ -23,7 +23,7 @@ export const homePrefs: Messages["homePrefs"] = {
     perChild: "Närmast per barn",
     stats: "Översiktssiffror",
     chores: "Sysslor den här veckan",
-    reminders: "Listan med alla påminnelser",
+    reminders: "De närmaste påminnelserna (alla finns under Påminnelser)",
   },
   perChildTitle: "I ”Närmast per barn”",
   kinds: { tests: "Prov", homework: "Läxor & uppgifter", activities: "Aktiviteter (träningar, matcher)", schoolOther: "Övriga skolhändelser" },

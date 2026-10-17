@@ -21,6 +21,8 @@ import FamilyColorsSettings from "@/components/FamilyColorsSettings";
 import { isManagedEmail } from "@/lib/managedProfileClient";
 import PushCard from "@/components/PushCard";
 import MyHomePicture from "@/components/MyHomePicture";
+import { ADMIN_EMAIL } from "@/lib/adminConfig";
+import { showWhatsNewAgain } from "@/components/WhatsNew";
 
 type HouseholdMember = {
   id: string;
@@ -60,6 +62,10 @@ const BOTTOM_NAV_APP_OPTIONS: { key: string; label: keyof Messages["nav"]; emoji
   { key: "chores", label: "chores", emoji: "🧹" },
   { key: "training", label: "activities", emoji: "🎯" },
   { key: "school", label: "school", emoji: "📚" },
+  // 2026-10-18 (Navigation 2.0)
+  { key: "reminders", label: "reminders", emoji: "🔔" },
+  { key: "birthdays", label: "birthdays", emoji: "🎂" },
+  { key: "trips", label: "trips", emoji: "🧳" },
 ];
 const DEFAULT_BOTTOM_NAV_APPS: string[] = [...DEFAULT_NAV_APPS];
 
@@ -77,6 +83,7 @@ type Profile = {
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
+  const isAdmin = session?.user?.email === ADMIN_EMAIL;
   const router = useRouter();
   const { m: msg, dateLocale, err: tErr } = useI18n();
   const t = msg.profile;
@@ -129,15 +136,14 @@ export default function ProfilePage() {
   // 2026-07-28 — toggle one app in/out of the bottom nav (3–4 non-Calendar
   // apps; Calendar itself is fixed, see BottomNav.tsx). Saves immediately,
   // same pattern as the view-mode switcher above.
-  async function toggleBottomNavApp(key: string) {
-    let next: string[];
-    if (bottomNavApps.includes(key)) {
-      if (bottomNavApps.length <= 3) return; // keep at least 3
-      next = bottomNavApps.filter(k => k !== key);
-    } else {
-      if (bottomNavApps.length >= 4) return; // at most 4
-      next = [...bottomNavApps, key];
-    }
+  // 2026-10-18 (Navigation 2.0): exactly three picks between Home and More,
+  // in the order chosen. Picking one that's already in another slot swaps them.
+  async function setBottomNavSlot(slot: number, key: string) {
+    const next = [...bottomNavApps].slice(0, 3);
+    const other = next.indexOf(key);
+    if (other === slot) return;
+    if (other >= 0) next[other] = next[slot];
+    next[slot] = key;
     setBottomNavApps(next);
     setSavingBottomNav(true);
     try {
@@ -451,6 +457,14 @@ export default function ProfilePage() {
 
         <form onSubmit={handleSave}>
 
+          {/* 2026-10-18 (Settings IA, spec §50): grouped, with a jump row on top. */}
+          <nav aria-label={msg.nav.settings} className="rfs-hscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 -20px 18px", padding: "2px 20px 4px" }}>
+            {([["g-account", t.groups.account], ["g-family", t.groups.family], ["g-home", t.groups.home], ["g-notifications", t.groups.notifications], ["g-looks", t.groups.looks], ...(household ? [["g-plan", t.groups.plan]] : []), ["g-data", t.groups.data], ["g-help", t.groups.help]] as [string, string][]).map(([id, label]) => (
+              <a key={id} href={`#${id}`} style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 50, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--fg-2)", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>{label}</a>
+            ))}
+          </nav>
+
+          <h2 id="g-account" style={groupTitle}>{t.groups.account}</h2>
           {/* ── Personal ── */}
           <Card title={t.personal}>
             <div style={{ display: "flex", gap: 10 }}>
@@ -535,185 +549,9 @@ export default function ProfilePage() {
             <Field label={t.language}>
               <LanguageSetting heading={false} />
             </Field>
-            <Field label={t.appearance}>
-              <ThemeSwitcher />
-              <Hint>{t.appearanceHint}</Hint>
-            </Field>
-            <Field label={t.display}>
-              <div style={{ display: "flex", gap: 8 }}>
-                {(["mobile", "web"] as ViewMode[]).map(mode => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => changeViewMode(mode)}
-                    style={{
-                      flex: 1, padding: "10px 14px", borderRadius: 12, cursor: "pointer",
-                      fontSize: 13, fontWeight: 700, fontFamily: "inherit",
-                      border: viewMode === mode ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
-                      background: viewMode === mode ? "var(--tint-accent)" : "var(--surface)",
-                      color: viewMode === mode ? "var(--accent-strong)" : "var(--fg-2)",
-                    }}
-                  >
-                    {mode === "mobile" ? t.mobileView : t.webView}
-                  </button>
-                ))}
-              </div>
-              <Hint>{t.displayHint}</Hint>
-            </Field>
-            <Field label={t.bottomNav}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                <span style={{
-                  display: "flex", alignItems: "center", gap: 6, padding: "8px 12px",
-                  borderRadius: 50, fontSize: 12.5, fontWeight: 700,
-                  background: "var(--surface-3)", color: "var(--subtle)", border: "1.5px solid var(--border)",
-                }}>
-                  {t.homeChip}
-                </span>
-                {BOTTOM_NAV_APP_OPTIONS.filter(opt => !profile?.isChildProfile || (CHILD_NAV_APPS as readonly string[]).includes(opt.key)).map(opt => {
-                  const active = bottomNavApps.includes(opt.key);
-                  const disabled = savingBottomNav || (active && bottomNavApps.length <= 3) || (!active && bottomNavApps.length >= 4);
-                  return (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => toggleBottomNavApp(opt.key)}
-                      disabled={disabled}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 6, padding: "8px 12px",
-                        borderRadius: 50, fontSize: 12.5, fontWeight: 700, fontFamily: "inherit",
-                        cursor: disabled ? "not-allowed" : "pointer",
-                        border: active ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
-                        background: active ? "var(--tint-accent)" : "var(--surface)",
-                        color: active ? "var(--accent-strong)" : "var(--fg-2)",
-                        opacity: disabled && !active ? 0.5 : 1,
-                      }}
-                    >
-                      {opt.emoji} {msg.nav[opt.label]}
-                    </button>
-                  );
-                })}
-              </div>
-              <Hint>{t.bottomNavHint(bottomNavApps.length)}</Hint>
-            </Field>
           </Card>
 
-          {/* 2026-10-11: everyone's own picture at the top of Home. */}
-          {profile && (
-            <div id="home-picture" style={{ scrollMarginTop: 16 }}>
-              <Card title={msg.homePrefs.myPictureTitle}>
-                <MyHomePicture />
-              </Card>
-            </div>
-          )}
-
-          {/* 2026-10-09: what Home shows (adults — a child has their own Home). */}
-          {profile && !profile.isChildProfile && (
-            <div id="home-settings" style={{ scrollMarginTop: 16 }}>
-              <Card title={msg.homePrefs.cardTitle}>
-                <HomePrefsSettings />
-              </Card>
-            </div>
-          )}
-
-          {/* 2026-10-10: the family's own colours per child and per type (Pro). */}
-          {profile && !profile.isChildProfile && (
-            <div id="colors" style={{ scrollMarginTop: 16 }}>
-              <Card title={msg.familyColors.cardTitle}>
-                <FamilyColorsSettings />
-              </Card>
-            </div>
-          )}
-
-          {/* 2026-10-09: push notifications on this phone (persona review). */}
-          <div id="notifications" style={{ scrollMarginTop: 16 }}>
-            <Card title={msg.push.cardTitle}>
-              <PushCard />
-            </Card>
-          </div>
-
-          {/* ── Calendar sync ── */}
-          {/* Outbound-only ICS feed: reminders, chores and trainings visible
-              to you (same rule as the in-app dashboard), read into your own
-              Google/Outlook/Apple calendar via "Add calendar > From URL".
-              No login to Google/Microsoft required, no cost — see
-              MARKET_RESEARCH_EU.md and ROADMAP.md, "Produktriktning – nästa
-              runda". */}
-          <Card title={t.calendarSync}>
-            <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6, margin: "0 0 14px" }}>
-              {t.calendarSyncBody}
-            </p>
-            {!calendarFeedUrl ? (
-              <button
-                type="button"
-                onClick={() => fetchCalendarFeed(false)}
-                disabled={calendarFeedLoading}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%",
-                  padding: "13px 16px", background: "var(--ink)", color: "#fff", border: "none",
-                  borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: calendarFeedLoading ? "not-allowed" : "pointer",
-                  fontFamily: FONT, opacity: calendarFeedLoading ? 0.6 : 1,
-                }}
-              >
-                {calendarFeedLoading ? t.gettingLink : t.getLink}
-              </button>
-            ) : (
-              <>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    readOnly
-                    value={calendarFeedUrl}
-                    onFocus={(e) => e.target.select()}
-                    style={{
-                      flex: 1, minWidth: 0, padding: "11px 12px", borderRadius: 12,
-                      border: "1.5px solid var(--border)", fontSize: 12.5, color: "var(--fg-2)",
-                      fontFamily: FONT, background: "var(--background)",
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={copyCalendarFeedUrl}
-                    style={{
-                      flexShrink: 0, padding: "0 16px", borderRadius: 12, border: "none",
-                      background: calendarFeedCopied ? "var(--tint-success)" : "var(--ink)",
-                      color: calendarFeedCopied ? "var(--success)" : "#fff",
-                      fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
-                    }}
-                  >
-                    {calendarFeedCopied ? t.copied : t.copy}
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => fetchCalendarFeed(true)}
-                  disabled={calendarFeedLoading}
-                  style={{
-                    marginTop: 10, background: "none", border: "none", color: "var(--muted)",
-                    fontSize: 12, fontWeight: 600, cursor: calendarFeedLoading ? "not-allowed" : "pointer",
-                    fontFamily: FONT, padding: 0,
-                  }}
-                >
-                  {t.newLink}
-                </button>
-              </>
-            )}
-          </Card>
-
-          {/* ── Notifications ── */}
-          <Card title={t.notifications}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 16, borderBottom: "1px solid var(--border-soft)" }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{t.email}</div>
-                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                  {profile?.email || session?.user?.email}
-                </div>
-              </div>
-              <span style={{
-                background: "var(--tint-accent)", color: "var(--accent)", fontSize: 12, fontWeight: 700,
-                padding: "4px 12px", borderRadius: 50,
-              }}>{t.active}</span>
-            </div>
-          </Card>
-
+          <h2 id="g-family" style={groupTitle}>{t.groups.family}</h2>
           {/* ── Household ── */}
           <Card title={t.household}>
             {household ? (
@@ -1003,6 +841,192 @@ export default function ProfilePage() {
             )}
           </Card>
 
+          <h2 id="g-home" style={groupTitle}>{t.groups.home}</h2>
+          {/* 2026-10-18 (Settings IA): the bottom nav — three picks + order. */}
+          <div id="bottom-nav" style={{ scrollMarginTop: 16 }}>
+          <Card title={t.bottomNav}>
+            <Field label={t.bottomNavIntro}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={navSlotRow}>
+                  <span style={navSlotNo}>🏠</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--subtle)" }}>{msg.nav.home}</span>
+                </div>
+                {[0, 1, 2].map((slot) => (
+                  <div key={slot} style={navSlotRow}>
+                    <span style={navSlotNo}>{slot + 1}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}><SelectWrap>
+                      <select
+                        value={bottomNavApps[slot] ?? ""}
+                        onChange={(e) => setBottomNavSlot(slot, e.target.value)}
+                        disabled={savingBottomNav}
+                        aria-label={t.bottomNavSlot(slot + 1)}
+                        style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 36, cursor: "pointer" }}
+                      >
+                        {BOTTOM_NAV_APP_OPTIONS.filter(opt => !profile?.isChildProfile || (CHILD_NAV_APPS as readonly string[]).includes(opt.key)).map(opt => (
+                          <option key={opt.key} value={opt.key}>{opt.emoji} {msg.nav[opt.label]}</option>
+                        ))}
+                      </select>
+                    </SelectWrap></div>
+                  </div>
+                ))}
+                <div style={navSlotRow}>
+                  <span style={navSlotNo}>⋯</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--subtle)" }}>{msg.nav.more}</span>
+                </div>
+              </div>
+              <Hint>{t.bottomNavHint(3)}</Hint>
+            </Field>
+          </Card>
+          </div>
+
+          {/* 2026-10-11: everyone's own picture at the top of Home. */}
+          {profile && (
+            <div id="home-picture" style={{ scrollMarginTop: 16 }}>
+              <Card title={msg.homePrefs.myPictureTitle}>
+                <MyHomePicture />
+              </Card>
+            </div>
+          )}
+
+          {/* 2026-10-09: what Home shows (adults — a child has their own Home). */}
+          {profile && !profile.isChildProfile && (
+            <div id="home-settings" style={{ scrollMarginTop: 16 }}>
+              <Card title={msg.homePrefs.cardTitle}>
+                <HomePrefsSettings />
+              </Card>
+            </div>
+          )}
+
+          <h2 id="g-notifications" style={groupTitle}>{t.groups.notifications}</h2>
+          {/* 2026-10-09: push notifications on this phone (persona review). */}
+          <div id="notifications" style={{ scrollMarginTop: 16 }}>
+            <Card title={msg.push.cardTitle}>
+              <PushCard />
+            </Card>
+          </div>
+
+          {/* ── Notifications ── */}
+          <Card title={t.notifications}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 16, borderBottom: "1px solid var(--border-soft)" }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg)" }}>{t.email}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                  {profile?.email || session?.user?.email}
+                </div>
+              </div>
+              <span style={{
+                background: "var(--tint-accent)", color: "var(--accent)", fontSize: 12, fontWeight: 700,
+                padding: "4px 12px", borderRadius: 50,
+              }}>{t.active}</span>
+            </div>
+          </Card>
+
+          {/* ── Calendar sync ── */}
+          {/* Outbound-only ICS feed: reminders, chores and trainings visible
+              to you (same rule as the in-app dashboard), read into your own
+              Google/Outlook/Apple calendar via "Add calendar > From URL".
+              No login to Google/Microsoft required, no cost — see
+              MARKET_RESEARCH_EU.md and ROADMAP.md, "Produktriktning – nästa
+              runda". */}
+          <Card title={t.calendarSync}>
+            <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6, margin: "0 0 14px" }}>
+              {t.calendarSyncBody}
+            </p>
+            {!calendarFeedUrl ? (
+              <button
+                type="button"
+                onClick={() => fetchCalendarFeed(false)}
+                disabled={calendarFeedLoading}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%",
+                  padding: "13px 16px", background: "var(--ink)", color: "#fff", border: "none",
+                  borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: calendarFeedLoading ? "not-allowed" : "pointer",
+                  fontFamily: FONT, opacity: calendarFeedLoading ? 0.6 : 1,
+                }}
+              >
+                {calendarFeedLoading ? t.gettingLink : t.getLink}
+              </button>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    readOnly
+                    value={calendarFeedUrl}
+                    onFocus={(e) => e.target.select()}
+                    style={{
+                      flex: 1, minWidth: 0, padding: "11px 12px", borderRadius: 12,
+                      border: "1.5px solid var(--border)", fontSize: 12.5, color: "var(--fg-2)",
+                      fontFamily: FONT, background: "var(--background)",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={copyCalendarFeedUrl}
+                    style={{
+                      flexShrink: 0, padding: "0 16px", borderRadius: 12, border: "none",
+                      background: calendarFeedCopied ? "var(--tint-success)" : "var(--ink)",
+                      color: calendarFeedCopied ? "var(--success)" : "#fff",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
+                    }}
+                  >
+                    {calendarFeedCopied ? t.copied : t.copy}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fetchCalendarFeed(true)}
+                  disabled={calendarFeedLoading}
+                  style={{
+                    marginTop: 10, background: "none", border: "none", color: "var(--muted)",
+                    fontSize: 12, fontWeight: 600, cursor: calendarFeedLoading ? "not-allowed" : "pointer",
+                    fontFamily: FONT, padding: 0,
+                  }}
+                >
+                  {t.newLink}
+                </button>
+              </>
+            )}
+          </Card>
+
+          <h2 id="g-looks" style={groupTitle}>{t.groups.looks}</h2>
+          <Card title={t.appearance}>
+            <Field label={t.appearance}>
+              <ThemeSwitcher />
+              <Hint>{t.appearanceHint}</Hint>
+            </Field>
+            <Field label={t.display}>
+              <div style={{ display: "flex", gap: 8 }}>
+                {(["mobile", "web"] as ViewMode[]).map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => changeViewMode(mode)}
+                    style={{
+                      flex: 1, padding: "10px 14px", borderRadius: 12, cursor: "pointer",
+                      fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+                      border: viewMode === mode ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
+                      background: viewMode === mode ? "var(--tint-accent)" : "var(--surface)",
+                      color: viewMode === mode ? "var(--accent-strong)" : "var(--fg-2)",
+                    }}
+                  >
+                    {mode === "mobile" ? t.mobileView : t.webView}
+                  </button>
+                ))}
+              </div>
+              <Hint>{t.displayHint}</Hint>
+            </Field>
+          </Card>
+
+          {/* 2026-10-10: the family's own colours per child and per type (Pro). */}
+          {profile && !profile.isChildProfile && (
+            <div id="colors" style={{ scrollMarginTop: 16 }}>
+              <Card title={msg.familyColors.cardTitle}>
+                <FamilyColorsSettings />
+              </Card>
+            </div>
+          )}
+
+          {household && <h2 id="g-plan" style={groupTitle}>{t.groups.plan}</h2>}
           {/* ── Plan ── (2026-09-28: driven by lib/entitlements via /api/household) */}
           {household && (
           <Card title={t.plan}>
@@ -1026,6 +1050,7 @@ export default function ProfilePage() {
           </Card>
           )}
 
+          <h2 id="g-data" style={groupTitle}>{t.groups.data}</h2>
           {/* ── Security ── */}
           <Card title={t.security}>
             {isGoogleUser ? (
@@ -1080,6 +1105,14 @@ export default function ProfilePage() {
 
             {/* 2026-09-27: real soft delete with family-admin approval + 60-day restore window */}
             <DeleteAccountSection />
+          </Card>
+
+          <h2 id="g-help" style={groupTitle}>{t.groups.help}</h2>
+          {/* 2026-10-18 (spec §50–52): ideas & voting and the admin link moved here from the menu. */}
+          <Card title={t.groups.help}>
+            <Link href="/dashboard/suggestions" style={helpLink}>💡 {msg.nav.ideas}<span aria-hidden>→</span></Link>
+            <button type="button" onClick={() => { showWhatsNewAgain(); router.push("/dashboard"); }} style={{ ...helpLink, width: "100%", background: "none", border: "none", borderTop: "1px solid var(--border-soft)", cursor: "pointer", fontFamily: FONT, textAlign: "left" }}>✨ {msg.whatsNew.showAgain}<span aria-hidden>→</span></button>
+            {isAdmin && <Link href="/admin" style={{ ...helpLink, borderTop: "1px solid var(--border-soft)" }}>🛡️ {msg.nav.admin}<span aria-hidden>→</span></Link>}
           </Card>
 
           {/* Save + Sign out */}
@@ -1183,6 +1216,11 @@ function CreateHousehold({ onCreated }: { onCreated: () => void }) {
 }
 
 // ── Helpers ──
+const groupTitle: React.CSSProperties = { fontSize: 12, fontWeight: 800, color: "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.07em", margin: "26px 4px 10px", scrollMarginTop: 16 };
+const helpLink: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "12px 2px", fontSize: 14, fontWeight: 700, color: "var(--fg)", textDecoration: "none" };
+const navSlotRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 10 };
+const navSlotNo: React.CSSProperties = { width: 26, height: 26, borderRadius: "50%", background: "var(--surface-3)", color: "var(--fg-2)", fontSize: 12.5, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
+
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{

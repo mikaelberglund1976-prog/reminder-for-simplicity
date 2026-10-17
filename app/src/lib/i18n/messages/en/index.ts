@@ -36,6 +36,7 @@ import { serverErrors } from "./serverErrors";
 import { shopping } from "./shopping";
 import { trips } from "./trips";
 import { wishlist } from "./wishlist";
+import { whatsNew } from "./whatsNew";
 
 export const en = {
   account,
@@ -75,6 +76,7 @@ export const en = {
   shopping,
   trips,
   wishlist,
+  whatsNew,
 };
 
 export type Messages = typeof en;
