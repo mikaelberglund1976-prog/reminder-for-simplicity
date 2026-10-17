@@ -12,6 +12,7 @@
 // day-only meaning everywhere else (recurrence, cron e-mails, calendar grid).
 import { prisma } from "@/lib/prisma";
 import type { ItemTime } from "@/lib/timeFormat";
+import { getSkips } from "@/lib/reminderSkips";
 
 export type StoredTime = { startTime: string | null; endTime: string | null };
 
@@ -70,10 +71,15 @@ export async function getTimes(ids: string[]): Promise<Map<string, StoredTime>> 
   return map;
 }
 
-/** Adds startTime/endTime (null = all day) to each item. */
-export async function withTimes<T extends { id: string }>(items: T[]): Promise<(T & StoredTime)[]> {
-  const map = await getTimes(items.map((i) => i.id));
-  return items.map((i) => ({ ...i, startTime: map.get(i.id)?.startTime ?? null, endTime: map.get(i.id)?.endTime ?? null }));
+/**
+ * Adds startTime/endTime (null = all day) to each item, plus (2026-10-17)
+ * `skipDates` — single days removed from a recurring series (lib/reminderSkips.ts),
+ * so every list that already carries times also carries the skipped days.
+ */
+export async function withTimes<T extends { id: string }>(items: T[]): Promise<(T & StoredTime & { skipDates: string[] })[]> {
+  const ids = items.map((i) => i.id);
+  const [map, skips] = await Promise.all([getTimes(ids), getSkips(ids)]);
+  return items.map((i) => ({ ...i, startTime: map.get(i.id)?.startTime ?? null, endTime: map.get(i.id)?.endTime ?? null, skipDates: skips.get(i.id) ?? [] }));
 }
 
 export async function setTime(reminderId: string, time: ItemTime): Promise<void> {

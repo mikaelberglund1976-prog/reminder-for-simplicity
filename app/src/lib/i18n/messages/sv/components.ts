@@ -39,4 +39,15 @@ export const components: Messages["components"] = {
     whatsIncluded: "Det här ingår i Pro →",
     couldNotStart: "Kunde inte starta provperioden",
   },
+  seriesDelete: {
+    delete: "Ta bort",
+    question: "Det här upprepas. Vad vill du ta bort?",
+    onlyThisDay: (day) => `Bara ${day}`,
+    onlyThisDayHint: "Resten av serien ligger kvar som vanligt.",
+    wholeSeries: "Hela serien",
+    wholeSeriesHint: "Alla dagar, även de som kommer. Går inte att ångra.",
+    removing: "Tar bort…",
+    skippedTitle: "Borttagna dagar",
+    restore: "Ångra",
+  },
 };

@@ -25,6 +25,8 @@ export interface RecurringItem {
   date: string; // ISO date string the item starts on
   recurrence: RecurrenceRule;
   choreRecurrenceDays?: string | null;
+  /** 2026-10-17: single days removed from the series (YYYY-MM-DD, see lib/reminderSkips.ts). */
+  skipDates?: string[] | null;
 }
 
 function atMidnight(d: Date): Date {
@@ -41,8 +43,15 @@ function dateKeyLocal(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** Every occurrence of `item` that falls within [rangeStart, rangeEnd], inclusive (both normalised to midnight). */
+/** Every occurrence of `item` that falls within [rangeStart, rangeEnd], inclusive (both normalised to midnight). Skipped days are left out. */
 export function getOccurrencesInRange(item: RecurringItem, rangeStart: Date, rangeEnd: Date): Date[] {
+  const all = expandOccurrences(item, rangeStart, rangeEnd);
+  if (!item.skipDates || item.skipDates.length === 0) return all;
+  const skip = new Set(item.skipDates);
+  return all.filter((d) => !skip.has(dateKeyLocal(d)));
+}
+
+function expandOccurrences(item: RecurringItem, rangeStart: Date, rangeEnd: Date): Date[] {
   const start = atMidnight(new Date(item.date));
   const from = atMidnight(rangeStart);
   const to = atMidnight(rangeEnd);
@@ -129,15 +138,17 @@ export const dateKey = dateKeyLocal;
 export function nextOccurrence(item: RecurringItem, from: Date = new Date()): Date {
   const start = atMidnight(new Date(item.date));
   if (item.recurrence === "ONCE" || Number.isNaN(start.getTime())) return start;
-  const f = atMidnight(from);
-  if (start >= f) return start;
+  const f0 = atMidnight(from);
+  const startSkipped = !!item.skipDates?.includes(dateKeyLocal(start));
+  if (start >= f0 && !startSkipped) return start;
+  const f = start > f0 ? start : f0;
   const horizon = new Date(f);
   horizon.setDate(horizon.getDate() + 400);
   return getOccurrencesInRange(item, f, horizon)[0] ?? start;
 }
 
 /** Same object with `date` replaced by its next occurrence (ISO). The stored start date is kept as `startDate`. */
-export function withNextDate<T extends { date: string; recurrence: string; choreRecurrenceDays?: string | null }>(item: T): T & { startDate: string } {
+export function withNextDate<T extends { date: string; recurrence: string; choreRecurrenceDays?: string | null; skipDates?: string[] | null }>(item: T): T & { startDate: string } {
   const next = nextOccurrence(item as unknown as RecurringItem);
   const same = atMidnight(new Date(item.date)).getTime() === next.getTime();
   return { ...item, startDate: item.date, date: same ? item.date : next.toISOString() };

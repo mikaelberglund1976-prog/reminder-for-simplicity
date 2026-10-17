@@ -8,6 +8,7 @@
 import { prisma } from "@/lib/prisma";
 import { getOccurrencesInRange, type RecurrenceRule } from "@/lib/recurrence";
 import { getTimes } from "@/lib/reminderTimes";
+import { getSkips } from "@/lib/reminderSkips";
 import { ensurePushTables, getPushKinds, sendPushToUser } from "@/lib/webPush";
 import { getLocaleForUser } from "@/lib/i18n/server";
 import { getMessages } from "@/lib/i18n/messages";
@@ -51,9 +52,10 @@ export async function runTomorrowDigest(now = new Date()) {
         },
         select: { id: true, name: true, category: true, date: true, recurrence: true, choreRecurrenceDays: true, schoolKind: true, subject: true, completedAt: true, assignedTo: true },
       });
+      const skips = await getSkips(items.filter((r) => r.category !== "SCHOOL").map((r) => r.id));
       const due = items.filter((r) => {
         if (r.category === "SCHOOL") return !r.completedAt && dayStr(r.date) === tKey;
-        return getOccurrencesInRange({ date: r.date.toISOString(), recurrence: r.recurrence as RecurrenceRule, choreRecurrenceDays: r.choreRecurrenceDays }, tomorrow, tomorrow).length > 0;
+        return getOccurrencesInRange({ date: r.date.toISOString(), recurrence: r.recurrence as RecurrenceRule, choreRecurrenceDays: r.choreRecurrenceDays, skipDates: skips.get(r.id) ?? null }, tomorrow, tomorrow).length > 0;
       });
       // Birthdays tomorrow that this person sees (same rule as GET /api/reminders).
       const bdayCandidates = await prisma.reminder.findMany({

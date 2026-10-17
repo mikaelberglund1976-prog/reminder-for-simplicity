@@ -17,6 +17,7 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getOccurrencesInRange, type RecurrenceRule } from "@/lib/recurrence";
 import { getTimes } from "@/lib/reminderTimes";
+import { getSkips } from "@/lib/reminderSkips";
 import type { Messages } from "@/lib/i18n/messages";
 import { ensureTripTables, flightTitle, leaveFor, parseFlight, type ItemRow, type TripRow } from "@/lib/trips";
 
@@ -94,9 +95,10 @@ export async function buildPlan(userId: string, t: Messages["assist"], ymd = tom
     where: { householdId: member.householdId, isActive: true, category: { in: ["SCHOOL", "TRAINING"] }, assignedTo: { in: scope } },
     select: { id: true, name: true, category: true, date: true, recurrence: true, choreRecurrenceDays: true, schoolKind: true, subject: true, completedAt: true, assignedTo: true, note: true },
   });
+  const skips = await getSkips(raw.filter((r) => r.category !== "SCHOOL").map((r) => r.id));
   const due = raw.filter((r) => r.category === "SCHOOL"
     ? !r.completedAt && r.date.toISOString().slice(0, 10) === ymd
-    : getOccurrencesInRange({ date: r.date.toISOString(), recurrence: r.recurrence as RecurrenceRule, choreRecurrenceDays: r.choreRecurrenceDays }, day, day).length > 0);
+    : getOccurrencesInRange({ date: r.date.toISOString(), recurrence: r.recurrence as RecurrenceRule, choreRecurrenceDays: r.choreRecurrenceDays, skipDates: skips.get(r.id) ?? null }, day, day).length > 0);
   const times = await getTimes(due.map((r) => r.id));
   const rides = due.length
     ? await prisma.$queryRaw<{ reminderId: string; driverId: string }[]>`SELECT "reminderId", "driverId" FROM "day_rides" WHERE "ymd" = ${ymd} AND "reminderId" = ANY(${due.map((r) => r.id)}::text[])`

@@ -37,4 +37,16 @@ export const components = {
     whatsIncluded: "What's included in Pro →",
     couldNotStart: "Could not start the trial",
   },
+  // 2026-10-17: remove one day of a recurring series.
+  seriesDelete: {
+    delete: "Delete",
+    question: "This repeats. What do you want to remove?",
+    onlyThisDay: (day: string) => `Only ${day}`,
+    onlyThisDayHint: "The rest of the series stays as it is.",
+    wholeSeries: "The whole series",
+    wholeSeriesHint: "Every day, also the ones coming up. Cannot be undone.",
+    removing: "Removing…",
+    skippedTitle: "Removed days",
+    restore: "Restore",
+  },
 };

@@ -7,6 +7,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n/client";
 import { weekdayName } from "@/lib/i18n/format";
+import SeriesDelete from "@/components/SeriesDelete";
+import { nextOccurrence, dateKey, type RecurrenceRule } from "@/lib/recurrence";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -49,6 +51,9 @@ function NewBookingContent() {
   const isEdit = !!editId;
   const [loadError, setLoadError] = useState("");
   const [canChangePerson, setCanChangePerson] = useState(true);
+  // 2026-10-17: the item as stored, for "Delete only this day / the whole series".
+  const [loaded, setLoaded] = useState<{ date: string; recurrence: RecurrenceRule; choreRecurrenceDays: string | null; skipDates: string[] } | null>(null);
+  const [confirmDeleteOnce, setConfirmDeleteOnce] = useState(false);
 
   const [name, setName] = useState("");
   // 2026-09-28 (test round, row 46): several people can share one
@@ -116,6 +121,7 @@ function NewBookingContent() {
       }
       setStartTime(item.startTime ?? "");
       setEndTime(item.endTime ?? "");
+      setLoaded({ date: item.date, recurrence: item.recurrence, choreRecurrenceDays: item.choreRecurrenceDays ?? null, skipDates: item.skipDates ?? [] });
     } catch (e) {
       console.error(e);
       setLoadError(t.couldNotLoad);
@@ -149,6 +155,23 @@ function NewBookingContent() {
   }
 
   const isTraining = category === "TRAINING";
+  const backTo = isTraining ? "/dashboard/training" : "/dashboard/family";
+  const isRecurring = !!loaded && (loaded.recurrence !== "ONCE" || !!loaded.choreRecurrenceDays);
+  const deleteDay = searchParams.get("on") || (loaded ? dateKey(nextOccurrence(loaded)) : "");
+
+  async function patchSkip(body: Record<string, string>) {
+    const res = await fetch(`/api/family/chores/${editId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("skip failed");
+    const d = await res.json().catch(() => ({}));
+    setLoaded((prev) => (prev ? { ...prev, skipDates: Array.isArray(d.skipDates) ? d.skipDates : prev.skipDates } : prev));
+  }
+  async function deleteWhole() {
+    const res = await fetch(`/api/reminders/${editId}`, { method: "DELETE" });
+    if (res.ok) router.push(backTo);
+    else setError(msg.common.somethingWentWrong);
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -470,6 +493,38 @@ function NewBookingContent() {
             {saving ? msg.common.saving : isEdit ? t.saveChanges : isTraining ? t.saveActivity : t.saveChore}
           </button>
         </form>
+        )}
+
+        {/* 2026-10-17: delete from the edit form — for a repeating activity,
+            "only this day" or "the whole series". */}
+        {isEdit && loaded && !loadError && (
+          <div style={{ marginTop: 28 }}>
+            {isRecurring ? (
+              <SeriesDelete
+                day={deleteDay}
+                skipDates={loaded.skipDates}
+                onSkipDay={async (d) => { await patchSkip({ skipDate: d }); router.back(); }}
+                onUnskipDay={(d) => patchSkip({ unskipDate: d })}
+                onDeleteAll={deleteWhole}
+              />
+            ) : !confirmDeleteOnce ? (
+              <button type="button" onClick={() => setConfirmDeleteOnce(true)}
+                style={{ width: "100%", padding: "17px", borderRadius: 50, background: "var(--tint-danger)", border: "1.5px solid var(--border-danger)", fontSize: 16, fontWeight: 600, color: "var(--danger)", cursor: "pointer", fontFamily: FONT }}>
+                {msg.components.seriesDelete.delete}
+              </button>
+            ) : (
+              <div style={{ display: "flex", gap: 10 }}>
+                <button type="button" onClick={() => setConfirmDeleteOnce(false)}
+                  style={{ flex: 1, padding: "12px", borderRadius: 50, background: "var(--surface)", border: "1.5px solid var(--border)", fontSize: 14, fontWeight: 600, color: "var(--fg)", cursor: "pointer", fontFamily: FONT }}>
+                  {msg.common.cancel}
+                </button>
+                <button type="button" onClick={deleteWhole}
+                  style={{ flex: 1, padding: "12px", borderRadius: 50, background: "#D94F4F", border: "none", fontSize: 14, fontWeight: 600, color: "#fff", cursor: "pointer", fontFamily: FONT }}>
+                  {msg.components.seriesDelete.delete}
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </main>
     </div>

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTimes, setTime, timesFromBody } from "@/lib/reminderTimes";
 import { markActivityImport } from "@/lib/activityFeeds";
+import { getSkips, applySkipFromBody } from "@/lib/reminderSkips";
 
 // 2026-10-07 (Mikael: "när man går in på alla aktiviteter kunna uppdatera
 // dem"): edit an existing activity (TRAINING) or chore (CHORE). Before this
@@ -34,7 +35,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const res = await load(params.id, session.user.id);
   if ("error" in res) return NextResponse.json({ error: res.error === 403 ? "Not allowed" : "Not found" }, { status: res.error });
   const t = (await getTimes([res.item.id])).get(res.item.id);
-  return NextResponse.json({ ...res.item, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null, canChangePerson: !res.isChild });
+  const skipDates = (await getSkips([res.item.id])).get(res.item.id) ?? [];
+  return NextResponse.json({ ...res.item, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null, skipDates, canChangePerson: !res.isChild });
 }
 
 // PATCH /api/family/chores/[id]
@@ -50,6 +52,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const { item, isChild } = res;
 
     const body = await req.json().catch(() => ({}));
+    // 2026-10-17: remove/restore ONE day of a recurring activity or chore.
+    try {
+      if (await applySkipFromBody(item.id, body)) {
+        const skipDates = (await getSkips([item.id])).get(item.id) ?? [];
+        return NextResponse.json({ success: true, skipDates });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+    }
     const data: {
       name?: string; assignedTo?: string; recurrence?: (typeof RECURRENCES)[number];
       choreRecurrenceDays?: string | null; date?: Date; requiresApproval?: boolean; note?: string | null;

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getOccurrencesInRange, type RecurringItem } from "@/lib/recurrence";
 import { buildIcsFeed, type IcsEvent } from "@/lib/ics";
 import { getTimes } from "@/lib/reminderTimes";
+import { getSkips } from "@/lib/reminderSkips";
 import { getBirthdayRows } from "@/lib/birthdays";
 import { birthdayTitle } from "@/lib/birthdayLabel";
 import { getLocaleForUser } from "@/lib/i18n/server";
@@ -75,13 +76,14 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     };
 
     const times = await getTimes(reminders.map((r) => r.id));
+    const skips = await getSkips(reminders.map((r) => r.id));
     // 2026-10-10: birthdays get "🎂 Elsa turns 13" in the person's language.
     const bdays = await getBirthdayRows(reminders.filter((r) => r.category === "BIRTHDAY").map((r) => r.id)).catch(() => new Map());
     const bm = bdays.size ? getMessages(await getLocaleForUser(user.id)).birthdays : null;
     const events: IcsEvent[] = [];
     for (const r of reminders) {
       const time = times.get(r.id);
-      const occs = getOccurrencesInRange(r as unknown as RecurringItem, from, to);
+      const occs = getOccurrencesInRange({ ...(r as unknown as RecurringItem), skipDates: skips.get(r.id) ?? null }, from, to);
       const categoryLabel = CATEGORY_LABELS[r.category] ?? r.category;
       const who = ["CHORE", "TRAINING", "SCHOOL"].includes(r.category) && r.assignedUser?.name ? ` (${r.assignedUser.name})` : "";
       const schoolBits = r.category === "SCHOOL"

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { sendReminderEmail, sendTrialEndingEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/webPush";
 import { getTimes } from "@/lib/reminderTimes";
+import { getSkips } from "@/lib/reminderSkips";
 import { hasPro } from "@/lib/entitlements";
 import { getLocaleForUser } from "@/lib/i18n/server";
 import { getMessages } from "@/lib/i18n/messages";
@@ -85,6 +86,8 @@ export async function runReminderCron() {
 
   // 2026-10-09: times of day for the emails and pushes ("Tandläkare 14:30").
   const times = await getTimes(reminders.map((r) => r.id));
+  // 2026-10-17: a day removed from a series sends no reminder for that day.
+  const skips = await getSkips(reminders.filter((r) => r.recurrence !== "ONCE").map((r) => r.id));
   // 2026-10-10: birthdays added on the Birthdays page (lib/birthdayCron.ts).
   const bdayRows = await getBirthdayRows(reminders.filter((r) => r.category === "BIRTHDAY").map((r) => r.id)).catch((err) => {
     console.error("Birthday lookup failed:", err);
@@ -131,6 +134,8 @@ export async function runReminderCron() {
     log.push(`[${reminder.name}] date=${toDateStr(new Date(reminder.date))} daysBefore=${reminder.reminderDaysBefore} sendOn=${sendDateStr} match=${isToday}`);
 
     if (!isToday) { skipped++; continue; }
+    const occDay = isFamilyItem || reminder.recurrence === "ONCE" ? toDateStr(new Date(reminder.date)) : toDateStr(addDays(todayStart, reminder.reminderDaysBefore));
+    if (skips.get(reminder.id)?.includes(occDay)) { log.push(`[${reminder.name}] ${occDay} removed from the series`); skipped++; continue; }
     if (importedActivities.has(reminder.id)) { skipped++; continue; }
 
     // 2026-09-27: homework/tests already ticked off don't need a reminder.

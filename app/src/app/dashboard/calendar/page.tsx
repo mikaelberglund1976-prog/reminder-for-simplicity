@@ -447,12 +447,15 @@ export default function CalendarPage() {
   function openEntry(entry: CalendarEntry) {
     // Each kind now has its own dedicated section (2026-07-28: Training split
     // out from the Chores/Family page, matching School's existing pattern).
-    if (entry.kind === "reminder") router.push(`/dashboard/${entry.id}`);
+    // 2026-10-17: `on` = the day that was tapped, so "Delete" on a recurring
+    // item can offer "only this day" for exactly that occurrence.
+    const on = dateKey(entry.occDate);
+    if (entry.kind === "reminder") router.push(`/dashboard/${entry.id}?on=${on}`);
     else if (entry.kind === "homework" || entry.kind === "test") router.push("/dashboard/school");
     // 2026-10-07: an activity opens straight in its edit form (a child
     // can't edit others' activities — the form shows "couldn't load" then,
     // so a child still goes to the list).
-    else if (entry.kind === "training") router.push(isChildView ? "/dashboard/training" : `/dashboard/family/new?type=training&edit=${entry.id}`);
+    else if (entry.kind === "training") router.push(isChildView ? "/dashboard/training" : `/dashboard/family/new?type=training&edit=${entry.id}&on=${on}`);
     else router.push(isChildView ? "/dashboard/family/child" : "/dashboard/family");
   }
 

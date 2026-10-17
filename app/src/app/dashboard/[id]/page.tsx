@@ -5,7 +5,8 @@ import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
-import { withNextDate } from "@/lib/recurrence";
+import { withNextDate, dateKey } from "@/lib/recurrence";
+import SeriesDelete from "@/components/SeriesDelete";
 import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
@@ -96,6 +97,7 @@ type Reminder = {
   handoverTo: string | null;
   urgencyLevel: string;
   canEdit?: boolean;
+  skipDates?: string[];
 };
 
 function formatDate(dateStr: string, dateLocale: string) {
@@ -248,6 +250,23 @@ export default function ReminderDetailPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // 2026-10-17: one day out of a recurring series. The calendar passes the
+  // day that was tapped as `?on=YYYY-MM-DD`; otherwise the next occurrence.
+  async function patchSkip(body: Record<string, string>) {
+    const res = await fetch("/api/reminders/" + id, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("skip failed");
+  }
+  async function handleSkipDay(day: string) {
+    await patchSkip({ skipDate: day });
+    if (window.history.length > 1) router.back(); else await fetchReminder();
+  }
+  async function handleUnskipDay(day: string) {
+    await patchSkip({ unskipDate: day });
+    await fetchReminder();
   }
 
   async function handleDelete() {
@@ -485,7 +504,16 @@ export default function ReminderDetailPage() {
         </Link>
 
         {/* Delete button */}
-        {!confirmDelete ? (
+        {reminder.recurrence !== "ONCE" ? (
+          <SeriesDelete
+            day={(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("on")) || dateKey(new Date(reminder.date))}
+            skipDates={reminder.skipDates ?? []}
+            onSkipDay={handleSkipDay}
+            onUnskipDay={handleUnskipDay}
+            onDeleteAll={handleDelete}
+            buttonLabel={t.delete}
+          />
+        ) : !confirmDelete ? (
           <button
             onClick={() => setConfirmDelete(true)}
             style={{

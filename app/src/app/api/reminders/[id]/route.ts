@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { markActivityImport } from "@/lib/activityFeeds";
 import { findReminderFor } from "@/lib/reminderAccess";
 import { getTimes, timesFromBody, setTime } from "@/lib/reminderTimes";
+import { getSkips, applySkipFromBody } from "@/lib/reminderSkips";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -35,7 +36,8 @@ export async function GET(
   }
 
   const t = (await getTimes([found.reminder.id])).get(found.reminder.id);
-  return NextResponse.json({ ...found.reminder, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null, canEdit: found.canEdit });
+  const skipDates = (await getSkips([found.reminder.id])).get(found.reminder.id) ?? [];
+  return NextResponse.json({ ...found.reminder, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null, skipDates, canEdit: found.canEdit });
 }
 
 // DELETE /api/reminders/[id] – Ta bort en reminder (soft delete)
@@ -82,6 +84,16 @@ export async function PATCH(
 
   try {
     const body = await req.json();
+    // 2026-10-17: `skipDate` / `unskipDate` removes or restores ONE day of a
+    // recurring series without touching the rest (lib/reminderSkips.ts).
+    try {
+      if (await applySkipFromBody(params.id, body)) {
+        const skipDates = (await getSkips([params.id])).get(params.id) ?? [];
+        return NextResponse.json({ success: true, skipDates });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+    }
     const data = updateSchema.parse(body); // zod strips startTime/endTime
     const time = timesFromBody(body);
 
