@@ -111,6 +111,8 @@ Nya, rent additiva tabeller skapas av appen vid första användning med `CREATE 
 - `parental_consents` (vårdnadshavarens bekräftelse) – `app/src/lib/consent.ts`
 - `school_feeds` och `school_imports` (SchoolSoft-import, 2026-10-03; sedan 2026-10-10 flera länkar per barn: kolumnerna `school_feeds.provider` och `school_imports.feedId`, unika indexet på `childId` ersatt av `(childId, url)`, allt skapas automatiskt) – `app/src/lib/schoolFeeds.ts`
 - `reminder_skips` (enstaka dagar borttagna ur en återkommande serie, 2026-10-17) – `app/src/lib/reminderSkips.ts`
+- `school_lessons` (schemat från skollänkarna – lektioner sparas för sig och visas bara som "08:20 Matte" och i veckoschemat, 2026-10-22) – `app/src/lib/schoolLessons.ts`. Vid första anrop tas lektioner som tidigare importerats som skolposter ("Lektion MA") bort ur listorna.
+- `email_prefs` (vilka mejl varje person vill ha, 2026-10-22) – `app/src/lib/notifyPrefs.ts`. Avregistreringslänken i mejlen är signerad med `NEXTAUTH_SECRET`.
 Mönstret passar bara nya tabeller. Nya kolumner i befintliga tabeller görs fortfarande enligt 5b.
 
 ### 5b. Databasändringar i produktion (lärdom 2026-09-28)

@@ -7,6 +7,8 @@ import QuickAdd from "@/components/QuickAdd";
 import ChangesCard from "@/components/ChangesCard";
 import TomorrowCard from "@/components/TomorrowCard";
 import TripSoonCard from "@/components/TripSoonCard";
+import { useLessons, FirstLessonMini, FirstLessonRow, WeekSheet } from "@/components/Timetable";
+import { nextFirstLesson } from "@/lib/lessonPlan";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -110,6 +112,9 @@ export default function DashboardPage() {
   // this isn't a child (they're sent to their own "My week").
   const [roleChecked, setRoleChecked] = useState(false);
   const media = useFamilyMedia();
+  // 2026-10-22: each child's first lesson + the week's timetable.
+  const lessons = useLessons(roleChecked);
+  const [weekFor, setWeekFor] = useState<{ id: string; name: string } | null>(null);
   const { m: msg, locale, dateLocale } = useI18n();
   const t = msg.home;
   // 2026-10-10: a type colour the family picked (Settings → Colours) wins over the built-in badge colour.
@@ -316,6 +321,9 @@ export default function DashboardPage() {
     }
     return rows.sort((x, y) => (x.startTime ? 0 : 1) - (y.startTime ? 0 : 1) || (x.startTime ?? "").localeCompare(y.startTime ?? "") || x.title.localeCompare(y.title));
   })();
+  // 2026-10-22 (Mikael: "passerat är passerat"): what's already over today
+  // leaves the list instead of being dimmed.
+  const todayOpen = todayRows.filter((r) => !r.done);
   const show = prefs.sections;
 
   if (status === "loading" || loading || !roleChecked) {
@@ -396,6 +404,18 @@ export default function DashboardPage() {
           <div className="rfs-hscroll" style={{ display: "flex", gap: 14, overflowX: "auto", margin: "0 -20px 22px", padding: "2px 20px 4px" }}>
             {householdMembers.map((m) => {
               const first = m.user.name?.split(" ")[0] ?? m.user.email.split("@")[0];
+              // 2026-10-22: a child with a timetable shows "08:20 / Matte" under
+              // the name; tapping opens the week's timetable.
+              const own = lessons.get(m.userId);
+              if (own && nextFirstLesson(own)) {
+                return (
+                  <button key={m.userId} type="button" onClick={() => setWeekFor({ id: m.userId, name: first })} aria-label={msg.timetable.open(first)} style={{ all: "unset", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, width: 60 }}>
+                    <Avatar userId={m.userId} name={first} size={52} />
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fg-2)", maxWidth: 60, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{first}</span>
+                    <FirstLessonMini lessons={own} />
+                  </button>
+                );
+              }
               return (
                 <Link key={m.userId} href="/dashboard/family/members" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: 56 }}>
                   <Avatar userId={m.userId} name={first} size={52} />
@@ -423,10 +443,11 @@ export default function DashboardPage() {
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
               <SectionTitle inline>{msg.homePrefs.todayTitle}</SectionTitle>
-              {todayRows.every((r) => r.done) && <span style={{ fontSize: 12, fontWeight: 700, color: "var(--success)" }}>{msg.homePrefs.todayEmptyDone}</span>}
+              {todayOpen.length === 0 && <span style={{ fontSize: 12, fontWeight: 700, color: "var(--success)" }}>{msg.homePrefs.todayEmptyDone}</span>}
             </div>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 14px", boxShadow: "var(--shadow)", marginBottom: 24 }}>
-              {todayRows.map((r, i) => {
+            {todayOpen.length === 0 && <div style={{ marginBottom: 18 }} />}
+            {todayOpen.length > 0 && <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 14px", boxShadow: "var(--shadow)", marginBottom: 24 }}>
+              {todayOpen.map((r, i) => {
                 const badge = familyBadge(r.kind) ?? (r.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
                   : r.kind === "HOMEWORK" ? { bg: "var(--tint-school)", fg: "var(--school)", label: msg.homePrefs.kindHomework }
                   : r.kind === "ACTIVITY" ? { bg: "var(--tint-warning)", fg: "#D85A30", label: msg.homePrefs.kindActivity }
@@ -444,7 +465,7 @@ export default function DashboardPage() {
                   </Link>
                 );
               })}
-            </div>
+            </div>}
           </>
         )}
 
@@ -458,11 +479,13 @@ export default function DashboardPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
               {nextUpByChild.map((p) => (
                 <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: p.items.length ? 6 : 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: p.items.length || lessons.get(p.id)?.length ? 6 : 0 }}>
                     <Avatar userId={p.id} name={p.name} size={28} />
                     <span style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
-                    {p.items.length === 0 && <span style={{ fontSize: 12, color: "var(--subtle)" }}>{msg.homePrefs.nothingSoon}</span>}
+                    {p.items.length === 0 && !(lessons.get(p.id) && nextFirstLesson(lessons.get(p.id)!)) && <span style={{ fontSize: 12, color: "var(--subtle)" }}>{msg.homePrefs.nothingSoon}</span>}
                   </div>
+                  {/* 2026-10-22: always first — when school starts next. */}
+                  <FirstLessonRow lessons={lessons.get(p.id)} onOpen={() => setWeekFor({ id: p.id, name: p.name })} />
                   {p.items.slice(0, prefs.perChildCount).map((it) => {
                     const d = getDaysUntil(it.day.toISOString());
                     const badge = familyBadge(it.kind) ?? (it.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
@@ -622,6 +645,9 @@ export default function DashboardPage() {
 
       </main>
 
+      {weekFor && (
+        <WeekSheet childId={weekFor.id} name={weekFor.name} lessons={lessons.get(weekFor.id) ?? []} onClose={() => setWeekFor(null)} />
+      )}
     </div>
   );
 }

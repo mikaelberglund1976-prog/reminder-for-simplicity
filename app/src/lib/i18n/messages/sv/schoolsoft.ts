@@ -33,7 +33,7 @@ export const schoolsoft: Messages["schoolsoft"] = {
   step1: (name) => `Logga in i SchoolSoft-appen som vårdnadshavare och välj ${name}.`,
   step2a: "Öppna ", step2b: " → ", step2c: ".",
   step3a: "Under ", step3b: ", slå ", step3on: "på", step3c: ": ", step3and: " och ", step3d: ".",
-  step4a: "Slå ", step4off: "av", step4b: " – annars kommer varje lektion med. ", step4c: " väljer du själv.",
+  step4a: "Slå ", step4off: "på", step4b: " för att se första lektionen och veckans schema (lektionerna hamnar aldrig i skollistan). ", step4c: " väljer du själv.",
   step5a: "Under ", step5b: ", tryck på kopiera-ikonen bredvid ", step5c: " och klistra in den nedan.",
   sbStep1: (name) => `Logga in i Studybee som ${name} (eller som vårdnadshavare).`,
   sbStep2: "Öppna kalendern och leta upp valet för att prenumerera på / exportera kalendern.",

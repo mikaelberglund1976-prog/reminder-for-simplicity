@@ -20,6 +20,7 @@ import HomePrefsSettings from "@/components/HomePrefsSettings";
 import FamilyColorsSettings from "@/components/FamilyColorsSettings";
 import { isManagedEmail } from "@/lib/managedProfileClient";
 import PushCard from "@/components/PushCard";
+import NotifyPrefsCard from "@/components/NotifyPrefsCard";
 import MyHomePicture from "@/components/MyHomePicture";
 import { ADMIN_EMAIL } from "@/lib/adminConfig";
 import { showWhatsNewAgain } from "@/components/WhatsNew";
@@ -902,6 +903,9 @@ export default function ProfilePage() {
           <div id="notifications" style={{ scrollMarginTop: 16 }}>
             <Card title={msg.push.cardTitle}>
               <PushCard />
+            </Card>
+            <Card title={msg.notify.cardTitle}>
+              <NotifyPrefsCard />
             </Card>
           </div>
 

@@ -2,7 +2,7 @@ import type { Messages } from "../en";
 
 export const push: Messages["push"] = {
   cardTitle: "Notiser i telefonen",
-  body: "En notis för påminnelser, och på kvällen för morgondagens prov, läxor och aktiviteter. Mejlen kommer som förut.",
+  body: "Slå på notiser i den här telefonen. Vad du vill få väljer du i rutan nedanför.",
   notConfigured: "Notiser är inte påslagna för appen än.",
   unsupported: "Den här webbläsaren kan inte visa notiser. Prova den installerade appen eller Chrome.",
   iosInstall: "På iPhone: installera appen först (Dela → Lägg till på hemskärmen), öppna den från hemskärmen och slå på notiser där.",

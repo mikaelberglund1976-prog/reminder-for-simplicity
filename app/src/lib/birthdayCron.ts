@@ -10,6 +10,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendBirthdayEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/webPush";
+import { emailAllowed, unsubscribeUrl } from "@/lib/notifyPrefs";
 import { hasFamilyAccess } from "@/lib/entitlements";
 import { getLocaleForUser } from "@/lib/i18n/server";
 import { getMessages } from "@/lib/i18n/messages";
@@ -65,11 +66,14 @@ export async function sendBirthdayReminder(
 
   for (const a of adults) {
     const { m, title } = await titleFor(a.id, reminder.name, row, occurrence);
-    await sendBirthdayEmail({ to: a.email, name: a.name, title, date: occurrence, daysLeft, wishlistUrl: childWithWishlist ? `${APP_URL}/dashboard/wishlist` : null })
-      .then(() => sentTo.push(a.email))
-      .catch((e) => console.error("Birthday email failed:", e));
+    if (await emailAllowed(a.id, "birthdays")) {
+      await sendBirthdayEmail({ to: a.email, name: a.name, title, date: occurrence, daysLeft, wishlistUrl: childWithWishlist ? `${APP_URL}/dashboard/wishlist` : null,
+        unsubscribe: { url: unsubscribeUrl(a.id, "birthdays"), label: m.notify.emailOff(m.notify.kinds.birthdays), settingsLabel: m.notify.emailSettings } })
+        .then(() => sentTo.push(a.email))
+        .catch((e) => console.error("Birthday email failed:", e));
+    }
     const when = daysLeft <= 0 ? m.push.today : daysLeft === 1 ? m.push.tomorrow : m.push.inDays(daysLeft);
-    await sendPushToUser(a.id, { title, body: m.push.dueBody(when, null), url: "/dashboard/birthdays", tag: `birthday-${reminder.id}` }, "reminders").catch(() => 0);
+    await sendPushToUser(a.id, { title, body: m.push.dueBody(when, null), url: "/dashboard/birthdays", tag: `birthday-${reminder.id}` }, "birthdays").catch(() => 0);
   }
 
   // Relatives only hear about birthdays the whole family shares.
@@ -77,11 +81,14 @@ export async function sendBirthdayReminder(
     for (const g of await wishlistGuestsOf(reminder.householdId, row.personId!)) {
       if (adults.some((a) => a.id === g.userId)) continue;
       const { m, title } = await titleFor(g.userId, reminder.name, row, occurrence);
-      await sendBirthdayEmail({ to: g.email, name: g.name, title, date: occurrence, daysLeft, wishlistUrl: `${APP_URL}/gifts`, guest: true })
-        .then(() => sentTo.push(g.email))
-        .catch((e) => console.error("Birthday guest email failed:", e));
+      if (await emailAllowed(g.userId, "birthdays")) {
+        await sendBirthdayEmail({ to: g.email, name: g.name, title, date: occurrence, daysLeft, wishlistUrl: `${APP_URL}/gifts`, guest: true,
+          unsubscribe: { url: unsubscribeUrl(g.userId, "birthdays"), label: m.notify.emailOff(m.notify.kinds.birthdays), settingsLabel: m.notify.emailSettings } })
+          .then(() => sentTo.push(g.email))
+          .catch((e) => console.error("Birthday guest email failed:", e));
+      }
       const when = daysLeft <= 0 ? m.push.today : daysLeft === 1 ? m.push.tomorrow : m.push.inDays(daysLeft);
-      await sendPushToUser(g.userId, { title, body: m.push.dueBody(when, null), url: "/gifts", tag: `birthday-${reminder.id}` }, "reminders").catch(() => 0);
+      await sendPushToUser(g.userId, { title, body: m.push.dueBody(when, null), url: "/gifts", tag: `birthday-${reminder.id}` }, "birthdays").catch(() => 0);
     }
   }
   return sentTo;
@@ -116,7 +123,7 @@ export async function sendBirthdayDayPushes(now = new Date()): Promise<string[]>
     let reached = 0;
     for (const uid of people) {
       const { m, title } = await titleFor(uid, r.name, row, occ);
-      reached += await sendPushToUser(uid, { title: m.birthdays.dayPushTitle(title), body: m.birthdays.dayPushBody, url: "/dashboard/birthdays", tag: `birthday-day-${r.id}` }, "reminders").catch(() => 0);
+      reached += await sendPushToUser(uid, { title: m.birthdays.dayPushTitle(title), body: m.birthdays.dayPushBody, url: "/dashboard/birthdays", tag: `birthday-day-${r.id}` }, "birthdays").catch(() => 0);
     }
     await prisma.reminderLog.create({ data: { reminderId: r.id, type: "birthday-day" } });
     log.push(`[${r.name}] birthday today -> push to ${reached} device(s)`);

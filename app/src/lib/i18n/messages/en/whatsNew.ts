@@ -2,12 +2,12 @@
 export const whatsNew = {
   title: "What's new in the app",
   points: [
-    "You now pick your own three shortcuts in the menu at the bottom.",
-    "Home is simpler.",
-    "Just write what you need to remember.",
-    "Everything is still there under More.",
+    "Timetable from school: each child's first lesson tomorrow is under their photo on Home. Tap for the week.",
+    "The School page only shows what's still to come – past items are gone.",
+    "Choose which emails and notifications you get under Settings → Notifications.",
+    "The emails have a new look.",
   ],
-  pickShortcuts: "Pick shortcuts",
+  pickShortcuts: "Pick notifications",
   ok: "Got it",
   showAgain: "Show what's new again",
 };

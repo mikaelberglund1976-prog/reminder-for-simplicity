@@ -14,13 +14,58 @@ const resend = {
     send: async (args: SendArgs) => {
       const to = (Array.isArray(args.to) ? args.to : [args.to]).filter((a) => !isManagedEmail(a));
       if (to.length === 0) return { data: null, error: null };
-      return resendClient.emails.send({ ...args, to } as SendArgs);
+      const html = typeof (args as { html?: unknown }).html === "string" ? lotuviSkin((args as { html: string }).html) : undefined;
+      return resendClient.emails.send({ ...args, to, ...(html ? { html } : {}) } as SendArgs);
     },
   },
 };
 
 const FROM = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
 const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+// 2026-10-22 (Mikael: "på med vår design med vår gubbe"): every email gets the
+// Lotuvi look — cream page, coral buttons, the companion figure on top —
+// instead of the old blue header. Done in one place, on the finished HTML, so
+// all templates (reminders, invites, birthdays, account emails) change
+// together. Solid colours with enough contrast both ways, so a mail app in
+// dark mode that inverts the colours still leaves every text readable.
+const SKIN: [string, string][] = [
+  ["#F0F4FF", "#FAF7F2"],
+  ["linear-gradient(135deg,#4a7ee0,#2e5ec8)", "#C24F26"],
+  ["rgba(46,94,200,0.4)", "rgba(194,79,38,0.28)"],
+  ["rgba(30,63,138,0.12)", "rgba(20,43,58,0.08)"],
+  ["#1A202C", "#142B3A"],
+  ["#2D3748", "#142B3A"],
+  ["#718096", "#5F6E79"],
+  ["#4A5FD5", "#C24F26"],
+  ["#ebf4ff", "#FFE9DE"],
+  ["#bee3f8", "#FFCDB6"],
+  ["#F7FAFC", "#FDFBF8"],
+  ["#F7FAFF", "#FDFBF8"],
+  ["#E1E9FF", "#ECE6DD"],
+  ["#EDF2F7", "#ECE6DD"],
+  ["#A0AEC0", "#7A8790"],
+];
+const OLD_HEADER = /<div style="background:linear-gradient\(135deg,#1e3f8a 0%,#2e5ec8 100%\);[^"]*">((?:\s*<div[^>]*>[\s\S]*?<\/div>)+)\s*<\/div>/g;
+
+export function lotuviSkin(html: string): string {
+  let out = html.replace(OLD_HEADER, (_all, inner: string) => {
+    const icon = /<div style="font-size:32px[^"]*">([\s\S]*?)<\/div>/.exec(inner)?.[1]?.trim() ?? "";
+    const texts = Array.from(inner.matchAll(/<div style="color:rgba\(255,255,255,[^"]*">([\s\S]*?)<\/div>/g)).map((m) => m[1].trim()).filter(Boolean);
+    const label = texts[0] ?? "Reminder for Simplicity";
+    const tagline = texts[1];
+    return `<div style="background:#FFE9DE;border-radius:16px 16px 0 0;padding:22px 24px 18px;text-align:center;border:1px solid #FFCDB6;border-bottom:none;">
+      <img src="${APP_URL}/brand/email-companion.png" width="76" height="76" alt="" style="display:block;margin:0 auto 10px;width:76px;height:76px;border-radius:50%;border:0;">
+      <div style="color:#142B3A;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">${icon ? `${icon}&nbsp; ` : ""}${label}</div>
+      ${tagline ? `<div style="color:#5F6E79;font-size:12px;margin-top:4px;">${tagline}</div>` : ""}
+    </div>`;
+  });
+  for (const [from, to] of SKIN) out = out.split(from).join(to);
+  // The white card gets a soft edge so it doesn't melt into the cream page.
+  out = out.replace(/background:#ffffff;border-radius:0 0 16px 16px;/g, "background:#ffffff;border-radius:0 0 16px 16px;border:1px solid #ECE6DD;border-top:none;");
+  if (!/name="color-scheme"/.test(out)) out = out.replace(/<head>/i, `<head><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only">`);
+  return out;
+}
 
 // 2026-10-04: emails are written in the recipient's family language (or the
 // language of the request when they have no family yet). Pass `locale` to
@@ -44,6 +89,13 @@ const CATEGORY_ICONS: Record<string, string> = {
   OTHER: "📌",
 };
 
+// 2026-10-22: days between today (Stockholm) and an item's day. Items are
+// stored at 00:00 or 10:00 UTC on their day, so the UTC date IS the day.
+export function calendarDaysUntil(date: Date, now = new Date()): number {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Stockholm", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  return Math.round((Date.parse(date.toISOString().slice(0, 10) + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000);
+}
+
 // ─── Reminder email ───────────────────────────────────────────────────────────
 
 export async function sendReminderEmail({
@@ -58,8 +110,11 @@ export async function sendReminderEmail({
   category,
   locale,
   time,
+  unsubscribe,
 }: {
   locale?: Locale;
+  /** 2026-10-22: "Stop emails about …" link + its label (lib/notifyPrefs.ts). */
+  unsubscribe?: { url: string; label: string; settingsLabel: string } | null;
   /** 2026-10-09: wall-clock time "HH:MM" (null/undefined = all day). */
   time?: string | null;
   to: string;
@@ -74,8 +129,10 @@ export async function sendReminderEmail({
 }) {
   const { l, t, d } = await lang(to, locale);
   const firstName = name?.split(" ")[0] ?? t.there;
-  const formattedDate = time ? `${d(date)}, ${time}` : d(date);
-  const daysLeft = Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const formattedDate = time ? `${d(date)} · ${time}` : d(date);
+  // 2026-10-22: whole calendar days in Swedish time. Rounding hours up made
+  // an email sent on the 20th for something on the 21st say "2 days left".
+  const daysLeft = calendarDaysUntil(date);
   const dashboardUrl = `${APP_URL}/dashboard/${reminderId}`;
   const icon = category ? (CATEGORY_ICONS[category] ?? "🔔") : "🔔";
 
@@ -168,6 +225,7 @@ export async function sendReminderEmail({
     <div style="text-align:center;padding:24px 0 0;">
       <p style="margin:0 0 6px;font-size:12px;color:#A0AEC0;line-height:1.8;">
         ${t.reminder.why}<br>
+        ${unsubscribe ? `<a href="${unsubscribe.url}" style="color:#5F6E79;text-decoration:underline;">${unsubscribe.label}</a> &nbsp;·&nbsp; <a href="${APP_URL}/profile#notifications" style="color:#5F6E79;text-decoration:underline;">${unsubscribe.settingsLabel}</a><br>` : ""}
         <a href="${APP_URL}/dashboard" style="color:#A0AEC0;text-decoration:underline;">${t.reminder.manage}</a>
         &nbsp;·&nbsp;
         <span>${t.footerBy.replace("Reminder for Simplicity · ", "")}</span>
@@ -793,8 +851,9 @@ export async function sendWishlistShareEmail({ to, inviterName, childName, local
 // 2026-10-10: birthday reminder (PRODUCT_SPEC 4b.33) — to the family's adults,
 // and to relatives the child's wishlist is shared with (button → /gifts).
 // `title` is built per recipient language by the caller ("🎂 Elsa fyller 13").
-export async function sendBirthdayEmail({ to, name, title, date, daysLeft, wishlistUrl, guest = false, locale }: {
+export async function sendBirthdayEmail({ to, name, title, date, daysLeft, wishlistUrl, guest = false, locale, unsubscribe }: {
   to: string; name: string | null; title: string; date: Date; daysLeft: number; wishlistUrl?: string | null; guest?: boolean; locale?: Locale;
+  unsubscribe?: { url: string; label: string; settingsLabel: string } | null;
 }) {
   const { l, t, d } = await lang(to, locale);
   const b = getMessages(l).birthdays;
@@ -808,6 +867,6 @@ export async function sendBirthdayEmail({ to, name, title, date, daysLeft, wishl
     lines,
     buttonText: wishlistUrl ? b.emailWishlistButton : b.emailButton,
     buttonUrl: wishlistUrl ?? `${APP_URL}/dashboard/birthdays`,
-    footer: guest ? b.emailGuestWhy : b.emailWhy,
+    footer: (guest ? b.emailGuestWhy : b.emailWhy) + (unsubscribe ? `<br><a href="${unsubscribe.url}" style="color:#5F6E79;text-decoration:underline;">${unsubscribe.label}</a> &nbsp;·&nbsp; <a href="${APP_URL}/profile#notifications" style="color:#5F6E79;text-decoration:underline;">${unsubscribe.settingsLabel}</a>` : ""),
   }), "birthday");
 }

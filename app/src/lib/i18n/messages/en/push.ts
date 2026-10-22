@@ -1,6 +1,6 @@
 export const push = {
   cardTitle: "Notifications on this phone",
-  body: "A ping for reminders, and in the evening for tomorrow's tests, homework and activities. Emails keep coming as before.",
+  body: "Turn on notifications on this phone. Choose what you want in the box below.",
   notConfigured: "Notifications aren't switched on for the app yet.",
   unsupported: "This browser can't show notifications. Try the installed app or Chrome.",
   iosInstall: "On iPhone: install the app first (Share → Add to Home Screen), open it from the home screen and turn notifications on there.",

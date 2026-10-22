@@ -33,7 +33,7 @@ export const schoolsoft = {
   step1: (name: string) => `In the SchoolSoft app, log in as ${name}'s guardian and pick ${name}.`,
   step2a: "Open ", step2b: " → ", step2c: ".",
   step3a: "Under ", step3b: ", turn ", step3on: "on", step3c: ": ", step3and: " and ", step3d: ".",
-  step4a: "Turn ", step4off: "off", step4b: " — otherwise every lesson comes in. ", step4c: " is up to you.",
+  step4a: "Turn ", step4off: "on", step4b: " to see each child's first lesson and the week's timetable (lessons never fill the school list). ", step4c: " is up to you.",
   step5a: "Under ", step5b: ", tap the copy icon next to ", step5c: " and paste it below.",
   sbStep1: (name: string) => `Log in to Studybee as ${name} (or as guardian).`,
   sbStep2: "Open the calendar and find the option to subscribe to / export the calendar.",

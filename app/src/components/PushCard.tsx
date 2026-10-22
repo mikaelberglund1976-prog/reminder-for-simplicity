@@ -7,8 +7,7 @@ import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
-type Kind = "reminders" | "tomorrow" | "changes";
-type State = { configured: boolean; publicKey: string | null; devices: number; kinds: Kind[] };
+type State = { configured: boolean; publicKey: string | null; devices: number; kinds: string[] };
 
 function keyBytes(b64u: string): Uint8Array {
   const pad = "=".repeat((4 - (b64u.length % 4)) % 4);
@@ -52,6 +51,7 @@ export default function PushCard() {
       if (!res.ok) throw new Error(String(res.status));
       setHere(sub);
       setState((s) => (s ? { ...s, devices: s.devices + 1 } : s));
+      window.dispatchEvent(new Event("rfs-push-changed"));
       await sendTest();
     } catch (e) {
       console.error(e);
@@ -67,6 +67,7 @@ export default function PushCard() {
       await here.unsubscribe().catch(() => {});
       setHere(null);
       setState((s) => (s ? { ...s, devices: Math.max(0, s.devices - 1) } : s));
+      window.dispatchEvent(new Event("rfs-push-changed"));
     } finally { setBusy(false); }
   }
 
@@ -74,13 +75,6 @@ export default function PushCard() {
     const res = await fetch("/api/push/test", { method: "POST" });
     const d = await res.json().catch(() => ({}));
     setNote(d.ok ? { text: t.testSent, ok: true } : { text: t.testFailed, ok: false });
-  }
-
-  async function toggleKind(k: Kind) {
-    if (!state) return;
-    const kinds = state.kinds.includes(k) ? state.kinds.filter((x) => x !== k) : [...state.kinds, k];
-    setState({ ...state, kinds });
-    await fetch("/api/push", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kinds }) }).catch(() => {});
   }
 
   const btn = { border: "none", borderRadius: 50, padding: "12px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT } as const;
@@ -99,12 +93,8 @@ export default function PushCard() {
       ) : here ? (
         <>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--success)", marginBottom: 12 }}>✓ {t.onHere}</div>
-          {(["reminders", "tomorrow", "changes"] as Kind[]).map((k) => (
-            <label key={k} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13.5, color: "var(--fg)", lineHeight: 1.45, marginBottom: 10, cursor: "pointer" }}>
-              <input type="checkbox" checked={!!state?.kinds.includes(k)} onChange={() => toggleKind(k)} style={{ width: 18, height: 18, marginTop: 1, flexShrink: 0, accentColor: "var(--accent)" }} />
-              <span>{k === "reminders" ? t.kindReminders : k === "tomorrow" ? t.kindTomorrow : t.kindChanges}</span>
-            </label>
-          ))}
+          {/* 2026-10-22: what to be pinged about is chosen per kind in the
+              Notifications card below (with email next to it). */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
             <button type="button" onClick={sendTest} disabled={busy} style={{ ...btn, background: "var(--surface-3)", color: "var(--fg-2)" }}>{t.sendTest}</button>
             <button type="button" onClick={turnOff} disabled={busy} style={{ ...btn, background: "none", color: "var(--danger)", padding: "12px 6px" }}>{t.turnOff}</button>

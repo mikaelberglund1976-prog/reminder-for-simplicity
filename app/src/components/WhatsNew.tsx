@@ -10,8 +10,9 @@ import { getMe } from "@/lib/me";
 import { useM } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
-const KEY = "rfs-whatsnew-2026-10-18";
-const RELEASED = Date.parse("2026-10-18T00:00:00Z");
+// 2026-10-22: new round — timetable, notification choices, new email look.
+const KEY = "rfs-whatsnew-2026-10-22";
+const RELEASED = Date.parse("2026-10-22T00:00:00Z");
 
 export function showWhatsNewAgain() {
   try { localStorage.removeItem(KEY); localStorage.setItem(KEY + "-force", "1"); } catch { /* ignore */ }
@@ -53,7 +54,7 @@ export default function WhatsNew() {
           ))}
         </ul>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/profile#bottom-nav" onClick={close} style={{ flex: 1, textAlign: "center", padding: "12px 10px", borderRadius: 12, background: "var(--surface-3)", color: "var(--fg-2)", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>{t.pickShortcuts}</Link>
+          <Link href="/profile#notifications" onClick={close} style={{ flex: 1, textAlign: "center", padding: "12px 10px", borderRadius: 12, background: "var(--surface-3)", color: "var(--fg-2)", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>{t.pickShortcuts}</Link>
           <button type="button" onClick={close} autoFocus style={{ flex: 1, padding: "12px 10px", borderRadius: 12, border: "none", background: "var(--accent-bg)", color: "var(--on-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT }}>{t.ok}</button>
         </div>
       </div>

@@ -29,6 +29,7 @@ import QuickAdd from "@/components/QuickAdd";
 import ChangesCard from "@/components/ChangesCard";
 import TomorrowCard from "@/components/TomorrowCard";
 import TripSoonCard from "@/components/TripSoonCard";
+import { useLessons, FirstLessonRow, WeekSheet } from "@/components/Timetable";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -72,6 +73,10 @@ function ChildViewContent() {
   const myId = session?.user?.id;
   const childId = searchParams.get("id") ?? myId;
   const isOwn = !!myId && childId === myId;
+  // 2026-10-22: the child's timetable (first lesson + the week).
+  const lessons = useLessons(!!myId);
+  const lessonOwner = childId ?? null;
+  const [weekOpen, setWeekOpen] = useState(false);
 
   const [chores, setChores] = useState<Chore[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -196,7 +201,7 @@ function ChildViewContent() {
   const activitiesSorted = [...activitiesToday, ...activities.filter((a) => !isToday(a))];
 
   const schoolOpen = school
-    .filter((s) => !s.completedAt && daysUntil(s.date) <= 14 && daysUntil(s.date) >= -7)
+    .filter((s) => !s.completedAt && daysUntil(s.date) <= 14 && daysUntil(s.date) >= 0)
     .sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
   const nextSchool = schoolOpen[0];
 
@@ -275,6 +280,16 @@ function ChildViewContent() {
         {isOwn && <ChangesCard />}
         {isOwn && <TripSoonCard />}
         {isOwn && <TomorrowCard />}
+
+        {/* 2026-10-22: when school starts next — tap for the week's timetable. */}
+        {lessonOwner && lessons.get(lessonOwner) && (
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "4px 14px", boxShadow: "var(--shadow)", marginBottom: 16 }}>
+            <FirstLessonRow lessons={lessons.get(lessonOwner)} onOpen={() => setWeekOpen(true)} borderTop={false} />
+          </div>
+        )}
+        {weekOpen && lessonOwner && (
+          <WeekSheet childId={lessonOwner} name={(isOwn ? firstName : childName) ?? ""} lessons={lessons.get(lessonOwner) ?? []} onClose={() => setWeekOpen(false)} />
+        )}
 
         {/* Overview — what needs doing, at a glance. */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 22 }}>

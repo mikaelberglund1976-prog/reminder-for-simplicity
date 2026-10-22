@@ -1,0 +1,33 @@
+export const notify = {
+  cardTitle: "Notifications",
+  intro: "Choose what you get by email and as a notification on your phone. Each person in the family chooses for themselves.",
+  email: "Email",
+  push: "Push",
+  kinds: {
+    reminders: "Reminders",
+    school: "Homework & tests",
+    activities: "Activities",
+    birthdays: "Birthdays",
+    tomorrow: "Evening summary",
+    changes: "Changes",
+  } as Record<string, string>,
+  hints: {
+    reminders: "Bills, appointments, trips, chores",
+    school: "The day before a test or homework",
+    activities: "Trainings and matches you added yourself",
+    birthdays: "A week before, and on the day",
+    tomorrow: "Tomorrow's tests, homework and activities at 19:00",
+    changes: "A moved match, a new test, a cancelled training",
+  } as Record<string, string>,
+  pushOffHint: "Push needs to be turned on for this phone above.",
+  saved: "Saved",
+  // Email footer + one-click page
+  emailOff: (kind: string) => `Stop emails about ${kind.toLowerCase()}`,
+  emailSettings: "All notification settings",
+  offTitle: (kind: string) => `Stop emails about ${kind.toLowerCase()}?`,
+  offBody: "You can turn them back on any time under Settings → Notifications.",
+  offButton: "Turn off these emails",
+  offDone: (kind: string) => `Done — no more emails about ${kind.toLowerCase()}.`,
+  offInvalid: "The link has expired. Change it under Settings → Notifications instead.",
+  toSettings: "Open Settings",
+};

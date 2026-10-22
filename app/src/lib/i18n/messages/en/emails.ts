@@ -10,7 +10,7 @@ export const emails = {
     dueTomorrow: "due tomorrow",
     dueIn: (n: number) => `due in ${n} days`,
     badgeToday: "⚡ Due today",
-    badgeDaysLeft: (n: number) => `${n} days left`,
+    badgeDaysLeft: (n: number) => (n === 1 ? "Tomorrow" : `${n} days left`),
     amount: "Amount",
     date: "Date",
     view: "View reminder →",

@@ -15,6 +15,7 @@ import { getBirthdayRows } from "@/lib/birthdays";
 import { sendBirthdayReminder, sendBirthdayDayPushes } from "@/lib/birthdayCron";
 import { notifyChanges } from "@/lib/changeWatch";
 import { runTripNudges } from "@/lib/tripNudges";
+import { emailAllowed, kindForCategory, unsubscribeUrl } from "@/lib/notifyPrefs";
 
 function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -172,12 +173,19 @@ export async function runReminderCron() {
     try {
       // School items: the person it's assigned to (usually the child) gets the
       // reminder, plus whoever created it if that's someone else (a parent).
-      const recipients: { email: string; name: string | null }[] = imported.has(reminder.id) ? [] : [{ email: reminder.user.email, name: reminder.user.name }];
+      const recipients: { id: string; email: string; name: string | null }[] = imported.has(reminder.id) ? [] : [{ id: reminder.user.id, email: reminder.user.email, name: reminder.user.name }];
       if (reminder.category === "SCHOOL" && reminder.assignedUser && !reminder.assignedUser.deletedAt
           && (imported.has(reminder.id) || reminder.assignedUser.email !== reminder.user.email)) {
-        recipients.unshift({ email: reminder.assignedUser.email, name: reminder.assignedUser.name });
+        recipients.unshift({ id: reminder.assignedUser.id, email: reminder.assignedUser.email, name: reminder.assignedUser.name });
       }
-      for (const r of recipients) await sendReminderEmail({
+      // 2026-10-22: everyone chooses which emails they get (Settings → Notifications).
+      const kind = kindForCategory(reminder.category as string);
+      const mailed: string[] = [];
+      for (const r of recipients) {
+        if (!(await emailAllowed(r.id, kind))) { log.push(`  -> ${r.email} has ${kind} emails off`); continue; }
+        const nm = getMessages(await getLocaleForUser(r.id)).notify;
+        mailed.push(r.email);
+        await sendReminderEmail({
         to: r.email,
         name: r.name,
         reminderName: reminder.name,
@@ -188,7 +196,9 @@ export async function runReminderCron() {
         reminderId: reminder.id,
         category: reminder.category,
         time: times.get(reminder.id)?.startTime ?? null,
+        unsubscribe: { url: unsubscribeUrl(r.id, kind), label: nm.emailOff(nm.kinds[kind]), settingsLabel: nm.emailSettings },
       });
+      }
 
       await prisma.reminderLog.create({
         data: { reminderId: reminder.id, type: "email" },
@@ -210,7 +220,7 @@ export async function runReminderCron() {
           body: pm.dueBody(when, amount),
           url: reminder.category === "SCHOOL" ? "/dashboard/school" : `/dashboard/${reminder.id}`,
           tag: `reminder-${reminder.id}`,
-        }, "reminders");
+        }, kind);
       }
 
       await prisma.reminder.update({
@@ -234,7 +244,7 @@ export async function runReminderCron() {
         }
       }
 
-      log.push(`  -> sent to ${recipients.map((r) => r.email).join(", ")}`);
+      log.push(`  -> sent to ${mailed.join(", ") || "(no email)"}`);
       sent++;
     } catch (err) {
       console.error(`Failed to send reminder ${reminder.id}:`, err);

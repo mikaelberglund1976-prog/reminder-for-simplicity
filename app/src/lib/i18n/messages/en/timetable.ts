@@ -1,0 +1,14 @@
+export const timetable = {
+  today: "Today",
+  tomorrow: "Tomorrow",
+  firstLesson: "First lesson",
+  week: "Timetable",
+  weekOf: (from: string) => `Week of ${from}`,
+  thisWeek: "This week",
+  nextWeek: "Next week",
+  noLessons: "No lessons this day",
+  noTimetable: "No timetable yet. Turn on \"Schema\" in the school platform's calendar export and sync.",
+  close: "Close",
+  open: (name: string) => `Open ${name}'s timetable`,
+  room: (r: string) => `room ${r}`,
+};

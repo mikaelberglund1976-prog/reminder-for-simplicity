@@ -24,6 +24,8 @@ import { prisma } from "@/lib/prisma";
 import { getTimes, setTime } from "@/lib/reminderTimes";
 import { parseWall } from "@/lib/activityFeeds";
 import { ChangeCollector } from "@/lib/changeWatch";
+import { isLessonSummary, lessonCode, lessonRoom, type Lesson } from "@/lib/lessonPlan";
+import { deleteLessonsForFeed, ensureLessonTable, replaceLessons, LESSON_FUTURE_DAYS, LESSON_PAST_DAYS } from "@/lib/schoolLessons";
 
 export const SYNC_EVERY_MS = 20 * 60 * 60 * 1000; // daily cron; 20h so a slightly early run still syncs
 export const MANUAL_SYNC_MIN_MS = 10 * 60 * 1000; // "Sync now" at most every 10 minutes
@@ -71,6 +73,11 @@ export function ensureSchoolFeedTables(): Promise<void> {
       await prisma.$executeRawUnsafe(`ALTER TABLE "school_imports" ADD COLUMN IF NOT EXISTS "feedId" TEXT`);
       // Imports from before 2026-10-10 all came from the child's SchoolSoft link.
       await prisma.$executeRawUnsafe(`UPDATE "school_imports" i SET "feedId" = f."id" FROM "school_feeds" f WHERE i."feedId" IS NULL AND f."childId" = i."childId" AND f."provider" = 'schoolsoft'`);
+      // 2026-10-22: timetable lessons ("Lektion MA") that came in as school
+      // items when "Schema" was on in SchoolSoft are taken out again — lessons
+      // live in school_lessons now (lib/schoolLessons.ts). Cheap and idempotent.
+      await prisma.$executeRawUnsafe(`UPDATE "reminders" SET "isActive" = false WHERE "isActive" = true AND "id" IN (SELECT i."reminderId" FROM "school_imports" i JOIN "reminders" r ON r."id" = i."reminderId" WHERE r."name" ~* '^lektion(er)?([^[:alnum:]]|$)')`);
+      await prisma.$executeRawUnsafe(`DELETE FROM "school_imports" WHERE "reminderId" IN (SELECT r."id" FROM "reminders" r WHERE r."name" ~* '^lektion(er)?([^[:alnum:]]|$)' AND r."isActive" = false)`);
     })().catch((err) => { ensured = null; throw err; });
   }
   return ensured;
@@ -106,7 +113,15 @@ export type ParsedEntry = {
   date: Date; kind: "HOMEWORK" | "TEST" | "OTHER"; subject: string | null; isTodo: boolean;
   /** 2026-10-09: wall-clock start "HH:MM" in Stockholm, null = all day. */
   time: string | null;
+  /** 2026-10-22: set when the entry is a timetable lesson — never imported as a school item. */
+  lesson: Lesson | null;
 };
+
+// 2026-10-22: SchoolSoft puts the type in front of the title, so a test the
+// teacher named "Prov Lag & rätt" arrives as "Prov Prov Lag & rätt".
+export function cleanSummary(summary: string): string {
+  return summary.replace(/^\s*(\S+)\s+\1(?=\s|$)\s*/i, "$1 ").trim();
+}
 
 // 2026-10-09: keep the lesson time for tests and events (e.g. "Prov 08:20").
 // Deadlines at 00:00/23:59 and to-dos carry no useful time.
@@ -179,7 +194,7 @@ export function parseIcs(text: string): ParsedEntry[] {
       if (cur && type) {
         const get = (k: string) => cur![k]?.value;
         const uid = get("UID");
-        const summary = unescapeText(get("SUMMARY") ?? "");
+        const summary = cleanSummary(unescapeText(get("SUMMARY") ?? ""));
         const dateProp = (type === "VTODO" && cur["DUE"]) ? cur["DUE"] : (cur["DUE"] ?? cur["DTSTART"]);
         const date = dateProp ? parseIcsDate(dateProp.value, dateProp.params) : null;
         const status = (get("STATUS") ?? "").toUpperCase();
@@ -191,7 +206,14 @@ export function parseIcs(text: string): ParsedEntry[] {
           const isAssignment = /(^|[-_])assignment[-_]/i.test(uid);
           const kind: ParsedEntry["kind"] = TEST_RE.test(hay) ? "TEST"
             : (type === "VTODO" || isAssignment || HOMEWORK_RE.test(hay) || HOMEWORK_RE.test(description ?? "")) ? "HOMEWORK" : "OTHER";
-          out.push({ uid: uid.trim().slice(0, 500), summary: summary.slice(0, 200), description: description ? description.slice(0, 1000) : null, categories, date, kind, subject: guessSubject(summary, categories.join(" "), description), isTodo: type === "VTODO", time: entryTime(dateProp, type === "VTODO") });
+          // 2026-10-22: a timetable lesson needs its real start/end and day.
+          let lesson: Lesson | null = null;
+          if (type === "VEVENT" && isLessonSummary(summary, uid) && cur["DTSTART"]) {
+            const s = parseWall(cur["DTSTART"].value);
+            const e = cur["DTEND"] ? parseWall(cur["DTEND"].value) : null;
+            if (s?.time) lesson = { day: s.ymd, start: s.time, end: e?.time && e.ymd === s.ymd ? e.time : null, code: lessonCode(summary), room: lessonRoom(description) };
+          }
+          out.push({ uid: uid.trim().slice(0, 500), summary: summary.slice(0, 200), description: description ? description.slice(0, 1000) : null, categories, date, kind, subject: guessSubject(summary, categories.join(" "), description), isTodo: type === "VTODO", time: entryTime(dateProp, type === "VTODO"), lesson });
         }
       }
       cur = null; type = null; continue;
@@ -248,9 +270,19 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
       ?? (await prisma.householdMember.findFirst({ where: { householdId: feed.householdId, role: { in: ["OWNER", "PARENT"] } }, select: { userId: true } }))?.userId
       ?? feed.createdById;
 
-    const entries = parseIcs(await fetchFeed(feed.url));
+    const parsed = parseIcs(await fetchFeed(feed.url));
     const from = new Date(now.getTime() - PAST_DAYS * 86400000);
     const to = new Date(now.getTime() + FUTURE_DAYS * 86400000);
+    // 2026-10-22: lessons ("Lektion MA") go to the timetable, everything else
+    // stays a school item. A lesson without a time is dropped (no use either way).
+    const isLessonEntry = (e: ParsedEntry) => !!e.lesson || isLessonSummary(e.summary, e.uid);
+    const lessonUids = new Set(parsed.filter(isLessonEntry).map((e) => e.uid));
+    const entries = parsed.filter((e) => !isLessonEntry(e));
+    const todayYmd = stockholmDay(now).toISOString().slice(0, 10);
+    const lessonFrom = new Date(Date.parse(todayYmd + "T12:00:00Z") - LESSON_PAST_DAYS * 86400000).toISOString().slice(0, 10);
+    const lessonTo = new Date(Date.parse(todayYmd + "T12:00:00Z") + LESSON_FUTURE_DAYS * 86400000).toISOString().slice(0, 10);
+    await ensureLessonTable();
+    const lessonCount = await replaceLessons(feed, parsed.flatMap((e) => (e.lesson ? [e.lesson] : [])), lessonFrom, lessonTo);
     const inWindow = entries.filter((e) => e.date >= from && e.date <= to).slice(0, MAX_ITEMS);
 
     // All of the child's imports: an item another of the child's links already
@@ -263,6 +295,15 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
     let added = 0, updated = 0, removed = 0;
     // 2026-10-11: change watch — moved/new/cancelled tests in the next two weeks.
     const watch = new ChangeCollector(feed.householdId, feed.childId, providerLabel(feed.provider), !existing.some(mine));
+
+    // Lessons imported as school items before 2026-10-22 leave the lists.
+    for (const imp of existing) {
+      if (!mine(imp) || !lessonUids.has(imp.uid)) continue;
+      await prisma.reminder.updateMany({ where: { id: imp.reminderId, isActive: true }, data: { isActive: false } });
+      await prisma.$executeRaw`DELETE FROM "school_imports" WHERE "reminderId" = ${imp.reminderId}`;
+      byUid.delete(imp.uid);
+      seen.add(imp.uid);
+    }
 
     for (const e of inWindow) {
       if (seen.has(e.uid)) continue;
@@ -310,6 +351,7 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
 
     const total = await importedCount(feed.id);
     result = { ok: true, added, updated, removed, total, status: "ok" };
+    if (lessonCount) console.log(`School feed ${feed.id}: ${lessonCount} lessons`);
   } catch (err) {
     console.error("School feed sync failed:", feed.id, err);
     result = { ok: false, added: 0, updated: 0, removed: 0, total: await importedCount(feed.id).catch(() => 0), status: err instanceof Error ? err.message : "Sync failed" };
@@ -365,6 +407,7 @@ export async function clearImported(feedId: string): Promise<number> {
   await ensureSchoolFeedTables();
   const n = await prisma.$executeRaw`UPDATE "reminders" SET "isActive" = false WHERE "id" IN (SELECT "reminderId" FROM "school_imports" WHERE "feedId" = ${feedId}) AND "isActive" = true`;
   await prisma.$executeRaw`DELETE FROM "school_imports" WHERE "feedId" = ${feedId}`;
+  await deleteLessonsForFeed(feedId).catch((e) => console.error("Lesson clear failed:", e));
   // Next "Sync now" should run right away after a reset.
   await prisma.$executeRaw`UPDATE "school_feeds" SET "lastSyncAt" = NULL, "lastCount" = 0 WHERE "id" = ${feedId}`;
   return n;
@@ -380,6 +423,7 @@ export async function deleteFeed(feedId: string) {
   const parked = `orphan:${f?.provider ?? "schoolsoft"}`;
   await prisma.$executeRaw`UPDATE "school_imports" SET "feedId" = ${parked} WHERE "feedId" = ${feedId}`;
   await prisma.$executeRaw`DELETE FROM "school_feeds" WHERE "id" = ${feedId}`;
+  await deleteLessonsForFeed(feedId).catch((e) => console.error("Lesson delete failed:", e));
 }
 
 // ── Helpers used by the school item routes ─────────────────────────────────

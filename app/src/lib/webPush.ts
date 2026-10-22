@@ -16,8 +16,11 @@ import { createECDH, createPrivateKey, createCipheriv, hkdfSync, randomBytes, si
 import { prisma } from "@/lib/prisma";
 
 export type PushMessage = { title: string; body: string; url?: string; tag?: string };
-export type PushKind = "reminders" | "tomorrow" | "changes";
-export const PUSH_KINDS: PushKind[] = ["reminders", "tomorrow", "changes"];
+// 2026-10-22: school, activities and birthdays split out of "reminders" so
+// each person can choose them one by one (Settings → Notifications).
+export type PushKind = "reminders" | "school" | "activities" | "birthdays" | "tomorrow" | "changes";
+export const PUSH_KINDS: PushKind[] = ["reminders", "school", "activities", "birthdays", "tomorrow", "changes"];
+const SPLIT_FROM_REMINDERS: PushKind[] = ["school", "activities", "birthdays"];
 
 const b64u = (b: Buffer) => b.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const fromB64u = (s: string) => Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
@@ -114,6 +117,11 @@ export async function getPushKinds(userId: string): Promise<PushKind[]> {
   // 2026-10-11: "changes" (the change watch) is new — people who saved their
   // choices before it existed get it on, unless they turned it off ("nochanges").
   if (!saved.includes("changes") && !saved.includes("nochanges")) kinds.push("changes");
+  // 2026-10-22: the kinds split out of "reminders" follow what the person had
+  // for "reminders" until they choose them one by one ("no<kind>" = off).
+  for (const k of SPLIT_FROM_REMINDERS) {
+    if (!saved.includes(k) && !saved.includes("no" + k) && saved.includes("reminders")) kinds.push(k);
+  }
   return kinds;
 }
 
@@ -121,6 +129,7 @@ export async function setPushKinds(userId: string, kinds: PushKind[]) {
   await ensurePushTables();
   const picked: string[] = PUSH_KINDS.filter((k) => kinds.includes(k));
   if (!picked.includes("changes")) picked.push("nochanges");
+  for (const k of SPLIT_FROM_REMINDERS) if (!picked.includes(k)) picked.push("no" + k);
   const clean = picked.join(",");
   await prisma.$executeRawUnsafe(
     `INSERT INTO "push_prefs" ("userId", "kinds", "updatedAt") VALUES ($1, $2, CURRENT_TIMESTAMP)

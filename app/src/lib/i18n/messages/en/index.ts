@@ -35,6 +35,8 @@ import { schoolsoft } from "./schoolsoft";
 import { serverErrors } from "./serverErrors";
 import { shopping } from "./shopping";
 import { trips } from "./trips";
+import { timetable } from "./timetable";
+import { notify } from "./notify";
 import { wishlist } from "./wishlist";
 import { whatsNew } from "./whatsNew";
 
@@ -75,6 +77,8 @@ export const en = {
   serverErrors,
   shopping,
   trips,
+  timetable,
+  notify,
   wishlist,
   whatsNew,
 };
