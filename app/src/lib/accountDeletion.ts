@@ -8,6 +8,8 @@
 //  - After 60 days it's removed for real (lib/cron.ts → purgeExpiredAccounts).
 import { deleteChangeDataForUser } from "@/lib/changeWatch";
 import { deletePlanDataForUser } from "@/lib/tomorrowPlan";
+import { deleteSchoolStartForUser } from "@/lib/schoolStart";
+import { CUSTODY_ENABLED, deleteCustodyForUser } from "@/lib/custody";
 import { prisma } from "@/lib/prisma";
 import { sendAccountDeletedEmail, sendDeletionRequestEmail } from "@/lib/email";
 import { deleteImage } from "@/lib/media";
@@ -178,6 +180,10 @@ export async function purgeAccount(userId: string) {
   await deleteChangeDataForUser(userId);
   await deletePlanDataForUser(userId);
   await prisma.$executeRaw`DELETE FROM "person_docs" WHERE "userId" = ${userId}`.catch(() => 0);
+  // 2026-10-23: school start times and exceptions (lib/schoolStart.ts).
+  await deleteSchoolStartForUser(userId);
+  // 2026-10-23: shared custody (prepared, only when FEATURE_CUSTODY is on).
+  if (CUSTODY_ENABLED) await deleteCustodyForUser(userId);
 }
 
 export async function purgeExpiredAccounts() {

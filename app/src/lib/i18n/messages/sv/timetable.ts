@@ -3,6 +3,7 @@ import type { Messages } from "../en";
 export const timetable: Messages["timetable"] = {
   today: "I dag",
   tomorrow: "I morgon",
+  off: "Ledig",
   firstLesson: "Första lektion",
   week: "Schema",
   weekOf: (from) => `Vecka från ${from}`,

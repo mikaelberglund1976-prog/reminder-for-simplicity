@@ -1,6 +1,7 @@
 export const timetable = {
   today: "Today",
   tomorrow: "Tomorrow",
+  off: "No school",
   firstLesson: "First lesson",
   week: "Timetable",
   weekOf: (from: string) => `Week of ${from}`,

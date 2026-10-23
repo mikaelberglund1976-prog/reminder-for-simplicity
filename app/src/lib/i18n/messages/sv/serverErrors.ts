@@ -207,4 +207,11 @@ export const serverErrors: Record<string, string> = {
   "Only the author can edit this": "Bara den som skrev den kan ändra",
   "Only an admin can change status": "Bara en administratör kan ändra status",
   "Invalid status": "Ogiltig status",
+  "Only an adult can change school times": "Bara en vuxen kan ändra skoltider",
+  "Pick a date": "Välj ett datum",
+  "Pick a time": "Välj en tid",
+  "Max two months at a time": "Max två månader åt gången",
+  "Couldn't save": "Kunde inte spara",
+  "Only an adult can change this": "Bara en vuxen kan ändra det här",
+  "Fill in both parents, the pattern and the start date": "Fyll i båda föräldrarna, schemat och startdagen",
 };

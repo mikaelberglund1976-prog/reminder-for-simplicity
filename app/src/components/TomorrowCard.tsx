@@ -9,7 +9,8 @@ import { useI18n } from "@/lib/i18n/client";
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 type Item = { reminderId: string; title: string; kind: "TEST" | "HOMEWORK" | "SCHOOL" | "ACTIVITY" | "TRIP"; who: string | null; startTime: string | null; endTime: string | null; place: string | null; needsRide: boolean; driverId: string | null; driver: string | null; href: string };
 type Check = { key: string; label: string; checked: boolean; custom: boolean; who: string | null };
-type Plan = { ymd: string; isAdult: boolean; items: Item[]; checks: Check[]; clashes: string[] };
+type Start = { childId: string; who: string | null; time: string | null; off: boolean; note: string | null; wake: string | null };
+type Plan = { ymd: string; isAdult: boolean; items: Item[]; checks: Check[]; clashes: string[]; starts?: Start[]; todayStarts?: Start[]; custody?: string[] };
 
 export default function TomorrowCard() {
   const { m, dateLocale } = useI18n();
@@ -26,7 +27,12 @@ export default function TomorrowCard() {
     fetch("/api/auth/session").then((r) => r.json()).then((s) => setMe(s?.user?.id ?? null)).catch(() => {});
   }, [load]);
 
-  if (!plan || (plan.items.length === 0 && plan.checks.length === 0)) return null;
+  const starts = plan?.starts ?? [];
+  const custody = plan?.custody ?? [];
+  // 2026-10-16: in the morning, today's start is what matters ("Idag: Elsa 08:20").
+  const morning = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Stockholm", hour: "2-digit", hourCycle: "h23" }).format(new Date())) < 10;
+  const todayStarts = morning ? (plan?.todayStarts ?? []) : [];
+  if (!plan || (plan.items.length === 0 && plan.checks.length === 0 && starts.length === 0 && todayStarts.length === 0 && custody.length === 0)) return null;
 
   const post = (body: object) => fetch("/api/family/tomorrow", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   async function toggle(c: Check) {
@@ -65,6 +71,28 @@ export default function TomorrowCard() {
     <section id="tomorrow" style={{ marginBottom: 24, fontFamily: FONT }}>
       <h2 style={{ fontSize: 13, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 10px" }}>{t.tmTitle(day)}</h2>
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 14px 12px", boxShadow: "var(--shadow)" }}>
+        {[{ list: todayStarts, label: t.tmToday }, { list: starts, label: t.tmSchoolStart }].filter((g) => g.list.length > 0).map((g) => (
+          <div key={g.label} style={{ margin: "10px 0 2px", display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", fontSize: 13.5, lineHeight: 1.45 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>🏫 {g.label}</span>
+            {g.list.map((s, i) => (
+              <span key={s.childId} style={{ color: "var(--fg)" }}>
+                {i > 0 && <span style={{ color: "var(--subtle)" }}>· </span>}
+                {s.who && <span style={{ fontWeight: 700 }}>{s.who} </span>}
+                {s.off
+                  ? <span style={{ fontWeight: 800, color: "var(--success)" }}>{t.tmOff}</span>
+                  : <span style={{ fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{s.time}</span>}
+                {s.note && <span style={{ color: "var(--muted)" }}> ({s.note})</span>}
+                {s.wake && <span style={{ color: "var(--muted)", fontSize: 12.5 }}> · ⏰ {t.tmWake(s.wake)}</span>}
+              </span>
+            ))}
+          </div>
+        ))}
+
+        {/* 2026-10-23 (row 52, behind FEATURE_CUSTODY): where each child is tomorrow. */}
+        {custody.map((c, i) => (
+          <div key={`c${i}`} style={{ margin: "10px 0 2px", fontSize: 13.5, fontWeight: 700, color: "var(--fg)", lineHeight: 1.4 }}>{c}</div>
+        ))}
+
         {plan.clashes.map((c, i) => (
           <div key={i} role="alert" style={{ margin: "10px 0 2px", background: "var(--tint-danger)", color: "var(--danger)", borderRadius: 12, padding: "9px 12px", fontSize: 13.5, fontWeight: 700, lineHeight: 1.4 }}>⚠️ {c}</div>
         ))}
@@ -73,7 +101,7 @@ export default function TomorrowCard() {
           const k = KIND[it.kind];
           const time = it.startTime ? `${it.startTime}${it.endTime ? `–${it.endTime}` : ""}` : "";
           return (
-            <div key={it.reminderId} style={{ padding: "10px 0", borderTop: i === 0 && !plan.clashes.length ? "none" : "1px solid var(--border-soft)" }}>
+            <div key={it.reminderId} style={{ padding: "10px 0", borderTop: i === 0 && !plan.clashes.length && !starts.length && !todayStarts.length && !custody.length ? "none" : "1px solid var(--border-soft)" }}>
               <Link href={it.href} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
                 <span style={{ width: 74, flexShrink: 0, fontSize: 13, fontWeight: 800, color: time ? "var(--fg)" : "var(--subtle)", fontVariantNumeric: "tabular-nums" }}>{time || "–"}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>

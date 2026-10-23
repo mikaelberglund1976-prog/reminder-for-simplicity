@@ -112,6 +112,10 @@ const KEYWORD_MAP: Array<{ slug: string; words: string[] }> = [
       "diskborste", "trash bag", "sopsäck", "battery", "batteri", "light bulb",
       "lampa", "shampoo", "schampo", "toothpaste", "tandkräm", "cleaning",
       "rengöring", "foil", "folie", "plastic wrap", "plastfolie",
+      // 2026-10-23: so the quick-add row recognises them (row 56).
+      "blöja", "blöjor", "diaper", "diapers", "våtservett", "våtservetter", "wet wipes",
+      "kattmat", "hundmat", "kattsand", "pet food", "cat food", "dog food",
+      "plåster", "tops", "bomullspads", "deodorant", "deo", "rakhyvel", "tamponger", "bindor",
     ],
   },
 ];

@@ -20,6 +20,8 @@ import { getTimes } from "@/lib/reminderTimes";
 import { getSkips } from "@/lib/reminderSkips";
 import type { Messages } from "@/lib/i18n/messages";
 import { ensureTripTables, flightTitle, leaveFor, parseFlight, type ItemRow, type TripRow } from "@/lib/trips";
+import { startsOn } from "@/lib/schoolStart";
+import { CUSTODY_ENABLED, custodyDays, loadCustodyOverrides, loadSchedules } from "@/lib/custody";
 
 const ADULT = ["OWNER", "PARENT", "ADULT"];
 const CLASH_GAP_MIN = 30;
@@ -73,7 +75,11 @@ export type PlanItem = {
   needsRide: boolean; driverId: string | null; driver: string | null; href: string;
 };
 export type PlanCheck = { key: string; label: string; checked: boolean; custom: boolean; who: string | null };
-export type Plan = { ymd: string; isAdult: boolean; items: PlanItem[]; checks: PlanCheck[]; clashes: string[] };
+// 2026-10-23: when each child starts school, tomorrow (and today, for the morning).
+export type PlanStart = { childId: string; who: string | null; time: string | null; off: boolean; note: string | null; wake: string | null };
+export type Plan = { ymd: string; isAdult: boolean; items: PlanItem[]; checks: PlanCheck[]; clashes: string[]; starts: PlanStart[]; todayStarts: PlanStart[];
+  /** 2026-10-23 (row 52, behind FEATURE_CUSTODY): where each child is tomorrow — "Leo moves to Dad 17:00". */
+  custody?: string[] };
 
 const toMin = (hhmm: string) => +hhmm.slice(0, 2) * 60 + +hhmm.slice(3, 5);
 
@@ -174,7 +180,38 @@ export async function buildPlan(userId: string, t: Messages["assist"], ymd = tom
       }
     }
   }
-  return { ymd, isAdult, items, checks, clashes };
+  // 2026-10-23: school start per child (adults: every child; a child: themself).
+  // Timetable first lesson, typed-in times and sovmorgon/days off (lib/schoolStart.ts).
+  let starts: PlanStart[] = [];
+  let todayStarts: PlanStart[] = [];
+  try {
+    const kids = isAdult ? people.filter((m) => m.role === "CHILD").map((m) => m.userId) : member.role === "CHILD" ? [userId] : [];
+    const toPlan = (s: Awaited<ReturnType<typeof startsOn>>[number]): PlanStart => ({ childId: s.childId, who: isAdult ? first.get(s.childId) ?? null : null, time: s.time, off: s.off, note: s.note, wake: s.wake });
+    [starts, todayStarts] = await Promise.all([
+      startsOn(kids, ymd).then((l) => l.map(toPlan)),
+      startsOn(kids, addDaysYmd(ymd, -1)).then((l) => l.map(toPlan)),
+    ]);
+  } catch (err) { console.error("Tomorrow plan: school start failed:", err); }
+
+  // 2026-10-23 (row 52): shared custody — prepared, only with FEATURE_CUSTODY on.
+  let custody: string[] | undefined;
+  if (CUSTODY_ENABLED && isAdult) {
+    try {
+      const kids = people.filter((m) => m.role === "CHILD").map((m) => m.userId);
+      const [schedules, overrides] = await Promise.all([loadSchedules(kids), loadCustodyOverrides(kids, addDaysYmd(ymd, -1), ymd)]);
+      custody = [];
+      for (const id of kids) {
+        const s = schedules.get(id);
+        if (!s) continue;
+        const d = custodyDays(s, ymd, 1, overrides)[0];
+        const p = d.side === "A" ? s.a : s.b;
+        const parent = p.userId ? first.get(p.userId) ?? "?" : p.label ?? "?";
+        custody.push(d.handover ? t.custodyHandover(first.get(id) ?? "?", parent, s.handoverTime) : t.custodyWith(first.get(id) ?? "?", parent));
+      }
+    } catch (err) { console.error("Tomorrow plan: custody failed:", err); }
+  }
+
+  return { ymd, isAdult, items, checks, clashes, starts, todayStarts, custody };
 }
 
 // ── changes ─────────────────────────────────────────────────────────────────

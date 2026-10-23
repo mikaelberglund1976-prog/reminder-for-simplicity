@@ -4,11 +4,11 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasFamilyAccess } from "@/lib/entitlements";
 import { ensureDefaultList, freeShoppingListId, listsVisibleTo, type HouseholdRoleStr } from "@/lib/lists";
-import { resolveCategoryId } from "@/lib/shoppingCategories";
+import { rememberCategory, resolveCategoryId } from "@/lib/shoppingCategories";
 import { normalizeTime, setTime } from "@/lib/reminderTimes";
 import { guessSubject } from "@/lib/schoolFeeds";
 import {
-  QUICK_LIMIT_PER_MONTH, QUICK_TYPES, countQuickUsage, matchList, parseLocally, parseWithAi,
+  QUICK_LIMIT_PER_MONTH, QUICK_TYPES, countQuickUsage, knownShopping, matchList, parseLocally, parseWithAi,
   quickAiConfigured, quickUsage, toItems, type QuickItem, type QuickType,
 } from "@/lib/quickAdd";
 
@@ -19,6 +19,9 @@ import {
 // 2026-10-18 (spec §21–23): plain shopping words are "high confidence" — the
 // client adds them straight away and offers Undo. Nothing gets a made-up day:
 // without one the preview asks "When?" and save refuses it.
+// 2026-10-23 (row 56): only shopping words we recognise go straight in (lib/
+// quickAdd.ts knownShopping). Anything else — "aw" — comes back `unsure` and
+// the preview asks where it belongs first. Saying "shopping" once teaches it.
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 const ADULT = ["OWNER", "PARENT", "ADULT"];
@@ -60,8 +63,9 @@ export async function POST(req: Request) {
   if (local?.listText && !matchList(local.listText, c.lists, null)) local = parseLocally(text, false);
   if (local) {
     const listId = matchList(local.listText, c.lists, c.defaultListId);
-    const items: QuickItem[] = local.items.map((title) => ({ type: "SHOPPING", title, date: null, startTime: null, endTime: null, subject: null, whoText: null, listText: local!.listText, personId: null, listId }));
-    return NextResponse.json({ ...base, items, ai: false, confident: true });
+    const known = await knownShopping(c.m.householdId, local.items);
+    const items: QuickItem[] = local.items.map((title, i) => ({ type: "SHOPPING", title, date: null, startTime: null, endTime: null, subject: null, whoText: null, listText: local!.listText, personId: null, listId, unsure: !known[i] }));
+    return NextResponse.json({ ...base, items, ai: false, confident: known.every(Boolean) });
   }
 
   if (!quickAiConfigured()) {
@@ -69,10 +73,11 @@ export async function POST(req: Request) {
     const plain = parseLocally(text, true, true);
     if (plain) {
       const listId = matchList(plain.listText, c.lists, c.defaultListId);
-      return NextResponse.json({ ...base, ai: false, items: plain.items.map((title) => ({ type: "SHOPPING", title, date: null, startTime: null, endTime: null, subject: null, whoText: null, listText: plain.listText, personId: null, listId })) });
+      const known = await knownShopping(c.m.householdId, plain.items);
+      return NextResponse.json({ ...base, ai: false, items: plain.items.map((title, i) => ({ type: "SHOPPING", title, date: null, startTime: null, endTime: null, subject: null, whoText: null, listText: plain.listText, personId: null, listId, unsure: !known[i] })) });
     }
     // Without the AI, anything that isn't plain shopping becomes a reminder — the person picks the day.
-    const items: QuickItem[] = [{ type: "REMINDER", title: text.slice(0, 80), date: null, startTime: null, endTime: null, subject: null, whoText: null, listText: null, personId: null, listId: null }];
+    const items: QuickItem[] = [{ type: "REMINDER", title: text.slice(0, 80), date: null, startTime: null, endTime: null, subject: null, whoText: null, listText: null, personId: null, listId: null, unsure: true }];
     return NextResponse.json({ ...base, items, ai: false });
   }
   if ((await quickUsage(c.m.householdId)) >= QUICK_LIMIT_PER_MONTH) {
@@ -85,6 +90,12 @@ export async function POST(req: Request) {
     let items = toItems(raw, c.people, c.lists, c.defaultListId, stockholmToday());
     // A child adds for themselves.
     if (!c.isAdult) items = items.map((i) => ({ ...i, personId: i.type === "SHOPPING" ? null : c.uid }));
+    // The AI may call anything a shopping item — ask when we don't recognise it.
+    const shopIdx = items.map((it, i) => (it.type === "SHOPPING" ? i : -1)).filter((i) => i >= 0);
+    if (shopIdx.length) {
+      const known = await knownShopping(c.m.householdId, shopIdx.map((i) => items[i].title));
+      shopIdx.forEach((idx, k) => { if (!known[k]) items[idx] = { ...items[idx], unsure: true }; });
+    }
     return NextResponse.json({ ...base, items, ai: true });
   } catch (err) {
     console.error("Quick add parse error:", err);
@@ -119,6 +130,8 @@ async function save(c: Ctx, body: { items?: unknown }) {
       const listId = typeof it.listId === "string" && listIds.has(it.listId) ? it.listId : c.defaultListId;
       if (!listId) { locked++; continue; }
       const categoryId = await resolveCategoryId(c.m.householdId, title);
+      // Picked "shopping" for something we didn't recognise → next time it goes straight in.
+      if (it.confirmed === true) await rememberCategory(c.m.householdId, title, categoryId).catch(() => {});
       const row = await prisma.shoppingListItem.create({ data: { name: title, listId, householdId: c.m.householdId, addedBy: c.uid, categoryId }, select: { id: true } });
       created.shopping.push(row.id);
       listId0 ??= listId;

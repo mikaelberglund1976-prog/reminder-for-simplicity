@@ -8,7 +8,7 @@ import ChangesCard from "@/components/ChangesCard";
 import TomorrowCard from "@/components/TomorrowCard";
 import TripSoonCard from "@/components/TripSoonCard";
 import { useLessons, FirstLessonMini, FirstLessonRow, WeekSheet } from "@/components/Timetable";
-import { nextFirstLesson } from "@/lib/lessonPlan";
+import { nextStart } from "@/lib/lessonPlan";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -60,6 +60,8 @@ function IcAlert()   { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle 
 const HOME_LIST_LIMIT = 5;
 const HOME_BIRTHDAY_LIMIT = 2;
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
+// 2026-10-23 (row 55): one width for every person on Home, so names and school start line up.
+const PERSON_COL = 66;
 
 function IcCart()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 6H5.6"/></svg>; }
 function IcCamera()  { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>; }
@@ -113,7 +115,7 @@ export default function DashboardPage() {
   const [roleChecked, setRoleChecked] = useState(false);
   const media = useFamilyMedia();
   // 2026-10-22: each child's first lesson + the week's timetable.
-  const lessons = useLessons(roleChecked);
+  const { lessons, starts } = useLessons(roleChecked);
   const [weekFor, setWeekFor] = useState<{ id: string; name: string } | null>(null);
   const { m: msg, locale, dateLocale } = useI18n();
   const t = msg.home;
@@ -404,26 +406,29 @@ export default function DashboardPage() {
           <div className="rfs-hscroll" style={{ display: "flex", gap: 14, overflowX: "auto", margin: "0 -20px 22px", padding: "2px 20px 4px" }}>
             {householdMembers.map((m) => {
               const first = m.user.name?.split(" ")[0] ?? m.user.email.split("@")[0];
-              // 2026-10-22: a child with a timetable shows "08:20 / Matte" under
-              // the name; tapping opens the week's timetable.
-              const own = lessons.get(m.userId);
-              if (own && nextFirstLesson(own)) {
+              // 2026-10-22/23 (rows 54–55): a child shows "Mån 08:20 / Matte"
+              // centred under the photo — every column the same width so the
+              // row lines up. With a timetable a tap opens the week.
+              const own = starts.get(m.userId);
+              const hasStart = !!nextStart(own);
+              const col: React.CSSProperties = { display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: PERSON_COL };
+              const body = (
+                <>
+                  <Avatar userId={m.userId} name={first} size={52} />
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fg-2)", maxWidth: PERSON_COL, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{first}</span>
+                  {hasStart && <FirstLessonMini days={own} />}
+                </>
+              );
+              if (hasStart && lessons.get(m.userId)) {
                 return (
-                  <button key={m.userId} type="button" onClick={() => setWeekFor({ id: m.userId, name: first })} aria-label={msg.timetable.open(first)} style={{ all: "unset", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, width: 60 }}>
-                    <Avatar userId={m.userId} name={first} size={52} />
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fg-2)", maxWidth: 60, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{first}</span>
-                    <FirstLessonMini lessons={own} />
+                  <button key={m.userId} type="button" onClick={() => setWeekFor({ id: m.userId, name: first })} aria-label={msg.timetable.open(first)} style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", ...col }}>
+                    {body}
                   </button>
                 );
               }
-              return (
-                <Link key={m.userId} href="/dashboard/family/members" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: 56 }}>
-                  <Avatar userId={m.userId} name={first} size={52} />
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fg-2)", maxWidth: 60, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{first}</span>
-                </Link>
-              );
+              return <Link key={m.userId} href="/dashboard/family/members" style={col}>{body}</Link>;
             })}
-            <Link href="/dashboard/family/members" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: 56 }}>
+            <Link href="/dashboard/family/members" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: PERSON_COL }}>
               <span style={{ width: 52, height: 52, borderRadius: "50%", border: "1.5px dashed var(--accent-border)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 500, boxSizing: "border-box" }}>+</span>
               <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--accent)" }}>{t.add}</span>
             </Link>
@@ -479,13 +484,13 @@ export default function DashboardPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
               {nextUpByChild.map((p) => (
                 <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: p.items.length || lessons.get(p.id)?.length ? 6 : 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: p.items.length || nextStart(starts.get(p.id)) ? 6 : 0 }}>
                     <Avatar userId={p.id} name={p.name} size={28} />
                     <span style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
-                    {p.items.length === 0 && !(lessons.get(p.id) && nextFirstLesson(lessons.get(p.id)!)) && <span style={{ fontSize: 12, color: "var(--subtle)" }}>{msg.homePrefs.nothingSoon}</span>}
+                    {p.items.length === 0 && !nextStart(starts.get(p.id)) && <span style={{ fontSize: 12, color: "var(--subtle)" }}>{msg.homePrefs.nothingSoon}</span>}
                   </div>
                   {/* 2026-10-22: always first — when school starts next. */}
-                  <FirstLessonRow lessons={lessons.get(p.id)} onOpen={() => setWeekFor({ id: p.id, name: p.name })} />
+                  <FirstLessonRow days={starts.get(p.id)} onOpen={lessons.get(p.id) ? () => setWeekFor({ id: p.id, name: p.name }) : undefined} />
                   {p.items.slice(0, prefs.perChildCount).map((it) => {
                     const d = getDaysUntil(it.day.toISOString());
                     const badge = familyBadge(it.kind) ?? (it.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }

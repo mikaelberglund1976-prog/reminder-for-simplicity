@@ -30,6 +30,7 @@ import ChangesCard from "@/components/ChangesCard";
 import TomorrowCard from "@/components/TomorrowCard";
 import TripSoonCard from "@/components/TripSoonCard";
 import { useLessons, FirstLessonRow, WeekSheet } from "@/components/Timetable";
+import { nextStart } from "@/lib/lessonPlan";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -74,7 +75,7 @@ function ChildViewContent() {
   const childId = searchParams.get("id") ?? myId;
   const isOwn = !!myId && childId === myId;
   // 2026-10-22: the child's timetable (first lesson + the week).
-  const lessons = useLessons(!!myId);
+  const { lessons, starts } = useLessons(!!myId);
   const lessonOwner = childId ?? null;
   const [weekOpen, setWeekOpen] = useState(false);
 
@@ -282,9 +283,9 @@ function ChildViewContent() {
         {isOwn && <TomorrowCard />}
 
         {/* 2026-10-22: when school starts next — tap for the week's timetable. */}
-        {lessonOwner && lessons.get(lessonOwner) && (
+        {lessonOwner && nextStart(starts.get(lessonOwner)) && (
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "4px 14px", boxShadow: "var(--shadow)", marginBottom: 16 }}>
-            <FirstLessonRow lessons={lessons.get(lessonOwner)} onOpen={() => setWeekOpen(true)} borderTop={false} />
+            <FirstLessonRow days={starts.get(lessonOwner)} onOpen={lessons.get(lessonOwner) ? () => setWeekOpen(true) : undefined} borderTop={false} />
           </div>
         )}
         {weekOpen && lessonOwner && (

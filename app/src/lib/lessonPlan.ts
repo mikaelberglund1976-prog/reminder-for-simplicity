@@ -125,3 +125,32 @@ export function nextFirstLesson(lessons: Lesson[], now = new Date()): FirstLesso
   }
   return null;
 }
+
+// ── 2026-10-23: the school day start shown on Home ──────────────────────────
+// What Home shows under a photo and in "Närmast per barn" comes from
+// lib/schoolStart.ts: an exception (sovmorgon / ledig) beats a typed-in time,
+// which beats the timetable's first lesson. One entry per day.
+export type StartDay = {
+  day: string;            // "YYYY-MM-DD"
+  time: string | null;    // "HH:MM", null when off
+  off: boolean;
+  note: string | null;    // "Studiedag", "Sovmorgon"
+  code: string | null;    // lesson code when the time matches the timetable
+  wake: string | null;    // "07:20"
+};
+
+export type NextStart = { start: StartDay; when: "today" | "tomorrow" | "later" };
+
+/** Today's start until it has passed (a day off today is skipped), then the next day with something known. */
+export function nextStart(days: StartDay[] | undefined, now = new Date()): NextStart | null {
+  if (!days?.length) return null;
+  const today = ymdOf(now);
+  const nowHm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const tomorrow = addDaysYmd(today, 1);
+  for (const d of [...days].sort((a, b) => a.day.localeCompare(b.day))) {
+    if (d.day < today) continue;
+    if (d.day === today && (d.off || !d.time || d.time <= nowHm)) continue;
+    return { start: d, when: d.day === today ? "today" : d.day === tomorrow ? "tomorrow" : "later" };
+  }
+  return null;
+}

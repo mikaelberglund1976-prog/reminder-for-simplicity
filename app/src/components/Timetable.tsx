@@ -6,13 +6,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
 import Avatar from "@/components/Avatar";
-import { addDaysYmd, countsAsLesson, lessonName, mondayOf, nextFirstLesson, type FirstLesson, type Lesson } from "@/lib/lessonPlan";
+import { addDaysYmd, countsAsLesson, lessonName, mondayOf, nextFirstLesson, nextStart, type Lesson, type NextStart, type StartDay } from "@/lib/lessonPlan";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
-/** childId → that child's lessons (this week and the next two). */
-export function useLessons(enabled = true): Map<string, Lesson[]> {
-  const [map, setMap] = useState<Map<string, Lesson[]>>(new Map());
+/** childId → that child's lessons (this week and the next two) and day starts (next two weeks). */
+export type Timetables = { lessons: Map<string, Lesson[]>; starts: Map<string, StartDay[]> };
+export function useLessons(enabled = true): Timetables {
+  const [data, setData] = useState<Timetables>({ lessons: new Map(), starts: new Map() });
   useEffect(() => {
     if (!enabled) return;
     let alive = true;
@@ -20,66 +21,93 @@ export function useLessons(enabled = true): Map<string, Lesson[]> {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!alive || !d?.children) return;
-        setMap(new Map((d.children as { id: string; lessons: Lesson[] }[]).filter((c) => c.lessons.length > 0).map((c) => [c.id, c.lessons])));
+        const kids = d.children as { id: string; lessons: Lesson[]; starts?: StartDay[] }[];
+        setData({
+          lessons: new Map(kids.filter((c) => c.lessons.length > 0).map((c) => [c.id, c.lessons])),
+          starts: new Map(kids.filter((c) => (c.starts ?? []).length > 0).map((c) => [c.id, c.starts!])),
+        });
       })
       .catch(() => {});
     return () => { alive = false; };
   }, [enabled]);
-  return map;
+  return data;
 }
 
 function ymdLocal(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** "I morgon", "I dag" or "Mån" for a first lesson. */
-export function useFirstLessonLabel() {
+/** "I morgon", "I dag" or "Mån" for a day start (`short` = always the weekday, for under a photo). */
+export function useStartLabel() {
   const { m, locale, dateLocale } = useI18n();
-  return (f: FirstLesson) => f.when === "today" ? m.timetable.today
+  const weekday = (day: string) => cap(new Date(day + "T12:00:00").toLocaleDateString(dateLocale, { weekday: "short" }).replace(".", ""), locale);
+  return (f: NextStart, short = false) => short ? weekday(f.start.day)
+    : f.when === "today" ? m.timetable.today
     : f.when === "tomorrow" ? m.timetable.tomorrow
-    : cap(new Date(f.lesson.day + "T12:00:00").toLocaleDateString(dateLocale, { weekday: "short" }).replace(".", ""), locale);
+    : weekday(f.start.day);
 }
 
 function cap(s: string, _l: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-/** Two short lines under a photo on Home: "08:20" / "Matte". */
-export function FirstLessonMini({ lessons }: { lessons: Lesson[] | undefined }) {
-  const { locale } = useI18n();
-  const label = useFirstLessonLabel();
-  const f = useMemo(() => (lessons ? nextFirstLesson(lessons) : null), [lessons]);
+/** The next school start for a child, or null. */
+export function useNextStart(days: StartDay[] | undefined): NextStart | null {
+  return useMemo(() => nextStart(days), [days]);
+}
+
+/**
+ * Two short centred lines under a photo on Home: "Mån 08:20" / "Matte"
+ * (2026-10-23, rows 54–55: the same format for every child — day, time,
+ * lesson — and centred under the photo). A day off reads "Mån" / "Ledig".
+ */
+export function FirstLessonMini({ days }: { days: StartDay[] | undefined }) {
+  const { locale, m } = useI18n();
+  const label = useStartLabel();
+  const f = useNextStart(days);
   if (!f) return null;
   const lang = locale === "sv" ? "sv" : "en";
+  const second = f.start.off ? m.timetable.off : f.start.code ? lessonName(f.start.code, lang, true) : f.start.note ?? "";
   return (
-    <span style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.15, marginTop: -2 }} title={`${label(f)} ${f.lesson.start} ${lessonName(f.lesson.code, lang)}`}>
-      <span style={{ fontSize: 11, fontWeight: 800, color: "var(--fg)", fontVariantNumeric: "tabular-nums" }}>
-        {f.when === "later" ? `${label(f)} ` : ""}{f.lesson.start}
+    <span style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "100%", lineHeight: 1.2, marginTop: -2 }}
+      title={`${label(f)} ${f.start.off ? m.timetable.off : f.start.time}${f.start.code ? ` ${lessonName(f.start.code, lang)}` : ""}${f.start.note ? ` (${f.start.note})` : ""}`}>
+      <span style={{ fontSize: 11, fontWeight: 800, color: "var(--fg)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+        {label(f, true)}{f.start.off ? "" : ` ${f.start.time}`}
       </span>
-      <span style={{ fontSize: 10.5, fontWeight: 600, color: "var(--muted)", maxWidth: 64, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {lessonName(f.lesson.code, lang, true)}
-      </span>
+      {second && (
+        <span style={{ fontSize: 10.5, fontWeight: 600, color: f.start.off ? "var(--success)" : "var(--muted)", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {second}
+        </span>
+      )}
     </span>
   );
 }
 
-/** One row: "🏫 I morgon 08:20 · Matte" — tap opens the week. */
-export function FirstLessonRow({ lessons, onOpen, borderTop = true }: { lessons: Lesson[] | undefined; onOpen: () => void; borderTop?: boolean }) {
+/** One row: "🏫 I morgon 08:20 · Matte · ⏰ 07:20" — tap opens the week (when there is a timetable). */
+export function FirstLessonRow({ days, onOpen, borderTop = true }: { days: StartDay[] | undefined; onOpen?: () => void; borderTop?: boolean }) {
   const { locale, m } = useI18n();
-  const label = useFirstLessonLabel();
-  const f = useMemo(() => (lessons ? nextFirstLesson(lessons) : null), [lessons]);
+  const label = useStartLabel();
+  const f = useNextStart(days);
   if (!f) return null;
   const lang = locale === "sv" ? "sv" : "en";
-  return (
-    <button type="button" onClick={onOpen} aria-label={m.timetable.week} style={{
-      all: "unset", boxSizing: "border-box", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-      padding: "7px 0", borderTop: borderTop ? "1px solid var(--border-soft)" : "none", fontFamily: FONT,
-    }}>
+  const s = f.start;
+  const text = [
+    `${label(f)} ${s.off ? m.timetable.off.toLowerCase() : s.time}`,
+    s.code && !s.off ? lessonName(s.code, lang) : null,
+    s.note,
+    s.wake && !s.off ? `⏰ ${s.wake}` : null,
+  ].filter(Boolean).join(" · ");
+  const inner = (
+    <>
       <span aria-label={m.timetable.firstLesson} title={m.timetable.firstLesson} style={{ fontSize: 13, padding: "2px 7px", borderRadius: 50, flexShrink: 0, background: "var(--tint-school)" }}>🏫</span>
-      <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {label(f)} {f.lesson.start} · {lessonName(f.lesson.code, lang)}
-      </span>
-      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", flexShrink: 0 }}>›</span>
-    </button>
+      <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{text}</span>
+      {onOpen && <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", flexShrink: 0 }}>›</span>}
+    </>
   );
+  const style: React.CSSProperties = {
+    boxSizing: "border-box", width: "100%", display: "flex", alignItems: "center", gap: 8,
+    padding: "7px 0", borderTop: borderTop ? "1px solid var(--border-soft)" : "none", fontFamily: FONT,
+  };
+  if (!onOpen) return <div style={style}>{inner}</div>;
+  return <button type="button" onClick={onOpen} aria-label={m.timetable.week} style={{ all: "unset", cursor: "pointer", ...style }}>{inner}</button>;
 }
 
 /** The week's timetable as a sheet: weekday chips, that day's lessons. */

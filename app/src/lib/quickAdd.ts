@@ -12,6 +12,8 @@
 // newsletter scan, lib/intake.ts). Only the typed text and today's date are
 // sent — names of the family and lists are matched on OUR server from the
 // words the AI points out ("Elsa", "Hansla"), like the scan does.
+import { guessCategorySlug } from "@/lib/shoppingCategories";
+import { CATALOG_ITEMS } from "@/lib/shoppingCatalog";
 import { prisma } from "@/lib/prisma";
 
 export type QuickType = "SHOPPING" | "TEST" | "HOMEWORK" | "SCHOOL_OTHER" | "ACTIVITY" | "REMINDER";
@@ -29,7 +31,33 @@ export type QuickItem = {
   listText: string | null;
   personId: string | null;   // matched here
   listId: string | null;     // matched here (SHOPPING)
+  /** 2026-10-23 (row 56): we're not sure where this goes — the preview asks first. */
+  unsure?: boolean;
 };
+
+// ── 2026-10-23 (row 56): is this a real shopping item? ─────────────────────
+// "aw" (after work) was added to the groceries list because any short word
+// without a date looked like shopping. Now only things we recognise go
+// straight in: a word the aisle sorter knows ("mjölk", "kycklingfilé"), a
+// catalogue item, or something this family has bought or sorted before.
+// Everything else is shown with "Where does it go?" first.
+export async function knownShopping(householdId: string, names: string[]): Promise<boolean[]> {
+  const keys = names.map((n) => n.trim().toLowerCase().replace(/^\d+([.,]\d+)?\s*(st|stk|kg|g|hg|l|liter|dl|cl|ml|pkt|paket|burk|burkar|flaskor|flaska|x)?\.?\s+/i, ""));
+  const catalog = new Set(Object.values(CATALOG_ITEMS).flat().map((s) => s.toLowerCase()));
+  const result = keys.map((k) => !!k && (guessCategorySlug(k) !== null || catalog.has(k)));
+  const unknown = keys.filter((k, i) => k && !result[i]);
+  if (!unknown.length) return result;
+  try {
+    const [bought, sorted] = await Promise.all([
+      prisma.shoppingListItem.findMany({ where: { householdId, isPurchased: true, name: { in: unknown, mode: "insensitive" } }, select: { name: true }, take: 50 }),
+      prisma.shoppingCategoryMemory.findMany({ where: { householdId, itemName: { in: unknown } }, select: { itemName: true } }),
+    ]);
+    const seen = new Set([...bought.map((b) => b.name.toLowerCase()), ...sorted.map((s) => s.itemName)]);
+    return keys.map((k, i) => result[i] || seen.has(k));
+  } catch {
+    return result;
+  }
+}
 
 export function quickAiConfigured(): boolean {
   return !!process.env.ANTHROPIC_API_KEY;

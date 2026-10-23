@@ -8,6 +8,7 @@ import Link from "next/link";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import SchoolSection from "@/components/SchoolSection";
 import SchoolSoftCard from "@/components/SchoolSoftCard";
+import SchoolStartCard from "@/components/SchoolStartCard";
 import { useM } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
@@ -126,6 +127,10 @@ function SchoolPageInner() {
       ) : (
         <SchoolSection mode="overview" members={members} initialDate={dateFromQuery} />
       )}
+
+      {/* 2026-10-23 (row 49): when each child starts — timetable, own times,
+          sovmorgon and days off. Adults only; the card hides itself otherwise. */}
+      <div style={{ marginTop: 20 }}><SchoolStartCard /></div>
 
       {/* 2026-10-18 (spec §27): you come here for the school week — links,
           sync and the newsletter scan are administration, so they sit below. */}

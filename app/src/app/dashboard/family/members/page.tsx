@@ -16,6 +16,7 @@ import { compressImage } from "@/lib/imageCompress";
 import { headerUrl, removeAvatar, removeHeader, uploadAvatar, uploadHeader, useFamilyMedia } from "@/lib/familyMedia";
 import { useI18n } from "@/lib/i18n/client";
 import LanguageSetting from "@/components/LanguageSetting";
+import CustodyCard from "@/components/CustodyCard";
 import { isManagedEmail } from "@/lib/managedProfileClient";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
@@ -468,6 +469,9 @@ export default function FamilyMembersPage() {
                 )}
               </div>
             </div>
+
+            {/* 2026-10-23 (row 52): shared custody — renders nothing unless FEATURE_CUSTODY is on. */}
+            <CustodyCard />
 
             {/* 2026-10-04: the family's language — set by a family admin. */}
             <LanguageSetting />

@@ -23,6 +23,8 @@ export const push = {
   dueBody: (when: string, amount: string | null) => (amount ? `${when} · ${amount}` : when),
   tomorrowTitle: (day: string) => `Tomorrow, ${day}`,
   more: (n: number) => `+${n} more`,
+  // 2026-10-16: first line of the evening push — "🏫 Elsa 08:20 · Leo off"
+  starts: (parts: string) => `🏫 ${parts}`,
   test: "Test",
   homework: "Homework",
 };

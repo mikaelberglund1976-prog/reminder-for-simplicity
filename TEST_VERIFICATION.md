@@ -214,3 +214,13 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Som barn: kan lägga in en kompis, kan inte ändra familjens.
 - [ ] På dagen: push "… i dag! Glöm inte att gratulera 🎉".
 
+## 23. Skolstart, personraden, "Var hör det hemma?" (2026-10-23) – se `RELEASE_2026-10-23.md`
+- [ ] Hem: under Filip, Oliver och Tyra står dag + tid på första raden och lektion under, centrerat under bilden.
+- [ ] Skola → Skolstart: barn med skollänk visar "Från schemat (skollänken)" och i dag/i morgon-tider.
+- [ ] "+ Sovmorgon / ledig dag" för i morgon (ledig, "Studiedag") → Hem visar "Mån / Ledig" under bilden, I morgon-kortet "ledig (Studiedag)", den andra vuxna får push.
+- [ ] Ändra: sätt väckning 60 min → I morgon-kortet visar "⏰ väck …".
+- [ ] Skriv "aw" → förhandsvisning "Var hör det hemma?"; Lägg till låst tills ett val är gjort.
+- [ ] Skriv "mjölk, bröd" → läggs till direkt som förut.
+- [ ] Skriv "blöjor" → direkt. Skriv ett okänt ord, välj Inköpslista, skriv samma ord igen → nu direkt.
+- [ ] Växelvis boende syns INTE på Familjemedlemmar (flaggan av).
+

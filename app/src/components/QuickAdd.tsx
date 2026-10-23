@@ -6,13 +6,15 @@
 // ("Milk added to Groceries · Undo"); every add can be undone for a moment;
 // the type can be corrected in the preview; nothing gets a made-up day —
 // an item without one asks "When?".
+// 2026-10-23 (row 56): a word we don't recognise ("aw" = after work) isn't
+// put on the shopping list — the preview asks "Where does it go?" first.
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
 import { listName } from "@/lib/i18n/shoppingLabels";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 type QType = "SHOPPING" | "TEST" | "HOMEWORK" | "SCHOOL_OTHER" | "ACTIVITY" | "REMINDER";
-type Item = { type: QType; title: string; date: string | null; startTime: string | null; endTime: string | null; subject: string | null; personId: string | null; listId: string | null };
+type Item = { type: QType; title: string; date: string | null; startTime: string | null; endTime: string | null; subject: string | null; personId: string | null; listId: string | null; unsure?: boolean; confirmed?: boolean };
 type Preview = { items: Item[]; people: { id: string; name: string }[]; lists: { id: string; name: string }[]; isAdult: boolean; full: boolean; me: string; confident?: boolean };
 type Created = { shopping: string[]; reminders: string[] };
 const TYPES: QType[] = ["SHOPPING", "REMINDER", "ACTIVITY", "TEST", "HOMEWORK", "SCHOOL_OTHER"];
@@ -87,7 +89,12 @@ export default function QuickAdd({ onAdded }: { onAdded?: () => void }) {
     } finally { setBusy(false); }
   }
 
-  const missingDay = !!preview?.items.some((it) => it.type !== "SHOPPING" && !it.date);
+  const missingDay = !!preview?.items.some((it) => !it.unsure && it.type !== "SHOPPING" && !it.date);
+  const unsure = !!preview?.items.some((it) => it.unsure);
+  const place = (i: number, type: QType) => update(i, type === "SHOPPING"
+    ? { type, unsure: false, confirmed: true, date: null, startTime: null, endTime: null, listId: preview?.items[i].listId ?? preview?.lists[0]?.id ?? null }
+    : { type, unsure: false });
+  const PLACES: QType[] = ["SHOPPING", "REMINDER", "ACTIVITY", "SCHOOL_OTHER"];
   const changeType = (i: number, type: QType) => update(i, type === "SHOPPING"
     ? { type, date: null, startTime: null, endTime: null, listId: preview?.items[i].listId ?? preview?.lists[0]?.id ?? null }
     : { type });
@@ -132,6 +139,19 @@ export default function QuickAdd({ onAdded }: { onAdded?: () => void }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <input value={it.title} onChange={(e) => update(i, { title: e.target.value })} aria-label={typeLabel(it.type)}
                     style={{ width: "100%", border: "none", background: "transparent", fontSize: 15, fontWeight: 700, color: "var(--fg)", padding: 0, outline: "none", fontFamily: FONT }} />
+                  {it.unsure ? (
+                    <div style={{ marginTop: 6 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, color: "var(--warning)", marginBottom: 6 }}>{t.qaWhere}</div>
+                      <div role="group" aria-label={t.qaWhere} style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {PLACES.filter((k) => preview.full || k === "SHOPPING" || k === "REMINDER").map((k) => (
+                          <button key={k} type="button" onClick={() => place(i, k)} style={{
+                            border: "1px solid var(--border)", background: TYPE_STYLE[k].bg, color: TYPE_STYLE[k].fg, borderRadius: 50,
+                            padding: "6px 11px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: FONT,
+                          }}>{TYPE_STYLE[k].emoji} {k === "SCHOOL_OTHER" ? t.qaPlaceSchool : typeLabel(k)}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" }}>
                     <select value={it.type} onChange={(e) => changeType(i, e.target.value as QType)} aria-label={t.qaType}
                       style={{ fontSize: 11.5, fontWeight: 800, padding: "3px 6px", borderRadius: 50, border: "none", background: s.bg, color: s.fg, fontFamily: FONT, cursor: "pointer" }}>
@@ -162,14 +182,16 @@ export default function QuickAdd({ onAdded }: { onAdded?: () => void }) {
                       </>
                     )}
                   </div>
+                  )}
                 </div>
                 <button type="button" onClick={() => remove(i)} aria-label={t.qaRemove} style={{ border: "none", background: "none", color: "var(--subtle)", fontSize: 20, lineHeight: 1, cursor: "pointer", padding: 4 }}>×</button>
               </div>
             );
           })}
+          {unsure && <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", margin: "4px 0 2px" }}>{t.qaUnsureHint}</div>}
           {missingDay && <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", margin: "4px 0 2px" }}>{t.qaNeedsDay}</div>}
           <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-            <button type="button" onClick={() => save()} disabled={busy || missingDay} style={{ flex: 1, border: "none", borderRadius: 12, padding: "12px 14px", background: "var(--accent-bg)", color: "var(--on-accent)", fontSize: 14.5, fontWeight: 800, cursor: busy || missingDay ? "not-allowed" : "pointer", fontFamily: FONT, opacity: busy || missingDay ? 0.5 : 1 }}>
+            <button type="button" onClick={() => save()} disabled={busy || missingDay || unsure} style={{ flex: 1, border: "none", borderRadius: 12, padding: "12px 14px", background: "var(--accent-bg)", color: "var(--on-accent)", fontSize: 14.5, fontWeight: 800, cursor: busy || missingDay || unsure ? "not-allowed" : "pointer", fontFamily: FONT, opacity: busy || missingDay || unsure ? 0.5 : 1 }}>
               {t.qaAdd(preview.items.length)}
             </button>
             <button type="button" onClick={() => setPreview(null)} style={{ border: "none", borderRadius: 12, padding: "12px 14px", background: "var(--surface-3)", color: "var(--fg-2)", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
