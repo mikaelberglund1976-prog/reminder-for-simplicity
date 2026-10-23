@@ -1,4 +1,5 @@
 # Roadmap – Reminder for Simplicity
+**Uppdaterad igen:** 2026-10-23 – Fas 1.13 (10–11 okt: Studybee, egna färger, inköpslistan, ändringsvakten, skriv vad som helst, I morgon-kortet, Resor) och Fas 1.14 (17–23 okt: serier, Navigation 2.0, schemat, mejlval, skolstart, växelvis boende förberett) tillagda.
 **Uppdaterad igen:** 2026-10-10 – Fas 1.11 (releaserna 7–10 okt) och Fas 1.12 (Lotuvi-varumärket live utom namnet, inkl. mörkt läge "Sage First") tillagda.
 **Uppdaterad igen:** 2026-10-04 (kväll) – appen på svenska och engelska, språk väljs per familj av familjens admin, förberett för fler språk (Fas 1.10). Se `RELEASE_2026-10-04b.md`.
 **Uppdaterad igen:** 2026-10-04 – mobiltestets fynd 4 okt åtgärdade och live (Fas 1.9): delade poster går att öppna, nästa datum överallt, barnens egen bottenmeny, städad Home, Free/Pro på ett ställe, ny publik startsida och "See how it works". Kalendersynk fortsatt Free. Se `RELEASE_2026-10-04.md`.
@@ -147,8 +148,28 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 ## Fas 1.12 – Lotuvi-varumärket (2026-10-10, LIVE utom namnet)
 - [x] Ljust läge Lotuvi Family, ikoner/favicon, logomärke, figur på startsidan (`RELEASE_2026-10-10b.md`)
 - [x] Mörkt läge "Sage First" enligt riktlinjer v0.3, tokens `--on-accent` och `--premium` (`RELEASE_2026-10-10c.md`)
-- [ ] Namnbyte efter clearance, produktionslogga, mejlfärger, knappradie (se `LAUNCH_CHECKLIST.md`)
+- [x] Mejlen i Lotuvi-design med figuren (22 okt, `RELEASE_2026-10-22.md`)
+- [ ] Namnbyte efter clearance, produktionslogga, knappradie (se `LAUNCH_CHECKLIST.md`)
 - [ ] **Senare:** Lotuvi Sport-temat (blå) när sportappen flyttar in under samma varumärke
+
+## Fas 1.13 – Appen märker saker åt en (10–11 okt 2026, LIVE)
+- [x] Flera skollänkar per barn + Studybee (`RELEASE_2026-10-10e.md`)
+- [x] Egna färger per person och typ, Pro (`RELEASE_2026-10-10f.md`)
+- [x] Kompakt inköpslista, butiksläge med textstorlek, egen bild på Hem, MyClub-svar, sysslor för alla (`RELEASE_2026-10-11.md`)
+- [x] Kategorin Dryck och smartare sortering (`RELEASE_2026-10-11b.md`)
+- [x] Ändringsvakten (flyttat/inställt/nytt prov → push), "Skriv vad som helst", I morgon-kortet (ska med, skjuts, krockar) (`RELEASE_2026-10-11c.md`)
+- [x] Resor: förberedelser för hela familjen – pass, vaccin, flyg, packlista, vill göra (`RELEASE_2026-10-11d.md`)
+- [ ] **Senare:** Siri-/Google-röst ovanpå `/api/quick-add`; vidarebefordrat skolmejl (egen adress per familj)
+
+## Fas 1.14 – Enklare navigation, schemat och skolstart (17–23 okt 2026, LIVE)
+- [x] Ta bort en enstaka dag i en serie (`RELEASE_2026-10-17.md`)
+- [x] Navigation 2.0: Hem | tre egna val | Mer, sidan Påminnelser, enklare Hem (`RELEASE_2026-10-18.md`) – etapp 1 av "Master Product & Build Specification"
+- [x] Schemat från skollänkarna, passerat är passerat, egna mejl-/notisval, ny mejldesign (`RELEASE_2026-10-22.md`)
+- [x] Skolstart (egna tider, väckning, sovmorgon/lediga dagar), samma format under bilderna på Hem, "Var hör det hemma?" i snabbinmatningen (`RELEASE_2026-10-23.md`)
+- [ ] Växelvis boende – förberett bakom `FEATURE_CUSTODY`, nästa steg i `CUSTODY_PLAN.md`
+- [ ] Vuxnas egna kalendrar + krockvarning mot jobbet (lanseringslistan rad 50) – byggd 16 okt på en gren som aldrig gick live; görs om när det beslutas
+- [ ] Etapp 2 av specen: hushålls-/vårdnadshavarmodellen (barn i flera hushåll), sysslor med valbara belöningar, onboarding i tre steg, notisregler, analytics-events
+- [ ] "Koppla Claude" via MCP-server (lanseringslistan rad 51)
 
 ## USP:ar och prioritet inför användartester (2026-07-28)
 
@@ -241,8 +262,8 @@ Mikael bekräftade ICS-riktningen och lade till två saker: (1) vill också synk
 - **Platsbaserade notiser** vid butiken *(P2.2 – kräver platsbehörighet)*
 - **Skafferihantering** *(P2.3 – separat funktionsområde, egen spec vid behov)*
 - **Måltidsplanering** som genererar inköpslista *(P2.4)*
-- **"Föräldrautrymme"-liknande modul** för separerade föräldrar/medföräldrar – samordna scheman, spåra avtal, hålla info om barn/husdjur strukturerat *(Best4Family-analys 2026-07-28. Intressant differentiator som matchar vår "hemmets bas"-positionering, men ett nytt konceptuellt område – kräver en egen spec-diskussion innan bygge, inte bara "bygg det", se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` §6)*. **Parkerad – bekräftat av Mikael 2026-08-02.** Var en rekommendation, nu ett beslut: läggs inte i planeringen igen förrän efter lansering.
-- **Lågprioriterade moduler identifierade hos Best4Family, medvetet parkerade** *(Best4Family-analys 2026-07-28 – lågt strategiskt värde för vår målgrupp just nu)*: Reseplanerare, Recept, Restauranger, Städplan, Omröstningar, Beslutshjul, Bill Split, Spelverktyg, fria Anteckningar, generella Uppgifter för vuxna (utöver Sysslor)
+- **"Föräldrautrymme"-liknande modul** för separerade föräldrar/medföräldrar – samordna scheman, spåra avtal, hålla info om barn/husdjur strukturerat *(Best4Family-analys 2026-07-28. Intressant differentiator som matchar vår "hemmets bas"-positionering, men ett nytt konceptuellt område – kräver en egen spec-diskussion innan bygge, inte bara "bygg det", se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` §6)*. **Parkerad – bekräftat av Mikael 2026-08-02.** Var en rekommendation, nu ett beslut: läggs inte i planeringen igen förrän efter lansering. *Uppdatering 2026-10-23: växelvis boende (veckor hos mamma/pappa) är förberett bakom en flagga – se `CUSTODY_PLAN.md`.*
+- **Lågprioriterade moduler identifierade hos Best4Family, medvetet parkerade** *(Best4Family-analys 2026-07-28 – lågt strategiskt värde för vår målgrupp just nu)*: Reseplanerare, Recept, Restauranger, Städplan, Omröstningar, Beslutshjul, Bill Split, Spelverktyg, fria Anteckningar, generella Uppgifter för vuxna (utöver Sysslor) *Uppdatering 2026-10-11: Resor byggdes ändå, men som förberedelser inför resan för familjen (pass, packlista, flygtider), inte som en reseplanerare.*
 
 ---
 

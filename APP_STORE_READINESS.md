@@ -2,6 +2,7 @@
 
 **Metod:** Websökningar mot Apples och Googles egna aktuella riktlinjer (App Store Review Guidelines, Play Console-hjälp) plus tredjepartskällor för praktisk implementation, korsat mot vår faktiska kodbas (`app/`). Källor längst ner.
 **Tillägg 2026-10-04:** appen finns nu på svenska och engelska (`RELEASE_2026-10-04b.md`) – butikstexter, skärmdumpar och nyckelord bör göras på båda språken (App Store Connect och Play Console har lokalisering per språk).
+**Tillägg 2026-10-23:** webb-push finns sedan 9 okt (PWA, iPhone kräver installerad app) – "idag bara email" nedan gäller inte längre för webben. För en App Store-app behövs fortfarande native push (APNs) via t.ex. Capacitor.
 **Syfte:** svara konkret på "om jag skulle vilja lansera för Apple och Google, vad måste vi göra om" – inte en allmän guide, utan vad *just den här appen* (Next.js-webbapp, redan PWA-förberedd) faktiskt behöver.
 
 ---

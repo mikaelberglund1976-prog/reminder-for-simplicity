@@ -122,6 +122,8 @@ I marknadsföringstexter (startsida, feature-pills, `/features`) används därem
 
 ## 5. Email templates (tone) *(translated to English 2026-07-27, per the language decision)*
 
+> **Nuläge 2026-10-22:** alla mejl har Lotuvi-design (cream bakgrund, korall-knappar, figuren överst) och fungerar i mörkt läge; texterna finns på svenska och engelska (`lib/i18n/messages/*/emails.ts`). Varje påminnelse- och födelsedagsmejl har "Stäng av mejl om …". Exemplen nedan visar bara tonen. Se `RELEASE_2026-10-22.md`.
+
 ### Reminder email
 ```
 Subject: 🔔 Reminder: [NAME] in [X] days

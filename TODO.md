@@ -815,7 +815,7 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [x] Beslut: ingen egen iPhone/Android-app nu, hemsidan blir installerbar PWA.
 - [x] Manifest med maskable-ikoner, id/scope, genvägar. Service worker v2 (cachar aldrig sidor, offlinesida). "Lägg till på mobilen"-ruta (Android-knapp, iPhone-steg). Inloggning 90 dagar rullande.
 - [ ] Klicktest `TEST_VERIFICATION.md` §15.
-- [ ] Nästa: webb-push-notiser.
+- [x] Nästa: webb-push-notiser – live 9 okt (`RELEASE_2026-10-09b.md`).
 - [ ] **Namnbeslut:** Reminder for Simplicity eller Assistiq (eller "Assistiq Familj") – se överst i `LAUNCH_CHECKLIST.md`.
 
 ## 42. Releaser 7–10 okt (live) – se respektive `RELEASE_*.md`
@@ -833,7 +833,7 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [x] Mörkt läge "Sage First" enligt riktlinjer v0.3: mint-primär, coral sekundär, grön-charcoal ytor. Ny token `--on-accent` (ingen inskriven vit text på accentknappar), `--premium` för Pro-chippet. `RELEASE_2026-10-10c.md`.
 - [ ] Klicktest `TEST_VERIFICATION.md` §21 (ljust + mörkt).
 - [ ] Produktionslogga i vektor (ÖPPET i riktlinjerna) – ersätt `public/brand/*_v0.1.*` och ikonerna.
-- [ ] Mejlens färger (`lib/email.ts`) till Lotuvi.
+- [x] Mejlens färger (`lib/email.ts`) till Lotuvi – ny mejldesign med figuren live 22 okt (`RELEASE_2026-10-22.md`).
 - [ ] Knappar 10–14 px hörn i stället för "piller" (riktlinjen) – kräver genomgång av inline-knappar.
 - [ ] Namnbeslut (Lotuvi är arbetsnamn): varumärkes-clearance, domän, sociala handles – se `LAUNCH_CHECKLIST.md` överst.
 
@@ -845,3 +845,27 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [x] Integritetstext sv/en + `GDPR.md` rad 4c.
 - [ ] Klicktest `TEST_VERIFICATION.md` §22.
 - [ ] Senare: import från kontakter, kalas-planering.
+
+## 45. Releaser 10–22 okt (live) – se respektive `RELEASE_*.md`
+- [x] **10 okt (e)** – flera skollänkar per barn (max 3) + Studybee (`RELEASE_2026-10-10e.md`).
+- [x] **10 okt (f)** – egna färger per person och typ, Pro (`RELEASE_2026-10-10f.md`).
+- [x] **11 okt** – kompakt inköpslista, butiksläge med textstorlek, byt kategori i ett ark, egen bild på Hem, MyClub [Ja]/[Nej], sysslor för alla (`RELEASE_2026-10-11.md`).
+- [x] **11 okt (b)** – kategorin Dryck, sortering på hela ord/sista ledet, avbockat överst i "I korgen" (`RELEASE_2026-10-11b.md`).
+- [x] **11 okt (c)** – ändringsvakten, "Skriv vad som helst" på Hem, I morgon-kortet med "Ska med", skjuts och krockar; synk två gånger per dag (`RELEASE_2026-10-11c.md`).
+- [x] **11 okt (d)** – Resor: pass, vaccin, flyg och tider, packlista per person, "Vill göra" med röster (`RELEASE_2026-10-11d.md`).
+- [x] **17 okt** – ta bort en enstaka dag i en serie, med ångra (`RELEASE_2026-10-17.md`).
+- [x] **18 okt** – Navigation 2.0: Hem | tre egna val | Mer, sidan Påminnelser, enklare Hem, snabbinmatning med ångra, "Nytt i appen" (`RELEASE_2026-10-18.md`).
+- [x] **22 okt** – schemat från skollänkarna (första lektion + veckoschema), passerat visas inte, egna mejl-/notisval per person, ny mejldesign, rätt antal dagar i mejl (`RELEASE_2026-10-22.md`).
+- [ ] Klicktest `TEST_VERIFICATION.md` §23–§31.
+- [ ] Kvar för Mikael: `ANTHROPIC_API_KEY` i Vercel (veckobrevsskanningen och AI-delen av "Skriv vad som helst" är av utan den), egen avsändardomän i Resend, "Schema" påslaget i SchoolSofts export för alla barn.
+- [ ] Gren `feature/skolstart-vuxenkalendrar` (PR #1) kan stängas – skolstartsdelen ligger i master sedan 23 okt. Vuxnas egna kalendrar (lanseringslistan rad 50) byggs om på nytt om/när det beslutas.
+- [ ] Gren `main` (samma som en gammal master-commit) kan tas bort på GitHub.
+
+## 46. Release 23 okt (live) – skolstart, personraden, "Var hör det hemma?", växelvis boende förberett – se `RELEASE_2026-10-23.md`
+- [x] Rad 49: egna skolstartstider, A/B-veckor, väckning, sovmorgon/lediga dagar ovanpå schemat. Hem, I morgon-kortet och kvällsnotisen.
+- [x] Rad 54–55: samma format för alla barn under bilden (dag + tid / lektion), centrerade lika breda kolumner.
+- [x] Rad 56: "Skriv vad som helst" lägger bara till igenkända varor direkt; annat frågar "Var hör det hemma?" och kommer ihåg ett bekräftat val.
+- [x] Rad 52: växelvis boende förberett bakom `FEATURE_CUSTODY` (av) – se `CUSTODY_PLAN.md`.
+- [ ] Klicktest `TEST_VERIFICATION.md` §32.
+- [ ] Rad 52 till live: notiser och skjuts följer boendet, undantag i UI, två hushåll, integritetstext (`CUSTODY_PLAN.md`).
+- [ ] Rad 51: "Koppla Claude" (MCP-server). ChatGPT-koppling är inte aktuell utan företag (Mikael 23 okt).

@@ -184,6 +184,20 @@ export async function purgeAccount(userId: string) {
   await deleteSchoolStartForUser(userId);
   // 2026-10-23: shared custody (prepared, only when FEATURE_CUSTODY is on).
   if (CUSTODY_ENABLED) await deleteCustodyForUser(userId);
+  // 2026-10-23 (found in the docs sync): per-person rows from 9–22 Oct that
+  // weren't removed with the account — push devices and choices, mail
+  // choices, Home choices, a child's club calendars and timetable, and the
+  // wishlist invitations to/for this person. A missing table just skips.
+  for (const q of [
+    prisma.$executeRaw`DELETE FROM "push_subscriptions" WHERE "userId" = ${userId}`,
+    prisma.$executeRaw`DELETE FROM "push_prefs" WHERE "userId" = ${userId}`,
+    prisma.$executeRaw`DELETE FROM "email_prefs" WHERE "userId" = ${userId}`,
+    prisma.$executeRaw`DELETE FROM "user_home_prefs" WHERE "userId" = ${userId}`,
+    prisma.$executeRaw`DELETE FROM "activity_imports" WHERE "childId" = ${userId}`,
+    prisma.$executeRaw`DELETE FROM "activity_feeds" WHERE "childId" = ${userId}`,
+    prisma.$executeRaw`DELETE FROM "school_lessons" WHERE "childId" = ${userId}`,
+    prisma.$executeRaw`DELETE FROM "wishlist_guests" WHERE "childId" = ${userId} OR "userId" = ${userId}`,
+  ]) await q.catch(() => 0);
 }
 
 export async function purgeExpiredAccounts() {

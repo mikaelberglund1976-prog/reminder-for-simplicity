@@ -2,7 +2,7 @@
 
 **Syfte:** en enda, avdubblerad, omprioriterad lista över allt som återstår innan produkten är "helt klar" för bred lansering. Ersätter inte `TODO.md` (som förblir den kronologiska arbetsloggen/historiken) utan sitter ovanpå den – det här dokumentet är **den aktuella sanningen om vad som är kvar**, `TODO.md` är **hur vi kom hit**.
 **Metod:** allt `- [ ]` extraherat ur `TODO.md` (punkt 1–25), `PRODUCT_SPEC.md`, `ROADMAP.md`, `OPERATIONS.md`, `APP_STORE_READINESS.md`, dubbletter slagna ihop, omgrupperat i faser efter vad som faktiskt blockerar vad.
-**Senast synkad:** 2026-10-10 – Lotuvi-varumärket live utom namnet (ljust, ikoner, figur, mörkt "Sage First"; `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`, `TODO.md` punkt 43) och releaserna 7–10 okt införda (`TODO.md` punkt 42). Före det: 2026-10-04 (sen kväll) – PWA-installation + namnfrågan uppsatt (`RELEASE_2026-10-04c.md`, `TODO.md` punkt 41). Före det: 2026-10-04 (kväll) – svenska + flerspråksstöd LIVE, språk per familj (`RELEASE_2026-10-04b.md`, `TODO.md` punkt 40). Före det: 2026-10-04 – mobiltestets fynd 4 okt LIVE (`RELEASE_2026-10-04.md`, `TODO.md` punkt 39). Före det: 2026-10-03 – barnets startsida, radera medlemmar, Home först, SchoolSoft-import LIVE (`RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`, `TODO.md` punkt 36–37). Före det: 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
+**Senast synkad:** 2026-10-23 – releaserna 10–23 okt införda (Studybee, egna färger, inköpslistan, ändringsvakten, skriv vad som helst, I morgon-kortet, Resor, serier, Navigation 2.0, schemat, mejlval, skolstart, växelvis boende förberett; `TODO.md` punkt 45–46). Före det: 2026-10-10 – Lotuvi-varumärket live utom namnet (ljust, ikoner, figur, mörkt "Sage First"; `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`, `TODO.md` punkt 43) och releaserna 7–10 okt införda (`TODO.md` punkt 42). Före det: 2026-10-04 (sen kväll) – PWA-installation + namnfrågan uppsatt (`RELEASE_2026-10-04c.md`, `TODO.md` punkt 41). Före det: 2026-10-04 (kväll) – svenska + flerspråksstöd LIVE, språk per familj (`RELEASE_2026-10-04b.md`, `TODO.md` punkt 40). Före det: 2026-10-04 – mobiltestets fynd 4 okt LIVE (`RELEASE_2026-10-04.md`, `TODO.md` punkt 39). Före det: 2026-10-03 – barnets startsida, radera medlemmar, Home först, SchoolSoft-import LIVE (`RELEASE_2026-10-01.md`, `RELEASE_2026-10-03.md`, `TODO.md` punkt 36–37). Före det: 2026-09-29 – mobiltestets fynd (rad 36–48), barnkonton med eget konto/Google och GDPR-åtgärderna LIVE (se `RELEASE_2026-09-28b.md`, `RELEASE_2026-09-29.md`, `GDPR.md`, `TODO.md` punkt 33–35). Tidigare: 2026-09-28 punkt 31 + UI-review + planer/reklam.
 **Obs:** den gemensamma lanseringslistan för alla Assistiq-appar (namn, bolag, webb, GDPR, betalning) finns i Claude Docs ("Genomlysning: Assistiq inför kommersiell lansering", fliken Todo-lista). Den här filen är appens egen tekniska checklista.
 **Uppdatera detta dokument** när en punkt blir klar (bocka av `- [x]`) eller när prioritet ändras – det tappar sitt värde annars.
 
@@ -19,7 +19,8 @@
 - [x] Färger ljust + mörkt ("Sage First"), ikoner/favicon, logomärke och figur live – namnet oförändrat (`BRAND.md`).
 - [ ] Varumärkes-clearance för Lotuvi (PRV/EUIPO/USPTO), domän och sociala handles – innan namnet byts.
 - [ ] Produktionslogga i vektor + slutlig ikonfamilj (ersätter tillfälliga filer i `public/brand/`).
-- [ ] Mejlens färger och knapparnas hörnradie enligt riktlinjen.
+- [x] Mejlens färger – ny mejldesign med figuren (22 okt, `RELEASE_2026-10-22.md`).
+- [ ] Knapparnas hörnradie enligt riktlinjen.
 - [ ] Klicktest ljust + mörkt (`TEST_VERIFICATION.md` §21).
 
 ---
@@ -56,7 +57,7 @@ Ingen inbördes teknisk ordning inom fasen, men allt här bör vara klart innan 
 
 **Nytt fynd 2026-08-02 – onboarding-genomgång (`PRODUCT_SPEC.md` 4b.32):**
 - [ ] *Delvis 2026-09-29:* inbjudna personer (barn och vuxna) slipper redan gaten. Kvar: självregistrerade.
-- [ ] **Stäng av eller ersätt admin-godkännande-gaten innan bred lansering.** Varje nytt konto är idag blockerat från att logga in alls tills en människa manuellt godkänt det i `/admin` – rätt för nuvarande stängda testfas (bekräftat av Mikael, inga externa användare än), men bryter helt mot "visa värde innan vi ber om något" (§9) och mot vad en ny användare/app store-granskare förväntar sig. Fanns inte som egen punkt i den ursprungliga versionen av den här listan – ett genuint gap, tillagt nu.
+- [x] *(Klart 2026-10-09, `RELEASE_2026-10-09b.md`: avstängt som standard, slås på igen med `REQUIRE_SIGNUP_APPROVAL=true`.)* **Stäng av eller ersätt admin-godkännande-gaten innan bred lansering.** Varje nytt konto är idag blockerat från att logga in alls tills en människa manuellt godkänt det i `/admin` – rätt för nuvarande stängda testfas (bekräftat av Mikael, inga externa användare än), men bryter helt mot "visa värde innan vi ber om något" (§9) och mot vad en ny användare/app store-granskare förväntar sig. Fanns inte som egen punkt i den ursprungliga versionen av den här listan – ett genuint gap, tillagt nu.
 
 ---
 
@@ -121,8 +122,8 @@ Från `COMPETITOR_ANALYSIS_TASKAPPS.md`/`PRODUCT_SPEC.md` 4b.30. Kan göras när
 - [ ] Kostnadssummering per kategori.
 - [ ] Månatlig email-digest.
 - [ ] CSV-import.
-- [ ] Push-notiser (PWA-grunden finns och installationen är klar 2026-10-04, push-logiken saknas – se PWA-avsnittet).
-- [ ] **Inkommande ICS-prenumeration för Activities** (klubb-/skolkalender in i appen, hette "Training" innan namnbytet 2026-08-02, se `PRODUCT_SPEC.md` 4b.33) – **väg beslutad 2026-08-02: offentlig .ics-länk, ingen Google/Outlook-inloggning** (se `ROADMAP.md`), bekräftat slutgiltigt. Själva byggarbetet inte gjort än.
+- [x] Push-notiser – live 2026-10-09 (påminnelser, kvällsnotis, ändringsvakten; egna val per typ sedan 22 okt).
+- [x] *(Klart 2026-10-09: klubbkalendrar, 3 per barn, `RELEASE_2026-10-09.md`.)* **Inkommande ICS-prenumeration för Activities** (klubb-/skolkalender in i appen, hette "Training" innan namnbytet 2026-08-02, se `PRODUCT_SPEC.md` 4b.33) – **väg beslutad 2026-08-02: offentlig .ics-länk, ingen Google/Outlook-inloggning** (se `ROADMAP.md`), bekräftat slutgiltigt. Själva byggarbetet inte gjort än.
 - [ ] Receptimport via foto (OCR/Tesseract.js) – medvetet väntat, kräver nytt npm-beroende + telefontest.
 - [ ] Google/Apple Calendar tvåvägssynk (skiljer sig från redan byggd envägs-export).
 - [ ] SMS-påminnelser, API för tredjepart, affiliate-program – Fas 3, lågprioriterat.
@@ -222,8 +223,22 @@ Beslut (Mikael 2026-10-04): ingen separat iPhone/Android-app nu – hemsidan ins
 - [x] Inloggning håller 90 dagar (rullande) i stället för 30.
 - [ ] Klicktesta: `TEST_VERIFICATION.md` §15 (iPhone + Android).
 - [ ] Lighthouse/PWA-kontroll i Chrome DevTools efter deploy.
-- [ ] Nästa steg: **webb-push-notiser** (påminnelser i telefonen i stället för bara mejl). Fungerar på iPhone bara när appen är installerad på hemskärmen. Kräver VAPID-nycklar i Vercel + tabell för prenumerationer + att cron skickar push.
+- [x] *(Klart 2026-10-09.)* Nästa steg: **webb-push-notiser** (påminnelser i telefonen i stället för bara mejl). Fungerar på iPhone bara när appen är installerad på hemskärmen. Kräver VAPID-nycklar i Vercel + tabell för prenumerationer + att cron skickar push.
 - [ ] Byt namn/ikon i manifestet när namnbeslutet ovan är taget.
+
+## Kodändringar 2026-10-07 – 2026-10-23 – DEPLOYADE ✅
+
+Ingen av releaserna behövde något databassteg – alla nya tabeller skapar sig själva (`OPERATIONS.md` §5a). Detaljer i respektive `RELEASE_*.md` och `TODO.md` punkt 42 och 44–46.
+- 7–10 okt: klockslag, närmast per barn, klubbkalendrar, öppen registrering, barn utan mejl, Kom igång-guide, webb-push, stjärnor, släktdelning, AI-intag, Lotuvi, födelsedagar.
+- 10–11 okt: Studybee och flera skollänkar, egna färger, kompakt inköpslista, Dryck, ändringsvakten, skriv vad som helst, I morgon-kortet, Resor.
+- 17–23 okt: ta bort en dag i en serie, Navigation 2.0, schemat från skollänkarna, mejlval per person, ny mejldesign, skolstart, "Var hör det hemma?", växelvis boende förberett (av).
+
+**Kvar innan lansering (utöver Fas A–G):**
+- [ ] `ANTHROPIC_API_KEY` i Vercel – saknas, så veckobrevsskanningen och AI-delen av "Skriv vad som helst" är av. Först: Anthropic-konto, villkor/DPA, kort konsekvensbedömning (`GDPR.md` §5).
+- [ ] `RESEND_FROM_EMAIL` på assistiq.se (Fas A).
+- [ ] Integritetstexten (`/privacy`) behöver nämna push, klubbkalendrar, Resor (passdatum), schema/skolstart och "Skriv vad som helst" – se `GDPR.md` §5.
+- [ ] Beslut Free/Pro (lanseringslistan rad 53): Resor och Skolstart är på alla planer tills vidare.
+- [ ] Klicktest `TEST_VERIFICATION.md` §23–§32.
 
 ## Vad som redan är klart och inte behöver oroa er (för sammanhanget)
 

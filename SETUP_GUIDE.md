@@ -1,5 +1,7 @@
 # Steg-för-steg: Från noll till live app
 
+> **Tillägg 2026-10-23:** miljövariabler som tillkommit sedan september (alla i Vercel → Environment Variables): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (webb-push, sedan 9 okt), `ANTHROPIC_API_KEY` (+ valfritt `ANTHROPIC_MODEL`) för veckobrevsskanningen och "Skriv vad som helst" – **saknas fortfarande**, `REQUIRE_SIGNUP_APPROVAL=true` bara om admin-godkännande ska slås på igen, `FEATURE_CUSTODY=true` bara för att testa växelvis boende. Inga databassteg: alla nya tabeller skapar sig själva (`OPERATIONS.md` §5a).
+
 > **Tillägg 2026-09-29:** inga nya miljövariabler. Serverfunktionerna körs i Frankfurt (`"regions": ["fra1"]` i `app/vercel.json`). Två nya tabeller (`media_images`, `parental_consents`) skapas av appen själv första gången de används – ingen `db push`. `ADMIN_EMAIL` visas som kontaktadress på `/privacy`.
 > **Testa lokalt utan att ladda ner Prisma-motorn** (om `binaries.prisma.sh` är blockerad): kopiera `app/` till en testmapp, installera `prisma@6 @prisma/client@6 @prisma/adapter-pg pg` där, lägg till `previewFeatures = ["queryCompiler", "driverAdapters"]` och `engineType = "client"` i generatorn och använd `PrismaPg`-adaptern i `lib/prisma.ts`. Committa aldrig de ändringarna – produktionen kör Prisma 5.
 
@@ -261,6 +263,8 @@ Lägg till dessa (kopiera från din `.env.local`):
 | `NEXT_PUBLIC_APP_URL` | Din Vercel-URL (se nedan) |
 | `NEXT_PUBLIC_APP_NAME` | `Reminder for Simplicity` |
 | `CRON_SECRET` | En slumpmässig text, t.ex. `mitt-hemliga-cron-2026` |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Webb-push. Skapa ett nyckelpar med `npx --yes web-push generate-vapid-keys` (paketet behövs bara för det); subject = `mailto:din@adress` |
+| `ANTHROPIC_API_KEY` | Från platform.claude.com (valfritt – utan den är AI-funktionerna av) |
 
 > 💡 **NEXTAUTH_URL och APP_URL:** Vercel ger dig en URL som `https://reminder-for-simplicity.vercel.app` – lägg in den. Du kan uppdatera detta efter deploy också.
 

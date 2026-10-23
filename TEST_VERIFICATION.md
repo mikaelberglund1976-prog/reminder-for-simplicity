@@ -1,5 +1,5 @@
 # Test & Verifiering – öppna punkter
-**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-10-10 (§16–§20 = releaserna 7–10 okt, §21 = Lotuvi ljust + mörkt; §15 steg 2 och 5: ikonen är nu Lotuvi-symbolen) · tidigare 2026-10-04 (§13 = mobiltestets fynd 4 okt) – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
+**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-10-23 (§23–§31 = releaserna 10–22 okt, §32 = 23 okt) · 2026-10-10 (§16–§20 = releaserna 7–10 okt, §21 = Lotuvi ljust + mörkt; §15 steg 2 och 5: ikonen är nu Lotuvi-symbolen) · tidigare 2026-10-04 (§13 = mobiltestets fynd 4 okt) – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
 
 Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader utan `[x]` betyder "inte verifierat".
 
@@ -214,7 +214,59 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Som barn: kan lägga in en kompis, kan inte ändra familjens.
 - [ ] På dagen: push "… i dag! Glöm inte att gratulera 🎉".
 
-## 23. Skolstart, personraden, "Var hör det hemma?" (2026-10-23) – se `RELEASE_2026-10-23.md`
+## 23. Flera skollänkar + Studybee (2026-10-10e) – se `RELEASE_2026-10-10e.md`
+- [ ] Skola → Skolkalender → barnet → "+ Lägg till en länk till" → Studybee-länk → "Ansluten. Synkat: N nya".
+- [ ] Prov visas som 🧪 med etiketten Studybee; SchoolSoft-raden orörd.
+- [ ] "Ta bort importerat" på Studybee-raden tar bara bort Studybee-posterna. Med 3 länkar: "Max 3 länkar per barn."
+
+## 24. Egna färger (2026-10-10f) – se `RELEASE_2026-10-10f.md`
+- [ ] Pro, vuxen: Inställningar → Färger → Barn 1 blå, Barn 2 gul, Prov röd → kalendern och Närmast per barn följer.
+- [ ] Kalender → Färg efter: Person. "↺ Standard" och "Återställ alla färger" fungerar.
+- [ ] Free: Pro-rutan. Barn: ser färgerna men kan inte ändra.
+
+## 25. Kompakt inköpslista, egen bild, MyClub (2026-10-11) – se `RELEASE_2026-10-11.md`
+- [ ] Tryck på en vara → byt kategori → lägg till samma vara igen → hamnar i nya kategorin.
+- [ ] Vara från barnkonto visas "Vara (Namn)". Butiksläge: textstorleken sparas.
+- [ ] Inställningar → "Min bild på startsidan": välj, kolla Hem, ta bort → familjebilden tillbaka (även som barn).
+- [ ] MyClub: "[Ja]" sist, "[Nej]" borta.
+
+## 26. Dryck + sortering (2026-10-11b) – se `RELEASE_2026-10-11b.md`
+- [ ] "Dryck" efter Skafferi. "Läsk", "Mellanmjölk", "Kycklingfilé", "Vindruvor" hamnar under Dryck, Mejeri, Kött & fisk, Frukt & grönt.
+- [ ] Avbockad vara hamnar överst i "I korgen".
+
+## 27. Ändringsvakten, Skriv vad som helst, I morgon-kortet (2026-10-11c) – se `RELEASE_2026-10-11c.md`
+- [ ] "mjölk, bröd" → inköpslistan. "äpplen på <listnamn>" → den listan.
+- [ ] (Kräver `ANTHROPIC_API_KEY`) "tandläkare tis 14" → förslag påminnelse tisdag 14:00.
+- [ ] Aktivitet i morgon med "Ta med matsäck" → "Matsäck" i Ska med, avbockning syns på annan telefon.
+- [ ] Två barn 17:30 och 17:45 → krockvarning; "Jag tar den" → andra föräldern får push.
+- [ ] Ändra tid på en match i klubbkalendern → "Synka nu" → kortet "Det här har ändrats" + push.
+
+## 28. Resor (2026-10-11d) – se `RELEASE_2026-10-11d.md`
+- [ ] Ny resa (strand, vaccination) → packlista per person.
+- [ ] Passdatum före hemresan = rött, < 6 mån efter = gult.
+- [ ] Flyg SK123 07:10 → "Åk hemifrån 04:25" och flyget i kalendern. Anslutningsflyg visar bytestid.
+- [ ] Som barn: bocka egna saker, lägga till en idé med länk, rösta.
+
+## 29. Ta bort en dag i en serie (2026-10-17) – se `RELEASE_2026-10-17.md`
+- [ ] Tryck på en återkommande bokning i kalendern → Ta bort → "Bara <dag>" → bara den dagen försvinner (kalender, Hem, I morgon, ICS).
+- [ ] "Borttagna dagar" → Ångra tar tillbaka dagen. "Hela serien" tar bort allt.
+
+## 30. Navigation 2.0 (2026-10-18) – se `RELEASE_2026-10-18.md`
+- [ ] Bottenmenyn: Hem | tre val | Mer. Inställningar → Hem & navigation: byt valen och ordningen.
+- [ ] Mer visar hela appen; Logga ut finns där. Barn får en kortare katalog.
+- [ ] Sidan Påminnelser: filter, sortering, siffror.
+- [ ] Hem utan karusell/siffror/lång lista som standard; Inställningar → Startsidan slår på dem igen.
+- [ ] Snabbinmatning utan dag frågar "När?" och Lägg till är låst tills dag valts.
+- [ ] "Nytt i appen" visas en gång (konton före 18 okt).
+
+## 31. Schemat, passerat, mejlval (2026-10-22) – se `RELEASE_2026-10-22.md`
+- [ ] "Schema" på i SchoolSoft-exporten → "Synka nu" → inga lektioner i skollistan, "08:20 / Matte" under barnets bild, tryck → veckans schema.
+- [ ] Skolsidan har ingen Försenat-del; det som passerat i dag syns inte i "I dag".
+- [ ] Mejl dagen före säger "I morgon" och klockslaget står vid datumet.
+- [ ] Inställningar → Notiser: av/på per typ för mejl och notis, även som barn. "Stäng av mejl om …" i ett mejl fungerar.
+- [ ] Mejlen har nya designen (cream, korall, figuren), också i mörkt läge.
+
+## 32. Skolstart, personraden, "Var hör det hemma?" (2026-10-23) – se `RELEASE_2026-10-23.md`
 - [ ] Hem: under Filip, Oliver och Tyra står dag + tid på första raden och lektion under, centrerat under bilden.
 - [ ] Skola → Skolstart: barn med skollänk visar "Från schemat (skollänken)" och i dag/i morgon-tider.
 - [ ] "+ Sovmorgon / ledig dag" för i morgon (ledig, "Studiedag") → Hem visar "Mån / Ledig" under bilden, I morgon-kortet "ledig (Studiedag)", den andra vuxna får push.

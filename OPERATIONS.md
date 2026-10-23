@@ -1,5 +1,6 @@
 # Operations – Reminder for Simplicity
 **Skapad:** 2026-07-27, enligt `CLAUDE_COMPANY_FRAMEWORK.md`s föreslagna projektstruktur.
+**Uppdaterad:** 2026-10-23 – kvällskörningen, alla tabeller som skapar sig själva, nya miljövariabler (`ANTHROPIC_API_KEY`, `VAPID_*`, `REQUIRE_SIGNUP_APPROVAL`, `FEATURE_CUSTODY`) och hur Claude pushar nu.
 **Syfte:** Hur den löpande driften faktiskt fungerar i den här kodbasen – vad som körs automatiskt, vad som kräver manuell koll, och vad Claude kan göra åt saken när något går fel.
 
 ---
@@ -21,6 +22,14 @@
   0. *(2026-10-03, körs först)* Hämtar SchoolSoft-länkar som inte synkats senaste ~20 h (`syncAllFeeds` i `lib/schoolFeeds.ts`). Loggrad "SchoolSoft feeds: X synced, Y failed"; "SchoolSoft sync ERROR" ska inte förekomma. Fel per barn syns också för föräldern på School-sidan. Endpointen har `maxDuration = 60`.
   8. *(2026-09-29, GDPR)* Tar bort bilder vars person/familj inte finns kvar (`purgeOrphanMedia`) och nollställer sparade Google-tokens
 - Returnerar `{ sent, skipped, errors, log }` – synligt i Vercels function-loggar. Rader som börjar med "GDPR cleanup ERROR" eller "Account purge ERROR" ska inte förekomma.
+
+**Morgonkörningen gör också (sedan 7–22 okt):** synkar klubb-/aktivitetskalendrar (`syncAllActivityFeeds`), skickar ändringsvaktens push (`notifyChanges`), resornas påminnelser (pass, vaccin, incheckning, packning – `runTripNudges`) och födelsedagarnas påminnelser och push på dagen (`lib/birthdayCron.ts`).
+
+**Cron: kvällskörning (sedan 2026-10-09)**
+- `vercel.json` schemalägger `GET /api/cron/evening` till **17:00 UTC** (19:00 svensk sommartid, 18:00 vintertid). Samma `CRON_SECRET`-skydd.
+- Synkar skol- och klubbkalendrar som inte synkats senaste 6 h och skickar ändringsvaktens push, så att en match som flyttats under dagen fångas samma kväll.
+- Skickar kvällsnotisen "I morgon" (`lib/tomorrowDigest.ts`): krockvarningar, skolstart ("🏫 Elsa 08:20 · Leo ledig"), prov, läxor, aktiviteter och födelsedagar. Rensar gamla "Ska med"/skjuts-rader och skolstartsundantag äldre än 7 dagar.
+- Loggrader "Evening sync ERROR" ska inte förekomma.
 
 **Region (2026-09-29):** `app/vercel.json` har `"regions": ["fra1"]` – serverfunktionerna körs i Frankfurt, samma region som Supabase (eu-central-1). Personuppgifter lämnar inte EU vid vanliga sidladdningar, och databasanropen blir snabbare.
 
@@ -81,6 +90,10 @@ Admin kan se appen som en person i sin egen familj: Family members → "👁 Vie
 | Databas | Supabase (PostgreSQL), både pooled (`DATABASE_URL`) och direct (`DIRECT_URL`) connection | Direct krävs av Prisma för `db push`/migrations |
 | Email | Resend | DNS för assistiq.se (DKIM, SPF, MX på send.) finns sedan 2026-09-28. Kontrollera att `RESEND_FROM_EMAIL` i Vercel är en adress på assistiq.se – `onboarding@resend.dev` levererar bara till Resend-kontoägaren, och då når verifierings- och inbjudningsmail inte fram. |
 | Admin/kontakt | `ADMIN_EMAIL` | Gatar `/admin` och visas som kontaktadress på `/privacy` (sedan 2026-09-29). |
+| Webb-push | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Satta i Vercel 2026-10-09. Byts nycklarna måste alla slå på notiser igen. |
+| AI (veckobrev, "Skriv vad som helst") | `ANTHROPIC_API_KEY`, valfritt `ANTHROPIC_MODEL` | **Saknas i Vercel (23 okt)** – då är veckobrevsskanningen av och snabbinmatningen klarar bara inköp och enkla påminnelser. Production + Preview, Sensitive. Se `GDPR.md` §5 innan den sätts. |
+| Registreringsgate | `REQUIRE_SIGNUP_APPROVAL` | Av som standard sedan 2026-10-09. `true` = nya konton måste godkännas i `/admin` igen. |
+| Växelvis boende | `FEATURE_CUSTODY` | Av (saknas). `true` slår på den förberedda funktionen – testa först i Preview, se `CUSTODY_PLAN.md`. |
 
 Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och Vercels environment variables, redeploya.
 
@@ -91,7 +104,7 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 > ✅ **Löst 2026-07-27 (natt):** automatisk deploy vid `git push` fungerar igen. Problemet var att Vercels GitHub-integration hade tappat webhooken (visade "ansluten" men triggade inget) – ett känt, återkommande Vercel-fel. Fixat genom en riktig **Disconnect** + ny **Connect Git Repository** i Vercel-dashboarden (Project Settings → Git). Bekräftat: en vanlig `git push` triggade en ny production-deployment automatiskt.
 
 - **Trigger (nuläge, normalfallet):** push till `master` på GitHub *(inte `main` – repots default branch heter `master`)*. Vercel deployar automatiskt via GitHub-integrationen.
-- **Hur Claude deployar (sedan 2026-09-28):** Claudes molnmiljö har ingen GitHub-behörighet och Cowork-VM:en på Macen har inga git-uppgifter. Claude gör ändringarna i en molnkopia, testar och bygger där, lägger över en patch till projektmappen, committar i VM:en och klickar sedan **Sync** i VS Code på Macen (klick-behörighet via datoranvändning) – det är Macens git som pushar. Git i VM:en behöver radera-behörighet för sina låsfiler (`.git/*.lock`) under sessionen; ofarliga `tmp_obj_*`-filer kan bli kvar i `.git/objects`.
+- **Hur Claude deployar (sedan oktober 2026):** Claudes molnsession har läs- och pushbehörighet till GitHub-repot. Claude klonar, ändrar, kör `tsc --noEmit` och `next build` i molnet och pushar direkt till `master` (commits med Mikael som författare, så att Vercel bygger dem). Vercel deployar automatiskt; Claude kollar att deployen blir READY via Vercel-kopplingen. *Tidigare (28 sep–början av okt):* patch till projektmappen och **Sync** i VS Code på Macen. I molnet kan Prisma-motorn inte laddas ned – kör `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true PRISMA_QUERY_ENGINE_LIBRARY=<tom fil> npx prisma generate --no-engine` för typerna, och `next build` med `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` och en dummy `RESEND_API_KEY`.
 - **Trigger (manuell nödlösning, om webhooken skulle tappas igen):** `npx vercel --prod` från `app/`-mappen (kräver `npx vercel login` + `npx vercel link` en gång per dator, kopplat till projektet `reminder-for-simplicity` i teamet `mikaelberglund1976-progs-projects`).
 - **Om auto-deploy tystnar igen:** gör om samma Disconnect/Connect-steg i Vercel-dashboarden först – det är den kända fixen för detta specifika Vercel-fel.
 - **Build:** `prisma generate && next build` (se `package.json`), oavsett trigger-metod.
@@ -106,13 +119,33 @@ Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och 
 ---
 
 ### 5a. Tabeller som skapar sig själva (sedan 2026-09-28)
-Nya, rent additiva tabeller skapas av appen vid första användning med `CREATE TABLE IF NOT EXISTS` – ingen `db push` och ingen tillfällig migreringsväg behövs:
-- `media_images` (profilbilder och familjefoto) – `app/src/lib/media.ts`
-- `parental_consents` (vårdnadshavarens bekräftelse) – `app/src/lib/consent.ts`
-- `school_feeds` och `school_imports` (SchoolSoft-import, 2026-10-03; sedan 2026-10-10 flera länkar per barn: kolumnerna `school_feeds.provider` och `school_imports.feedId`, unika indexet på `childId` ersatt av `(childId, url)`, allt skapas automatiskt) – `app/src/lib/schoolFeeds.ts`
-- `reminder_skips` (enstaka dagar borttagna ur en återkommande serie, 2026-10-17) – `app/src/lib/reminderSkips.ts`
-- `school_lessons` (schemat från skollänkarna – lektioner sparas för sig och visas bara som "08:20 Matte" och i veckoschemat, 2026-10-22) – `app/src/lib/schoolLessons.ts`. Vid första anrop tas lektioner som tidigare importerats som skolposter ("Lektion MA") bort ur listorna.
-- `email_prefs` (vilka mejl varje person vill ha, 2026-10-22) – `app/src/lib/notifyPrefs.ts`. Avregistreringslänken i mejlen är signerad med `NEXTAUTH_SECRET`.
+Nya, rent additiva tabeller skapas av appen vid första användning med `CREATE TABLE IF NOT EXISTS` – ingen `db push` och ingen tillfällig migreringsväg behövs. Alla i dag (2026-10-23):
+
+| Tabell | Vad | Fil | Sedan |
+|---|---|---|---|
+| `media_images` | Profilbilder, familjefoto, egen bild på Hem (`myheader`) | `lib/media.ts` | 28 sep |
+| `parental_consents` | Vårdnadshavarens bekräftelse | `lib/consent.ts` | 29 sep |
+| `school_feeds`, `school_imports` | Skollänkar och importerade poster (flera länkar per barn sedan 10 okt: `provider`, `feedId`, unikt `(childId, url)`) | `lib/schoolFeeds.ts` | 3 okt |
+| `reminder_times` | Klockslag på poster | `lib/reminderTimes.ts` | 7 okt |
+| `activity_feeds`, `activity_imports` | Klubbkalendrar och importerade aktiviteter | `lib/activityFeeds.ts` | 9 okt |
+| `user_home_prefs` | Vad var och en vill se på Hem | `lib/homePrefsStore.ts` | 9 okt |
+| `push_subscriptions`, `push_prefs` | Webb-push per enhet och notisval | `lib/webPush.ts` | 9 okt |
+| `chore_rewards` | Veckopeng per stjärna | `lib/choreStars.ts` | 9 okt |
+| `wishlist_guests` | Släkt som önskelistan delats med | `lib/wishlistGuests.ts` | 9 okt |
+| `intake_usage` | Antal veckobrevsskanningar per familj och månad | `lib/intake.ts` | 10 okt |
+| `birthdays` | Födelsedagar (sidotabell till `Reminder`) | `lib/birthdays.ts` | 10 okt |
+| `household_colors` | Familjens egna färger | `lib/familyColorsStore.ts` | 10 okt |
+| `shopping_category_seeds` | Att Dryck lagts till en gång per familj | `lib/shoppingCategories.ts` | 11 okt |
+| `change_alerts`, `change_seen` | Ändringsvakten | `lib/changeWatch.ts` | 11 okt |
+| `day_checks`, `day_rides` | "Ska med" och skjuts i I morgon-kortet (rensas efter 7 dagar) | `lib/tomorrowPlan.ts` | 11 okt |
+| `quickadd_usage` | AI-tolkningar i "Skriv vad som helst" per familj och månad | `lib/quickAdd.ts` | 11 okt |
+| `trips`, `trip_items`, `person_docs` | Resor, packlista/flyg/idéer, passets utgångsdatum | `lib/trips.ts` | 11 okt |
+| `reminder_skips` | Enstaka dagar borttagna ur en serie | `lib/reminderSkips.ts` | 17 okt |
+| `school_lessons` | Schemat från skollänkarna (lektioner visas bara som första lektion och i veckoschemat). Vid första anrop tas gamla "Lektion MA"-skolposter bort | `lib/schoolLessons.ts` | 22 okt |
+| `email_prefs` | Vilka mejl var och en vill ha. Avregistreringslänken är signerad med `NEXTAUTH_SECRET` | `lib/notifyPrefs.ts` | 22 okt |
+| `school_start_settings`, `school_start_rules`, `school_start_overrides` | Skolstart: A/B, väckning, egna tider, sovmorgon/lediga dagar (undantag rensas efter 7 dagar) | `lib/schoolStart.ts` | 23 okt |
+| `custody_schedules`, `custody_overrides` | Växelvis boende – skapas bara med `FEATURE_CUSTODY=true` | `lib/custody.ts` | förberett 23 okt |
+
 Mönstret passar bara nya tabeller. Nya kolumner i befintliga tabeller görs fortfarande enligt 5b.
 
 ### 5b. Databasändringar i produktion (lärdom 2026-09-28)
