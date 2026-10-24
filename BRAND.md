@@ -3,6 +3,8 @@
 
 > 🧪 **Lotuvi-test live (2026-10-10):** Färger, ikoner, logomärke, figur och mörkt läge följer nu *Lotuvi_Brand_Product_Guidelines_v0.3* (Family-uttrycket). **Namnet är oförändrat** ("Reminder for Simplicity"). Sanningskällan för färger är `app/src/app/globals.css`; §3 och §6 nedan beskriver nuläget. Se `RELEASE_2026-10-10b.md` (ljust, ikoner, figur) och `RELEASE_2026-10-10c.md` (mörkt läge "Sage First").
 
+> **Nuläge 2026-10-24:** nya startsidor (förälder och barn) följer Lotuvi-paletten i ljust och mörkt läge – kort med 18 px hörn, typetiketter i samma färger som kalendern, "Behöver din uppmärksamhet" i varningstonen. Skissernas orange var bara exempel. Se `RELEASE_2026-10-24.md`.
+
 > 🗄️ *Historik:* **Färgpalett löst (2026-07-26):** Tidigare fanns tre olika accentfärger i `BRAND.md`, `RFS-Product-Direction.md` och `globals.css`. Mikael valde paletten från `RFS-Product-Direction.md` (accent `#4A5FD5`) som sanningskälla. Den är nu genomförd i `globals.css` och samtliga `.tsx`-filer i `app/src`. (Ersatt av Lotuvi-paletten 2026-10-10.)
 
 ---

@@ -1,4 +1,5 @@
 # Roadmap – Reminder for Simplicity
+**Uppdaterad igen:** 2026-10-24 – Fas 1.15 (nya startsidor, rad 57–64) tillagd; todo-genomgång med Mikael: vuxnas kalendrar, växelvis boende och Koppla Claude flyttade till Fas 2 (framtida), Free/Pro till före lansering.
 **Uppdaterad igen:** 2026-10-23 – Fas 1.13 (10–11 okt: Studybee, egna färger, inköpslistan, ändringsvakten, skriv vad som helst, I morgon-kortet, Resor) och Fas 1.14 (17–23 okt: serier, Navigation 2.0, schemat, mejlval, skolstart, växelvis boende förberett) tillagda.
 **Uppdaterad igen:** 2026-10-10 – Fas 1.11 (releaserna 7–10 okt) och Fas 1.12 (Lotuvi-varumärket live utom namnet, inkl. mörkt läge "Sage First") tillagda.
 **Uppdaterad igen:** 2026-10-04 (kväll) – appen på svenska och engelska, språk väljs per familj av familjens admin, förberett för fler språk (Fas 1.10). Se `RELEASE_2026-10-04b.md`.
@@ -166,10 +167,16 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] Navigation 2.0: Hem | tre egna val | Mer, sidan Påminnelser, enklare Hem (`RELEASE_2026-10-18.md`) – etapp 1 av "Master Product & Build Specification"
 - [x] Schemat från skollänkarna, passerat är passerat, egna mejl-/notisval, ny mejldesign (`RELEASE_2026-10-22.md`)
 - [x] Skolstart (egna tider, väckning, sovmorgon/lediga dagar), samma format under bilderna på Hem, "Var hör det hemma?" i snabbinmatningen (`RELEASE_2026-10-23.md`)
-- [ ] Växelvis boende – förberett bakom `FEATURE_CUSTODY`, nästa steg i `CUSTODY_PLAN.md`
-- [ ] Vuxnas egna kalendrar + krockvarning mot jobbet (lanseringslistan rad 50) – byggd 16 okt på en gren som aldrig gick live; görs om när det beslutas
+- [→] Växelvis boende – förberett bakom `FEATURE_CUSTODY`; **framtida feature** (Mikael 24 okt), se Fas 2
+- [→] Vuxnas egna kalendrar (lanseringslistan rad 50) – **framtida feature** (Mikael 24 okt), se Fas 2
 - [ ] Etapp 2 av specen: hushålls-/vårdnadshavarmodellen (barn i flera hushåll), sysslor med valbara belöningar, onboarding i tre steg, notisregler, analytics-events
-- [ ] "Koppla Claude" via MCP-server (lanseringslistan rad 51)
+- [→] "Koppla Claude" via MCP-server (lanseringslistan rad 51) – **framtida feature** (Mikael 24 okt), se Fas 2
+
+## Fas 1.15 – Nya startsidor (24 okt 2026, LIVE)
+- [x] Förälderns Hem: personrad med bara barn (tryck → barnets dag), ett kort per barn med skolstart + närmaste + "Nästa", "Behöver din uppmärksamhet", I dag med Visa kalender, Kommande 3 + Visa alla, inga snabbknappar/siffror (`RELEASE_2026-10-24.md`)
+- [x] Barnets Hem "min dag": nästa lektion, tre statusrutor, I dag, Kommande; föräldern kan öppna och ändra i barnets dag
+- [x] Korta titlar på importerade aktiviteter, "Om mig" under Mer
+- **Läge:** familjeappens funktionslista i lanseringsdokumentet är tom – det som återstår före lansering är namn, företag, webbtexter, GDPR-text, prismodell/Free–Pro (rad 53) och betalning.
 
 ## USP:ar och prioritet inför användartester (2026-07-28)
 
@@ -219,6 +226,12 @@ Mikael bekräftade ICS-riktningen och lade till två saker: (1) vill också synk
 ---
 
 ## Fas 2 – Tillväxt
+
+**Framtida features beslutade 2026-10-24 (lanseringslistan, tabellen "Senare"):**
+- Vuxnas egna kalendrar (rad 50) – paketera först: vad vill vi ha och vilket värde ger det? Utred också export åt andra hållet: förälderns egen kalender prenumererar via iCal/webcal. Gammal gren `feature/skolstart-vuxenkalendrar` (PR #1) kan stängas.
+- "Koppla Claude" – MCP-server mot appens API (rad 51). ChatGPT kräver företag.
+- Växelvis boende (rad 52) – förberett bakom `FEATURE_CUSTODY`, se `CUSTODY_PLAN.md`.
+- Mikrofon/röstinmatning i "Skriv vad som helst" (rad 65).
 **Mål:** 250 aktiva användare, validera betalningsvilja.
 
 - [x] Google Login *(redan klart – flyttad hit från "klart i Fas 1")*

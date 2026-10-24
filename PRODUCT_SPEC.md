@@ -1,5 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.24 | **Uppdaterad:** 2026-10-23 | **Ägare:** Mikael Berglund
+**Version:** 2.25 | **Uppdaterad:** 2026-10-24 | **Ägare:** Mikael Berglund
+**Not (2026-10-24, live):** 4b.55 (nya startsidor för förälder och barn) och 4b.56 (Om mig) tillagda; 4b.10/4b.51 kompletteras av 4b.55. 4b.54 växelvis boende är nu en framtida feature. Se `RELEASE_2026-10-24.md`.
 **Not (2026-10-23, live):** 4b.45–4b.54 tillagda (releaserna 10–23 okt: Studybee och flera skollänkar, egna färger, inköpslistan, ändringsvakten, skriv vad som helst, I morgon-kortet, Resor, serier, Navigation 2.0, schemat, mejlval, skolstart, växelvis boende förberett). §7.4 uppdaterad med vilka nya funktioner som är Free respektive Pro. Se `RELEASE_2026-10-10e.md` … `RELEASE_2026-10-23.md` och `CUSTODY_PLAN.md`.
 **Not (2026-10-10, live):** §9 punkt 8 tillagd – utseendet följer Lotuvi-riktlinjerna v0.3 (namnet oförändrat), System/Ljust/Mörkt med "Sage First" i mörkt. Funktionerna från 7–10 okt (klockslag, närmast per barn, klubbkalendrar, Kom igång-guide, webb-push, stjärnor, släktdelning, "I dag", AI-intag) beskrivs i `RELEASE_2026-10-07.md` … `RELEASE_2026-10-10.md`. Se `BRAND.md`, `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`.
 **Not (2026-10-04, live):** 4b.42 (mobiltestets fynd 4 okt) tillagd; 4b.10 och §7.4 uppdaterade – barn väljer egen bottenmeny (standard Home, Calendar, School, Activities), återkommande poster visar nästa datum, Free/Pro samlat i `lib/plans.ts`, kalendersynk fortsatt Free. Se `RELEASE_2026-10-04.md`.
@@ -511,7 +512,15 @@ Lektioner från skollänkarna sparas för sig (`school_lessons`) och visas bara 
 Skola → Skolstart: egna tider mån–fre (A/B-veckor), väckning 30–120 min före, sovmorgon och lediga dagar (datum eller intervall). Ordning: undantag > egen tid > första lektionen från schemat. Syns under bilden på Hem (alltid "dag tid" / lektion, centrerat), i I morgon-kortet och i kvällsnotisen; en ändring för i dag/i morgon ger push till övriga vuxna och barnet. Alla planer. *Skriv vad som helst* lägger bara till igenkända varor direkt (sorteringens ord, katalogen, sådant familjen köpt eller sorterat förut); annat frågar "Var hör det hemma?" (Inköp/Påminnelse/Aktivitet/Skola) och kommer ihåg ett bekräftat val. Se `RELEASE_2026-10-23.md`.
 
 ### 4b.54 Växelvis boende (förberett 2026-10-23, inte live)
-Schema per barn (7/7, 2-2-3, 2-2-5-5), förälder A/B (vuxen i familjen eller ett namn), bytestid, undantag per dag, rad i I morgon-kortet. Bakom `FEATURE_CUSTODY=true` (av i produktion). Kvar innan live: notiser och skjuts följer boendet, två hushåll, integritetstext. Se `CUSTODY_PLAN.md`.
+Schema per barn (7/7, 2-2-3, 2-2-5-5), förälder A/B (vuxen i familjen eller ett namn), bytestid, undantag per dag, rad i I morgon-kortet. Bakom `FEATURE_CUSTODY=true` (av i produktion). Kvar innan live: notiser och skjuts följer boendet, två hushåll, integritetstext. Se `CUSTODY_PLAN.md`. **2026-10-24:** framtida feature (Mikael) – flaggan förblir av.
+
+### 4b.55 Nya startsidor (2026-10-24, live)
+*Förälderns Hem:* familjebild (lägre), hälsning, Skriv vad som helst (kameraknapp bara när skanningen är på), personrad med bara barnen – bild och namn, tryck öppnar barnets dag. **Behöver din uppmärksamhet** visas bara när något finns: krockar i morgon, aktivitet utan skjuts, ändringsvaktens ändringar (OK stänger), prov/läxor inom två dagar, aktiviteter utan person. **I dag** i tidsordning med "Visa kalender". **Närmast per barn**: ett kort per barn med "🏫 Börjar mån 08:10 · Matte" (skolstarten visas bara här), närmaste sak, "Nästa: …" och "+N"; en återkommande aktivitet räknas en gång. I morgon-kortet (utan krockar, de står ovan). **Kommande**: tre påminnelser + Visa alla. Inga snabbknappar eller siffrorutor. Sysslor bara när det finns sysslor.
+*Barnets Hem ("min dag"):* nästa lektion överst, Skriv vad som helst, tre statusrutor (Prov & läxor / Aktiviteter / Sysslor) som räknar samma rader som listorna, I dag, I morgon, Kommande (3 + Visa alla → kalendern), sysslor (inga = en rad). Föräldern når samma sida från Hem (`/dashboard/family/child?id=…`), med raden "Du tittar på Tyras dag" och kan bocka av och lägga till.
+*Titlar:* importerade aktiviteter kortas på Hem ("Friidrott · Träning · Ursvik"), rådata kvar i detaljvyn (`lib/displayTitle.ts`). Se `RELEASE_2026-10-24.md`.
+
+### 4b.56 Om mig (2026-10-24, live)
+"Vad sparar appen om mig?" ligger under Mer → Om mig (`/dashboard/about-me`) i stället för längst ned på barnets Hem (lanseringslistan rad 15 och 62).
 
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
@@ -590,6 +599,8 @@ Ersätter "Basic/Pro" i 7.1 där de skiljer sig, och hela 7.3. Källan till sann
 **Uppdatering 2026-10-04:** Mikael bekräftade att **kalendersynk förblir Free** tills vidare (tankar om framtida Pro: synk av skolans läxor till barnen, synk av träningar). SchoolSoft-import räknas som del av Läxor & prov (Pro). Uppdelningen och priset (49 kr/mån, 399 kr/år) finns nu på ett ställe, `app/src/lib/plans.ts`, som används av `/upgrade`, `/` och `/features`.
 
 **Uppdatering 2026-10-23 (vad nya funktioner hör till):** Free – födelsedagar, Resor (tills vidare), Skolstart med egna tider (tills vidare), inköp och påminnelser via "Skriv vad som helst", egna mejl-/notisval. Pro (och provperioden) – skollänkar och schemat, klubbkalendrar, egna färger, AI-intag av veckobrev, skola och aktiviteter via "Skriv vad som helst". Resor och Skolstart tas med i genomgången av Free/Pro (lanseringslistan rad 53).
+
+**Uppdatering 2026-10-24:** Free/Pro-genomgången (rad 53: fler inköpslistor gratis, ett barn med skolsynk i Free?) görs **före lansering** tillsammans med prismodellen (rad 28). Nya startsidorna är på alla planer; korten visar bara det familjen har tillgång till.
 
 **Provperiod:** 14 dagar, hela familjen, utan kort, en gång per hushåll, startas av en vuxen (`FamilyTrial.childId` är nu frivilligt). Ångerrätt (14 dagar enligt lag) gäller när betalning införs – inget produktval.
 

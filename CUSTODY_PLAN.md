@@ -1,5 +1,7 @@
 # Växelvis boende (lanseringslistan rad 52) – förberett, inte live
 
+**Beslut 2026-10-24 (Mikael):** framtida feature – ligger under "Senare" i lanseringslistan. Flaggan förblir av.
+
 **Status 2026-10-23:** koden ligger i `master` men är avstängd. Den slås på med `FEATURE_CUSTODY=true` i Vercel (Production eller bara Preview för test). Utan flaggan svarar API:t 404, kortet syns inte och inga tabeller skapas.
 
 ## Vad som finns

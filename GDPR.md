@@ -54,7 +54,8 @@ Gemensamt för alla rader: lagras i Supabase (eu-central-1, Frankfurt); appens s
 - Egen registrering: registreringssidan säger att man måste vara 13 år för att skapa ett konto själv. Det är nytt 2026-09-29 och kan tas bort om Mikael vill. **Beslutet från 2026-08-02 om ingen åldersgräns för barnprofiler (som föräldern skapar) gäller fortfarande.**
 - SchoolSoft (2026-10-03): bara en vuxen kan koppla, byta eller ta bort barnets länk. Länken sparas bara på servern och visas aldrig för någon i familjen. Bara `*.schoolsoft.se` och (sedan 2026-10-10) `*.studybee.io` / `*.studybee.se` hämtas. Barnet ser de importerade posterna men kan inte ta bort dem.
 - Skolschema (2026-10-22): lektionerna visas bara som första lektion och i veckoschemat – aldrig i listor, mejl eller kalender. Barnet ser sitt eget; vuxna i familjen ser barnens. Skolstart (2026-10-23) ändras bara av vuxna.
-- Barn ser bara sina egna saker och aldrig reklam. "My week" har en kort barnversion av integritetstexten ("What does the app save about me?").
+- Barn ser bara sina egna saker och aldrig reklam. Den korta barnversionen av integritetstexten ("Vad sparar appen om mig?") ligger sedan 2026-10-24 under Mer → Om mig (`/dashboard/about-me`).
+- Nya startsidor (2026-10-24): inga nya uppgifter samlas in. En vuxen i familjen kan öppna ett barns dag från Hem och ändra där – samma behörighet som vuxna redan hade på sysslor, skola och aktiviteter. Ett barn ser fortfarande bara sitt eget.
 
 ---
 

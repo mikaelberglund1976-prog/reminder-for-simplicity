@@ -276,3 +276,15 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Skriv "blöjor" → direkt. Skriv ett okänt ord, välj Inköpslista, skriv samma ord igen → nu direkt.
 - [ ] Växelvis boende syns INTE på Familjemedlemmar (flaggan av).
 
+## 33. Nya startsidor (2026-10-24) – se `RELEASE_2026-10-24.md`
+- [ ] Förälder, Hem: personraden visar bara barnen (bild + namn, ingen skolstart under bilden). Tryck på ett barn → barnets dag med raden "Du tittar på …s dag".
+- [ ] Närmast per barn: varje kort visar "🏫 Börjar … · lektion", närmaste sak med etikett, "Nästa: …" och "+N". En daglig träning syns bara en gång. Hela kortet öppnar barnets dag.
+- [ ] Behöver din uppmärksamhet: syns bara när något finns. Krock i morgon (röd), "Ingen skjuts än" för aktivitet med skjuts, ändringar med OK (OK stänger dem), prov/läxa i dag–i övermorgon, "N aktiviteter saknar person" → Fixa. Krocken står inte också i I morgon-kortet.
+- [ ] I dag har "Visa kalender"; Kommande visar tre rader + "Visa alla" → Påminnelser. Inga snabbknappar eller siffrorutor på Hem; de finns inte heller under Inställningar → Startsidan.
+- [ ] Importerad aktivitet (MyClub) visas kort på Hem, t.ex. "Friidrott · Träning · Ursvik"; öppnar man den syns originaltiteln.
+- [ ] Barn, Hem: nästa lektion överst (tryck → veckoschema), tre rutor (Prov & läxor → Skola, Aktiviteter, Sysslor), I dag, I morgon, Kommande (3 + Visa alla). Inga sysslor = en rad med "+ Lägg till en syssla".
+- [ ] Föräldern bockar av en syssla i barnets dag → syns hos barnet.
+- [ ] Mer → Om mig (barn) visar "Vad sparar appen om mig?".
+- [ ] Kameraknappen i skrivfältet syns INTE (ingen `ANTHROPIC_API_KEY`).
+- [ ] "Nytt i appen" visas en gång med fyra punkter om nya Hem.
+- [ ] Samma sak i mörkt läge och på engelska.
