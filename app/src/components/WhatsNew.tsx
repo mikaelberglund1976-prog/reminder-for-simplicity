@@ -11,8 +11,8 @@ import { useM } from "@/lib/i18n/client";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 // 2026-10-22: new round — timetable, notification choices, new email look.
-const KEY = "rfs-whatsnew-2026-10-22";
-const RELEASED = Date.parse("2026-10-22T00:00:00Z");
+const KEY = "rfs-whatsnew-2026-10-24";
+const RELEASED = Date.parse("2026-10-24T00:00:00Z");
 
 export function showWhatsNewAgain() {
   try { localStorage.removeItem(KEY); localStorage.setItem(KEY + "-force", "1"); } catch { /* ignore */ }

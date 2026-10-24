@@ -17,7 +17,7 @@ export const homePrefs: Messages["homePrefs"] = {
   kindReminder: "Påminnelse",
   sections: {
     today: "I dag – hela familjen i tidsordning",
-    family: "Familjens bilder",
+    family: "Barnens bilder (tryck för att öppna deras dag)",
     quick: "Snabbval",
     comingUp: "På gång (påminnelser, 7 dagar)",
     perChild: "Närmast per barn",

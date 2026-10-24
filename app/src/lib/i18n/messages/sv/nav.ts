@@ -13,6 +13,7 @@ export const nav: Messages["nav"] = {
   birthdays: "Födelsedagar",
   trips: "Resor",
   ideas: "Idéer & röstning",
+  aboutMe: "Om mig",
   settings: "Inställningar",
   privacy: "Integritet",
   admin: "Admin",

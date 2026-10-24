@@ -8,7 +8,8 @@
 // an item without one asks "When?".
 // 2026-10-23 (row 56): a word we don't recognise ("aw" = after work) isn't
 // put on the shopping list — the preview asks "Where does it go?" first.
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n/client";
 import { listName } from "@/lib/i18n/shoppingLabels";
 
@@ -35,6 +36,13 @@ export default function QuickAdd({ onAdded }: { onAdded?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [note, setNote] = useState<{ ok: boolean; text: string; undo?: Created } | null>(null);
+  // 2026-10-24 (launch list row 60): a camera button for the weekly-letter
+  // scan — only when scanning is switched on (ANTHROPIC_API_KEY in Vercel)
+  // and this person may use it (an adult with Pro/trial). Hidden otherwise.
+  const [canScan, setCanScan] = useState(false);
+  useEffect(() => {
+    fetch("/api/intake").then((r) => (r.ok ? r.json() : null)).then((d) => setCanScan(!!d?.configured && !!d?.available)).catch(() => {});
+  }, []);
 
   const typeLabel = (k: QType) => ({ SHOPPING: t.qaShopping, TEST: t.qaTest, HOMEWORK: t.qaHomework, SCHOOL_OTHER: t.qaSchool, ACTIVITY: t.qaActivity, REMINDER: t.qaReminder })[k];
 
@@ -113,6 +121,11 @@ export default function QuickAdd({ onAdded }: { onAdded?: () => void }) {
           placeholder={t.qaPlaceholder} aria-label={t.qaPlaceholder} enterKeyHint="go" maxLength={500}
           style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15, padding: "8px 8px", color: "var(--fg)", fontFamily: FONT }}
         />
+        {canScan && (
+          <Link href="/dashboard/intake" aria-label={m.home.quick.scan} title={m.home.quick.scan} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, borderRadius: 12, background: "var(--surface-3)", color: "var(--fg-2)", flexShrink: 0, textDecoration: "none" }}>
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </Link>
+        )}
         <button type="submit" disabled={busy || !text.trim()} style={{ border: "none", borderRadius: 12, padding: "0 16px", background: "var(--accent-bg)", color: "var(--on-accent)", fontSize: 14, fontWeight: 800, cursor: "pointer", opacity: busy || !text.trim() ? 0.5 : 1, fontFamily: FONT, flexShrink: 0 }}>
           {busy && !preview ? t.qaThinking : t.qaGo}
         </button>

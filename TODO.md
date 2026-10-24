@@ -2,6 +2,7 @@
 
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
+**Uppdaterad igen:** 2026-10-24 – punkt 47: nya startsidor (rad 57–64), buggar 66–69, todo-genomgång (50–53 flyttade), se `RELEASE_2026-10-24.md`.
 **Uppdaterad igen:** 2026-10-10 (eftermiddag) – punkt 44: födelsedagar (familj, släkt, kompisar och husdjur, gäller alla eller en person), se `RELEASE_2026-10-10d.md`.
 **Uppdaterad igen:** 2026-10-10 – punkt 42–43: releaserna 7–10 okt (klockslag, närmast per barn, klubbkalendrar, måstelistan, stjärnor/släktdelning, AI-intag) införda i loggen, och Lotuvi-varumärket live utom namnet – ljust läge, ikoner, figur och mörkt läge "Sage First" (se `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`). Alla md-filer synkade.
 **Skapad:** 2026-07-26, efter granskning av kodbas + git-status vid flytt till ny dator.
@@ -869,3 +870,10 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [ ] Klicktest `TEST_VERIFICATION.md` §32.
 - [ ] Rad 52 till live: notiser och skjuts följer boendet, undantag i UI, två hushåll, integritetstext (`CUSTODY_PLAN.md`).
 - [ ] Rad 51: "Koppla Claude" (MCP-server). ChatGPT-koppling är inte aktuell utan företag (Mikael 23 okt).
+
+## 47. Release 24 okt (live) – nya startsidor, rad 57–64 + 66–69 – se `RELEASE_2026-10-24.md`
+- [x] Rad 57 (skiss B), 58, 59, 60, 61, 62, 63, 64 – förälderns Hem och barnets "min dag", föräldern öppnar barnets dag.
+- [x] Rad 66–69 (buggar 11 okt) kontrollerade/åtgärdade. Rad 70 (rensa Mikaels konto) väntar på Mikael.
+- [x] Todo-genomgång: 50, 51, 52 → Senare; 53 + ny 71 (publika startsidan) → Före lansering.
+- [ ] Klicktest på riktig data (mobil): Hem som förälder och barn, tryck på barn, Behöver din uppmärksamhet, mörkt läge.
+- [ ] Kvar för Mikael: `ANTHROPIC_API_KEY` i Vercel (då dyker kameraknappen upp i skrivfältet).

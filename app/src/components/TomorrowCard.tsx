@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/client";
+import { shortTitle } from "@/lib/displayTitle";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 type Item = { reminderId: string; title: string; kind: "TEST" | "HOMEWORK" | "SCHOOL" | "ACTIVITY" | "TRIP"; who: string | null; startTime: string | null; endTime: string | null; place: string | null; needsRide: boolean; driverId: string | null; driver: string | null; href: string };
@@ -12,7 +13,8 @@ type Check = { key: string; label: string; checked: boolean; custom: boolean; wh
 type Start = { childId: string; who: string | null; time: string | null; off: boolean; note: string | null; wake: string | null };
 type Plan = { ymd: string; isAdult: boolean; items: Item[]; checks: Check[]; clashes: string[]; starts?: Start[]; todayStarts?: Start[]; custody?: string[] };
 
-export default function TomorrowCard() {
+// 2026-10-24: on the adult Home clashes are shown under "Needs your attention" instead (no duplicates).
+export default function TomorrowCard({ hideClashes = false }: { hideClashes?: boolean } = {}) {
   const { m, dateLocale } = useI18n();
   const t = m.assist;
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -93,7 +95,7 @@ export default function TomorrowCard() {
           <div key={`c${i}`} style={{ margin: "10px 0 2px", fontSize: 13.5, fontWeight: 700, color: "var(--fg)", lineHeight: 1.4 }}>{c}</div>
         ))}
 
-        {plan.clashes.map((c, i) => (
+        {!hideClashes && plan.clashes.map((c, i) => (
           <div key={i} role="alert" style={{ margin: "10px 0 2px", background: "var(--tint-danger)", color: "var(--danger)", borderRadius: 12, padding: "9px 12px", fontSize: 13.5, fontWeight: 700, lineHeight: 1.4 }}>⚠️ {c}</div>
         ))}
 
@@ -101,11 +103,11 @@ export default function TomorrowCard() {
           const k = KIND[it.kind];
           const time = it.startTime ? `${it.startTime}${it.endTime ? `–${it.endTime}` : ""}` : "";
           return (
-            <div key={it.reminderId} style={{ padding: "10px 0", borderTop: i === 0 && !plan.clashes.length && !starts.length && !todayStarts.length && !custody.length ? "none" : "1px solid var(--border-soft)" }}>
+            <div key={it.reminderId} style={{ padding: "10px 0", borderTop: i === 0 && (hideClashes || !plan.clashes.length) && !starts.length && !todayStarts.length && !custody.length ? "none" : "1px solid var(--border-soft)" }}>
               <Link href={it.href} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
                 <span style={{ width: 74, flexShrink: 0, fontSize: 13, fontWeight: 800, color: time ? "var(--fg)" : "var(--subtle)", fontVariantNumeric: "tabular-nums" }}>{time || "–"}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.title}</span>
+                  <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortTitle(it.title)}</span>
                   {(it.who || it.place) && <span style={{ display: "block", fontSize: 12, color: "var(--muted)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{[it.who, it.place && (it.kind === "TRIP" ? it.place : `📍 ${it.place}`)].filter(Boolean).join(" · ")}</span>}
                 </span>
                 <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0, background: k.bg, color: k.fg }}>{k.label}</span>

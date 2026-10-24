@@ -189,3 +189,27 @@ export function WeekSheet({ childId, name, lessons, onClose }: { childId: string
     </div>
   );
 }
+
+/**
+ * 2026-10-24 (launch list rows 57 + 61, sketch B): the school start inside a
+ * child's card on the adult Home — "🏫 Börjar mån 08:10 · Matte" — instead of
+ * under the photo. Shown in one place only.
+ */
+export function StartLine({ days }: { days: StartDay[] | undefined }) {
+  const { locale, m } = useI18n();
+  const label = useStartLabel();
+  const f = useNextStart(days);
+  if (!f) return null;
+  const lang = locale === "sv" ? "sv" : "en";
+  const s = f.start;
+  const when = label(f);
+  const text = s.off
+    ? m.home3.offDay(when)
+    : [m.home3.startsAt(when.toLowerCase(), s.time ?? ""), s.code ? lessonName(s.code, lang) : null, s.note, s.wake ? `⏰ ${s.wake}` : null].filter(Boolean).join(" · ");
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: s.off ? "var(--success)" : "var(--muted)", marginTop: 2, minWidth: 0 }}>
+      <span aria-hidden>🏫</span>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{text}</span>
+    </div>
+  );
+}

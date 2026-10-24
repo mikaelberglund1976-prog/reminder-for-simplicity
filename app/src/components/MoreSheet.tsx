@@ -26,6 +26,7 @@ const IcGift = I(<><rect x="3" y="8" width="18" height="4"/><rect x="4" y="12" w
 const IcSuitcase = I(<><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>);
 const IcUsers = I(<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>);
 const IcGear = I(<><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></>);
+const IcUser = I(<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>);
 const IcLogout = I(<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>);
 
 type Item = { href: string; label: keyof Messages["nav"]; Icon: () => React.ReactElement; tint: string; color: string };
@@ -65,6 +66,8 @@ const CHILD: Group[] = [
     { href: "/dashboard/trips", label: "trips", Icon: IcSuitcase, tint: "var(--tint-accent)", color: "var(--accent)" },
   ] },
   { title: "groupApp", items: [
+    // 2026-10-24 (row 62): "What does the app save about me?" moved here from the child's Home.
+    { href: "/dashboard/about-me", label: "aboutMe", Icon: IcUser, tint: "var(--surface-3)", color: "var(--fg-2)" },
     { href: "/profile", label: "settings", Icon: IcGear, tint: "var(--surface-3)", color: "var(--fg-2)" },
   ] },
 ];

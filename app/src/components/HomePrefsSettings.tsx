@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import Avatar from "@/components/Avatar";
 import { useI18n } from "@/lib/i18n/client";
-import { DEFAULT_HOME_PREFS, HOME_SECTIONS, PER_CHILD_COUNTS, PER_CHILD_KINDS, normalizeHomePrefs, type HomePrefs } from "@/lib/homePrefs";
+import { DEFAULT_HOME_PREFS, HOME_SECTIONS, PER_CHILD_KINDS, normalizeHomePrefs, type HomePrefs } from "@/lib/homePrefs";
 
 type Child = { id: string; name: string };
 
@@ -42,7 +42,8 @@ export default function HomePrefsSettings() {
       <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.45 }}>{t.intro}</div>
 
       <div style={{ border: "1.5px solid var(--border)", borderRadius: 14, overflow: "hidden" }}>
-        {HOME_SECTIONS.map((k, i) => (
+        {/* 2026-10-24 (row 60): quick actions and number tiles are no longer on Home. */}
+        {HOME_SECTIONS.filter((k) => k !== "quick" && k !== "stats").map((k, i) => (
           <div key={k}>
             <ToggleRow first={i === 0} label={t.sections[k]} on={prefs.sections[k]}
               onChange={(v) => update({ ...prefs, sections: { ...prefs.sections, [k]: v } })} />
@@ -54,12 +55,7 @@ export default function HomePrefsSettings() {
                     <Chip key={pk} active={prefs.perChild[pk]} onClick={() => update({ ...prefs, perChild: { ...prefs.perChild, [pk]: !prefs.perChild[pk] } })}>{t.kinds[pk]}</Chip>
                   ))}
                 </div>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--subtle)", margin: "12px 0 6px" }}>{t.countLabel}</div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {PER_CHILD_COUNTS.map((n) => (
-                    <Chip key={n} active={prefs.perChildCount === n} onClick={() => update({ ...prefs, perChildCount: n })}>{n}</Chip>
-                  ))}
-                </div>
+                {/* 2026-10-24 (row 57): each child is one compact card now — the count choice is gone. */}
                 {children.length > 1 && (<>
                   <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--subtle)", margin: "12px 0 6px" }}>{t.childrenLabel}</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>

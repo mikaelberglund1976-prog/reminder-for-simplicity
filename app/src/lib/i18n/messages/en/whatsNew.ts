@@ -2,10 +2,10 @@
 export const whatsNew = {
   title: "What's new in the app",
   points: [
-    "Timetable from school: each child's first lesson tomorrow is under their photo on Home. Tap for the week.",
-    "The School page only shows what's still to come – past items are gone.",
-    "Choose which emails and notifications you get under Settings → Notifications.",
-    "The emails have a new look.",
+    "New Home: one card per child with when school starts, the next thing and what comes after.",
+    "Tap a child to see their own day — and tick off or add things there.",
+    "“Needs your attention” gathers clashes, missing rides, changes and tests in the next few days.",
+    "Children's Home: next lesson on top, today and what's coming.",
   ],
   pickShortcuts: "Pick notifications",
   ok: "Got it",

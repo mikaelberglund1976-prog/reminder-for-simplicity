@@ -4,10 +4,11 @@ import { useSession } from "next-auth/react";
 import StartGuide from "@/components/StartGuide";
 import GiftSharesCard from "@/components/GiftSharesCard";
 import QuickAdd from "@/components/QuickAdd";
-import ChangesCard from "@/components/ChangesCard";
+import AttentionCard, { type SoonSchool } from "@/components/AttentionCard";
+import { shortTitle } from "@/lib/displayTitle";
 import TomorrowCard from "@/components/TomorrowCard";
 import TripSoonCard from "@/components/TripSoonCard";
-import { useLessons, FirstLessonMini, FirstLessonRow, WeekSheet } from "@/components/Timetable";
+import { useLessons, StartLine } from "@/components/Timetable";
 import { nextStart } from "@/lib/lessonPlan";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -23,9 +24,8 @@ import { reminderDisplayName, type BirthdayMeta } from "@/lib/birthdayLabel";
 import { normalizeHomePrefs, type HomePrefs } from "@/lib/homePrefs";
 import { formatTimeRange } from "@/lib/timeFormat";
 import { useI18n } from "@/lib/i18n/client";
-import { CATEGORY_BADGE, ServiceLogo, StatCard, ReminderRow, getDaysUntil, formatDate, compactAmount, type Reminder, type HouseholdMember } from "@/components/ReminderParts";
+import { CATEGORY_BADGE, ServiceLogo, ReminderRow, getDaysUntil, formatDate, type Reminder, type HouseholdMember } from "@/components/ReminderParts";
 import { relativeDay } from "@/lib/i18n/relative";
-import type { Messages } from "@/lib/i18n/messages";
 
 
 type SchoolItem = {
@@ -50,43 +50,11 @@ type NextUpEntry = {
 };
 
 
-const SZ = { width: 20, height: 20 };
-const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-
-function IcBell()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>; }
-function IcCard()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>; }
-function IcAlert()   { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>; }
-
 const HOME_LIST_LIMIT = 5;
 const HOME_BIRTHDAY_LIMIT = 2;
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
-// 2026-10-23 (row 55): one width for every person on Home, so names and school start line up.
+// 2026-10-23 (row 55): one width for every person on Home, so names line up.
 const PERSON_COL = 66;
-
-function IcCart()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 6H5.6"/></svg>; }
-function IcCamera()  { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>; }
-function IcSchool()  { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12.5V17c0 1.5 2.5 3 6 3s6-1.5 6-3v-4.5"/></svg>; }
-function IcChecklist() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="m4 6 1 1 2-2"/><path d="m4 12 1 1 2-2"/><path d="m4 18 1 1 2-2"/></svg>; }
-function IcGift()    { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="8" width="18" height="4"/><rect x="4" y="12" width="16" height="9"/><path d="M12 8v13M12 8c-1.5-3-5-3-5-1s2 1 5 1zM12 8c1.5-3 5-3 5-1s-2 1-5 1z"/></svg>; }
-function IcCalendar() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
-function IcSuitcase() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M8 11v5M16 11v5"/></svg>; }
-function IcCake() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3M12 8v3M17 8v3"/></svg>; }
-function IcBellPlus() { return <svg {...SZ} viewBox="0 0 24 24" {...STR}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M12 6v5M9.5 8.5h5"/></svg>; }
-
-// Order = how often the personas reached for them in the review.
-const QUICK_ACTIONS: { label: keyof Messages["home"]["quick"]; href: string; Icon: () => React.ReactElement; color: string; tint: string; pro?: boolean }[] = [
-  { label: "newReminder",  href: "/dashboard/new",                 Icon: IcBellPlus,  color: "var(--accent)",  tint: "var(--tint-accent)" },
-  { label: "shoppingList", href: "/dashboard/family/shopping-list", Icon: IcCart,      color: "var(--success)", tint: "var(--tint-success)" },
-  { label: "scan",          href: "/dashboard/intake",               Icon: IcCamera,    color: "var(--violet)",  tint: "var(--tint-accent)", pro: true },
-  { label: "homework", href: "/dashboard/school",           Icon: IcSchool,    color: "var(--accent)",  tint: "var(--tint-accent)" , pro: true },
-  { label: "chores",        href: "/dashboard/family",               Icon: IcChecklist, color: "var(--warning)", tint: "var(--tint-warning)" , pro: true },
-  { label: "wishlists",     href: "/dashboard/wishlist",             Icon: IcGift,      color: "var(--danger)",  tint: "var(--tint-danger)" , pro: true },
-  // 2026-10-10: birthdays are free.
-  { label: "birthdays",     href: "/dashboard/birthdays",            Icon: IcCake,      color: "var(--pink)",    tint: "var(--tint-pink)" },
-  // 2026-10-11: trips — passports, flights, packing, ideas.
-  { label: "trips",         href: "/dashboard/trips",                Icon: IcSuitcase,  color: "var(--accent)",  tint: "var(--tint-accent)" },
-  { label: "calendar",      href: "/dashboard/calendar",             Icon: IcCalendar,  color: "var(--fg-2)",    tint: "var(--surface-3)" },
-];
 
 function SectionTitle({ children, inline }: { children: React.ReactNode; inline?: boolean }) {
   return <h2 style={{ fontSize: 17, fontWeight: 800, color: "var(--fg)", margin: inline ? 0 : "0 0 10px", letterSpacing: "-0.2px" }}>{children}</h2>;
@@ -97,7 +65,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const [reminders, setReminders]        = useState<Reminder[]>([]);
   const [loading, setLoading]            = useState(true);
-  const [preferredCurrency, setCurrency] = useState("SEK");
   // 2026-10-18: filter + sort live on the Reminders page now.
   const filterCategory = "ALL" as string;
   const sortBy = "date_asc" as string;
@@ -115,8 +82,7 @@ export default function DashboardPage() {
   const [roleChecked, setRoleChecked] = useState(false);
   const media = useFamilyMedia();
   // 2026-10-22: each child's first lesson + the week's timetable.
-  const { lessons, starts } = useLessons(roleChecked);
-  const [weekFor, setWeekFor] = useState<{ id: string; name: string } | null>(null);
+  const { starts } = useLessons(roleChecked);
   const { m: msg, locale, dateLocale } = useI18n();
   const t = msg.home;
   // 2026-10-10: a type colour the family picked (Settings → Colours) wins over the built-in badge colour.
@@ -139,7 +105,6 @@ export default function DashboardPage() {
     if (status !== "authenticated") return;
     getMe().then((me) => {
       if (me?.isChildProfile) { router.replace("/dashboard/family/child"); return; }
-      if (me?.preferredCurrency) setCurrency(me.preferredCurrency);
       setRoleChecked(true);
       fetchReminders(); fetchHousehold(); fetchFamilyData();
       fetch("/api/profile/home-prefs").then((r) => (r.ok ? r.json() : null)).then((d) => { if (d?.prefs) setPrefs(normalizeHomePrefs(d.prefs)); }).catch(() => {});
@@ -205,27 +170,9 @@ export default function DashboardPage() {
     } catch (e) { console.error(e); }
   }
 
-  // Stats
-  const totalActive   = reminders.length;
-  const passedCount   = reminders.filter(r => getDaysUntil(r.date) < 0).length;
   const attentionItems = [...reminders]
     .filter(r => getDaysUntil(r.date) <= 7)
     .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date));
-
-  // Yearly budget — annualise each amount by recurrence
-  const yearlyTotal = reminders
-    .filter(r => r.amount != null && r.amount > 0)
-    .reduce((sum, r) => {
-      const a = r.amount ?? 0;
-      switch (r.recurrence) {
-        case "MONTHLY": return sum + a * 12;
-        case "WEEKLY":  return sum + a * 52;
-        case "DAILY":   return sum + a * 365;
-        default:        return sum + a; // ONCE, YEARLY
-      }
-    }, 0);
-
-
 
   const sorted = [...reminders].sort((a, b) => {
     if (sortBy === "date_asc")    return getDaysUntil(a.date) - getDaysUntil(b.date);
@@ -326,6 +273,25 @@ export default function DashboardPage() {
   // 2026-10-22 (Mikael: "passerat är passerat"): what's already over today
   // leaves the list instead of being dimmed.
   const todayOpen = todayRows.filter((r) => !r.done);
+  // 2026-10-24 (row 59): tests and hand-ins in the next two days, per child.
+  const soonSchool: SoonSchool[] = (() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const limit = new Date(today); limit.setDate(limit.getDate() + 2);
+    const childIds = new Set(householdMembers.filter((m) => m.role === "CHILD").map((m) => m.userId));
+    return schoolItems
+      .filter((it) => !it.completedAt && it.assignedUser && childIds.has(it.assignedUser.id) && (it.schoolKind === "TEST" || it.schoolKind === "HOMEWORK"))
+      .map((it) => ({ it, day: (() => { const d = new Date(it.date); d.setHours(0, 0, 0, 0); return d; })() }))
+      .filter(({ day }) => day >= today && day <= limit)
+      .sort((a, b) => a.day.getTime() - b.day.getTime())
+      .slice(0, 4)
+      .map(({ it, day }) => ({
+        key: `soon-${it.id}`, day, kind: (it.schoolKind ?? "OTHER") as SoonSchool["kind"], href: `/dashboard/family/child?id=${it.assignedUser!.id}`,
+        who: it.assignedUser!.name?.split(" ")[0] ?? it.assignedUser!.email.split("@")[0],
+        title: it.subject ? `${it.subject} · ${it.name}` : it.name,
+      }));
+  })();
+  // 2026-10-24 (row 69): activities nobody is assigned to.
+  const unassignedActivities = activities.filter((a) => !a.assignedUser).length;
   const show = prefs.sections;
 
   if (status === "loading" || loading || !roleChecked) {
@@ -350,7 +316,7 @@ export default function DashboardPage() {
         {homeHeader && (
           <Link href="/profile#home-picture" aria-label={t.familyPhotoAria} style={{ display: "block", margin: "-12px 0 18px", borderRadius: 22, overflow: "hidden", boxShadow: "var(--shadow)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={homeHeader} alt="" style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }} />
+            <img src={homeHeader} alt="" style={{ width: "100%", height: 110, objectFit: "cover", display: "block" }} />
           </Link>
         )}
 
@@ -397,36 +363,24 @@ export default function DashboardPage() {
         {/* 2026-10-11: just write it — the app works out where it goes. Then
             what the school/club calendars changed (the change watch). */}
         {hasHousehold && <QuickAdd onAdded={() => { fetchReminders(); fetchFamilyData(); }} />}
-        {hasHousehold && <ChangesCard />}
         {hasHousehold && <TripSoonCard />}
 
-        {/* 2026-09-28 (rows 40 + 44): the family at a glance — photos, and
-            adding someone is one tap from Home instead of buried in Settings. */}
+        {/* 2026-09-28 (rows 40 + 44): the family at a glance.
+            2026-10-24 (launch list rows 57 + 61): children only, photo and
+            name. A tap opens the child's own Home ("my day") exactly as the
+            child sees it — the parent can tick off, add and change there. The
+            school start moved into each child's card below (never twice). */}
         {hasHousehold && show.family && (
           <div className="rfs-hscroll" style={{ display: "flex", gap: 14, overflowX: "auto", margin: "0 -20px 22px", padding: "2px 20px 4px" }}>
-            {householdMembers.map((m) => {
+            {householdMembers.filter((m) => m.role === "CHILD").map((m) => {
               const first = m.user.name?.split(" ")[0] ?? m.user.email.split("@")[0];
-              // 2026-10-22/23 (rows 54–55): a child shows "Mån 08:20 / Matte"
-              // centred under the photo — every column the same width so the
-              // row lines up. With a timetable a tap opens the week.
-              const own = starts.get(m.userId);
-              const hasStart = !!nextStart(own);
-              const col: React.CSSProperties = { display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: PERSON_COL };
-              const body = (
-                <>
+              return (
+                <Link key={m.userId} href={`/dashboard/family/child?id=${m.userId}`} aria-label={msg.home3.openChild(first)}
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: PERSON_COL }}>
                   <Avatar userId={m.userId} name={first} size={52} />
                   <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fg-2)", maxWidth: PERSON_COL, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{first}</span>
-                  {hasStart && <FirstLessonMini days={own} />}
-                </>
+                </Link>
               );
-              if (hasStart && lessons.get(m.userId)) {
-                return (
-                  <button key={m.userId} type="button" onClick={() => setWeekFor({ id: m.userId, name: first })} aria-label={msg.timetable.open(first)} style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", ...col }}>
-                    {body}
-                  </button>
-                );
-              }
-              return <Link key={m.userId} href="/dashboard/family/members" style={col}>{body}</Link>;
             })}
             <Link href="/dashboard/family/members" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 6, textDecoration: "none", flexShrink: 0, width: PERSON_COL }}>
               <span style={{ width: 52, height: 52, borderRadius: "50%", border: "1.5px dashed var(--accent-border)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 500, boxSizing: "border-box" }}>+</span>
@@ -434,6 +388,9 @@ export default function DashboardPage() {
             </Link>
           </div>
         )}
+
+        {/* 2026-10-24 (row 59): what wants a decision — only when something's there. */}
+        {hasHousehold && <AttentionCard soon={soonSchool} unassigned={unassignedActivities} />}
 
         {/* 2026-10-09: wishlists other families have shared with me. */}
         <GiftSharesCard />
@@ -448,7 +405,9 @@ export default function DashboardPage() {
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
               <SectionTitle inline>{msg.homePrefs.todayTitle}</SectionTitle>
-              {todayOpen.length === 0 && <span style={{ fontSize: 12, fontWeight: 700, color: "var(--success)" }}>{msg.homePrefs.todayEmptyDone}</span>}
+              {todayOpen.length === 0
+                ? <span style={{ fontSize: 12, fontWeight: 700, color: "var(--success)" }}>{msg.homePrefs.todayEmptyDone}</span>
+                : <Link href="/dashboard/calendar" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{msg.home3.showCalendar}</Link>}
             </div>
             {todayOpen.length === 0 && <div style={{ marginBottom: 18 }} />}
             {todayOpen.length > 0 && <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "4px 14px", boxShadow: "var(--shadow)", marginBottom: 24 }}>
@@ -463,7 +422,7 @@ export default function DashboardPage() {
                   <Link key={r.key} href={r.href} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", textDecoration: "none", opacity: r.done ? 0.45 : 1 }}>
                     <span style={{ width: 74, flexShrink: 0, fontSize: 13, fontWeight: 800, color: time ? "var(--fg)" : "var(--subtle)", fontVariantNumeric: "tabular-nums" }}>{time || msg.common.today}</span>
                     <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: r.done && r.kind !== "ACTIVITY" ? "line-through" : "none" }}>{r.title}</span>
+                      <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: r.done && r.kind !== "ACTIVITY" ? "line-through" : "none" }}>{shortTitle(r.title)}</span>
                       {r.who && <span style={{ display: "block", fontSize: 12, color: "var(--muted)", marginTop: 1 }}>{r.who}</span>}
                     </span>
                     <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0, background: badge.bg, color: badge.fg }}>{badge.label}</span>
@@ -482,129 +441,97 @@ export default function DashboardPage() {
               <Link href="/profile#home-settings" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{msg.homePrefs.customize}</Link>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-              {nextUpByChild.map((p) => (
-                <div key={p.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: p.items.length || nextStart(starts.get(p.id)) ? 6 : 0 }}>
-                    <Avatar userId={p.id} name={p.name} size={28} />
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
-                    {p.items.length === 0 && !nextStart(starts.get(p.id)) && <span style={{ fontSize: 12, color: "var(--subtle)" }}>{msg.homePrefs.nothingSoon}</span>}
-                  </div>
-                  {/* 2026-10-22: always first — when school starts next. */}
-                  <FirstLessonRow days={starts.get(p.id)} onOpen={lessons.get(p.id) ? () => setWeekFor({ id: p.id, name: p.name }) : undefined} />
-                  {p.items.slice(0, prefs.perChildCount).map((it) => {
-                    const d = getDaysUntil(it.day.toISOString());
-                    const badge = familyBadge(it.kind) ?? (it.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
-                      : it.kind === "HOMEWORK" ? { bg: "var(--tint-school)", fg: "var(--school)", label: msg.homePrefs.kindHomework }
-                      : it.kind === "ACTIVITY" ? { bg: "var(--tint-warning)", fg: "#D85A30", label: msg.homePrefs.kindActivity }
-                      : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool });
-                    const time = formatTimeRange(it);
-                    return (
-                      <Link key={it.key} href={it.href} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderTop: "1px solid var(--border-soft)", textDecoration: "none" }}>
-                        <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0, background: badge.bg, color: badge.fg }}>{badge.label}</span>
-                        <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.title}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0, color: d <= 0 ? "var(--warning)" : "var(--muted)", textAlign: "right" }}>
-                          {d === 0 ? msg.common.today : d === 1 ? msg.common.tomorrow : it.day.toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" })}{time ? ` ${time}` : ""}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                  {p.items.length > prefs.perChildCount && (
-                    <div style={{ fontSize: 12, color: "var(--subtle)", paddingTop: 4 }}>{msg.homePrefs.moreSoon(p.items.length - prefs.perChildCount)}</div>
-                  )}
-                </div>
-              ))}
+              {/* 2026-10-24 (row 57, sketch B): one compact card per child —
+                  school start, the nearest thing, "Next: …" and "+N". The
+                  whole card opens the child's own Home. */}
+              {nextUpByChild.map((p) => {
+                // A repeating activity counts once (its next time) — otherwise a
+                // daily training fills "Next" and "+N" with itself.
+                const seenIds = new Set<string>();
+                const uniq = p.items.filter((it) => (seenIds.has(it.id) ? false : (seenIds.add(it.id), true)));
+                const [first, second] = uniq;
+                const extra = Math.max(0, uniq.length - 2);
+                const whenText = (it: NextUpEntry) => {
+                  const d = getDaysUntil(it.day.toISOString());
+                  const time = formatTimeRange(it);
+                  return `${d === 0 ? msg.common.today : d === 1 ? msg.common.tomorrow : it.day.toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" })}${time ? ` ${time}` : ""}`;
+                };
+                const badge = first ? (familyBadge(first.kind) ?? (first.kind === "TEST" ? { bg: "var(--tint-danger)", fg: "var(--danger)", label: msg.homePrefs.kindTest }
+                  : first.kind === "HOMEWORK" ? { bg: "var(--tint-school)", fg: "var(--school)", label: msg.homePrefs.kindHomework }
+                  : first.kind === "ACTIVITY" ? { bg: "var(--tint-warning)", fg: "#D85A30", label: msg.homePrefs.kindActivity }
+                  : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool })) : null;
+                return (
+                  <Link key={p.id} href={`/dashboard/family/child?id=${p.id}`} aria-label={msg.home3.openChild(p.name)}
+                    style={{ display: "flex", gap: 12, alignItems: "flex-start", textDecoration: "none", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "12px 14px", boxShadow: "var(--shadow)" }}>
+                    <Avatar userId={p.id} name={p.name} size={36} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                        <span style={{ fontSize: 14.5, fontWeight: 800, color: "var(--fg)", flex: 1 }}>{p.name}</span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", flexShrink: 0 }}>{extra > 0 ? `${msg.home3.more(extra)} ›` : "›"}</span>
+                      </div>
+                      <StartLine days={starts.get(p.id)} />
+                      {first && badge ? (
+                        <>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 7, minWidth: 0 }}>
+                            <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 50, flexShrink: 0, background: badge.bg, color: badge.fg }}>{badge.label}</span>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortTitle(first.title)}</span>
+                          </div>
+                          <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <span style={{ fontWeight: 700, color: getDaysUntil(first.day.toISOString()) <= 0 ? "var(--warning)" : "var(--muted)" }}>{whenText(first)}</span>
+                            {second && <> · {msg.home3.nextLabel} {shortTitle(second.title)} {whenText(second).toLowerCase()}</>}
+                          </div>
+                        </>
+                      ) : (
+                        !nextStart(starts.get(p.id)) && <div style={{ fontSize: 12.5, color: "var(--subtle)", marginTop: 4 }}>{msg.homePrefs.nothingSoon}</div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </>
         )}
 
         {/* 2026-10-11: tomorrow as a checklist — bring, rides, clashes. */}
-        {hasHousehold && <TomorrowCard />}
+        {hasHousehold && <TomorrowCard hideClashes />}
 
-        {/* Quick actions — "What would you like to do?" row, borrowed from the
-            reference app: the most common jobs one tap away, horizontally
-            scrollable so the row never wraps on a phone. */}
-        {show.quick && (<>
-        <SectionTitle>{t.whatToDo}</SectionTitle>
-        <div className="rfs-hscroll" style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 24px", padding: "2px 20px 4px", scrollSnapType: "x proximity", scrollPaddingInline: 20 }}>
-          {QUICK_ACTIONS.map((qa) => (
-            <Link key={qa.href + qa.label} href={qa.href} style={{
-              flex: "0 0 auto", width: 104, minHeight: 96, scrollSnapAlign: "start",
-              background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18,
-              padding: "14px 10px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10,
-              textDecoration: "none", color: "var(--fg)", boxShadow: "var(--shadow)",
-            }}>
-              <span style={{ position: "relative", width: 40, height: 40, borderRadius: 12, background: qa.tint, color: qa.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <qa.Icon />
-                {qa.pro && plan?.plan === "FREE" && (
-                  <span style={{ position: "absolute", top: -6, right: -14, fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 6, background: "var(--accent-bg)", color: "var(--on-accent)" }}>{t.pro}</span>
-                )}
-              </span>
-              <span style={{ fontSize: 13, fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>{t.quick[qa.label]}</span>
-            </Link>
-          ))}
-        </div>
-        </>)}
+        {/* 2026-10-24 (row 60): no big "What would you like to do?" on Home —
+            everything is in the bottom bar and under More. */}
 
-        {/* Coming up — horizontal cards for the next 7 days (overdue first).
-            Replaces both the old "Needs your attention" list (which repeated
-            the same rows as the main list below) and the "IQ Spotlight" card. */}
-        {/* 2026-10-04 (Mikael): empty sections aren't shown. */}
+        {/* Coming up — 2026-10-24 (row 60): the next three, one tap from all
+            of them. Overdue first. Empty → not shown. */}
         {show.comingUp && attentionItems.length > 0 && (<>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-          <SectionTitle inline>{t.comingUp}</SectionTitle>
-          <Link href="/dashboard/calendar" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{t.calendarLink}</Link>
-        </div>
-        {(
-          <div className="rfs-hscroll" style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -20px 24px", padding: "2px 20px 4px", scrollSnapType: "x mandatory", scrollPaddingInline: 20 }}>
-            {attentionItems.slice(0, 10).map((r) => {
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+            <SectionTitle inline>{msg.home3.comingUp}</SectionTitle>
+            <Link href="/dashboard/reminders" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>{msg.home3.showAll}</Link>
+          </div>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "2px 14px", boxShadow: "var(--shadow)", marginBottom: 24 }}>
+            {attentionItems.slice(0, 3).map((r, i) => {
               const days = getDaysUntil(r.date);
               const overdue = days < 0;
-              const badge = CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER;
               const owner = r.assignedTo ? householdMembers.find(m => m.userId === r.assignedTo) : null;
               const ownerName = owner ? (owner.user.name?.split(" ")[0] ?? owner.user.email.split("@")[0]) : null;
               return (
-                <button key={r.id} onClick={() => router.push(`/dashboard/${r.id}`)} style={{
-                  flex: "0 0 auto", width: 250, scrollSnapAlign: "start", textAlign: "left", cursor: "pointer",
-                  background: "var(--surface)", border: overdue ? "1.5px solid var(--border-danger)" : "1px solid var(--border)",
-                  borderRadius: 18, padding: 14, display: "flex", gap: 12, alignItems: "center", fontFamily: FONT, boxShadow: "var(--shadow)",
-                }}>
+                <Link key={r.id} href={`/dashboard/${r.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--border-soft)", textDecoration: "none" }}>
                   <ServiceLogo name={r.name} />
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: overdue ? "var(--danger)" : days <= 1 ? "var(--warning)" : "var(--accent)", marginTop: 3 }}>
-                      {overdue ? msg.reminders.overdueOn(formatDate(r.date, dateLocale)) : relativeDay(msg, locale, r.date)}{r.startTime ? ` · ${r.startTime}` : ""}
-                    </div>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "nowrap", overflow: "hidden" }}>
-                      <span style={{ padding: "2px 8px", borderRadius: 50, fontSize: 10.5, fontWeight: 700, background: badge.bg, color: badge.color, whiteSpace: "nowrap" }}>
-                        {msg.reminders.categories[r.category] ?? r.category}
-                      </span>
-                      {ownerName && <span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>👤 {ownerName}</span>}
-                      {r.amount != null && r.amount > 0 && <span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>{r.amount.toLocaleString(dateLocale)} {r.currency}</span>}
-                    </div>
-                  </div>
-                </button>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: "var(--fg)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
+                    <span style={{ display: "block", fontSize: 12, color: "var(--muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {[msg.reminders.categories[r.category] ?? r.category, ownerName, r.amount != null && r.amount > 0 ? `${r.amount.toLocaleString(dateLocale)} ${r.currency}` : null].filter(Boolean).join(" · ")}
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 800, flexShrink: 0, textAlign: "right", color: overdue ? "var(--danger)" : days <= 1 ? "var(--warning)" : "var(--muted)" }}>
+                    {overdue ? msg.reminders.overdueOn(formatDate(r.date, dateLocale)) : relativeDay(msg, locale, r.date)}{r.startTime ? ` · ${r.startTime}` : ""}
+                  </span>
+                </Link>
               );
             })}
           </div>
-        )}
         </>)}
 
         <AdSlot placement="home" style={{ marginBottom: 20 }} />
 
-        {/* Overview tiles — three honest numbers. "Needs attention" used to
-            count only overdue items while the list above said "4 items";
-            it's now labelled for what it is. */}
-        {show.stats && reminders.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
-          <StatCard icon={<IcBell />} iconColor="var(--accent)" iconBg="var(--tint-accent)" value={totalActive} label={t.statActive} />
-          <StatCard icon={<IcAlert />} iconColor="var(--danger)" iconBg="var(--tint-danger)" value={passedCount} label={t.statOverdue} />
-          <button onClick={() => router.push("/dashboard/reminders")}
-            style={{ all: "unset", cursor: "pointer", display: "block" }} aria-label={t.reviewCosts}>
-            <StatCard icon={<IcCard />} iconColor="var(--success)" iconBg="var(--tint-success)"
-              value={yearlyTotal > 0 ? compactAmount(yearlyTotal) : "—"} label={`${t.perYear}${yearlyTotal > 0 ? " · " + preferredCurrency : ""}`} />
-          </button>
-        </div>
-        )}
+        {/* 2026-10-24 (row 60): no number tiles on Home. */}
 
         {/* Family progress — only when there's something to show. */}
         {show.chores && familyCardRows.length > 0 && (
@@ -650,9 +577,6 @@ export default function DashboardPage() {
 
       </main>
 
-      {weekFor && (
-        <WeekSheet childId={weekFor.id} name={weekFor.name} lessons={lessons.get(weekFor.id) ?? []} onClose={() => setWeekFor(null)} />
-      )}
     </div>
   );
 }

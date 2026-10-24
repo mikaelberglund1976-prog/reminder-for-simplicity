@@ -18,7 +18,7 @@ export const homePrefs = {
   kindReminder: "Reminder",
   sections: {
     today: "Today — the whole family, in time order",
-    family: "Family photos row",
+    family: "Children's photos (tap to open their day)",
     quick: "Quick actions",
     comingUp: "Coming up (reminders, next 7 days)",
     perChild: "Next up per child",

@@ -11,6 +11,7 @@ export const nav = {
   birthdays: "Birthdays",
   trips: "Trips",
   ideas: "Ideas & voting",
+  aboutMe: "About me",
   settings: "Settings",
   privacy: "Privacy",
   admin: "Admin",
