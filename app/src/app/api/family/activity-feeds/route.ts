@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trackServer } from "@/lib/analyticsStore";
 import { prisma } from "@/lib/prisma";
 import { childInFamily, requireAdult } from "../school-feeds/_auth";
 import {
@@ -61,6 +62,8 @@ export async function POST(req: Request) {
     }
     const feed = await createActivityFeed(a.householdId, childId, n.url, cleanLabel(body?.label), a.userId);
     const result = await syncActivityFeed(feed);
+    // 2026-10-25 (G7)
+    await trackServer("source_connected", { kind: "activity", provider: "calendar", ok: result.ok }, { householdId: a.householdId, userId: a.userId });
     return NextResponse.json({ result, id: feed.id });
   } catch (err) {
     console.error("Activity feed POST error:", err);

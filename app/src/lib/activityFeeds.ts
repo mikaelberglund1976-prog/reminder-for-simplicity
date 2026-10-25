@@ -23,6 +23,8 @@ import { randomUUID } from "crypto";
 import { lookup } from "dns/promises";
 import net from "net";
 import { prisma } from "@/lib/prisma";
+import { trackServer } from "@/lib/analyticsStore";
+import { trackCorrection } from "@/lib/schoolFeeds";
 import { getTimes, setTime } from "@/lib/reminderTimes";
 import { ChangeCollector } from "@/lib/changeWatch";
 
@@ -466,6 +468,8 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
     result = { ok: false, added: 0, updated: 0, removed: 0, total: await activityImportedCount(feed.id).catch(() => 0), status: err instanceof Error ? err.message : "Sync failed" };
   }
   await prisma.$executeRaw`UPDATE "activity_feeds" SET "lastSyncAt" = ${now}, "lastStatus" = ${result.status}, "lastCount" = ${result.total} WHERE "id" = ${feed.id}`;
+  // 2026-10-25 (G7): sync success rate and how much comes in automatically.
+  await trackServer("sync_result", { kind: "activity", ok: result.ok, added: result.added, updated: result.updated, removed: result.removed }, { householdId: feed.householdId });
   return result;
 }
 
@@ -552,14 +556,17 @@ export async function activityImportInfo(ids: string[]): Promise<Map<string, str
 export async function setActivityPerson(reminderId: string, personId: string) {
   try {
     await ensureActivityFeedTables();
-    await prisma.$executeRaw`UPDATE "activity_imports" SET "personOverride" = ${personId} WHERE "reminderId" = ${reminderId}`;
+    const n = await prisma.$executeRaw`UPDATE "activity_imports" SET "personOverride" = ${personId} WHERE "reminderId" = ${reminderId}`;
+    if (n > 0) await trackCorrection("activity", "move", reminderId);
   } catch (err) { console.error("setActivityPerson failed:", err); }
 }
 
 export async function markActivityImport(reminderId: string, field: "edited" | "hidden") {
   try {
     await ensureActivityFeedTables();
-    if (field === "edited") await prisma.$executeRaw`UPDATE "activity_imports" SET "edited" = true WHERE "reminderId" = ${reminderId}`;
-    else await prisma.$executeRaw`UPDATE "activity_imports" SET "hidden" = true WHERE "reminderId" = ${reminderId}`;
+    const n = field === "edited"
+      ? await prisma.$executeRaw`UPDATE "activity_imports" SET "edited" = true WHERE "reminderId" = ${reminderId} AND "edited" = false`
+      : await prisma.$executeRaw`UPDATE "activity_imports" SET "hidden" = true WHERE "reminderId" = ${reminderId} AND "hidden" = false`;
+    if (n > 0) await trackCorrection("activity", field === "edited" ? "edit" : "hide", reminderId);
   } catch (err) { console.error("markActivityImport failed:", err); }
 }

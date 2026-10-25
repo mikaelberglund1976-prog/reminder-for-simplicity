@@ -21,6 +21,7 @@
 // change get their feedId filled in from the child's SchoolSoft link.
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { trackServer } from "@/lib/analyticsStore";
 import { getTimes, setTime } from "@/lib/reminderTimes";
 import { parseWall } from "@/lib/activityFeeds";
 import { ChangeCollector } from "@/lib/changeWatch";
@@ -361,6 +362,8 @@ export async function syncFeed(feed: FeedRow): Promise<SyncResult> {
     result = { ok: false, added: 0, updated: 0, removed: 0, total: await importedCount(feed.id).catch(() => 0), status: err instanceof Error ? err.message : "Sync failed" };
   }
   await prisma.$executeRaw`UPDATE "school_feeds" SET "lastSyncAt" = ${now}, "lastStatus" = ${result.status}, "lastCount" = ${result.total} WHERE "id" = ${feed.id}`;
+  // 2026-10-25 (G7): sync success rate and how much comes in automatically.
+  await trackServer("sync_result", { kind: "school", ok: result.ok, added: result.added, updated: result.updated, removed: result.removed }, { householdId: feed.householdId });
   return result;
 }
 
@@ -456,18 +459,27 @@ export async function importSources(ids: string[]): Promise<Map<string, string>>
   }
 }
 
+/** 2026-10-25 (G7): "correction rate" — an imported item someone had to fix. */
+export async function trackCorrection(kind: "school" | "activity", how: "move" | "edit" | "hide", reminderId: string) {
+  const r = await prisma.reminder.findUnique({ where: { id: reminderId }, select: { householdId: true } }).catch(() => null);
+  await trackServer("import_corrected", { kind, how }, { householdId: r?.householdId ?? null });
+}
+
 /** 2026-10-25 (G1): an imported school item was moved to another person. */
 export async function setImportPerson(reminderId: string, personId: string) {
   try {
     await ensureSchoolFeedTables();
-    await prisma.$executeRaw`UPDATE "school_imports" SET "personOverride" = ${personId} WHERE "reminderId" = ${reminderId}`;
+    const n = await prisma.$executeRaw`UPDATE "school_imports" SET "personOverride" = ${personId} WHERE "reminderId" = ${reminderId}`;
+    if (n > 0) await trackCorrection("school", "move", reminderId);
   } catch (err) { console.error("setImportPerson failed:", err); }
 }
 
 export async function markImport(reminderId: string, field: "edited" | "hidden") {
   try {
     await ensureSchoolFeedTables();
-    if (field === "edited") await prisma.$executeRaw`UPDATE "school_imports" SET "edited" = true WHERE "reminderId" = ${reminderId}`;
-    else await prisma.$executeRaw`UPDATE "school_imports" SET "hidden" = true WHERE "reminderId" = ${reminderId}`;
+    const n = field === "edited"
+      ? await prisma.$executeRaw`UPDATE "school_imports" SET "edited" = true WHERE "reminderId" = ${reminderId} AND "edited" = false`
+      : await prisma.$executeRaw`UPDATE "school_imports" SET "hidden" = true WHERE "reminderId" = ${reminderId} AND "hidden" = false`;
+    if (n > 0) await trackCorrection("school", field === "edited" ? "edit" : "hide", reminderId);
   } catch (err) { console.error("markImport failed:", err); }
 }

@@ -11,6 +11,7 @@
 // what's shared with them — enforced by the APIs, not just here.
 // A parent can open the same page for one child (?id=…) from Chores.
 import { useSession } from "next-auth/react";
+import { track } from "@/lib/analytics";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import HamburgerMenu from "@/components/HamburgerMenu";
@@ -99,6 +100,13 @@ function ChildViewContent() {
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
+
+  // 2026-10-25 (G7, "child activation"): the child's day was opened — by the
+  // child (own) or by a parent looking at it.
+  useEffect(() => {
+    if (status === "authenticated" && childId) track("child_day_opened", { own: isOwn });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, childId]);
 
   useEffect(() => {
     if (status === "authenticated") load();

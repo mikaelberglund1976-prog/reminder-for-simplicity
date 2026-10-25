@@ -534,6 +534,8 @@ export default function AdminPage() {
               </TabButton>
               {/* 2026-09-28: ads have their own page */}
               <Link href="/admin/ads" style={{ alignSelf: "center", fontSize: 13, fontWeight: 700, color: "#7BB8FF", textDecoration: "none", padding: "8px 6px" }}>Ads →</Link>
+              {/* 2026-10-25 (G7): product metrics */}
+              <Link href="/admin/metrics" style={{ alignSelf: "center", fontSize: 13, fontWeight: 700, color: "#7BB8FF", textDecoration: "none", padding: "8px 6px" }}>Nyckeltal →</Link>
             </div>
             <input
               type="search"

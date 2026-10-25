@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trackServer } from "@/lib/analyticsStore";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -182,6 +183,8 @@ async function save(c: Ctx, body: { items?: unknown }) {
     other++;
   }
   const listName = listId0 ? c.lists.find((l) => l.id === listId0)?.name ?? null : null;
+  // 2026-10-25 (G7)
+  if (shopping + other > 0) await trackServer("quick_capture_saved", { shopping, other }, { householdId: c.m.householdId, userId: c.uid, isChild: !c.isAdult });
   return NextResponse.json({ saved: shopping + other, shopping, other, locked, created, listName });
 }
 

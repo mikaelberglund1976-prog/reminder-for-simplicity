@@ -6,7 +6,8 @@ import { ANALYTICS_EVENTS, cleanProps, recordAnalyticsEvent } from "@/lib/analyt
 
 // 2026-10-24: POST /api/events { event, props } — product analytics
 // (lib/analytics.ts → lib/analyticsStore.ts). Signed-in only; the user id is
-// used to tell child from adult and is not stored.
+// used to tell child from adult and is not stored. 2026-10-25 (G7): household
+// and person are stored as one-way pseudonyms (hh/ph), never as ids.
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
@@ -18,8 +19,9 @@ export async function POST(req: Request) {
     if (typeof event !== "string" || !(ANALYTICS_EVENTS as readonly string[]).includes(event)) {
       return NextResponse.json({ error: "Unknown event" }, { status: 400 });
     }
-    const membership = await prisma.householdMember.findFirst({ where: { userId: session.user.id }, select: { role: true } });
-    await recordAnalyticsEvent(event, cleanProps(body?.props), membership?.role === "CHILD");
+    const membership = await prisma.householdMember.findFirst({ where: { userId: session.user.id }, select: { role: true, householdId: true } });
+    // 2026-10-25 (G7): stored as pseudonyms only (lib/analyticsStore.ts).
+    await recordAnalyticsEvent(event, cleanProps(body?.props), membership?.role === "CHILD", { householdId: membership?.householdId, userId: session.user.id });
     return new NextResponse(null, { status: 204 });
   } catch (err) {
     console.error("analytics event failed", err);

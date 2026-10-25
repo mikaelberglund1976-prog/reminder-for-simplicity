@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/client";
 import { shortTitle } from "@/lib/displayTitle";
+import { track } from "@/lib/analytics";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 type Alert = { id: string; childId: string; kind: "MOVED" | "TIME" | "CANCELLED" | "NEW_TEST" | "NEW" | "MANY"; title: string; oldYmd: string | null; newYmd: string | null; oldTime: string | null; newTime: string | null; count: number | null };
@@ -77,7 +78,9 @@ export default function AttentionCard({ soon, unassigned }: { soon: SoonSchool[]
       </>
     );
     const style: React.CSSProperties = { display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0", fontSize: 14, lineHeight: 1.4, textDecoration: "none", borderTop: "1px solid var(--border-soft)" };
-    return href ? <Link key={key} href={href} style={style}>{inner}</Link> : <div key={key} style={style}>{inner}</div>;
+    // 2026-10-25 (G7): which kinds of attention rows lead to action.
+    const kind = key.startsWith("c") ? "clash" : key.startsWith("r") ? "ride" : key.startsWith("f") ? "feed" : key === "unassigned" ? "unassigned" : "school";
+    return href ? <Link key={key} href={href} style={style} onClick={() => track("attention_clicked", { kind })}>{inner}</Link> : <div key={key} style={style}>{inner}</div>;
   };
 
   return (

@@ -7,7 +7,10 @@ export type AnalyticsEvent =
   | "more_opened"
   | "more_search_used"
   | "more_quick_action_clicked"
-  | "more_feature_clicked";
+  | "more_feature_clicked"
+  // 2026-10-25 (G7)
+  | "attention_clicked"
+  | "child_day_opened";
 
 export function track(event: AnalyticsEvent, props: Record<string, string | number | boolean | null> = {}): void {
   try {

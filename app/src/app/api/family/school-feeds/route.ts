@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trackServer } from "@/lib/analyticsStore";
 import { prisma } from "@/lib/prisma";
 import { childInFamily, requireAdult } from "./_auth";
 import { importedCount, listFeeds, MAX_FEEDS_PER_CHILD, maskUrl, normalizeFeedUrl, providerLabel, saveFeed, syncFeed } from "@/lib/schoolFeeds";
@@ -58,6 +59,8 @@ export async function POST(req: Request) {
     const feed = await saveFeed(a.householdId, childId, n.url, n.provider, a.userId);
     if ("error" in feed) return NextResponse.json({ error: feed.error }, { status: 400 });
     const result = await syncFeed(feed);
+    // 2026-10-25 (G7)
+    await trackServer("source_connected", { kind: "school", provider: feed.provider, ok: result.ok }, { householdId: a.householdId, userId: a.userId });
     return NextResponse.json({ result, provider: feed.provider });
   } catch (err) {
     console.error("School feed POST error:", err);

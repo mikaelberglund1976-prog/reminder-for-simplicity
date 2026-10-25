@@ -1,4 +1,5 @@
 import { getUserLanguage } from "@/lib/i18n/server";
+import { trackAppOpen } from "@/lib/analyticsStore";
 import { NAV_APPS, serializeNavTabs } from "@/lib/navTabs";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -71,6 +72,12 @@ export async function GET() {
   // 2026-10-04: the family's language, so every device follows it.
   // 2026-10-25 (G4): the person's own language first, then the family's.
   const language = await getUserLanguage(user.id);
+  // 2026-10-25 (G7): "this person used the app today" — once per day, as a
+  // pseudonym; not while an admin is viewing the app as someone else.
+  if (!(session as { impersonator?: unknown }).impersonator) {
+    const m = await prisma.householdMember.findFirst({ where: { userId: user.id }, select: { householdId: true, role: true } });
+    await trackAppOpen(user.id, m?.householdId ?? null, m?.role === "CHILD");
+  }
   return NextResponse.json({ ...rest, hasPassword: !!password, language });
 }
 
