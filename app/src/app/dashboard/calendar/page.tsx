@@ -111,7 +111,16 @@ type Chore = {
   completedAt?: string | null;
   showInCalendar?: boolean;
   startTime?: string | null; endTime?: string | null;
+  // 2026-10-25 (Etapp 0 G2): where an imported item came from ("SchoolSoft",
+  // "Studybee", the activity link's name) — null for items made in the app.
+  imported?: boolean;
+  source?: string | null;
 };
+
+// "… · SchoolSoft" on imported items, so it's clear the item syncs from a link.
+function withSource(text: string, c: { imported?: boolean; source?: string | null }) {
+  return c.imported && c.source ? `${text} · ${c.source}` : text;
+}
 
 type CalendarEntry = {
   occDate: Date;
@@ -365,7 +374,7 @@ export default function CalendarPage() {
       for (const occ of occs) {
         const key = dateKey(occ);
         const list = map.get(key) ?? [];
-        list.push({ occDate: occ, id: tr.id, name: tr.name, kind: "training", color: TRAINING_COLOR, subtitle: withTime(formatTimeRange(tr), `${t.activity} · ${who}`), short: chipWithTime(tr.startTime, tr.name), startTime: tr.startTime ?? null, personId: tr.assignedUser?.id ?? null });
+        list.push({ occDate: occ, id: tr.id, name: tr.name, kind: "training", color: TRAINING_COLOR, subtitle: withSource(withTime(formatTimeRange(tr), `${t.activity} · ${who}`), tr), short: chipWithTime(tr.startTime, tr.name), startTime: tr.startTime ?? null, personId: tr.assignedUser?.id ?? null });
         map.set(key, list);
       }
     }
@@ -384,7 +393,7 @@ export default function CalendarPage() {
         list.push({
           occDate: occ, id: s.id, name: title, kind: isTest ? "test" : "homework",
           color: isTest ? TEST_COLOR : SCHOOL_COLOR,
-          subtitle: withTime(formatTimeRange(s), `${kindWord} · ${who}${s.completedAt ? t.doneSuffix : ""}`),
+          subtitle: withSource(withTime(formatTimeRange(s), `${kindWord} · ${who}${s.completedAt ? t.doneSuffix : ""}`), s),
           short: chipWithTime(s.startTime, `${isTest ? "🧪" : "📝"} ${s.subject || s.name}`),
           startTime: s.startTime ?? null,
           personId: s.assignedUser?.id ?? null,

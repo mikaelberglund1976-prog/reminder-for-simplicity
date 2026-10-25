@@ -16,6 +16,8 @@ type Alert = { id: string; childId: string; kind: "MOVED" | "TIME" | "CANCELLED"
 type Changes = { alerts: Alert[]; names: Record<string, string>; me: string };
 type TItem = { reminderId: string; title: string; who: string | null; needsRide: boolean; driverId: string | null; href: string };
 type Plan = { isAdult: boolean; items: TItem[]; clashes: string[] };
+// 2026-10-25 (Etapp 0 G8): links that stopped syncing — see /api/family/feed-health.
+type FeedIssue = { id: string; kind: "school" | "activity"; who: string; source: string; lastSyncAt: string | null; failed: boolean };
 const ICON: Record<Alert["kind"], string> = { MOVED: "📅", TIME: "⏰", CANCELLED: "🚫", NEW_TEST: "📝", NEW: "✨", MANY: "🔄" };
 
 export type SoonSchool = { key: string; who: string; title: string; day: Date; kind: "TEST" | "HOMEWORK" | "OTHER"; href: string };
@@ -26,16 +28,18 @@ export default function AttentionCard({ soon, unassigned }: { soon: SoonSchool[]
   const a = m.assist;
   const [changes, setChanges] = useState<Changes | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [feedIssues, setFeedIssues] = useState<FeedIssue[]>([]);
 
   useEffect(() => {
     fetch("/api/changes").then((r) => (r.ok ? r.json() : null)).then(setChanges).catch(() => {});
     fetch("/api/family/tomorrow").then((r) => (r.ok ? r.json() : null)).then(setPlan).catch(() => {});
+    fetch("/api/family/feed-health").then((r) => (r.ok ? r.json() : null)).then((d) => setFeedIssues(d?.issues ?? [])).catch(() => {});
   }, []);
 
   const alerts = changes?.alerts ?? [];
   const clashes = plan?.clashes ?? [];
   const noRide = plan?.isAdult ? plan.items.filter((i) => i.needsRide && !i.driverId) : [];
-  if (alerts.length === 0 && clashes.length === 0 && noRide.length === 0 && soon.length === 0 && unassigned === 0) return null;
+  if (alerts.length === 0 && clashes.length === 0 && noRide.length === 0 && soon.length === 0 && unassigned === 0 && feedIssues.length === 0) return null;
 
   const day = (ymd: string | null) => ymd ? new Date(ymd + "T12:00:00Z").toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }) : "";
   const changeLine = (x: Alert) => {
@@ -52,6 +56,12 @@ export default function AttentionCard({ soon, unassigned }: { soon: SoonSchool[]
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
     return diff <= 0 ? m.common.today.toLowerCase() : diff === 1 ? m.common.tomorrow.toLowerCase() : d.toLocaleDateString(dateLocale, { weekday: "long" });
+  };
+  const feedLine = (f: FeedIssue) => {
+    if (f.failed) return t.attFeedFailed(f.source, f.who);
+    if (!f.lastSyncAt) return t.attFeedNever(f.source, f.who);
+    const since = new Date(f.lastSyncAt).toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" });
+    return t.attFeedStale(f.source, f.who, since);
   };
   async function seen() {
     setChanges((c) => c && { ...c, alerts: [] });
@@ -85,6 +95,7 @@ export default function AttentionCard({ soon, unassigned }: { soon: SoonSchool[]
         return row(`a${x.id}`, ICON[x.kind], <>{who && <strong>{who}: </strong>}{changeLine(x)}</>);
       })}
       {soon.map((s) => row(s.key, s.kind === "TEST" ? "📝" : "📚", t.attTestSoon(s.who, s.title, when(s.day)), s.href))}
+      {feedIssues.map((f) => row(`f${f.id}`, "🔌", feedLine(f), f.kind === "school" ? "/dashboard/school" : "/dashboard/training", t.attCheck))}
       {unassigned > 0 && row("unassigned", "👤", t.attUnassigned(unassigned), "/dashboard/training", t.attFix)}
     </section>
   );

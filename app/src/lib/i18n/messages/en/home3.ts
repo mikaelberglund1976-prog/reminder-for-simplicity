@@ -9,6 +9,11 @@ export const home3 = {
   attTestSoon: (who: string, title: string, when: string) => `${who}: ${title} ${when}`,
   attUnassigned: (n: number) => (n === 1 ? "1 activity has no one assigned" : `${n} activities have no one assigned`),
   attFix: "Fix",
+  // 2026-10-25 (Etapp 0 G8): a school/activity link that stopped syncing
+  attFeedFailed: (source: string, who: string) => `${source}${who ? ` for ${who}` : ""} isn't syncing`,
+  attFeedStale: (source: string, who: string, since: string) => `${source}${who ? ` for ${who}` : ""} hasn't synced since ${since}`,
+  attFeedNever: (source: string, who: string) => `${source}${who ? ` for ${who}` : ""} hasn't synced yet`,
+  attCheck: "Check",
   // Next up per child (row 57)
   startsAt: (day: string, time: string) => `Starts ${day} ${time}`,
   offDay: (day: string) => `${day} · off school`,

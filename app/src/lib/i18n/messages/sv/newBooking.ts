@@ -45,6 +45,7 @@ export const newBooking: Messages["newBooking"] = {
   noTime: "Ta bort tid",
   timeHint: "Lämna tomt om det inte finns någon bestämd tid.",
   editActivity: "Ändra aktivitet",
+  importedFrom: (source) => `Från ${source} – när du sparar en ändring här skriver synken inte över den.`,
   editChore: "Ändra syssla",
   saveChanges: "Spara ändringar",
   couldNotLoad: "Kunde inte hämtas – den kan ha tagits bort.",

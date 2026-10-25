@@ -158,7 +158,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
     finally { setBusy(null); }
   }
 
-  async function saveEdit(id: string, fields: { name: string; subject: string; schoolKind: SchoolKind; date: string; startTime: string | null }) {
+  async function saveEdit(id: string, fields: EditFields) {
     setBusy(id);
     try {
       const res = await fetch(`/api/family/school/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fields) });
@@ -199,7 +199,7 @@ export default function SchoolSection({ mode, members = [], initialDate, onlyUse
         const adultView = mode === "overview";
         const canChange = adultView || !item.imported;
         return <Row key={item.id} item={item} first={i === 0} busy={busy === item.id} showOwner={adultView && members.length > 1}
-          canEdit={canChange} canDelete={canChange}
+          canEdit={canChange} canDelete={canChange} people={adultView ? members : []}
           onToggle={() => patch(item.id, { completed: !item.completedAt })}
           onCalendar={() => patch(item.id, { showInCalendar: !item.showInCalendar })}
           onSave={(fields) => saveEdit(item.id, fields)}
@@ -332,10 +332,17 @@ function toDateInput(iso: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCalendar, onSave, onDelete }: {
+// 2026-10-25 (Etapp 0 G1): only what was actually changed is sent, so that
+// moving an imported item to another child doesn't stop its school link from
+// updating it (a content change still does, as before).
+type EditFields = Partial<{ name: string; subject: string; schoolKind: SchoolKind; date: string; startTime: string | null; assignedTo: string }>;
+
+function Row({ item, first, busy, showOwner, canEdit, canDelete, people = [], onToggle, onCalendar, onSave, onDelete }: {
   item: SchoolItem; first: boolean; busy: boolean; showOwner: boolean; canEdit: boolean; canDelete: boolean;
+  // adults only: who the item can be moved to (empty = no picker)
+  people?: { id: string; name: string }[];
   onToggle: () => void; onCalendar: () => void; onDelete: () => void;
-  onSave: (f: { name: string; subject: string; schoolKind: SchoolKind; date: string; startTime: string | null }) => Promise<boolean>;
+  onSave: (f: EditFields) => Promise<boolean>;
 }) {
   const meta = KIND_META[item.schoolKind ?? "OTHER"];
   const { m: msg, dateLocale } = useI18n();
@@ -349,16 +356,28 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
   const [eKind, setEKind] = useState<SchoolKind>(item.schoolKind ?? "OTHER");
   const [eDate, setEDate] = useState(toDateInput(item.date));
   const [eTime, setETime] = useState(item.startTime ?? "");
+  const [eWho, setEWho] = useState(item.assignedUser?.id ?? "");
 
   function startEdit() {
     if (!canEdit) return;
-    setEName(item.name); setESubject(item.subject ?? ""); setEKind(item.schoolKind ?? "OTHER"); setEDate(toDateInput(item.date)); setETime(item.startTime ?? "");
+    setEName(item.name); setESubject(item.subject ?? ""); setEKind(item.schoolKind ?? "OTHER"); setEDate(toDateInput(item.date)); setETime(item.startTime ?? ""); setEWho(item.assignedUser?.id ?? "");
     setEditing(true);
   }
 
   if (editing) {
     return (
-      <form onSubmit={async (e) => { e.preventDefault(); if (!eName.trim()) return; if (await onSave({ name: eName.trim(), subject: eSubject.trim(), schoolKind: eKind, date: eDate, startTime: eTime || null })) setEditing(false); }}
+      <form onSubmit={async (e) => {
+        e.preventDefault();
+        if (!eName.trim()) return;
+        const f: EditFields = {};
+        if (eName.trim() !== item.name) f.name = eName.trim();
+        if (eSubject.trim() !== (item.subject ?? "")) f.subject = eSubject.trim();
+        if (eKind !== (item.schoolKind ?? "OTHER")) f.schoolKind = eKind;
+        if (eDate !== toDateInput(item.date)) f.date = eDate;
+        if ((eTime || null) !== (item.startTime ?? null)) f.startTime = eTime || null;
+        if (eWho && eWho !== (item.assignedUser?.id ?? "")) f.assignedTo = eWho;
+        if (Object.keys(f).length === 0 || await onSave(f)) setEditing(false);
+      }}
         style={{ padding: "12px 14px", borderTop: first ? "none" : "1px solid var(--border-soft)", background: "var(--surface-2)", fontFamily: FONT }}>
         <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
           {(Object.keys(KIND_META) as SchoolKind[]).map(k => {
@@ -376,6 +395,11 @@ function Row({ item, first, busy, showOwner, canEdit, canDelete, onToggle, onCal
           <input value={eSubject} onChange={e => setESubject(e.target.value)} list="school-subjects" placeholder={t.subject} style={{ ...input, flex: 1 }} aria-label={t.subject} />
           <input type="date" value={eDate} onChange={e => setEDate(e.target.value)} style={{ ...input, flex: 1 }} aria-label={msg.common.date} />
         </div>
+        {people.length > 1 && (
+          <select value={eWho} onChange={e => setEWho(e.target.value)} style={input} aria-label={t.whoFor} title={t.whoFor}>
+            {people.map(p => <option key={p.id} value={p.id}>{t.whoFor}: {p.name}</option>)}
+          </select>
+        )}
         <input type="time" value={eTime} step={300} onChange={e => setETime(e.target.value)} style={input} aria-label={t.timeOptional} title={t.timeOptional} />
         {item.imported && <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.4 }}>{t.fromPlatformEdit(item.source ?? "SchoolSoft")}</div>}
         <div style={{ display: "flex", gap: 8 }}>

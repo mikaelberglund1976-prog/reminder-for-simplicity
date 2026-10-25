@@ -71,6 +71,10 @@ export function ensureSchoolFeedTables(): Promise<void> {
       );
       await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "school_imports_child_uid_key" ON "school_imports"("childId", "uid")`);
       await prisma.$executeRawUnsafe(`ALTER TABLE "school_imports" ADD COLUMN IF NOT EXISTS "feedId" TEXT`);
+      // 2026-10-25 (Etapp 0 G1): who an imported item was moved to (null = the
+      // link's child). The school sync never rewrites the person, so this is
+      // the record of the move. Structure only — no existing row is changed.
+      await prisma.$executeRawUnsafe(`ALTER TABLE "school_imports" ADD COLUMN IF NOT EXISTS "personOverride" TEXT`);
       // Imports from before 2026-10-10 all came from the child's SchoolSoft link.
       await prisma.$executeRawUnsafe(`UPDATE "school_imports" i SET "feedId" = f."id" FROM "school_feeds" f WHERE i."feedId" IS NULL AND f."childId" = i."childId" AND f."provider" = 'schoolsoft'`);
       // 2026-10-22: timetable lessons ("Lektion MA") that came in as school
@@ -450,6 +454,14 @@ export async function importSources(ids: string[]): Promise<Map<string, string>>
     console.error("importSources failed:", err);
     return new Map();
   }
+}
+
+/** 2026-10-25 (G1): an imported school item was moved to another person. */
+export async function setImportPerson(reminderId: string, personId: string) {
+  try {
+    await ensureSchoolFeedTables();
+    await prisma.$executeRaw`UPDATE "school_imports" SET "personOverride" = ${personId} WHERE "reminderId" = ${reminderId}`;
+  } catch (err) { console.error("setImportPerson failed:", err); }
 }
 
 export async function markImport(reminderId: string, field: "edited" | "hidden") {

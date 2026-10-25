@@ -25,6 +25,8 @@ export const school = {
   emailDayBefore: "You'll get an email reminder the day before.",
   done: (n: number) => `Done · ${n}`,
   subject: "Subject",
+  // 2026-10-25 (Etapp 0 G1): move an item to another child
+  whoFor: "For",
   fromPlatformEdit: (name: string) => `From ${name} — after you save, ${name} won't overwrite your changes.`,
   markNotDone: "Mark as not done",
   markDone: "Mark as done",

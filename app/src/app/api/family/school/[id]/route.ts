@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { importedIds, markImport } from "@/lib/schoolFeeds";
+import { importedIds, markImport, setImportPerson } from "@/lib/schoolFeeds";
 import { timesFromBody, setTime } from "@/lib/reminderTimes";
 
 async function loadAllowed(id: string, userId: string) {
@@ -50,13 +50,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const item = res.item;
 
     const body = await req.json().catch(() => ({}));
-    const data: { completedAt?: Date | null; showInCalendar?: boolean; name?: string; subject?: string | null; schoolKind?: "HOMEWORK" | "TEST" | "OTHER"; date?: Date; note?: string | null } = {};
+    const data: { assignedTo?: string; completedAt?: Date | null; showInCalendar?: boolean; name?: string; subject?: string | null; schoolKind?: "HOMEWORK" | "TEST" | "OTHER"; date?: Date; note?: string | null } = {};
     if (typeof body?.completed === "boolean") data.completedAt = body.completed ? new Date() : null;
     if (typeof body?.showInCalendar === "boolean") data.showInCalendar = body.showInCalendar;
     // 2026-10-03: adjust an item (e.g. an imported one marked as homework that
     // is really a test). Editing an imported item stops SchoolSoft from
     // overwriting it at the next sync.
     let contentEdit = false;
+    // 2026-10-25 (Etapp 0 G1): move an item to the right child (e.g. a school
+    // link connected to the wrong one). Adults only. Moving isn't a content
+    // edit — the school sync keeps updating the item where it now is.
+    if (typeof body?.assignedTo === "string" && body.assignedTo !== item.assignedTo) {
+      if (res.role === "CHILD") return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+      const target = await prisma.householdMember.findFirst({ where: { householdId: item.householdId!, userId: body.assignedTo } });
+      if (!target) return NextResponse.json({ error: "Pick someone in your family" }, { status: 400 });
+      data.assignedTo = body.assignedTo;
+    }
     if (typeof body?.name === "string") {
       if (!body.name.trim()) return NextResponse.json({ error: "Name can't be empty" }, { status: 400 });
       data.name = body.name.trim().slice(0, 200); contentEdit = true;
@@ -79,6 +88,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const updated = Object.keys(data).length > 0 ? await prisma.reminder.update({ where: { id: item.id }, data }) : item;
     if (time) { await setTime(item.id, time); contentEdit = true; }
     if (contentEdit) await markImport(item.id, "edited");
+    if (data.assignedTo) await setImportPerson(item.id, data.assignedTo);
     return NextResponse.json({ ...updated, ...(time ?? {}) });
   } catch (err) {
     console.error("School PATCH error:", err);

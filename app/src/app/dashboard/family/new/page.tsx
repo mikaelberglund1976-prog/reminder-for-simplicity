@@ -50,6 +50,8 @@ function NewBookingContent() {
   const editId = searchParams.get("edit");
   const isEdit = !!editId;
   const [loadError, setLoadError] = useState("");
+  // 2026-10-25 (Etapp 0 G2): the link an imported activity syncs from.
+  const [importSource, setImportSource] = useState<string | null>(null);
   const [canChangePerson, setCanChangePerson] = useState(true);
   // 2026-10-17: the item as stored, for "Delete only this day / the whole series".
   const [loaded, setLoaded] = useState<{ date: string; recurrence: RecurrenceRule; choreRecurrenceDays: string | null; skipDates: string[] } | null>(null);
@@ -101,6 +103,7 @@ function NewBookingContent() {
       setNote(item.note ?? "");
       setRequiresApproval(!!item.requiresApproval);
       setCanChangePerson(item.canChangePerson !== false);
+      setImportSource(typeof item.source === "string" ? item.source : null);
       if (item.assignedTo) setAssignees([item.assignedTo]);
       const day = typeof item.date === "string" ? item.date.slice(0, 10) : startDate;
       // Show the date as the family's local day (dates are stored around midday).
@@ -271,6 +274,9 @@ function NewBookingContent() {
               {isEdit ? (isTraining ? "🎯 " + t.editActivity : "🧹 " + t.editChore) : isTraining ? t.newActivityChip : t.newChoreChip}
             </span>
           </div>
+          {isEdit && importSource && (
+            <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.4, marginTop: -6 }}>{t.importedFrom(importSource)}</div>
+          )}
 
           {/* Name */}
           <div>

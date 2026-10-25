@@ -43,6 +43,7 @@ export const newBooking = {
   noTime: "Clear time",
   timeHint: "Leave empty if there is no set time.",
   editActivity: "Edit activity",
+  importedFrom: (source: string) => `From ${source} — once you save a change here, the sync won't overwrite it.`,
   editChore: "Edit chore",
   saveChanges: "Save changes",
   couldNotLoad: "Could not load it — it may have been removed.",

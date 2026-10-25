@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTimes, setTime, timesFromBody } from "@/lib/reminderTimes";
-import { markActivityImport } from "@/lib/activityFeeds";
+import { activityImportInfo, markActivityImport, setActivityPerson } from "@/lib/activityFeeds";
 import { getSkips, applySkipFromBody } from "@/lib/reminderSkips";
 
 // 2026-10-07 (Mikael: "när man går in på alla aktiviteter kunna uppdatera
@@ -36,7 +36,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if ("error" in res) return NextResponse.json({ error: res.error === 403 ? "Not allowed" : "Not found" }, { status: res.error });
   const t = (await getTimes([res.item.id])).get(res.item.id);
   const skipDates = (await getSkips([res.item.id])).get(res.item.id) ?? [];
-  return NextResponse.json({ ...res.item, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null, skipDates, canChangePerson: !res.isChild });
+  // 2026-10-25 (Etapp 0 G2): which calendar link an imported activity came from.
+  const source = res.item.category === "TRAINING" ? (await activityImportInfo([res.item.id])).get(res.item.id) ?? null : null;
+  return NextResponse.json({ ...res.item, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null, skipDates, canChangePerson: !res.isChild, source });
 }
 
 // PATCH /api/family/chores/[id]
@@ -93,13 +95,37 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const time = item.category === "TRAINING" ? timesFromBody(body) : undefined;
     if (Object.keys(data).length === 0 && !time) return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
 
+    // 2026-10-25 (Etapp 0 G1): the edit form sends every field on save. Work
+    // out what really changed, so that moving an imported activity to another
+    // person doesn't stop its calendar link from updating it. Unchanged fields
+    // aren't written at all.
+    let contentChanged = false;
+    let timeToWrite = time;
+    if (item.category === "TRAINING") {
+      const ymd = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Stockholm", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+      if (data.name !== undefined && data.name === item.name) delete data.name;
+      if (data.note !== undefined && (data.note ?? null) === (item.note ?? null)) delete data.note;
+      if (data.recurrence !== undefined && data.recurrence === item.recurrence) delete data.recurrence;
+      if (data.choreRecurrenceDays !== undefined && (data.choreRecurrenceDays ?? null) === (item.choreRecurrenceDays ?? null)) delete data.choreRecurrenceDays;
+      if (data.date !== undefined && ymd(data.date) === ymd(item.date)) delete data.date;
+      if (time) {
+        const cur = (await getTimes([item.id])).get(item.id);
+        if ((cur?.startTime ?? null) === (time.startTime ?? null) && (cur?.endTime ?? null) === (time.endTime ?? null)) timeToWrite = undefined;
+      }
+      contentChanged = Object.keys(data).some((k) => k !== "assignedTo") || !!timeToWrite;
+    }
+
     const updated = Object.keys(data).length > 0
       ? await prisma.reminder.update({ where: { id: item.id }, data })
       : item;
-    if (time) await setTime(item.id, time);
-    // 2026-10-09: an activity from a calendar link that's changed here is no
-    // longer overwritten by the next sync.
-    if (item.category === "TRAINING") await markActivityImport(item.id, "edited");
+    if (item.category === "TRAINING") {
+      if (timeToWrite) await setTime(item.id, timeToWrite);
+      // 2026-10-09: an activity from a calendar link that's changed here is no
+      // longer overwritten by the next sync. 2026-10-25: only a real content
+      // change counts — a new person is remembered and the sync keeps going.
+      if (contentChanged) await markActivityImport(item.id, "edited");
+      if (data.assignedTo) await setActivityPerson(item.id, data.assignedTo);
+    } else if (time) await setTime(item.id, time);
     const t = (await getTimes([item.id])).get(item.id);
     return NextResponse.json({ ...updated, startTime: t?.startTime ?? null, endTime: t?.endTime ?? null });
   } catch (err) {

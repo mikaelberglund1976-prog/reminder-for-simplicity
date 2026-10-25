@@ -47,6 +47,10 @@ export function ensureActivityFeedTables(): Promise<void> {
         `CREATE TABLE IF NOT EXISTS "activity_imports" ("reminderId" TEXT NOT NULL, "feedId" TEXT NOT NULL, "childId" TEXT NOT NULL, "uid" TEXT NOT NULL, "edited" BOOLEAN NOT NULL DEFAULT false, "hidden" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "activity_imports_pkey" PRIMARY KEY ("reminderId"))`
       );
       await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "activity_imports_feed_uid_key" ON "activity_imports"("feedId", "uid")`);
+      // 2026-10-25 (Etapp 0 G1): someone moved an imported activity to another
+      // person. Null = the link's child (every existing row). Structure only —
+      // no existing row is changed.
+      await prisma.$executeRawUnsafe(`ALTER TABLE "activity_imports" ADD COLUMN IF NOT EXISTS "personOverride" TEXT`);
       // 2026-10-11 (Mikael): activities imported before the MyClub fix still
       // start with the answer ("[JA] Träning") and only change at the next sync
       // (up to 20 h). Fix them right away: "[Nej]" ones are removed, the rest get
@@ -63,7 +67,7 @@ export type ActivityFeedRow = {
   id: string; householdId: string; childId: string; url: string; label: string | null; createdById: string;
   createdAt: Date; lastSyncAt: Date | null; lastStatus: string | null; lastCount: number | null;
 };
-type ImportRow = { reminderId: string; feedId: string; uid: string; edited: boolean; hidden: boolean };
+type ImportRow = { reminderId: string; feedId: string; uid: string; edited: boolean; hidden: boolean; personOverride: string | null };
 
 // ── Link validation ─────────────────────────────────────────────────────────
 export function normalizeActivityUrl(raw: unknown): { url: string } | { error: string } {
@@ -378,7 +382,12 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
     const declined = new Set<string>();
     const entries = parseActivities(text, from, to, declined).slice(0, MAX_ITEMS);
 
-    const existing = await prisma.$queryRaw<ImportRow[]>`SELECT "reminderId", "feedId", "uid", "edited", "hidden" FROM "activity_imports" WHERE "feedId" = ${feed.id}`;
+    const existing = await prisma.$queryRaw<ImportRow[]>`SELECT "reminderId", "feedId", "uid", "edited", "hidden", "personOverride" FROM "activity_imports" WHERE "feedId" = ${feed.id}`;
+    // 2026-10-25 (G1): an activity moved to someone else stays with them and
+    // keeps syncing (time, place, cancellations) — unless that person has left
+    // the family, then it goes back to the link's child.
+    const memberIds = new Set((await prisma.householdMember.findMany({ where: { householdId: feed.householdId }, select: { userId: true } })).map((x) => x.userId));
+    const personFor = (imp: ImportRow) => (imp.personOverride && memberIds.has(imp.personOverride) ? imp.personOverride : feed.childId);
     const byUid = new Map(existing.map((r) => [r.uid, r]));
     const ids = existing.map((r) => r.reminderId);
     const [reminders, times] = await Promise.all([
@@ -408,16 +417,16 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
           // MyClub) and now back in the calendar (answer changed) → bring it
           // back. Deleted in the app = hidden, which was skipped above.
           if (e.ymd < todayYmd) continue;
-          await prisma.reminder.update({ where: { id: r.id }, data: { isActive: true, name, date, note, assignedTo: feed.childId } });
+          await prisma.reminder.update({ where: { id: r.id }, data: { isActive: true, name, date, note, assignedTo: personFor(imp) } });
           await setTime(r.id, { startTime: e.startTime, endTime: e.endTime });
           updated++;
           continue;
         }
         const t = times.get(r.id);
-        const changed = r.name !== name || r.date.getTime() !== date.getTime() || (r.note ?? null) !== note || r.assignedTo !== feed.childId;
+        const changed = r.name !== name || r.date.getTime() !== date.getTime() || (r.note ?? null) !== note || r.assignedTo !== personFor(imp);
         const timeChanged = (t?.startTime ?? null) !== e.startTime || (t?.endTime ?? null) !== e.endTime;
         if (r.date.getTime() !== date.getTime() || timeChanged) watch.changed(r.id, name, r.date.toISOString().slice(0, 10), e.ymd, t?.startTime ?? null, e.startTime);
-        if (changed) await prisma.reminder.update({ where: { id: r.id }, data: { name, date, note, assignedTo: feed.childId } });
+        if (changed) await prisma.reminder.update({ where: { id: r.id }, data: { name, date, note, assignedTo: personFor(imp) } });
         if (timeChanged) await setTime(r.id, { startTime: e.startTime, endTime: e.endTime });
         if (changed || timeChanged) updated++;
         continue;
@@ -536,6 +545,15 @@ export async function activityImportInfo(ids: string[]): Promise<Map<string, str
     for (const r of rows) map.set(r.reminderId, r.label || maskActivityUrl(r.url));
   } catch (err) { console.error("activityImportInfo failed:", err); }
   return map;
+}
+
+/** 2026-10-25 (G1): an imported activity was moved to another person — the
+ *  sync keeps updating it but leaves it with them. No-op for app-made items. */
+export async function setActivityPerson(reminderId: string, personId: string) {
+  try {
+    await ensureActivityFeedTables();
+    await prisma.$executeRaw`UPDATE "activity_imports" SET "personOverride" = ${personId} WHERE "reminderId" = ${reminderId}`;
+  } catch (err) { console.error("setActivityPerson failed:", err); }
 }
 
 export async function markActivityImport(reminderId: string, field: "edited" | "hidden") {
