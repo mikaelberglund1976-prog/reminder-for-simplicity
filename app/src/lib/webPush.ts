@@ -14,6 +14,7 @@
 // VAPID_PRIVATE_KEY (base64url, 32 bytes), VAPID_SUBJECT (mailto:…).
 import { createECDH, createPrivateKey, createCipheriv, hkdfSync, randomBytes, sign } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { trackServer } from "@/lib/analyticsStore";
 
 export type PushMessage = { title: string; body: string; url?: string; tag?: string };
 // 2026-10-22: school, activities and birthdays split out of "reminders" so
@@ -149,7 +150,9 @@ export async function sendPushToUser(userId: string, msg: PushMessage, kind: Pus
       `SELECT "endpoint", "p256dh", "auth" FROM "push_subscriptions" WHERE "userId" = $1`, userId
     );
     let reached = 0;
-    const payload = Buffer.from(JSON.stringify({ title: msg.title, body: msg.body, url: msg.url ?? "/dashboard", tag: msg.tag }));
+    // 2026-10-25: `kind` travels with the push so the service worker can count
+    // a tap (notification_opened) per kind — §38 "notification action rate".
+    const payload = Buffer.from(JSON.stringify({ title: msg.title, body: msg.body, url: msg.url ?? "/dashboard", tag: msg.tag, kind: kind ?? "other" }));
     for (const s of subs) {
       try {
         const res = await fetch(s.endpoint, {
@@ -174,6 +177,7 @@ export async function sendPushToUser(userId: string, msg: PushMessage, kind: Pus
         console.error("Push send error:", err);
       }
     }
+    if (reached > 0) await trackServer("notification_sent", { kind: kind ?? "other" }, { userId });
     return reached;
   } catch (err) {
     // Push is best-effort: it must never break the cron run or an API call.

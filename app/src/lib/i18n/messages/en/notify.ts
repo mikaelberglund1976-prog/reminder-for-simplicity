@@ -20,6 +20,16 @@ export const notify = {
     changes: "A moved match, a new test, a cancelled training",
   } as Record<string, string>,
   pushOffHint: "Push needs to be turned on for this phone above.",
+  // 2026-10-25 (masterbrief §26): presets first, details under Customise
+  presetLabel: "How much do you want to hear?",
+  presets: { important: "Important", balanced: "Balanced", all: "Everything", custom: "Customise" } as Record<string, string>,
+  presetHints: {
+    important: "Only what needs you: reminders and changes (a moved match, a new test). Email only for reminders.",
+    balanced: "Recommended. Reminders, homework & tests, activities, changes and the evening summary. Email for reminders and school.",
+    all: "Everything, by push and email.",
+    custom: "Choose per kind below.",
+  } as Record<string, string>,
+  recommended: "recommended",
   saved: "Saved",
   // Email footer + one-click page
   emailOff: (kind: string) => `Stop emails about ${kind.toLowerCase()}`,

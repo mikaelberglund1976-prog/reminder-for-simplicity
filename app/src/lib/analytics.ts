@@ -10,7 +10,9 @@ export type AnalyticsEvent =
   | "more_feature_clicked"
   // 2026-10-25 (G7)
   | "attention_clicked"
-  | "child_day_opened";
+  | "child_day_opened"
+  | "notification_opened"
+  | "notify_preset_chosen";
 
 export function track(event: AnalyticsEvent, props: Record<string, string | number | boolean | null> = {}): void {
   try {

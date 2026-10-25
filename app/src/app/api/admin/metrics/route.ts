@@ -73,6 +73,7 @@ export async function GET() {
     ]);
     const manual = await ev(`SELECT COUNT(*) AS n FROM "reminders" r WHERE r."createdAt" >= NOW() - INTERVAL '30 days'
           AND NOT EXISTS (SELECT 1 FROM "school_imports" i WHERE i."reminderId" = r."id") AND NOT EXISTS (SELECT 1 FROM "activity_imports" a WHERE a."reminderId" = r."id")`);
+    const notif = await ev(`SELECT COUNT(*) FILTER (WHERE "event" = 'notification_sent') AS sent, COUNT(*) FILTER (WHERE "event" = 'notification_opened') AS opened FROM "analytics_events" WHERE "event" IN ('notification_sent','notification_opened') AND "createdAt" >= NOW() - INTERVAL '30 days'`);
     const events = await q(`SELECT "event", COUNT(*) AS n FROM "analytics_events" WHERE "createdAt" >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY 2 DESC`);
 
     const hh = hhTotal;
@@ -89,6 +90,7 @@ export async function GET() {
       childActivation: { n: num(childActive.n), of: withChild.length, pct: rate(num(childActive.n), withChild.length) },
       automaticShare30d: { imported: importedN, manual: num(manual.n), pct: rate(importedN, importedN + num(manual.n)) },
       correctionRate30d: { corrected: num(corrections.n), moved: num(corrections.moved), edited: num(corrections.edited), hidden: num(corrections.hidden), added: num(sync.added), pct: rate(num(corrections.n), num(sync.added)) },
+      notificationAction30d: { sent: num(notif.sent), opened: num(notif.opened), pct: rate(num(notif.opened), num(notif.sent)) },
       syncSuccess30d: { ok: num(sync.ok), total: num(sync.total), pct: rate(num(sync.ok), num(sync.total)) },
       events30d: events.map((e) => ({ event: String(e.event), n: num(e.n) })),
     });

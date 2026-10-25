@@ -27,6 +27,10 @@ export const ANALYTICS_EVENTS = [
   "more_opened", "more_search_used", "more_quick_action_clicked", "more_feature_clicked",
   // 2026-10-25 (G7): client events
   "attention_clicked", "child_day_opened",
+  // 2026-10-25 (§38 "notification action rate"): sent by the service worker
+  "notification_opened",
+  // 2026-10-25: notification preset chosen (§26)
+  "notify_preset_chosen",
 ] as const;
 // 2026-10-25 (G7): recorded on the server only (never accepted from /api/events).
 export const SERVER_EVENTS = [
@@ -36,6 +40,7 @@ export const SERVER_EVENTS = [
   "import_corrected",  // { kind, how: move|edit|hide } — someone fixed an imported item
   "quick_capture_saved", // { shopping, other, ai }
   "reminder_done",     // { undo } — G6
+  "notification_sent", // { kind } — one per push that reached ≥1 device
 ] as const;
 export type ServerEvent = (typeof SERVER_EVENTS)[number];
 

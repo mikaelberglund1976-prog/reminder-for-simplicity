@@ -1,4 +1,4 @@
-// Reminder for Simplicity – service worker (v3, 2026-10-09: + push notifications)
+// Reminder for Simplicity – service worker (v3, 2026-10-09: + push notifications; 2026-10-25: counts taps on notifications)
 //
 // What it does:
 //  - Pages (HTML): always fetched from the network, NEVER cached. That keeps
@@ -92,7 +92,7 @@ self.addEventListener("push", (e) => {
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       tag: data.tag || undefined,
-      data: { url: data.url || "/dashboard" },
+      data: { url: data.url || "/dashboard", kind: data.kind || "other" },
     })
   );
 });
@@ -100,6 +100,12 @@ self.addEventListener("push", (e) => {
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || "/dashboard";
+  // 2026-10-25 (§38 "notification action rate"): count the tap. Best-effort —
+  // never delays or blocks opening the app.
+  const kind = (e.notification.data && e.notification.data.kind) || "other";
+  try {
+    fetch("/api/events", { method: "POST", credentials: "include", keepalive: true, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "notification_opened", props: { kind } }) }).catch(() => {});
+  } catch (_) { /* ignore */ }
   e.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const c of list) {

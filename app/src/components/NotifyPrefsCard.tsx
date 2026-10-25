@@ -7,11 +7,28 @@
 // above; email choices work on their own.
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n/client";
+import { track } from "@/lib/analytics";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const ROWS = ["reminders", "school", "activities", "birthdays", "tomorrow", "changes"] as const;
 type Row = (typeof ROWS)[number];
 const EMAIL_ROWS: Row[] = ["reminders", "school", "activities", "birthdays"];
+
+// 2026-10-25 (masterbrief §26–27): three presets + Customise. A preset only
+// writes the same per-kind choices as the switches below — nothing new is
+// stored, and nobody's current choices change until they pick one. (Everyone
+// who never changed anything is on "Everything", the old default.)
+type Preset = "important" | "balanced" | "all";
+const PRESETS: Record<Preset, { push: Row[]; email: Row[] }> = {
+  important: { push: ["reminders", "changes"], email: ["reminders"] },
+  balanced: { push: ["reminders", "school", "activities", "changes", "tomorrow"], email: ["reminders", "school"] },
+  all: { push: [...ROWS], email: [...EMAIL_ROWS] },
+};
+const same = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
+function presetOf(email: string[], push: string[]): Preset | "custom" {
+  for (const p of Object.keys(PRESETS) as Preset[]) if (same(email, PRESETS[p].email) && same(push, PRESETS[p].push)) return p;
+  return "custom";
+}
 
 function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => void; label: string; disabled?: boolean }) {
   return (
@@ -31,6 +48,7 @@ export default function NotifyPrefsCard() {
   const [email, setEmail] = useState<string[] | null>(null);
   const [push, setPush] = useState<{ kinds: string[]; devices: number; configured: boolean } | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
 
   useEffect(() => {
     fetch("/api/notify/prefs").then((r) => (r.ok ? r.json() : null)).then((d) => setEmail(d?.email ?? [...EMAIL_ROWS])).catch(() => setEmail([...EMAIL_ROWS]));
@@ -60,10 +78,43 @@ export default function NotifyPrefsCard() {
   }
 
   const pushReady = !!push?.configured && push.devices > 0;
+  const current = email && push ? presetOf(email, push.kinds) : null;
+  const detailsOpen = showCustom || current === "custom";
+
+  async function choosePreset(p: Preset | "custom") {
+    if (p === "custom") { setShowCustom(true); return; }
+    if (!email || !push) return;
+    setShowCustom(false);
+    const want = PRESETS[p];
+    setEmail([...want.email]);
+    setPush({ ...push, kinds: [...want.push] });
+    track("notify_preset_chosen", { preset: p });
+    const [a, b] = await Promise.all([
+      fetch("/api/notify/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: want.email }) }).catch(() => null),
+      fetch("/api/push", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kinds: want.push }) }).catch(() => null),
+    ]);
+    if (a?.ok && b?.ok) flash();
+  }
 
   return (
     <div style={{ fontFamily: FONT }}>
       <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6, margin: "0 0 12px" }}>{t.intro}</p>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: "var(--fg)", marginBottom: 8 }}>{t.presetLabel}</div>
+      <div role="radiogroup" aria-label={t.presetLabel} style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 4, padding: 4, borderRadius: 14, background: "var(--surface-3)", border: "1px solid var(--border)", opacity: current ? 1 : 0.6 }}>
+        {(["important", "balanced", "all", "custom"] as const).map((p) => {
+          const on = (p === "custom" ? detailsOpen : current === p && !showCustom);
+          return (
+            <button key={p} type="button" role="radio" aria-checked={on} disabled={!current} onClick={() => choosePreset(p)} style={{
+              minHeight: 44, padding: "6px 4px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12.5, fontWeight: 700, lineHeight: 1.2,
+              background: on ? "var(--surface)" : "transparent", color: on ? "var(--fg)" : "var(--muted)", boxShadow: on ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
+            }}>{t.presets[p]}</button>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.45, margin: "8px 0 14px" }}>
+        {t.presetHints[detailsOpen ? "custom" : current ?? "balanced"]}
+      </div>
+      {detailsOpen && (<>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 0 6px", borderBottom: "1px solid var(--border-soft)" }}>
         <span style={{ flex: 1, fontSize: 11.5, fontWeight: 700, color: "var(--subtle)" }}>{saved ? `✓ ${t.saved}` : ""}</span>
         <span style={{ width: 42, textAlign: "center", fontSize: 11.5, fontWeight: 800, color: "var(--muted)" }}>{t.email}</span>
@@ -81,6 +132,8 @@ export default function NotifyPrefsCard() {
           <Switch on={pushReady && !!push?.kinds.includes(k)} onClick={() => togglePush(k)} label={`${t.push}: ${t.kinds[k]}`} disabled={!pushReady} />
         </div>
       ))}
+      </>)}
+      {saved && !detailsOpen && <div style={{ fontSize: 12, color: "var(--success)", fontWeight: 700 }}>✓ {t.saved}</div>}
       {!pushReady && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 10, lineHeight: 1.5 }}>{t.pushOffHint}</div>}
     </div>
   );

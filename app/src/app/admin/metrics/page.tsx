@@ -23,6 +23,7 @@ type Metrics = {
   automaticShare30d: { imported: number; manual: number; pct: Pct };
   correctionRate30d: { corrected: number; moved: number; edited: number; hidden: number; added: number; pct: Pct };
   syncSuccess30d: { ok: number; total: number; pct: Pct };
+  notificationAction30d: { sent: number; opened: number; pct: Pct };
   events30d: { event: string; n: number }[];
 };
 
@@ -79,6 +80,7 @@ export default function AdminMetricsPage() {
               <Tile label="Barn aktiva (30 d)" value={pct(m.childActivation.pct)} sub={`${m.childActivation.n} av ${m.childActivation.of} hushåll med barn`} />
               <Tile label="Automatiskt inhämtat (30 d)" value={pct(m.automaticShare30d.pct)} sub={`${m.automaticShare30d.imported} från länkar, ${m.automaticShare30d.manual} för hand`} />
               <Tile label="Rättade importer (30 d)" value={pct(m.correctionRate30d.pct)} sub={`${m.correctionRate30d.corrected} rättade (flyttade ${m.correctionRate30d.moved}, ändrade ${m.correctionRate30d.edited}, borttagna ${m.correctionRate30d.hidden}) av ${m.correctionRate30d.added} nya`} />
+              <Tile label="Öppnade notiser (30 d)" value={pct(m.notificationAction30d.pct)} sub={`${m.notificationAction30d.opened} öppnade av ${m.notificationAction30d.sent} skickade`} />
               <Tile label="Lyckade synkar (30 d)" value={pct(m.syncSuccess30d.pct)} sub={`${m.syncSuccess30d.ok} av ${m.syncSuccess30d.total}`} />
             </div>
             <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--fg)", margin: "24px 0 8px" }}>Händelser senaste 30 dagarna</h2>
@@ -92,7 +94,7 @@ export default function AdminMetricsPage() {
               ))}
             </div>
             <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 14, lineHeight: 1.5 }}>
-              Notisernas effekt (§38 &quot;notification action rate&quot;) mäts inte än – se nästa steg i <code>NEXT_STEPS.md</code>.
+              &quot;Öppnade notiser&quot; räknas från 25 okt 2026 (masterbrief §38 &quot;notification action rate&quot;).
             </p>
           </>
         )}
