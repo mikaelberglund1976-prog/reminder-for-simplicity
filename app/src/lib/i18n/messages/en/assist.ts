@@ -13,6 +13,10 @@ export const assist = {
   // quick add
   qaPlaceholder: "Write anything… milk, dentist Tue 2pm, Elsa test maths Fri",
   qaGo: "Go",
+  // 2026-10-25 (masterbrief §8 step 2): say it instead of typing
+  qaVoice: "Say it",
+  qaListening: "Listening…",
+  qaVoiceFailed: "Couldn't hear that — try again or type it.",
   qaThinking: "Reading…",
   qaAdd: (n: number) => (n === 1 ? "Add" : `Add all ${n}`),
   qaCancel: "Cancel",

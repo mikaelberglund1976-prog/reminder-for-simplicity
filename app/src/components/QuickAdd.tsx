@@ -29,10 +29,38 @@ const TYPE_STYLE: Record<QType, { bg: string; fg: string; emoji: string }> = {
   REMINDER: { bg: "var(--tint-accent)", fg: "var(--accent)", emoji: "🔔" },
 };
 
-export default function QuickAdd({ onAdded }: { onAdded?: () => void }) {
-  const { m, err, dateLocale } = useI18n();
+// 2026-10-25 (masterbrief §8, Etapp 6 in the PWA): voice input where the
+// browser has speech recognition (Safari on iPhone, Chrome on Android).
+// The spoken words become the same text as if typed — nothing else changes.
+type SpeechRec = { lang: string; interimResults: boolean; maxAlternatives: number; start: () => void; stop: () => void;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null; onerror: (() => void) | null; onend: (() => void) | null };
+function speechCtor(): (new () => SpeechRec) | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
+
+export default function QuickAdd({ onAdded, initialText }: { onAdded?: () => void; initialText?: string | null }) {
+  const { m, err, dateLocale, locale } = useI18n();
   const t = m.assist;
-  const [text, setText] = useState("");
+  // 2026-10-25: text shared to the app (Share Sheet → /share) arrives prefilled.
+  const [text, setText] = useState(initialText ?? "");
+  const [canVoice, setCanVoice] = useState(false);
+  const [listening, setListening] = useState(false);
+  useEffect(() => {
+    setCanVoice(!!speechCtor());
+    // 2026-10-25 (§8 step 4): something shared to the app lands here as ?capture=…
+    try {
+      const u = new URL(window.location.href);
+      const cap = u.searchParams.get("capture");
+      if (cap && !initialText) {
+        setText(cap.slice(0, 500));
+        u.searchParams.delete("capture");
+        window.history.replaceState(null, "", u.pathname + (u.search ? u.search : "") + u.hash);
+        setTimeout(() => document.getElementById("qa-input")?.focus(), 100);
+      }
+    } catch { /* ignore */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [note, setNote] = useState<{ ok: boolean; text: string; undo?: Created } | null>(null);
@@ -43,6 +71,31 @@ export default function QuickAdd({ onAdded }: { onAdded?: () => void }) {
   useEffect(() => {
     fetch("/api/intake").then((r) => (r.ok ? r.json() : null)).then((d) => setCanScan(!!d?.configured && !!d?.available)).catch(() => {});
   }, []);
+
+  function listen() {
+    const Ctor = speechCtor();
+    if (!Ctor || listening) return;
+    const rec = new Ctor();
+    rec.lang = locale === "sv" ? "sv-SE" : "en-GB";
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    let finalText = "";
+    rec.onresult = (e) => {
+      let s = "";
+      for (let i = 0; i < e.results.length; i++) s += e.results[i][0].transcript;
+      finalText = s;
+      setText(s);
+    };
+    rec.onerror = () => { setListening(false); setNote({ ok: false, text: t.qaVoiceFailed }); };
+    rec.onend = () => {
+      setListening(false);
+      // Said something → read it right away (same preview/confirm as typing).
+      if (finalText.trim()) setTimeout(() => document.getElementById("qa-form")?.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true })), 50);
+    };
+    setNote(null);
+    setListening(true);
+    try { rec.start(); } catch { setListening(false); }
+  }
 
   const typeLabel = (k: QType) => ({ SHOPPING: t.qaShopping, TEST: t.qaTest, HOMEWORK: t.qaHomework, SCHOOL_OTHER: t.qaSchool, ACTIVITY: t.qaActivity, REMINDER: t.qaReminder })[k];
 
@@ -115,12 +168,18 @@ export default function QuickAdd({ onAdded }: { onAdded?: () => void }) {
 
   return (
     <div style={{ marginBottom: 22, fontFamily: FONT }}>
-      <form onSubmit={read} style={{ display: "flex", gap: 8, background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 16, padding: 6, boxShadow: "var(--shadow)" }}>
-        <input
+      <form id="qa-form" onSubmit={read} style={{ display: "flex", gap: 8, background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 16, padding: 6, boxShadow: "var(--shadow)" }}>
+        <input id="qa-input"
           value={text} onChange={(e) => { setText(e.target.value); if (note && !note.ok) setNote(null); }}
-          placeholder={t.qaPlaceholder} aria-label={t.qaPlaceholder} enterKeyHint="go" maxLength={500}
+          placeholder={listening ? t.qaListening : t.qaPlaceholder} aria-label={t.qaPlaceholder} enterKeyHint="go" maxLength={500}
           style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15, padding: "8px 8px", color: "var(--fg)", fontFamily: FONT }}
         />
+        {canVoice && (
+          <button type="button" onClick={listen} aria-label={t.qaVoice} title={t.qaVoice} aria-pressed={listening}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, minHeight: 40, border: "none", borderRadius: 12, background: listening ? "var(--tint-danger)" : "var(--surface-3)", color: listening ? "var(--danger)" : "var(--fg-2)", flexShrink: 0, cursor: "pointer" }}>
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="22"/></svg>
+          </button>
+        )}
         {canScan && (
           <Link href="/dashboard/intake" aria-label={m.home.quick.scan} title={m.home.quick.scan} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, borderRadius: 12, background: "var(--surface-3)", color: "var(--fg-2)", flexShrink: 0, textDecoration: "none" }}>
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>

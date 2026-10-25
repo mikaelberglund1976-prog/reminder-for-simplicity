@@ -393,9 +393,47 @@ export default function ShoppingListPage() {
     }
   }
 
+  // 2026-10-25 (masterbrief §35, Etapp 6 in the PWA): ticking things off in a
+  // shop with no signal. A tick that can't reach the server is kept on the
+  // screen and queued on this device (only item ids + checked/unchecked —
+  // no names), then sent as soon as the connection is back. Last tick wins.
+  const QUEUE_KEY = "rfs:shop-queue";
+  type Queued = { id: string; isPurchased: boolean };
+  const readQueue = (): Queued[] => { try { const v = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? "[]"); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const writeQueue = (q: Queued[]) => { try { if (q.length) localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); else localStorage.removeItem(QUEUE_KEY); } catch { /* private mode */ } };
+  const [offline, setOffline] = useState(false);
+  function enqueue(id: string, isPurchased: boolean) {
+    writeQueue([...readQueue().filter((q) => q.id !== id), { id, isPurchased }]);
+    setOffline(true);
+  }
+  async function flushQueue() {
+    let q = readQueue();
+    if (!q.length) { setOffline(typeof navigator !== "undefined" && !navigator.onLine); return; }
+    for (const job of [...q]) {
+      try {
+        const res = await fetch(`/api/family/shopping-list/${job.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isPurchased: job.isPurchased }) });
+        // Gone (deleted by someone else) or done → drop it; a server error → try later.
+        if (res.ok || res.status === 404 || res.status === 403) q = q.filter((x) => x.id !== job.id);
+        else break;
+      } catch { break; }
+    }
+    writeQueue(q);
+    setOffline(q.length > 0 || (typeof navigator !== "undefined" && !navigator.onLine));
+    if (q.length === 0 && activeListId) fetchItems(activeListId);
+  }
+  useEffect(() => {
+    flushQueue();
+    const on = () => { flushQueue(); };
+    const off = () => setOffline(true);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, [activeListId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function togglePurchased(item: Item) {
     const wasPurchased = item.isPurchased;
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: !wasPurchased, purchasedAt: !wasPurchased ? new Date().toISOString() : null } : i)));
+    if (typeof navigator !== "undefined" && !navigator.onLine) { enqueue(item.id, !wasPurchased); return; }
     try {
       const res = await fetch(`/api/family/shopping-list/${item.id}`, {
         method: "PATCH",
@@ -409,8 +447,9 @@ export default function ShoppingListPage() {
         setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: wasPurchased } : i)));
       }
     } catch (e) {
+      // No connection → keep the tick and send it later (see the queue above).
       console.error(e);
-      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPurchased: wasPurchased } : i)));
+      enqueue(item.id, !wasPurchased);
     }
   }
 
@@ -737,6 +776,11 @@ export default function ShoppingListPage() {
       // and the underlying Household/List share-token infra are left untouched
       // below in case this comes back later — only the UI is hidden.
     >
+      {offline && (
+        <div role="status" style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--tint-warning)", border: "1px solid var(--border)", borderRadius: 12, padding: "9px 12px", fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 10, fontFamily: FONT }}>
+          <span aria-hidden>📶</span> {t.offlineNote}
+        </div>
+      )}
       {dupNotice && (
         <div role="status" style={{ position: "fixed", left: 16, right: 16, bottom: "calc(84px + env(safe-area-inset-bottom))", maxWidth: 480, margin: "0 auto", zIndex: 60,
           background: "var(--ink)", color: "#fff", borderRadius: 14, padding: "12px 16px", fontSize: 14, fontWeight: 600, boxShadow: "0 6px 24px rgba(0,0,0,0.25)", fontFamily: FONT }}>

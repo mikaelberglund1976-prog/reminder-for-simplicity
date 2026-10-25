@@ -16,6 +16,7 @@ export const shopping: Messages["shopping"] = {
     household: ["Toalettpapper", "Hushållspapper", "Diskmedel", "Tvättmedel", "Soppåsar", "Tandkräm", "Schampo", "Handtvål", "Aluminiumfolie", "Plastfolie", "Batterier", "Glödlampor", "Disksvampar", "Servetter"],
   },
   unsorted: "Osorterat",
+  offlineNote: "Ingen uppkoppling – det du bockar av sparas här och skickas när nätet är tillbaka.",
   alreadyOnList: (name) => `${name} finns redan på listan`,
   defaultListName: "Inköpslista",
   couldNotDeleteList: "Kunde inte ta bort listan",
