@@ -6,7 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { LOCALES, LOCALE_COOKIE, isLocale } from "@/lib/i18n/config";
-import { getHouseholdLanguage, getRequestLocale, setHouseholdLanguage } from "@/lib/i18n/server";
+import { getHouseholdLanguage, getRequestLocale, getUserOwnLanguage, setHouseholdLanguage } from "@/lib/i18n/server";
 
 async function myMembership(userId: string) {
   const me = await prisma.householdMember.findFirst({ where: { userId } });
@@ -39,6 +39,8 @@ export async function PATCH(req: Request) {
   if (!me.isAdmin) return NextResponse.json({ error: "Only the family's admins can change the language" }, { status: 403 });
   await setHouseholdLanguage(me.householdId, language);
   const res = NextResponse.json({ language });
-  res.cookies.set(LOCALE_COOKIE, language, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  // 2026-10-25 (G4): an admin with their own language keeps it on this device.
+  const own = await getUserOwnLanguage(session.user.id);
+  res.cookies.set(LOCALE_COOKIE, own ?? language, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
   return res;
 }

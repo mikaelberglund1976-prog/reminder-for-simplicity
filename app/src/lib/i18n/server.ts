@@ -47,6 +47,49 @@ export async function setHouseholdLanguage(householdId: string, locale: Locale):
   await prisma.$executeRawUnsafe(`UPDATE "households" SET "language" = $1 WHERE "id" = $2`, locale, householdId);
 }
 
+// 2026-10-25 (masterbrief §25, Etapp 0 G4): language per person. users.language
+// = the person's own choice; null = follow the family's language (every
+// existing user — no row is changed). Created by the app on first use, like
+// households.language, and read/written only through this file.
+let ensuredUser: Promise<void> | null = null;
+export function ensureUserLanguageColumn(): Promise<void> {
+  if (!ensuredUser) {
+    ensuredUser = prisma
+      .$executeRawUnsafe(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "language" TEXT`)
+      .then(() => undefined)
+      .catch((err) => {
+        ensuredUser = null;
+        throw err;
+      });
+  }
+  return ensuredUser;
+}
+
+/** The person's own language, or null when they follow the family. */
+export async function getUserOwnLanguage(userId: string | null | undefined): Promise<Locale | null> {
+  if (!userId) return null;
+  try {
+    await ensureUserLanguageColumn();
+    const rows = await prisma.$queryRawUnsafe<{ language: string | null }[]>(`SELECT "language" FROM "users" WHERE "id" = $1`, userId);
+    const l = rows[0]?.language;
+    return isLocale(l) ? l : null;
+  } catch (err) {
+    console.error("getUserOwnLanguage", err);
+    return null;
+  }
+}
+
+/** null = follow the family again. */
+export async function setUserOwnLanguage(userId: string, locale: Locale | null): Promise<void> {
+  await ensureUserLanguageColumn();
+  await prisma.$executeRawUnsafe(`UPDATE "users" SET "language" = $1 WHERE "id" = $2`, locale, userId);
+}
+
+/** The language a person sees: their own choice, else their family's (null = neither chosen). */
+export async function getUserLanguage(userId: string | null | undefined): Promise<Locale | null> {
+  return (await getUserOwnLanguage(userId)) ?? (await getUserHouseholdLanguage(userId));
+}
+
 /** The language of the family a user belongs to (null = not chosen / no family). */
 export async function getUserHouseholdLanguage(userId: string | null | undefined): Promise<Locale | null> {
   if (!userId) return null;
@@ -68,12 +111,12 @@ export function getRequestLocale(): Locale {
 }
 
 /**
- * Language to write to a person in (emails): their family's language, else the
- * request's language when there is a request, else English.
+ * Language to write to a person in (emails, push): their own language, else
+ * their family's, else the request's language when there is a request, else English.
  */
 export async function getLocaleForUser(userId: string | null | undefined, fallback?: Locale): Promise<Locale> {
-  const fam = await getUserHouseholdLanguage(userId);
-  return fam ?? fallback ?? getRequestLocale();
+  const own = await getUserLanguage(userId);
+  return own ?? fallback ?? getRequestLocale();
 }
 
 export async function getLocaleForEmail(email: string | null | undefined, fallback?: Locale): Promise<Locale> {

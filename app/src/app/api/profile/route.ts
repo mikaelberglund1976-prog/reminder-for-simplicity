@@ -1,4 +1,4 @@
-import { getUserHouseholdLanguage } from "@/lib/i18n/server";
+import { getUserLanguage } from "@/lib/i18n/server";
 import { NAV_APPS, serializeNavTabs } from "@/lib/navTabs";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -69,7 +69,8 @@ export async function GET() {
   // the "pin" or "credentials" provider on a Google-linked account.
   const { password, ...rest } = user;
   // 2026-10-04: the family's language, so every device follows it.
-  const language = await getUserHouseholdLanguage(user.id);
+  // 2026-10-25 (G4): the person's own language first, then the family's.
+  const language = await getUserLanguage(user.id);
   return NextResponse.json({ ...rest, hasPassword: !!password, language });
 }
 

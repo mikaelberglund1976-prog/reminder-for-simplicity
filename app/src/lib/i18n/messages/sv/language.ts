@@ -7,4 +7,9 @@ export const language: Messages["language"] = {
   changed: "Språket är ändrat",
   thisDevice: "Språk på den här enheten",
   label: "Språk",
+  mine: "Mitt språk",
+  mineHint: "Bara för dig – appen, dina mejl och dina notiser. Resten av familjen behåller sitt.",
+  followFamily: (name) => `Familjens (${name})`,
+  familyDefault: "Familjens standardspråk",
+  familyDefaultHint: "Gäller alla som inte valt ett eget. Bara familjens administratörer kan ändra det.",
 };
