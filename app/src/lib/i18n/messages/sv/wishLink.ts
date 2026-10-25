@@ -1,0 +1,27 @@
+import type { Messages } from "../en";
+
+export const wishLink: Messages["wishLink"] = {
+  title: "Dela med länk",
+  hint: "Den som har länken ser den här listan och kan reservera en önskan med bara sitt namn – inget konto. Inget annat i familjen visas, och barnet ser aldrig vem som reserverat vad.",
+  create: "Skapa länk",
+  share: "Dela länken",
+  copied: "Kopierad!",
+  turnOff: "Stäng av länken",
+  validUntil: (date) => `Gäller till ${date}`,
+  shareTitle: "Önskelista",
+  pageTitle: "Önskelista",
+  heading: (name) => `${name}s önskelista`,
+  intro: "Välj något att ge – familjen ser att det är taget, så ingen köper samma sak.",
+  yourName: "Ditt namn",
+  namePlaceholder: "t.ex. Mormor Anna",
+  nameFirst: "Skriv ditt namn först, så familjen vet vem.",
+  reserve: "Jag ger den här",
+  confirm: "Bekräfta",
+  taken: "Tagen",
+  yours: "Din",
+  where: "Se var",
+  empty: "Inga önskningar än.",
+  goneTitle: "Länken fungerar inte längre",
+  goneBody: "Den kan ha gått ut eller stängts av. Be familjen om en ny.",
+  privacy: "Bara ditt namn sparas, så familjen vet vem som ger vad.",
+};

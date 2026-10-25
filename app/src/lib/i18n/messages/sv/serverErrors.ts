@@ -5,6 +5,9 @@ export const serverErrors: Record<string, string> = {
   "Pick a day first": "Välj en dag först",
   // 2026-10-25 (G6)
   "Only one-off reminders can be ticked off": "Bara engångspåminnelser kan bockas av",
+  "This link has expired or been turned off": "Länken har gått ut eller stängts av",
+  "Write your name so the family knows": "Skriv ditt namn så familjen vet",
+  "Someone already took that one": "Någon har redan tagit den",
   // Login / accounts
   "Your account is pending admin approval.": "Ditt konto väntar på att godkännas av en administratör.",
   "Please confirm your email first — check your inbox for the link.": "Bekräfta din e-post först – titta i inkorgen efter länken.",

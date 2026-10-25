@@ -11,6 +11,7 @@ import ListAccessPanel, { type ListMemberOption } from "@/components/ListAccessP
 import { useI18n, useM } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/messages";
 import WishlistSharePanel from "@/components/WishlistSharePanel";
+import WishlistLinkPanel from "@/components/WishlistLinkPanel";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 const STR = { fill: "none" as const, stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -31,6 +32,7 @@ type ChildSafeItem = {
 type AdultItem = ChildSafeItem & {
   status: "WANTED" | "RESERVED" | "PURCHASED";
   reserver: { id: string; name: string | null } | null;
+  guestName?: string; // 2026-10-25: reserved through the share link
   purchaser: { id: string; name: string | null } | null;
 };
 
@@ -557,6 +559,8 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
 
       {/* 2026-10-09: share this child's wishlist with relatives (guest accounts). */}
       {activeChild && <WishlistSharePanel childId={activeChild} childName={(children.find(([id]) => id === activeChild)?.[1] ?? "").split(" ")[0]} />}
+      {/* 2026-10-25 (§20): share link without an account — only with FEATURE_WISHLIST_LINK. */}
+      {activeList && <WishlistLinkPanel listId={activeList.id} />}
 
       <div style={{ fontSize: 12, color: "var(--subtle)", marginBottom: 14, lineHeight: 1.5 }}>
         {t.adultsOnly}
@@ -588,7 +592,7 @@ function AdultWishlist({ lists, canEditAccess, onChange, tabBar, myId }: { lists
                     </div>
                     {item.status !== "WANTED" && (
                       <div style={{ fontSize: 11, color: "var(--subtle)", marginTop: 2 }}>
-                        {item.status === "RESERVED" && t.reservedBy(item.reserver?.name ?? t.someone)}
+                        {item.status === "RESERVED" && t.reservedBy(item.reserver?.name ?? item.guestName ?? t.someone)}
                         {item.status === "PURCHASED" && t.boughtBy(item.purchaser?.name ?? t.someone)}
                       </div>
                     )}

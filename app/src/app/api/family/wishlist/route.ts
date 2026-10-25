@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { WISHLIST_LINK_ENABLED, guestReservations } from "@/lib/wishlistLinks";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -78,9 +79,12 @@ export async function GET(req: Request) {
       orderBy: isChildRequester ? { createdAt: "desc" } : [{ status: "asc" }, { createdAt: "desc" }],
     });
 
+    // 2026-10-25 (§20, behind FEATURE_WISHLIST_LINK): adults see the name a
+    // relative gave when reserving through the share link. Never the child.
+    const guests = !isChildRequester && WISHLIST_LINK_ENABLED ? await guestReservations(items.filter((i) => i.status !== "WANTED").map((i) => i.id)) : new Map<string, string>();
     return NextResponse.json({
       access: isPro ? "PRO" : "TRIAL",
-      items: isChildRequester ? items.map(toChildSafeItem) : items,
+      items: isChildRequester ? items.map(toChildSafeItem) : items.map((i) => (guests.has(i.id) ? { ...i, guestName: guests.get(i.id) } : i)),
     });
   } catch (err) {
     console.error("Wishlist GET error:", err);

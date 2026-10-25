@@ -23,6 +23,7 @@ import { language } from "./language";
 import { members } from "./members";
 import { more } from "./more";
 import { sources } from "./sources";
+import { wishLink } from "./wishLink";
 import { meta } from "./meta";
 import { nav } from "./nav";
 import { newBooking } from "./newBooking";
@@ -70,6 +71,7 @@ export const en = {
   members,
   more,
   sources,
+  wishLink,
   meta,
   nav,
   newBooking,
