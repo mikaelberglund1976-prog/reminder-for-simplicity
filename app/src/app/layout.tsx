@@ -14,8 +14,9 @@ export const viewport: Viewport = {
   themeColor: "#FAF7F2",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // 2026-10-25 (masterbrief §37, WCAG 1.4.4): zoom is no longer blocked
+  // (was maximumScale: 1, userScalable: false). globals.css keeps fields at
+  // 16px on phones so iOS doesn't zoom on focus.
 };
 
 // 2026-10-04: title/description follow the visitor's language (cookie or browser).
