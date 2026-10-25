@@ -117,6 +117,16 @@ export default function ShoppingListPage() {
   const [sheetItem, setSheetItem] = useState<Item | null>(null);
   // Store-mode text size, remembered per device.
   const [storeSize, setStoreSize] = useState<StoreSize>("M");
+  // 2026-10-24: More → "New item" lands here with ?add=1 and opens the add
+  // sheet straight on New (no extra tap). Read from window.location rather
+  // than useSearchParams, which would need a Suspense boundary for the build.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("add") !== "1") return;
+    setAddTab("create");
+    setAddSheetOpen(true);
+    router.replace("/dashboard/family/shopping-list");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     try {
       const v = localStorage.getItem("rfs.storeTextSize");

@@ -9,6 +9,7 @@ import { getMessages } from "@/lib/i18n/messages";
 import { addDays, addWeeks, addMonths, addYears } from "date-fns";
 import { purgeExpiredAccounts } from "@/lib/accountDeletion";
 import { purgeOrphanMedia } from "@/lib/media";
+import { deleteOldAnalyticsEvents } from "@/lib/analyticsStore";
 import { importedIds, syncAllFeeds } from "@/lib/schoolFeeds";
 import { activityImportInfo, syncAllActivityFeeds } from "@/lib/activityFeeds";
 import { getBirthdayRows } from "@/lib/birthdays";
@@ -311,6 +312,14 @@ export async function runReminderCron() {
   } catch (err) {
     console.error("GDPR cleanup failed:", err);
     log.push(`GDPR cleanup ERROR: ${String(err)}`);
+  }
+
+  // 2026-10-24: analytics events are kept 180 days (lib/analyticsStore.ts).
+  try {
+    const old = await deleteOldAnalyticsEvents();
+    if (old) log.push(`Removed old analytics events: ${old}`);
+  } catch (err) {
+    console.error("Analytics cleanup failed:", err);
   }
 
   return { success: true, sent, skipped, errors, todayStr, log };

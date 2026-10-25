@@ -1,0 +1,25 @@
+import type { Messages } from "../en";
+
+export const more: Messages["more"] = {
+  title: "Mer",
+  search: "Sök funktion…",
+  searchLabel: "Sök funktioner i Mer",
+  noMatch: (q) => `Inget matchar ”${q}”.`,
+  quick: "Snabbt",
+  help: "Hjälp & feedback",
+  qActivity: "Ny aktivitet",
+  qReminder: "Ny påminnelse",
+  qChore: "Ny syssla",
+  qShopping: "Ny inköpsvara",
+  calendar: (today, week) => [today > 0 ? `${today} i dag` : "", week > today ? `${week} denna vecka` : ""].filter(Boolean).join(" · "),
+  active: (n) => `${n} aktiva`,
+  overdue: (n) => `${n} försenade`,
+  choresLeft: (n) => `${n} kvar denna vecka`,
+  itemsLeft: (n) => (n === 1 ? "1 vara kvar" : `${n} varor kvar`),
+  wishes: (n) => (n === 1 ? "1 önskning" : `${n} önskningar`),
+  today: "i dag",
+  tomorrow: "i morgon",
+  bday: (name, days) => (days === 0 ? `${name} i dag 🎂` : days === 1 ? `${name} i morgon` : `${name} om ${days} dagar`),
+  tripNow: (name) => `${name} · pågår`,
+  tripIn: (name, days) => `${name} om ${days} dagar`,
+};

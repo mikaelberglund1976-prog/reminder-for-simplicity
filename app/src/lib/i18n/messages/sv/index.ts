@@ -22,6 +22,7 @@ import { intake } from "./intake";
 import { landing } from "./landing";
 import { language } from "./language";
 import { members } from "./members";
+import { more } from "./more";
 import { meta } from "./meta";
 import { nav } from "./nav";
 import { newBooking } from "./newBooking";
@@ -67,6 +68,7 @@ export const sv: Messages = {
   landing,
   language,
   members,
+  more,
   meta,
   nav,
   newBooking,
