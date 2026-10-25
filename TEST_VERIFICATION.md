@@ -1,5 +1,5 @@
 # Test & Verifiering – öppna punkter
-**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-10-23 (§23–§31 = releaserna 10–22 okt, §32 = 23 okt) · 2026-10-10 (§16–§20 = releaserna 7–10 okt, §21 = Lotuvi ljust + mörkt; §15 steg 2 och 5: ikonen är nu Lotuvi-symbolen) · tidigare 2026-10-04 (§13 = mobiltestets fynd 4 okt) – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
+**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-10-25 (§34 = Etapp 0 + Mer-menyn) · 2026-10-23 (§23–§31 = releaserna 10–22 okt, §32 = 23 okt) · 2026-10-10 (§16–§20 = releaserna 7–10 okt, §21 = Lotuvi ljust + mörkt; §15 steg 2 och 5: ikonen är nu Lotuvi-symbolen) · tidigare 2026-10-04 (§13 = mobiltestets fynd 4 okt) – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
 
 Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader utan `[x]` betyder "inte verifierat".
 
@@ -288,3 +288,28 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Kameraknappen i skrivfältet syns INTE (ingen `ANTHROPIC_API_KEY`).
 - [ ] "Nytt i appen" visas en gång med fyra punkter om nya Hem.
 - [ ] Samma sak i mörkt läge och på engelska.
+
+## 34. Etapp 0 + ny Mer-meny (2026-10-25) – se `RELEASE_2026-10-25.md`, `-25b.md`, `-25c.md`
+**Synk och källa**
+- [ ] Kalendern: importerat prov/aktivitet har källan sist i underraden ("· SchoolSoft", "· Friidrott").
+- [ ] Skola → tryck på en importerad post → "Gäller: Filip" → Spara. Posten ligger hos Filip; vid nästa "Synka nu" på Tyras länk stannar den hos Filip, och ändrar skolan tiden kommer den nya tiden in.
+- [ ] Aktiviteter → ändra person på en importerad träning (bara personen) → Spara. Nästa synk: personen är kvar, en ny tid från MyClub kommer in. Ändra sedan namnet → synken lämnar den i fred (som förut).
+- [ ] Spara en skolpost utan att ändra något → ingenting händer (posten markeras inte som ändrad).
+- [ ] Synkfel: koppla en avstängd/felaktig länk (eller vänta 48 h utan synk) → "🔌 … synkar inte / har inte synkat sedan …" i Behöver din uppmärksamhet → Kolla.
+**Språk per person**
+- [ ] Inställningar → Språk → Mitt språk = English: appen byter direkt; mejl/push till dig på engelska; resten av familjen kvar på svenska. "Familjens (Svenska)" tar tillbaka.
+- [ ] Som admin: Familjens standardspråk byts – den som har eget språk påverkas inte.
+**Nyckeltal**
+- [ ] Admin → Nyckeltal laddar; "Aktiva hushåll (7 d)" ≥ 1 efter att du öppnat appen; inga namn/e-post syns.
+- [ ] Efter några dagar: "Samordnade hushåll" = 1 när två i familjen använt appen samma vecka.
+**Barnvakt / släkt**
+- [ ] Familjemedlemmar → Lägg till vuxen → Barnvakt / släkt → inbjudan går iväg; personen går med med rollen "Barnvakt / släkt".
+- [ ] Som barnvakt: ser kalender, skola, aktiviteter, inköpslistan; ser inte påminnelser "bara föräldrar" och inga belopp; kan bocka av en läxa; kan inte ändra/flytta/ta bort en skolpost eller aktivitet (felmeddelande); ser ingen synkfel-rad.
+- [ ] Befintlig "Annan vuxen" fungerar exakt som förut.
+**Klart för påminnelser**
+- [ ] Påminnelser: rund knapp på en engångspåminnelse → raden försvinner, "Klart: … · Ångra" i 6 s; Ångra tar tillbaka. "Klara senaste 30 dagarna" visar den och kan ångras.
+- [ ] Försenad engångspåminnelse syns i Behöver din uppmärksamhet med ✓ Klart (inte under Kommande); Klart tar bort raden.
+- [ ] Påminnelsens sida: "Markera som klar" → tillbaka till listan; avbockad påminnelse mejlas inte och räknas inte i Mer:s "försenade".
+- [ ] Återkommande påminnelse och födelsedag har ingen avbockning.
+**Mer-menyn** – se `RELEASE_2026-10-25b.md`.
+

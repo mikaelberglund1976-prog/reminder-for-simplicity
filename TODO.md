@@ -2,6 +2,7 @@
 
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
+**Uppdaterad igen:** 2026-10-25 – punkt 48: masterbriefen (`ASSISTIQ_MASTERBRIEF.md`), Etapp 0 och ny Mer-meny live, se `RELEASE_2026-10-25*.md` och `NEXT_STEPS.md`.
 **Uppdaterad igen:** 2026-10-24 – punkt 47: nya startsidor (rad 57–64), buggar 66–69, todo-genomgång (50–53 flyttade), se `RELEASE_2026-10-24.md`.
 **Uppdaterad igen:** 2026-10-10 (eftermiddag) – punkt 44: födelsedagar (familj, släkt, kompisar och husdjur, gäller alla eller en person), se `RELEASE_2026-10-10d.md`.
 **Uppdaterad igen:** 2026-10-10 – punkt 42–43: releaserna 7–10 okt (klockslag, närmast per barn, klubbkalendrar, måstelistan, stjärnor/släktdelning, AI-intag) införda i loggen, och Lotuvi-varumärket live utom namnet – ljust läge, ikoner, figur och mörkt läge "Sage First" (se `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`). Alla md-filer synkade.
@@ -877,3 +878,13 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [x] Todo-genomgång: 50, 51, 52 → Senare; 53 + ny 71 (publika startsidan) → Före lansering.
 - [ ] Klicktest på riktig data (mobil): Hem som förälder och barn, tryck på barn, Behöver din uppmärksamhet, mörkt läge.
 - [ ] Kvar för Mikael: `ANTHROPIC_API_KEY` i Vercel (då dyker kameraknappen upp i skrivfältet).
+
+## 48. 25 okt (live) – masterbriefen och Etapp 0 – se `RELEASE_2026-10-25.md`, `-25b.md`, `-25c.md`
+- [x] Masterbriefen sparad (`ASSISTIQ_MASTERBRIEF.md`) och gap-analys mot koden gjord (projekt-doc `etapp-0-analys-2026-10-24`).
+- [x] Grundregel inskriven i `OPERATIONS.md` §5b: befintliga användares data orörd, bara additiva ändringar.
+- [x] G1 flytta importerad post · G2 källan syns · G8 synkfel på Hem · G4 språk per person · G7 nyckeltal · G5 Barnvakt/släkt · G6 Klart för påminnelser · G3 gemensam källmodell. Ny Mer-meny (annan session, samma dag).
+- [x] Lokala projektmappen synkad med GitHub (stod på 22 okt).
+- [ ] Klicktest på riktig data: `TEST_VERIFICATION.md` §34.
+- [ ] Kvar för Mikael: `/privacy` om produktanalysen; GitHub-repot är publikt – gör det privat om koden inte ska vara öppen.
+- [ ] Nästa: `NEXT_STEPS.md`.
+

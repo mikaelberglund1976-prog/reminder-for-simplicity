@@ -1,6 +1,7 @@
 # Operations – Reminder for Simplicity
 **Skapad:** 2026-07-27, enligt `CLAUDE_COMPANY_FRAMEWORK.md`s föreslagna projektstruktur.
-**Uppdaterad:** 2026-10-23 – kvällskörningen, alla tabeller som skapar sig själva, nya miljövariabler (`ANTHROPIC_API_KEY`, `VAPID_*`, `REQUIRE_SIGNUP_APPROVAL`, `FEATURE_CUSTODY`) och hur Claude pushar nu.
+**Uppdaterad:** 2026-10-25 – Etapp 0 ur masterbriefen (`ASSISTIQ_MASTERBRIEF.md`): grundregeln om befintlig data (§5b), kolumner och enum-värden som appen lägger till själv (§5c), nyckeltalen i admin (§3d), språk per person (§7b), synkhälsa och gemensam källmodell (§1). Se `RELEASE_2026-10-25.md` och `RELEASE_2026-10-25c.md`.
+**Uppdaterad tidigare:** 2026-10-23 – kvällskörningen, alla tabeller som skapar sig själva, nya miljövariabler (`ANTHROPIC_API_KEY`, `VAPID_*`, `REQUIRE_SIGNUP_APPROVAL`, `FEATURE_CUSTODY`) och hur Claude pushar nu.
 **Syfte:** Hur den löpande driften faktiskt fungerar i den här kodbasen – vad som körs automatiskt, vad som kräver manuell koll, och vad Claude kan göra åt saken när något går fel.
 
 ---
@@ -30,6 +31,11 @@
 - Synkar skol- och klubbkalendrar som inte synkats senaste 6 h och skickar ändringsvaktens push, så att en match som flyttats under dagen fångas samma kväll.
 - Skickar kvällsnotisen "I morgon" (`lib/tomorrowDigest.ts`): krockvarningar, skolstart ("🏫 Elsa 08:20 · Leo ledig"), prov, läxor, aktiviteter och födelsedagar. Rensar gamla "Ska med"/skjuts-rader och skolstartsundantag äldre än 7 dagar.
 - Loggrader "Evening sync ERROR" ska inte förekomma.
+
+**Kalenderlänkar – synkhälsa och källmodell (sedan 2026-10-25)**
+- Alla skol- och klubblänkar läses genom `lib/feedSources.ts` (`listSources`) och synkas av samma slinga (`runDueSyncs`) på morgonen och kvällen.
+- En länk som misslyckats, eller inte synkat på 48 h, syns för familjens vuxna i **Behöver din uppmärksamhet** på Hem ("SchoolSoft för Tyra har inte synkat sedan …", `/api/family/feed-health`). Mikael behöver alltså inte bevaka det själv – men samma lista är första stället att titta när en familj säger att något inte kommit in.
+- Engångspåminnelser som bockats av (`completedAt`) mejlas inte (`cron.ts`).
 
 **Region (2026-09-29):** `app/vercel.json` har `"regions": ["fra1"]` – serverfunktionerna körs i Frankfurt, samma region som Supabase (eu-central-1). Personuppgifter lämnar inte EU vid vanliga sidladdningar, och databasanropen blir snabbare.
 
@@ -79,7 +85,17 @@ Det finns ingen roll-nivå inom admin – man antingen är `ADMIN_EMAIL` eller i
 - **Radering:** `/admin` → Deleted: Restore eller Delete now. Automatisk permanent radering efter 60 dagar sker i cron.
 
 ### 3c. View as (impersonation, 2026-10-03)
-Admin kan se appen som en person i sin egen familj: Family members → "👁 View as". Röd list högst upp med Switch/Back to me; slutar själv efter 2 h. Loggas som `[impersonation] start/stop` i Vercels funktionsloggar. Logik: `app/src/lib/impersonation.ts`.
+Admin kan se appen som en person i sin egen familj: Family members → "👁 View as". Röd list högst upp med Switch/Back to me; slutar själv efter 2 h. Loggas som `[impersonation] start/stop` i Vercels funktionsloggar. Logik: `app/src/lib/impersonation.ts`. *(25 okt: medan admin "visar som" någon räknas det inte som att den personen öppnat appen i nyckeltalen.)*
+
+### 3d. Nyckeltal (sedan 2026-10-25, Etapp 0 G7)
+`/admin/metrics` (länk "Nyckeltal →" i `/admin`, API `/api/admin/metrics`) visar masterbriefens mått (§38–39). Bara antal, ingen familj eller person visas. Definitioner:
+- **Samordnade hushåll (7 d) ★** – North Star, första versionen: hushåll där minst 2 olika personer öppnat appen de senaste 7 dagarna.
+- **Aktiva hushåll (7 d)** – hushåll med minst ett `app_open` på 7 dagar.
+- **Kvarhållning D7 / D30** – av hushållen som först sågs för 7–14 resp. 30–60 dagar sedan: andelen som varit aktiva de senaste 7 dagarna.
+- **Kopplad källa** – hushåll med minst en skol- eller klubblänk delat med alla hushåll. **Andra vuxen** – hushåll med ≥2 vuxna. **Barn aktiva** – hushåll med barn där ett barn öppnat appen på 30 dagar.
+- **Automatiskt inhämtat (30 d)** – poster från länkar delat med (dem + poster gjorda för hand). **Rättade importer (30 d)** – `import_corrected` (flyttad, ändrad, borttagen) delat med nya importerade. **Lyckade synkar (30 d)**.
+- Händelser sparas i `analytics_events` med **pseudonymer** (`hh`/`ph` = HMAC-SHA256 av hushålls-/person-id med `NEXTAUTH_SECRET`, 16 tecken). **Byts `NEXTAUTH_SECRET` bryts kedjan**: hushåll räknas då som nya och kvarhållningen nollställs. Händelser rensas efter 180 dagar av morgonkörningen. Alla händelser listas i `lib/analyticsStore.ts` (`ANALYTICS_EVENTS` från klienten, `SERVER_EVENTS` från servern).
+- Data finns från 25 okt 2026. D7 kan visa något tidigast 1 nov och D30 tidigast 24 nov.
 
 ## 4. Miljöer & secrets
 
@@ -146,7 +162,9 @@ Nya, rent additiva tabeller skapas av appen vid första användning med `CREATE 
 | `school_start_settings`, `school_start_rules`, `school_start_overrides` | Skolstart: A/B, väckning, egna tider, sovmorgon/lediga dagar (undantag rensas efter 7 dagar) | `lib/schoolStart.ts` | 23 okt |
 | `custody_schedules`, `custody_overrides` | Växelvis boende – skapas bara med `FEATURE_CUSTODY=true` | `lib/custody.ts` | förberett 23 okt |
 
-Mönstret passar bara nya tabeller. Nya kolumner i befintliga tabeller görs fortfarande enligt 5b.
+| `analytics_events` | Produktanalys (Mer-menyn 24–25 okt). Sedan 25 okt även pseudonymerna `hh`/`ph`, se §3d | `lib/analyticsStore.ts` | 24 okt |
+
+Mönstret passar bara nya tabeller. Nya kolumner i befintliga tabeller görs fortfarande enligt 5b – utom de rent additiva i 5c.
 
 ### 5b. Databasändringar i produktion (lärdom 2026-09-28)
 Varken Claudes molnmiljö eller Cowork-VM:en på Macen når Supabase direkt (port 5432), så `npm run db:push` kan bara köras från din egen terminal. Alternativet som användes 28/9 och fungerade utan avbrott:
@@ -154,6 +172,21 @@ Varken Claudes molnmiljö eller Cowork-VM:en på Macen når Supabase direkt (por
 2. Anropa den (status → schema → data) mot `reminder-for-simplicity.vercel.app`.
 3. Deploya den nya koden. 4. Ta bort routen i en städcommit.
 Håll ändringarna additiva (nya kolumner/tabeller, NOT NULL tas bort, aldrig tvärtom) så att gammal och ny kod fungerar under övergången.
+
+**Grundregel (Mikael, 2026-10-24): de befintliga användarnas data ska vara orörd.** Varje release får bara *lägga till* (tabeller, nullbara kolumner, enum-värden) – inga `DROP`, inga omdöpningar, inga typbyten, ingen backfill av befintliga rader. Behövs en datamigrering är det ett eget beslut, med export först. Nya `ensure…()`-funktioner får bara skapa struktur, inte ändra rader. (Äldre undantag som fortfarande körs: städningen av "Lektion"-poster i `schoolFeeds.ts` och MyClub-titlarna i `activityFeeds.ts` – idempotenta men de skriver i data. Ska inte upprepas.)
+
+### 5c. Kolumner och enum-värden som appen lägger till själv (sedan 2026-10-25)
+Samma idé som 5a men för befintliga tabeller – bara `ADD COLUMN IF NOT EXISTS` med null/default, eller `ADD VALUE IF NOT EXISTS`, körs vid första användning:
+
+| Ändring | Vad | Fil | Release |
+|---|---|---|---|
+| `households.language` | Familjens språk | `lib/i18n/server.ts` | 4 okt |
+| `school_imports.personOverride`, `activity_imports.personOverride` | Vem en importerad post flyttats till (null = länkens barn) | `lib/schoolFeeds.ts`, `lib/activityFeeds.ts` | 25 okt (a) |
+| `users.language` | Personens eget språk (null = familjens) | `lib/i18n/server.ts` | 25 okt (c) |
+| `analytics_events.hh`, `.ph` | Pseudonymer för nyckeltalen | `lib/analyticsStore.ts` | 25 okt (c) |
+| enum `HouseholdRole` + `CAREGIVER` | Barnvakt / släkt (begränsad vuxen). Läggs till först när någon bjuds in som det | `lib/roles.ts` | 25 okt (c) |
+
+`reminders.completedAt` fanns redan (skolposter) och används sedan 25 okt även för engångspåminnelser – ingen schemaändring.
 
 ## 6. Incidenter
 
@@ -190,6 +223,7 @@ Dessa är kända luckor, inte akuta – men bör tas i tur och ordning i takt me
 - Mejl till familjer skrivs på mottagarens familjespråk (`lib/email.ts`, `messages/*/emails.ts`). Admin-mejl till Mikael är på engelska.
 - Integritetsmeddelandet finns i två filer (`privacy/PrivacyEn.tsx`, `PrivacySv.tsx`) – ändra båda.
 - Familjens språk sparas i `households.language`; kolumnen skapas automatiskt av appen (ingen `db push`). Support: en familj som "fastnat" på fel språk byter själv under Family members → Language (admin), eller så sätts kolumnen direkt i Supabase.
+- **Sedan 2026-10-25: språk per person.** `users.language` (null = följ familjen). Var och en väljer under Inställningar → Språk → *Mitt språk*; familjens språk är standard för de som inte valt. Mejl och push går på personens språk (`getLocaleForUser`: person → familj → enhet). Support: "fel språk för en person" → nollställ `users.language` för den personen.
 - Nytt språk: se receptet i `RELEASE_2026-10-04b.md`.
 
 ## 8. Säkerhetsgranskning av användardata (2026-08-02)

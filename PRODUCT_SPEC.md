@@ -1,5 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.25 | **Uppdaterad:** 2026-10-24 | **Ägare:** Mikael Berglund
+**Version:** 2.26 | **Uppdaterad:** 2026-10-25 | **Ägare:** Mikael Berglund
+**Not (2026-10-25, live):** Produktens riktning styrs nu av `ASSISTIQ_MASTERBRIEF.md` (Mikaels masterbrief 24 okt: enkel på ytan, kraftfull under ytan; Core/Supporting/Contextual; etapp 0–7). Etapp 0 (Foundations) är klar: 4b.57–4b.63 tillagda (synkfel på Hem, källan syns, flytta importerad post, språk per person, nyckeltal, Barnvakt/släkt-roll, Klart för påminnelser, gemensam källmodell). Datamodellen nedan kompletterad. Se `RELEASE_2026-10-25.md`, `RELEASE_2026-10-25b.md` (ny Mer-meny), `RELEASE_2026-10-25c.md` och `NEXT_STEPS.md`.
 **Not (2026-10-24, live):** 4b.55 (nya startsidor för förälder och barn) och 4b.56 (Om mig) tillagda; 4b.10/4b.51 kompletteras av 4b.55. 4b.54 växelvis boende är nu en framtida feature. Se `RELEASE_2026-10-24.md`.
 **Not (2026-10-23, live):** 4b.45–4b.54 tillagda (releaserna 10–23 okt: Studybee och flera skollänkar, egna färger, inköpslistan, ändringsvakten, skriv vad som helst, I morgon-kortet, Resor, serier, Navigation 2.0, schemat, mejlval, skolstart, växelvis boende förberett). §7.4 uppdaterad med vilka nya funktioner som är Free respektive Pro. Se `RELEASE_2026-10-10e.md` … `RELEASE_2026-10-23.md` och `CUSTODY_PLAN.md`.
 **Not (2026-10-10, live):** §9 punkt 8 tillagd – utseendet följer Lotuvi-riktlinjerna v0.3 (namnet oförändrat), System/Ljust/Mörkt med "Sage First" i mörkt. Funktionerna från 7–10 okt (klockslag, närmast per barn, klubbkalendrar, Kom igång-guide, webb-push, stjärnor, släktdelning, "I dag", AI-intag) beskrivs i `RELEASE_2026-10-07.md` … `RELEASE_2026-10-10.md`. Se `BRAND.md`, `RELEASE_2026-10-10b.md`, `RELEASE_2026-10-10c.md`.
@@ -522,6 +523,29 @@ Schema per barn (7/7, 2-2-3, 2-2-5-5), förälder A/B (vuxen i familjen eller et
 ### 4b.56 Om mig (2026-10-24, live)
 "Vad sparar appen om mig?" ligger under Mer → Om mig (`/dashboard/about-me`) i stället för längst ned på barnets Hem (lanseringslistan rad 15 och 62).
 
+### 4b.57 Extern data: källan syns, synkfel syns, felkopplad post flyttas (2026-10-25, live – masterbrief §10–12, Etapp 0 G1/G2/G8)
+- **Källan:** importerade poster visar sin källa – i kalendern ("Prov · Tyra · SchoolSoft"), i skollistan och i redigeringen ("Från Friidrott – när du sparar en ändring här skriver synken inte över den").
+- **Synkfel:** en länk som misslyckats eller inte synkat på 48 h syns i *Behöver din uppmärksamhet* med "Kolla".
+- **Flytta:** en vuxen kan flytta en importerad skolpost ("Gäller: …") eller aktivitet till rätt person. Flytten stoppar inte synken – tid, plats och inställt fortsätter att komma in, och posten stannar hos den nya personen (`personOverride`). Bara en ändring av innehållet (namn, datum, tid …) gör att synken lämnar posten i fred, som förut. Ett sparande utan ändringar gör ingenting.
+
+### 4b.58 Språk per person (2026-10-25, live – masterbrief §25, G4)
+Var och en (även barn) väljer *Mitt språk* under Inställningar → Språk: familjens eller ett eget. Familjens språk (admin) är standard för de som inte valt. Appen, mejl och push följer personen. Innehåll dupliceras inte.
+
+### 4b.59 Nyckeltal (2026-10-25, live – masterbrief §38–39, G7)
+Admin → Nyckeltal: samordnade hushåll (North Star, första versionen), aktiva hushåll, D7/D30-kvarhållning per hushåll, kopplad källa, andra vuxen, barnaktivering, andel automatiskt inhämtat, andel rättade importer, lyckade synkar. Pseudonymiserade händelser, inga id:n – se `OPERATIONS.md` §3d och `GDPR.md`.
+
+### 4b.60 Roll: Barnvakt / släkt (2026-10-25, live – masterbrief §22, G5)
+Ny begränsad vuxenroll `CAREGIVER` vid inbjudan (Förälder / Annan vuxen / Barnvakt / släkt). Ser familjens delade kalender, skola, aktiviteter och listor och kan bocka av; ser inte "bara för föräldrar"-påminnelser eller belopp och kan inte sköta familjen, kalenderlänkar, barnprofiler eller abonnemang, och kan inte ändra/flytta/ta bort andras poster. "Annan vuxen" (`ADULT`) är oförändrad med full åtkomst. Inte än: byta roll på befintlig medlem, dölja knappar barnvakten inte får använda.
+
+### 4b.61 Klart för påminnelser (2026-10-25, live – masterbrief §15, G6)
+Engångspåminnelser bockas av (rad i Påminnelser med Ångra, knapp på påminnelsen, ✓ Klart i *Behöver din uppmärksamhet* där försenade nu visas). Avbockade försvinner ur listor, kalender och Mer, räknas inte som försenade och mejlas inte; "Klara senaste 30 dagarna" går att ångra. Återkommande påminnelser och födelsedagar rullar vidare som förut. Samma fält (`completedAt`) som skolposter – grunden för ett gemensamt action-lager.
+
+### 4b.62 Gemensam källmodell (2026-10-25, live – masterbrief §16, §45, G3)
+`lib/feedSources.ts`: alla externa kalenderkällor (skola, aktiviteter) i en modell och en synkslinga. Ändringsvakten anger personen en flyttad aktivitet tillhör nu. Sammanslagning av själva matchningen till en motor väntar på en testdatabas (`NEXT_STEPS.md`).
+
+### 4b.63 Ny Mer-meny (2026-10-25, live)
+Sök, snabbval och levande status per rad – se `RELEASE_2026-10-25b.md`.
+
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 
 - [ ] **WhatsApp-påminnelser** – Alternativ kanal till email, högre öppningsgrad
@@ -648,13 +672,15 @@ Ersätter "Basic/Pro" i 7.1 där de skiljer sig, och hela 7.3. Källan till sann
 ### Datamodell (nuläge, ur `app/prisma/schema.prisma`)
 
 **User**
-`id, email, password?, pin? (tillagd 2026-07-27, se 4b.13), name?, emailVerified?, phone?, preferredCurrency, timezone, isChildProfile, calendarFeedToken? (tillagd 2026-07-28, se 4b.19)`
+`id, email, password?, pin? (tillagd 2026-07-27, se 4b.13), name?, emailVerified?, phone?, preferredCurrency, timezone, isChildProfile, calendarFeedToken? (tillagd 2026-07-28, se 4b.19)` + `language?` *(2026-10-25, skapas av appen, 4b.58)*
 
 **Reminder**
-`id, userId, householdId?, name, category, date, recurrence, amount?, currency, note?, reminderDaysBefore, isActive, lastSentAt?` + Pro-fält: `assignedTo, fallbackTo, visibility, handoverState, handoverTo, handoverInitiatedAt, urgencyLevel` + Chore-fält: `requiresApproval, choreRecurrenceDays`
+`id, userId, householdId?, name, category, date, recurrence, amount?, currency, note?, reminderDaysBefore, isActive, lastSentAt?` + Pro-fält: `assignedTo, fallbackTo, visibility, handoverState, handoverTo, handoverInitiatedAt, urgencyLevel` + Chore-fält: `requiresApproval, choreRecurrenceDays` + skolfält `schoolKind, subject, completedAt, showInCalendar` (`completedAt` används sedan 2026-10-25 även för avbockade engångspåminnelser, 4b.61)
+
+*Masterbriefens grundobjekt (§43 Etapp 0) i dagens modell:* **Person** = `User` + `HouseholdMember`; **Event** och **Action** = `Reminder` (+ `reminder_times`, `completedAt`, `ChoreCompletion`); **List** = `List`; **Source** = `school_feeds`/`activity_feeds` + importtabellerna med extern UID, samlade i `lib/feedSources.ts`; **Role** = `HouseholdRole`; **Visibility** = `Visibility` + `List.visibleToAll`/`ListMember`. Flödet SchoolSoft-händelse → barnet → Kalender → Hem → Barnets dag går genom **en** `Reminder`-rad utan kopior.
 
 **Household / HouseholdMember / HouseholdInvite**
-Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER), inbjudningar med token + utgångsdatum. `Household.shoppingListShareToken?` *(tillagd 2026-07-27, deprecated 2026-07-28)* – ersatt av `List.shareToken` (en token per lista istället för en per hushåll), se 4b.15. Fältet finns kvar oanvänt i schemat.
+Hushåll, medlemskap med roll (OWNER/PARENT/ADULT/CHILD/MEMBER, + CAREGIVER sedan 2026-10-25 – 4b.60), inbjudningar med token + utgångsdatum. `Household.shoppingListShareToken?` *(tillagd 2026-07-27, deprecated 2026-07-28)* – ersatt av `List.shareToken` (en token per lista istället för en per hushåll), se 4b.15. Fältet finns kvar oanvänt i schemat.
 
 **ChoreCompletion**
 `id, reminderId, childId, weekStart, status (DONE/PENDING_APPROVAL/APPROVED), approvedBy?, approvedAt?`

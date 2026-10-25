@@ -1,4 +1,5 @@
 # Roadmap – Reminder for Simplicity
+**Uppdaterad igen:** 2026-10-25 – Masterbriefen (`ASSISTIQ_MASTERBRIEF.md`) är nu produktens riktning; Fas 1.16 (Etapp 0 – Foundations klar, ny Mer-meny) tillagd och etapp 1–7 lagda som plan framåt (se "Masterbriefens etapper" nedan och `NEXT_STEPS.md`).
 **Uppdaterad igen:** 2026-10-24 – Fas 1.15 (nya startsidor, rad 57–64) tillagd; todo-genomgång med Mikael: vuxnas kalendrar, växelvis boende och Koppla Claude flyttade till Fas 2 (framtida), Free/Pro till före lansering.
 **Uppdaterad igen:** 2026-10-23 – Fas 1.13 (10–11 okt: Studybee, egna färger, inköpslistan, ändringsvakten, skriv vad som helst, I morgon-kortet, Resor) och Fas 1.14 (17–23 okt: serier, Navigation 2.0, schemat, mejlval, skolstart, växelvis boende förberett) tillagda.
 **Uppdaterad igen:** 2026-10-10 – Fas 1.11 (releaserna 7–10 okt) och Fas 1.12 (Lotuvi-varumärket live utom namnet, inkl. mörkt läge "Sage First") tillagda.
@@ -177,6 +178,25 @@ Identifierade som gap mot Best4Family, se `COMPETITOR_ANALYSIS_BEST4FAMILY.md` �
 - [x] Barnets Hem "min dag": nästa lektion, tre statusrutor, I dag, Kommande; föräldern kan öppna och ändra i barnets dag
 - [x] Korta titlar på importerade aktiviteter, "Om mig" under Mer
 - **Läge:** familjeappens funktionslista i lanseringsdokumentet är tom – det som återstår före lansering är namn, företag, webbtexter, GDPR-text, prismodell/Free–Pro (rad 53) och betalning.
+
+## Fas 1.16 – Masterbriefens Etapp 0: Foundations (25 okt 2026, LIVE)
+Underlag: `ASSISTIQ_MASTERBRIEF.md`, gap-analysen (projekt-doc `etapp-0-analys-2026-10-24`), releaser `RELEASE_2026-10-25.md`, `-25b.md`, `-25c.md`. Grundregel: befintliga användares data orörd – bara additiva ändringar.
+- **G1** flytta importerad post till rätt person utan att stoppa synken · **G2** källan syns på posten · **G8** synkfel på Hem
+- **G4** språk per person · **G7** nyckeltal (Admin → Nyckeltal, pseudonymiserat) · **G5** roll Barnvakt / släkt · **G6** Klart för påminnelser · **G3** gemensam källmodell (`lib/feedSources.ts`)
+- Ny Mer-meny (sök, snabbval, status per rad, första analyshändelserna)
+- Exit-kriteriet uppfyllt: SchoolSoft-händelse → barnet → Kalender → Hem → Barnets dag går via en rad utan kopior.
+
+## Masterbriefens etapper – status och nästa (2026-10-25)
+| Etapp | Innehåll | Status |
+|---|---|---|
+| 0 Foundations | Datamodell, källa/person, synk, roller, språk, analys | ✅ klar 25 okt (kvar: sammanslagen matchningsmotor, se `NEXT_STEPS.md`) |
+| 1 Hem + Quick Capture | Mindre header, Idag, Behöver din uppmärksamhet, Nästa per barn, text-capture | 🟡 i stort sett klar (18–25 okt; standardmenyn är redan Hem–Kalender–Inköp–Skola–Mer); kvar: 5-sekunderstest med riktiga föräldrar, röst-capture |
+| 2 Person + skola + aktivitet | Källhantering, MyClub/iCal, flytta, transparens, synk-/feltillstånd | 🟡 delvis (G1/G2/G8); kvar: en sida för alla källor, samma händelse från två källor, motor |
+| 3 Kalender + Barnets dag + Actions | Person-först-filter, Barnets dag, gemensamt action-lager | ⬜ nästa |
+| 4 Supporting | Inköp (dedupe, snabbare), Sysslor, Födelsedagar på Hem | ⬜ |
+| 5 Contextual | Delningslänk för önskelista, kontextuella födelsedagar/resor | ⬜ |
+| 6 Native | Offline, push, share sheet, röst, kamera, widgets | ⬜ (`APP_STORE_READINESS.md`) |
+| 7 WhatsApp V1 | Påminnelser, ändringar, sammanfattning – efter kostnadsutredning | ⬜ |
 
 ## USP:ar och prioritet inför användartester (2026-07-28)
 
