@@ -91,6 +91,9 @@ export default function ShoppingListPage() {
   const [url, setUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState("");
+  // 2026-10-25 (§17): "Milk is already on the list" instead of a duplicate
+  const [dupNotice, setDupNotice] = useState<string | null>(null);
+  useEffect(() => { if (!dupNotice) return; const id = setTimeout(() => setDupNotice(null), 3500); return () => clearTimeout(id); }, [dupNotice]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [recent, setRecent] = useState<{ name: string; icon: string }[]>([]);
@@ -375,6 +378,10 @@ export default function ShoppingListPage() {
       if (!res.ok) {
         setItems((prev) => prev.filter((i) => i.id !== tempId));
         setError(data.error ? err(data.error) : msg.common.somethingWentWrong);
+      } else if (data?.duplicate) {
+        setItems((prev) => prev.filter((i) => i.id !== tempId).map((i) => (i.id === data.id ? data : i)));
+        setDupNotice(t.alreadyOnList(data.name));
+        closeAddSheet();
       } else {
         setItems((prev) => prev.map((i) => (i.id === tempId ? data : i)));
         fetch("/api/family/shopping-list/suggestions").then((r) => r.json()).then((d) => setRecent(d.recent ?? [])).catch(() => {});
@@ -478,7 +485,10 @@ export default function ShoppingListPage() {
         setError(data.error ? err(data.error) : msg.common.somethingWentWrong);
       } else {
         const data = await res.json();
-        setItems((prev) => prev.map((i) => (i.id === tempId ? data : i)));
+        if (data?.duplicate) {
+          setItems((prev) => prev.filter((i) => i.id !== tempId));
+          setDupNotice(t.alreadyOnList(data.name));
+        } else setItems((prev) => prev.map((i) => (i.id === tempId ? data : i)));
       }
     } catch {
       setItems((prev) => prev.filter((i) => i.id !== tempId));
@@ -727,6 +737,12 @@ export default function ShoppingListPage() {
       // and the underlying Household/List share-token infra are left untouched
       // below in case this comes back later — only the UI is hidden.
     >
+      {dupNotice && (
+        <div role="status" style={{ position: "fixed", left: 16, right: 16, bottom: "calc(84px + env(safe-area-inset-bottom))", maxWidth: 480, margin: "0 auto", zIndex: 60,
+          background: "var(--ink)", color: "#fff", borderRadius: 14, padding: "12px 16px", fontSize: 14, fontWeight: 600, boxShadow: "0 6px 24px rgba(0,0,0,0.25)", fontFamily: FONT }}>
+          ✓ {dupNotice}
+        </div>
+      )}
       {/* List switcher */}
       <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2, marginBottom: 10 }}>
         {lists.map((l) => (

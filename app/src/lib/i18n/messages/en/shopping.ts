@@ -15,6 +15,7 @@ export const shopping = {
     household: ["Toilet paper", "Paper towels", "Dish soap", "Laundry detergent", "Trash bags", "Toothpaste", "Shampoo", "Hand soap", "Aluminum foil", "Cling film", "Batteries", "Light bulbs", "Sponges", "Napkins"],
   } as Record<string, string[]>,
   unsorted: "Unsorted",
+  alreadyOnList: (name: string) => `${name} is already on the list`, // 2026-10-25 (§17)
   defaultListName: "Shopping list",
   couldNotDeleteList: "Couldn't delete the list",
   scanUnsupported: "Barcode scanning isn't supported in this browser yet — try Chrome on Android, or add the item manually.",

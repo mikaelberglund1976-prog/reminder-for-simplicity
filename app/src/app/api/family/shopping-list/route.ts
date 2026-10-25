@@ -90,6 +90,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "This list needs Pro — the free plan includes one shared shopping list." }, { status: 403 });
     }
 
+    // 2026-10-25 (masterbrief §17 "deduplicering"): the same thing already on
+    // this list and not bought yet → don't add it twice, say so instead.
+    // Case/space-insensitive. A quantity on the new one is added to the note
+    // of the existing item only if it had none.
+    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+    const open = await prisma.shoppingListItem.findMany({ where: { listId, isPurchased: false }, select: { id: true, name: true, quantity: true } });
+    const same = open.find((i) => norm(i.name) === norm(name));
+    if (same) {
+      const q = quantity?.toString().trim();
+      if (q && !same.quantity) await prisma.shoppingListItem.update({ where: { id: same.id }, data: { quantity: q } });
+      const existing = await prisma.shoppingListItem.findUnique({ where: { id: same.id }, include: { adder: { select: { id: true, name: true } }, purchaser: { select: { id: true, name: true } }, categoryDef: true } });
+      return NextResponse.json({ ...existing, duplicate: true }, { status: 200 });
+    }
+
     // Manual category wins and is remembered for next time; otherwise fall
     // back to household memory, then a keyword guess (see shoppingCategories.ts).
     let categoryId: string | null;

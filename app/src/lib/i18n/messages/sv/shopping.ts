@@ -16,6 +16,7 @@ export const shopping: Messages["shopping"] = {
     household: ["Toalettpapper", "Hushållspapper", "Diskmedel", "Tvättmedel", "Soppåsar", "Tandkräm", "Schampo", "Handtvål", "Aluminiumfolie", "Plastfolie", "Batterier", "Glödlampor", "Disksvampar", "Servetter"],
   },
   unsorted: "Osorterat",
+  alreadyOnList: (name) => `${name} finns redan på listan`,
   defaultListName: "Inköpslista",
   couldNotDeleteList: "Kunde inte ta bort listan",
   scanUnsupported: "Streckkodsläsning fungerar inte i den här webbläsaren än – testa Chrome på Android, eller lägg till varan för hand.",

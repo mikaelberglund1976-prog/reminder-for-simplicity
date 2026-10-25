@@ -130,6 +130,10 @@ async function save(c: Ctx, body: { items?: unknown }) {
     if (type === "SHOPPING") {
       const listId = typeof it.listId === "string" && listIds.has(it.listId) ? it.listId : c.defaultListId;
       if (!listId) { locked++; continue; }
+      // 2026-10-25 (§17): already on that list and not bought → not twice (and
+      // not part of "undo" — it was there before).
+      const dupe = await prisma.shoppingListItem.findFirst({ where: { listId, isPurchased: false, name: { equals: title.trim(), mode: "insensitive" } }, select: { id: true } });
+      if (dupe) { listId0 ??= listId; shopping++; continue; }
       const categoryId = await resolveCategoryId(c.m.householdId, title);
       // Picked "shopping" for something we didn't recognise → next time it goes straight in.
       if (it.confirmed === true) await rememberCategory(c.m.householdId, title, categoryId).catch(() => {});
