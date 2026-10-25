@@ -41,5 +41,8 @@ export async function findReminderFor(userId: string, id: string) {
     (reminder.visibility === "PARENTS" && isAdult);
   if (!canRead) return null;
 
+  // 2026-10-25 (G5): a caregiver reads the family's shared reminders but not
+  // their amounts (PARENTS ones were never readable for them — not adult).
+  if (membership.role === "CAREGIVER") return { reminder: { ...reminder, amount: null, currency: null }, canEdit: false };
   return { reminder, canEdit: isAdult && reminder.visibility !== "PRIVATE" };
 }

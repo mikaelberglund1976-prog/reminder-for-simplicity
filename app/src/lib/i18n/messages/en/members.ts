@@ -5,7 +5,7 @@ export const members = {
   addManaged: "Add child",
   childAddedManaged: (name: string) => `✓ ${name} is added. You look after the profile — add school, activities and chores for them.`,
   managedSuffix: " · managed by you",
-  roles: { OWNER: "Owner", PARENT: "Parent", ADULT: "Adult", CHILD: "Child", MEMBER: "Member" } as Record<string, string>,
+  roles: { OWNER: "Owner", PARENT: "Parent", ADULT: "Adult", CHILD: "Child", MEMBER: "Member", CAREGIVER: "Babysitter / relative" } as Record<string, string>,
   title: "Family members",
   loading: "Loading family…",
   enterValidEmail: "Enter a valid email address",
@@ -48,6 +48,9 @@ export const members = {
   childEmailPlaceholder: "emma@example.com or you+emma@gmail.com",
   adultEmailPlaceholder: "partner@example.com",
   otherAdult: "Other adult",
+  // 2026-10-25 (G5): limited adult
+  caregiver: "Babysitter / relative",
+  roleHint: { PARENT: "Sees and manages everything in the family.", ADULT: "Sees and manages everything in the family.", CAREGIVER: "Sees the family's calendar, school, activities and lists and can tick things off — not \"parents only\" reminders, amounts or the family's settings." } as Record<string, string>,
   guardianText1: "I'm the child's parent or guardian, and I agree that the child's account and what the family adds for them (homework, chores, activities, wishlist, photo) are kept as described in the ",
   privacyNotice: "privacy notice",
   childHelp: "We email a link to confirm the address and choose a password — or, with a Google address, they just tap “Continue with Google”. Already made an account themselves? Use that email and they join at their next login. Children only see their own homework, chores, activities and wishlist.",

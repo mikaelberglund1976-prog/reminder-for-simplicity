@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureCaregiverRole } from "@/lib/roles";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -14,8 +15,10 @@ export async function POST(req: Request) {
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
-    const validRoles = ["PARENT", "ADULT", "CHILD", "MEMBER"];
+    // 2026-10-25 (G5): + CAREGIVER (limited adult, lib/roles.ts)
+    const validRoles = ["PARENT", "ADULT", "CAREGIVER", "CHILD", "MEMBER"];
     const inviteRole = validRoles.includes(role) ? role : "ADULT";
+    if (inviteRole === "CAREGIVER") await ensureCaregiverRole();
 
     // Get user's household and verify OWNER role
     const membership = await prisma.householdMember.findFirst({
@@ -53,7 +56,7 @@ export async function POST(req: Request) {
       data: {
         householdId: membership.householdId,
         email,
-        role: inviteRole as "PARENT" | "ADULT" | "CHILD" | "MEMBER",
+        role: inviteRole as "PARENT" | "ADULT" | "CAREGIVER" | "CHILD" | "MEMBER",
         expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
       },
     });

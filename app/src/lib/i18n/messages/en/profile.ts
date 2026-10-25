@@ -64,7 +64,7 @@ export const profile = {
   members: (n: number) => `${n} member${n !== 1 ? "s" : ""}`,
   pro: "⚡ Pro",
   free: "Free",
-  roles: { OWNER: "Owner", CHILD: "Child", PARENT: "Parent", ADULT: "Adult" } as Record<string, string>,
+  roles: { OWNER: "Owner", CHILD: "Child", PARENT: "Parent", ADULT: "Adult", CAREGIVER: "Babysitter / relative" } as Record<string, string>,
   remove: "Remove",
   sendUpdate: "📣 Send a family update",
   sendUpdateTitle: "Send a family update",

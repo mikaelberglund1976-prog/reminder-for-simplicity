@@ -25,6 +25,9 @@ async function load(id: string, userId: string) {
   if (!membership) return { error: 404 as const };
   const isChild = membership.role === "CHILD";
   if (isChild && (item.category !== "TRAINING" || item.assignedTo !== userId)) return { error: 403 as const };
+  // 2026-10-25 (G5): a caregiver (limited adult) doesn't change the family's
+  // chores or activities (ticking a chore off is a separate route).
+  if (membership.role === "CAREGIVER" && item.userId !== userId) return { error: 403 as const };
   return { item, isChild };
 }
 

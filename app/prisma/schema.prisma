@@ -535,6 +535,10 @@ enum HouseholdRole {
   ADULT
   CHILD
   MEMBER
+  // 2026-10-25 (Etapp 0 G5): limited adult ("Barnvakt / släkt"), see
+  // lib/roles.ts. Added to the database enum by ensureCaregiverRole() the
+  // first time someone is invited as one — no migration step.
+  CAREGIVER
 }
 
 enum ReminderCategory {

@@ -49,7 +49,7 @@ export default function FamilyMembersPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [noLogin, setNoLogin] = useState(false);
-  const [adultRole, setAdultRole] = useState<"PARENT" | "ADULT">("PARENT");
+  const [adultRole, setAdultRole] = useState<"PARENT" | "ADULT" | "CAREGIVER">("PARENT");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsUpgrade, setNeedsUpgrade] = useState(false);
@@ -400,15 +400,19 @@ export default function FamilyMembersPage() {
                           </>
                         )}
                         {addKind === "adult" && (
-                          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                            {([["PARENT", t.roles.PARENT], ["ADULT", t.otherAdult]] as const).map(([v, l]) => (
-                              <button key={v} type="button" onClick={() => setAdultRole(v)} style={{
-                                flex: 1, padding: "10px 8px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
+                          <>
+                          <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                            {/* 2026-10-25 (G5): + Babysitter / relative (limited adult) */}
+                            {([["PARENT", t.roles.PARENT], ["ADULT", t.otherAdult], ["CAREGIVER", t.caregiver]] as const).map(([v, l]) => (
+                              <button key={v} type="button" onClick={() => setAdultRole(v)} aria-pressed={adultRole === v} style={{
+                                flex: 1, minHeight: 44, padding: "8px 6px", borderRadius: 12, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT, lineHeight: 1.25,
                                 background: adultRole === v ? "var(--ink)" : "var(--surface)", color: adultRole === v ? "#fff" : "var(--fg-2)",
                                 border: adultRole === v ? "none" : "1.5px solid var(--border)",
                               }}>{l}</button>
                             ))}
                           </div>
+                          <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, marginBottom: 12 }}>{t.roleHint[adultRole]}</div>
+                          </>
                         )}
                         {addKind === "child" && (
                           <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, color: "var(--fg)", lineHeight: 1.45, marginBottom: 12, cursor: "pointer" }}>

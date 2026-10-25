@@ -68,6 +68,12 @@ export async function GET() {
     });
   }
 
+  // 2026-10-25 (G5): a caregiver (limited adult) doesn't see amounts on the
+  // family's reminders — only on their own.
+  if (membership?.role === "CAREGIVER") {
+    const me = session.user.id;
+    reminders = reminders.map((r) => (r.userId === me ? r : { ...r, amount: null, currency: null }));
+  }
   // 2026-10-07: optional time of day, see lib/reminderTimes.ts.
   // 2026-10-10: birthdays carry { personId, birthYear, kind } for "turns 13".
   return NextResponse.json(await withBirthdays(await withTimes(reminders)));

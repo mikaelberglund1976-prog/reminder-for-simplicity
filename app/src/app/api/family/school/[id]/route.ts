@@ -30,6 +30,8 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   // otherwise make a test disappear), and a removed one stays removed.
   const isImported = (await importedIds([res.item.id])).has(res.item.id);
   if (isImported && res.role === "CHILD") return NextResponse.json({ error: "Ask a parent to remove things from the school calendar" }, { status: 403 });
+  // 2026-10-25 (G5): a caregiver (limited adult) can tick off, not remove.
+  if (res.role === "CAREGIVER" && res.item.userId !== session.user.id) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   await prisma.reminder.update({ where: { id: res.item.id }, data: { isActive: false } });
   if (isImported) await markImport(res.item.id, "hidden");
   return NextResponse.json({ success: true });
@@ -50,6 +52,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const item = res.item;
 
     const body = await req.json().catch(() => ({}));
+    // 2026-10-25 (G5): a caregiver may tick off / hide from calendar, but not
+    // change or move what isn't theirs.
+    if (res.role === "CAREGIVER" && item.userId !== session.user.id && ["name", "subject", "schoolKind", "date", "note", "startTime", "assignedTo"].some((k) => body?.[k] !== undefined)) {
+      return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+    }
     const data: { assignedTo?: string; completedAt?: Date | null; showInCalendar?: boolean; name?: string; subject?: string | null; schoolKind?: "HOMEWORK" | "TEST" | "OTHER"; date?: Date; note?: string | null } = {};
     if (typeof body?.completed === "boolean") data.completedAt = body.completed ? new Date() : null;
     if (typeof body?.showInCalendar === "boolean") data.showInCalendar = body.showInCalendar;

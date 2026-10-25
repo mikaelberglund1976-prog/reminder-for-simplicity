@@ -5,7 +5,7 @@
 
 import { prisma } from "@/lib/prisma";
 
-export type HouseholdRoleStr = "OWNER" | "PARENT" | "ADULT" | "CHILD" | "MEMBER";
+export type HouseholdRoleStr = "OWNER" | "PARENT" | "ADULT" | "CHILD" | "MEMBER" | "CAREGIVER";
 export type ListKindStr = "SHOPPING" | "WISHLIST";
 
 export type ListRow = {

@@ -66,7 +66,7 @@ export const profile: Messages["profile"] = {
   members: (n) => `${n} ${n !== 1 ? "medlemmar" : "medlem"}`,
   pro: "⚡ Pro",
   free: "Gratis",
-  roles: { OWNER: "Ägare", CHILD: "Barn", PARENT: "Förälder", ADULT: "Vuxen" },
+  roles: { OWNER: "Ägare", CHILD: "Barn", PARENT: "Förälder", ADULT: "Vuxen", CAREGIVER: "Barnvakt / släkt" },
   remove: "Ta bort",
   sendUpdate: "📣 Skicka ett meddelande till familjen",
   sendUpdateTitle: "Skicka ett meddelande till familjen",
