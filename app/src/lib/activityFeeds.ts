@@ -427,7 +427,7 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
         const t = times.get(r.id);
         const changed = r.name !== name || r.date.getTime() !== date.getTime() || (r.note ?? null) !== note || r.assignedTo !== personFor(imp);
         const timeChanged = (t?.startTime ?? null) !== e.startTime || (t?.endTime ?? null) !== e.endTime;
-        if (r.date.getTime() !== date.getTime() || timeChanged) watch.changed(r.id, name, r.date.toISOString().slice(0, 10), e.ymd, t?.startTime ?? null, e.startTime);
+        if (r.date.getTime() !== date.getTime() || timeChanged) watch.changed(r.id, name, r.date.toISOString().slice(0, 10), e.ymd, t?.startTime ?? null, e.startTime, personFor(imp));
         if (changed) await prisma.reminder.update({ where: { id: r.id }, data: { name, date, note, assignedTo: personFor(imp) } });
         if (timeChanged) await setTime(r.id, { startTime: e.startTime, endTime: e.endTime });
         if (changed || timeChanged) updated++;
@@ -456,7 +456,7 @@ export async function syncActivityFeed(feed: ActivityFeedRow): Promise<ActivityS
       const ymd = r.date.toISOString().slice(0, 10);
       if (ymd < todayYmd || ymd > to) continue;
       await prisma.reminder.update({ where: { id: r.id }, data: { isActive: false } });
-      if (!isDeclined(imp.uid)) watch.removed(r.id, r.name, ymd, times.get(r.id)?.startTime ?? null);
+      if (!isDeclined(imp.uid)) watch.removed(r.id, r.name, ymd, times.get(r.id)?.startTime ?? null, personFor(imp));
       removed++;
     }
     await watch.save();
@@ -484,13 +484,9 @@ export async function syncAllActivityFeeds(opts: { maxAgeMs?: number; deadline?:
   await ensureActivityFeedTables();
   const cutoff = new Date(Date.now() - (opts.maxAgeMs ?? SYNC_EVERY_MS));
   const feeds = await prisma.$queryRaw<ActivityFeedRow[]>`SELECT * FROM "activity_feeds" WHERE "lastSyncAt" IS NULL OR "lastSyncAt" < ${cutoff} ORDER BY "lastSyncAt" ASC NULLS FIRST LIMIT 200`;
-  let synced = 0, failed = 0;
-  for (const f of feeds) {
-    if (opts.deadline && Date.now() > opts.deadline) break;
-    const r = await syncActivityFeed(f);
-    if (r.ok) synced++; else failed++;
-  }
-  return { synced, failed };
+  // 2026-10-25 (G3): the loop is shared with the other source kind.
+  const { runDueSyncs } = await import("@/lib/feedSources");
+  return runDueSyncs(feeds, syncActivityFeed, opts.deadline);
 }
 
 export async function listActivityFeeds(householdId: string): Promise<ActivityFeedRow[]> {

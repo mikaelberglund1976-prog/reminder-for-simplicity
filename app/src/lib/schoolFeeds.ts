@@ -377,13 +377,9 @@ export async function syncAllFeeds(opts: { maxAgeMs?: number; deadline?: number 
   await ensureSchoolFeedTables();
   const cutoff = new Date(Date.now() - (opts.maxAgeMs ?? SYNC_EVERY_MS));
   const feeds = await prisma.$queryRaw<FeedRow[]>`SELECT * FROM "school_feeds" WHERE "lastSyncAt" IS NULL OR "lastSyncAt" < ${cutoff} ORDER BY "lastSyncAt" ASC NULLS FIRST LIMIT 200`;
-  let synced = 0, failed = 0;
-  for (const f of feeds) {
-    if (opts.deadline && Date.now() > opts.deadline) break;
-    const r = await syncFeed(f);
-    if (r.ok) synced++; else failed++;
-  }
-  return { synced, failed };
+  // 2026-10-25 (G3): the loop is shared with the other source kind.
+  const { runDueSyncs } = await import("@/lib/feedSources");
+  return runDueSyncs(feeds, syncFeed, opts.deadline);
 }
 
 export async function getFeed(feedId: string): Promise<FeedRow | null> {

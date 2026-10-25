@@ -54,7 +54,9 @@ export function ensureChangeTables(): Promise<void> {
 }
 
 // ── collecting during one sync ──────────────────────────────────────────────
-type Pending = Omit<ChangeAlert, "id" | "householdId" | "childId" | "createdAt" | "notifiedAt" | "count">;
+// 2026-10-25 (Etapp 0 G3): `person` = who the item belongs to now, when it
+// was moved away from the link's child (lib/activityFeeds personOverride).
+type Pending = Omit<ChangeAlert, "id" | "householdId" | "childId" | "createdAt" | "notifiedAt" | "count"> & { person?: string };
 
 const stockholmYmd = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Stockholm", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 const addDaysYmd = (ymd: string, n: number) => new Date(Date.parse(ymd + "T12:00:00Z") + n * 86400000).toISOString().slice(0, 10);
@@ -70,20 +72,20 @@ export class ChangeCollector {
   }
 
   /** An item already imported got a new date and/or time. */
-  changed(reminderId: string, title: string, oldYmd: string, newYmd: string, oldTime: string | null, newTime: string | null) {
+  changed(reminderId: string, title: string, oldYmd: string, newYmd: string, oldTime: string | null, newTime: string | null, person?: string) {
     if (this.firstSync) return;
     if (!this.soon(oldYmd) && !this.soon(newYmd)) return;
-    if (oldYmd !== newYmd) this.items.push({ reminderId, kind: "MOVED", title, oldYmd, newYmd, oldTime, newTime });
-    else if (oldTime !== newTime && newTime) this.items.push({ reminderId, kind: "TIME", title, oldYmd, newYmd, oldTime, newTime });
+    if (oldYmd !== newYmd) this.items.push({ reminderId, kind: "MOVED", title, oldYmd, newYmd, oldTime, newTime, person });
+    else if (oldTime !== newTime && newTime) this.items.push({ reminderId, kind: "TIME", title, oldYmd, newYmd, oldTime, newTime, person });
   }
   added(reminderId: string, title: string, ymd: string, time: string | null, isTest: boolean) {
     if (this.firstSync) return;
     if (isTest ? !this.soon(ymd) : !this.soon(ymd, NEW_ACTIVITY_DAYS)) return;
     this.items.push({ reminderId, kind: isTest ? "NEW_TEST" : "NEW", title, oldYmd: null, newYmd: ymd, oldTime: null, newTime: time });
   }
-  removed(reminderId: string, title: string, ymd: string, time: string | null) {
+  removed(reminderId: string, title: string, ymd: string, time: string | null, person?: string) {
     if (this.firstSync || !this.soon(ymd, NEW_ACTIVITY_DAYS)) return;
-    this.items.push({ reminderId, kind: "CANCELLED", title, oldYmd: ymd, newYmd: null, oldTime: time, newTime: null });
+    this.items.push({ reminderId, kind: "CANCELLED", title, oldYmd: ymd, newYmd: null, oldTime: time, newTime: null, person });
   }
 
   /** Saves what was collected. Never throws — a sync must not fail because of this. */
@@ -99,7 +101,7 @@ export class ChangeCollector {
         // Same change already recorded and not yet sent (e.g. "Sync now" twice) → skip.
         const dup = await prisma.$queryRaw<{ id: string }[]>`SELECT "id" FROM "change_alerts" WHERE "reminderId" = ${it.reminderId} AND "kind" = ${it.kind} AND COALESCE("newYmd", '') = ${it.newYmd ?? ""} AND COALESCE("newTime", '') = ${it.newTime ?? ""} AND "createdAt" > NOW() - INTERVAL '3 days' LIMIT 1`;
         if (dup.length) continue;
-        await prisma.$executeRaw`INSERT INTO "change_alerts" ("id", "householdId", "childId", "reminderId", "kind", "title", "oldYmd", "newYmd", "oldTime", "newTime") VALUES (${randomUUID()}, ${this.householdId}, ${this.childId}, ${it.reminderId}, ${it.kind}, ${it.title.slice(0, 200)}, ${it.oldYmd}, ${it.newYmd}, ${it.oldTime}, ${it.newTime})`;
+        await prisma.$executeRaw`INSERT INTO "change_alerts" ("id", "householdId", "childId", "reminderId", "kind", "title", "oldYmd", "newYmd", "oldTime", "newTime") VALUES (${randomUUID()}, ${this.householdId}, ${it.person ?? this.childId}, ${it.reminderId}, ${it.kind}, ${it.title.slice(0, 200)}, ${it.oldYmd}, ${it.newYmd}, ${it.oldTime}, ${it.newTime})`;
       }
       return this.items.length;
     } catch (err) {
