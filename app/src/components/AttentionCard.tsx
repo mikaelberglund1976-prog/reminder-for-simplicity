@@ -118,7 +118,7 @@ export default function AttentionCard({ soon, unassigned, overdue = [], onDone, 
         </div>
       ))}
       {birthdays.map((b) => row(`b${b.id}`, "🎁", t.attBirthday(b.name.startsWith("🎂") ? b.name.slice(2).trim() : b.name, b.days), b.href, b.wishlist ? t.attWishlist : undefined))}
-      {feedIssues.map((f) => row(`f${f.id}`, "🔌", feedLine(f), f.kind === "school" ? "/dashboard/school" : "/dashboard/training", t.attCheck))}
+      {feedIssues.map((f) => row(`f${f.id}`, "🔌", feedLine(f), "/dashboard/sources", t.attCheck))}
       {unassigned > 0 && row("unassigned", "👤", t.attUnassigned(unassigned), "/dashboard/training", t.attFix)}
     </section>
   );

@@ -118,6 +118,9 @@ async function assertPublicHost(hostname: string) {
   if (!addrs.length || addrs.some((a) => isPrivateIp(a.address))) throw new Error("The link points to an address we can't fetch");
 }
 
+/** 2026-10-25: also used for school links from "another platform" (lib/schoolFeeds.ts). */
+export async function fetchPublicCalendar(url: string): Promise<string> { return fetchCalendar(url); }
+
 async function fetchCalendar(url: string): Promise<string> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 10_000);

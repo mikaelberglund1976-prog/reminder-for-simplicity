@@ -46,7 +46,7 @@ export const profile = {
   bottomNav: "Bottom nav",
   homeChip: "🏠 Home",
   bottomNavHint: (_count: number) => "Home is always first and More always last. Pick the three in between, in the order you want — everything else is under More.",
-  groups: { account: "My account", family: "Family", home: "Home & navigation", notifications: "Notifications & calendar", looks: "Appearance", plan: "Plan", data: "Privacy & data", help: "Help & feedback" },
+  groups: { account: "My account", family: "Family", home: "Customise the app", notifications: "Notifications", calendar: "Calendars & integrations", looks: "Appearance", plan: "Plan", data: "Privacy & data", help: "Help & feedback" },
   bottomNavIntro: "Your three shortcuts",
   bottomNavSlot: (n: number) => `Place ${n}`,
   calendarSync: "Calendar sync",

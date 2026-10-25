@@ -13,13 +13,14 @@ import type { Messages } from "@/lib/i18n/messages";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 
-type Provider = "schoolsoft" | "studybee";
+// 2026-10-25 (Etapp 2): "ical" = any other school platform's calendar link.
+type Provider = "schoolsoft" | "studybee" | "ical";
 type Feed = { id: string; provider: Provider; label: string; host: string; lastSyncAt: string | null; lastStatus: string | null; imported: number };
 type ChildFeeds = { childId: string; name: string; feeds: Feed[] };
 type SyncResult = { ok: boolean; added: number; updated: number; removed: number; total: number; status: string };
 
-const LABEL: Record<Provider, string> = { schoolsoft: "SchoolSoft", studybee: "Studybee" };
-const PLACEHOLDER: Record<Provider, string> = { schoolsoft: "https://sms.schoolsoft.se/…", studybee: "webcal://backend.studybee.io/calendar.ics?token=…" };
+const LABEL: Record<Provider, string> = { schoolsoft: "SchoolSoft", studybee: "Studybee", ical: "iCal" };
+const PLACEHOLDER: Record<Provider, string> = { schoolsoft: "https://sms.schoolsoft.se/…", studybee: "webcal://backend.studybee.io/calendar.ics?token=…", ical: "webcal://…  eller  https://…/calendar.ics" };
 
 function guessProvider(url: string): Provider | null {
   const u = url.toLowerCase();
@@ -172,15 +173,15 @@ export default function SchoolSoftCard() {
                 {connectFor === r.childId && (
                   <div style={{ marginTop: 10, background: "var(--surface-2)", borderRadius: 14, padding: 12 }}>
                     <div role="radiogroup" aria-label={t.platform} style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-                      {(["schoolsoft", "studybee"] as Provider[]).map((p) => (
+                      {(["schoolsoft", "studybee", "ical"] as Provider[]).map((p) => (
                         <button key={p} type="button" role="radio" aria-checked={provider === p} onClick={() => setProvider(p)}
                           style={{ ...btnSoft, flex: 1, background: provider === p ? "var(--ink)" : "var(--surface-3)", color: provider === p ? "#fff" : "var(--fg-2)" }}>
-                          {LABEL[p]}
+                          {p === "ical" ? t.otherPlatform : LABEL[p]}
                         </button>
                       ))}
                     </div>
                     <button type="button" onClick={() => setShowGuide((v) => !v)} style={{ background: "none", border: "none", padding: 0, fontSize: 12.5, fontWeight: 800, color: "var(--fg)", cursor: "pointer", fontFamily: FONT }}>
-                      {showGuide ? "▾" : "▸"} {t.howTo(r.name, LABEL[provider])}
+                      {showGuide ? "▾" : "▸"} {t.howTo(r.name, provider === "ical" ? t.otherLabel : LABEL[provider])}
                     </button>
                     {showGuide && provider === "schoolsoft" && (
                       <ol style={guideList}>
@@ -191,6 +192,13 @@ export default function SchoolSoftCard() {
                         <li>{t.step5a}<b>Prenumerera på kalender</b>{t.step5b}<b>Länk</b>{t.step5c}</li>
                       </ol>
                     )}
+                    {showGuide && provider === "ical" && (
+                      <ol style={guideList}>
+                        <li>{t.otherStep1(r.name)}</li>
+                        <li>{t.otherStep2}</li>
+                        <li>{t.otherStep3}</li>
+                      </ol>
+                    )}
                     {showGuide && provider === "studybee" && (
                       <ol style={guideList}>
                         <li>{t.sbStep1(r.name)}</li>
@@ -199,7 +207,7 @@ export default function SchoolSoftCard() {
                       </ol>
                     )}
                     <div style={{ fontSize: 11.5, color: "var(--warning)", background: "var(--tint-warning)", borderRadius: 10, padding: "8px 10px", margin: "10px 0", lineHeight: 1.45 }}>
-                      {t.linkWarning(r.name, LABEL[provider])}
+                      {t.linkWarning(r.name, provider === "ical" ? t.otherLabel : LABEL[provider])}
                     </div>
                     <input value={url} onChange={(e) => { setUrl(e.target.value); const g = guessProvider(e.target.value); if (g) setProvider(g); }}
                       placeholder={PLACEHOLDER[provider]} autoComplete="off" autoCapitalize="off" spellCheck={false} inputMode="url"

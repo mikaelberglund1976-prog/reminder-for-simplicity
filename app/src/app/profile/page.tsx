@@ -460,7 +460,8 @@ export default function ProfilePage() {
 
           {/* 2026-10-18 (Settings IA, spec §50): grouped, with a jump row on top. */}
           <nav aria-label={msg.nav.settings} className="rfs-hscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 -20px 18px", padding: "2px 20px 4px" }}>
-            {([["g-account", t.groups.account], ["g-family", t.groups.family], ["g-home", t.groups.home], ["g-notifications", t.groups.notifications], ["g-looks", t.groups.looks], ...(household ? [["g-plan", t.groups.plan]] : []), ["g-data", t.groups.data], ["g-help", t.groups.help]] as [string, string][]).map(([id, label]) => (
+            {/* 2026-10-25 (masterbrief §30): Account · Family · Notifications · Calendars & integrations · Customise · Appearance · Plan · Privacy & data · Help */}
+            {([["g-account", t.groups.account], ["g-family", t.groups.family], ["g-notifications", t.groups.notifications], ["g-calendar", t.groups.calendar], ["g-home", t.groups.home], ["g-looks", t.groups.looks], ...(household ? [["g-plan", t.groups.plan]] : []), ["g-data", t.groups.data], ["g-help", t.groups.help]] as [string, string][]).map(([id, label]) => (
               <a key={id} href={`#${id}`} style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 50, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--fg-2)", fontSize: 12.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>{label}</a>
             ))}
           </nav>
@@ -842,62 +843,6 @@ export default function ProfilePage() {
             )}
           </Card>
 
-          <h2 id="g-home" style={groupTitle}>{t.groups.home}</h2>
-          {/* 2026-10-18 (Settings IA): the bottom nav — three picks + order. */}
-          <div id="bottom-nav" style={{ scrollMarginTop: 16 }}>
-          <Card title={t.bottomNav}>
-            <Field label={t.bottomNavIntro}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={navSlotRow}>
-                  <span style={navSlotNo}>🏠</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--subtle)" }}>{msg.nav.home}</span>
-                </div>
-                {[0, 1, 2].map((slot) => (
-                  <div key={slot} style={navSlotRow}>
-                    <span style={navSlotNo}>{slot + 1}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}><SelectWrap>
-                      <select
-                        value={bottomNavApps[slot] ?? ""}
-                        onChange={(e) => setBottomNavSlot(slot, e.target.value)}
-                        disabled={savingBottomNav}
-                        aria-label={t.bottomNavSlot(slot + 1)}
-                        style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 36, cursor: "pointer" }}
-                      >
-                        {BOTTOM_NAV_APP_OPTIONS.filter(opt => !profile?.isChildProfile || (CHILD_NAV_APPS as readonly string[]).includes(opt.key)).map(opt => (
-                          <option key={opt.key} value={opt.key}>{opt.emoji} {msg.nav[opt.label]}</option>
-                        ))}
-                      </select>
-                    </SelectWrap></div>
-                  </div>
-                ))}
-                <div style={navSlotRow}>
-                  <span style={navSlotNo}>⋯</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--subtle)" }}>{msg.nav.more}</span>
-                </div>
-              </div>
-              <Hint>{t.bottomNavHint(3)}</Hint>
-            </Field>
-          </Card>
-          </div>
-
-          {/* 2026-10-11: everyone's own picture at the top of Home. */}
-          {profile && (
-            <div id="home-picture" style={{ scrollMarginTop: 16 }}>
-              <Card title={msg.homePrefs.myPictureTitle}>
-                <MyHomePicture />
-              </Card>
-            </div>
-          )}
-
-          {/* 2026-10-09: what Home shows (adults — a child has their own Home). */}
-          {profile && !profile.isChildProfile && (
-            <div id="home-settings" style={{ scrollMarginTop: 16 }}>
-              <Card title={msg.homePrefs.cardTitle}>
-                <HomePrefsSettings />
-              </Card>
-            </div>
-          )}
-
           <h2 id="g-notifications" style={groupTitle}>{t.groups.notifications}</h2>
           {/* 2026-10-09: push notifications on this phone (persona review). */}
           <div id="notifications" style={{ scrollMarginTop: 16 }}>
@@ -925,6 +870,18 @@ export default function ProfilePage() {
             </div>
           </Card>
 
+          {/* 2026-10-25 (§30): own group — the family's calendar links + outbound sync. */}
+          <h2 id="g-calendar" style={groupTitle}>{t.groups.calendar}</h2>
+          {household && profile && !profile.isChildProfile && (
+            <Link href="/dashboard/sources" style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "14px 16px", marginBottom: 12, textDecoration: "none", minHeight: 56 }}>
+              <span aria-hidden style={{ fontSize: 18 }}>🔗</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 14.5, fontWeight: 800, color: "var(--fg)" }}>{msg.sources.settingsRow}</span>
+                <span style={{ display: "block", fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>{msg.sources.settingsHint}</span>
+              </span>
+              <span style={{ color: "var(--faint)", fontWeight: 800 }}>›</span>
+            </Link>
+          )}
           {/* ── Calendar sync ── */}
           {/* Outbound-only ICS feed: reminders, chores and trainings visible
               to you (same rule as the in-app dashboard), read into your own
@@ -992,6 +949,71 @@ export default function ProfilePage() {
             )}
           </Card>
 
+          <h2 id="g-home" style={groupTitle}>{t.groups.home}</h2>
+          {/* 2026-10-18 (Settings IA): the bottom nav — three picks + order. */}
+          <div id="bottom-nav" style={{ scrollMarginTop: 16 }}>
+          <Card title={t.bottomNav}>
+            <Field label={t.bottomNavIntro}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={navSlotRow}>
+                  <span style={navSlotNo}>🏠</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--subtle)" }}>{msg.nav.home}</span>
+                </div>
+                {[0, 1, 2].map((slot) => (
+                  <div key={slot} style={navSlotRow}>
+                    <span style={navSlotNo}>{slot + 1}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}><SelectWrap>
+                      <select
+                        value={bottomNavApps[slot] ?? ""}
+                        onChange={(e) => setBottomNavSlot(slot, e.target.value)}
+                        disabled={savingBottomNav}
+                        aria-label={t.bottomNavSlot(slot + 1)}
+                        style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 36, cursor: "pointer" }}
+                      >
+                        {BOTTOM_NAV_APP_OPTIONS.filter(opt => !profile?.isChildProfile || (CHILD_NAV_APPS as readonly string[]).includes(opt.key)).map(opt => (
+                          <option key={opt.key} value={opt.key}>{opt.emoji} {msg.nav[opt.label]}</option>
+                        ))}
+                      </select>
+                    </SelectWrap></div>
+                  </div>
+                ))}
+                <div style={navSlotRow}>
+                  <span style={navSlotNo}>⋯</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--subtle)" }}>{msg.nav.more}</span>
+                </div>
+              </div>
+              <Hint>{t.bottomNavHint(3)}</Hint>
+            </Field>
+          </Card>
+          </div>
+
+          {/* 2026-10-11: everyone's own picture at the top of Home. */}
+          {profile && (
+            <div id="home-picture" style={{ scrollMarginTop: 16 }}>
+              <Card title={msg.homePrefs.myPictureTitle}>
+                <MyHomePicture />
+              </Card>
+            </div>
+          )}
+
+          {/* 2026-10-09: what Home shows (adults — a child has their own Home). */}
+          {profile && !profile.isChildProfile && (
+            <div id="home-settings" style={{ scrollMarginTop: 16 }}>
+              <Card title={msg.homePrefs.cardTitle}>
+                <HomePrefsSettings />
+              </Card>
+            </div>
+          )}
+
+          {/* 2026-10-10: the family's own colours per child and per type (Pro). */}
+          {profile && !profile.isChildProfile && (
+            <div id="colors" style={{ scrollMarginTop: 16 }}>
+              <Card title={msg.familyColors.cardTitle}>
+                <FamilyColorsSettings />
+              </Card>
+            </div>
+          )}
+
           <h2 id="g-looks" style={groupTitle}>{t.groups.looks}</h2>
           <Card title={t.appearance}>
             <Field label={t.appearance}>
@@ -1020,15 +1042,6 @@ export default function ProfilePage() {
               <Hint>{t.displayHint}</Hint>
             </Field>
           </Card>
-
-          {/* 2026-10-10: the family's own colours per child and per type (Pro). */}
-          {profile && !profile.isChildProfile && (
-            <div id="colors" style={{ scrollMarginTop: 16 }}>
-              <Card title={msg.familyColors.cardTitle}>
-                <FamilyColorsSettings />
-              </Card>
-            </div>
-          )}
 
           {household && <h2 id="g-plan" style={groupTitle}>{t.groups.plan}</h2>}
           {/* ── Plan ── (2026-09-28: driven by lib/entitlements via /api/household) */}

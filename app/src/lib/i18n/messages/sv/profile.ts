@@ -48,7 +48,7 @@ export const profile: Messages["profile"] = {
   bottomNav: "Menyn längst ner",
   homeChip: "🏠 Hem",
   bottomNavHint: () => "Hem är alltid först och Mer alltid sist. Välj de tre däremellan i den ordning du vill – allt annat finns under Mer.",
-  groups: { account: "Mitt konto", family: "Familjen", home: "Hem & navigation", notifications: "Notiser & kalender", looks: "Utseende", plan: "Plan", data: "Integritet & data", help: "Hjälp & feedback" },
+  groups: { account: "Mitt konto", family: "Familjen", home: "Anpassa appen", notifications: "Notiser", calendar: "Kalendrar & integrationer", looks: "Utseende", plan: "Plan", data: "Integritet & data", help: "Hjälp & feedback" },
   bottomNavIntro: "Dina tre genvägar",
   bottomNavSlot: (n) => `Plats ${n}`,
   calendarSync: "Kalendersynk",

@@ -15,7 +15,7 @@
 // They match differently on purpose (school per child + UID across a child's
 // links, activity per link + UID) and touch live data, so that merge waits for
 // a test database — see NEXT_STEPS.md "Synkmotor".
-import { listFeeds, providerLabel } from "@/lib/schoolFeeds";
+import { listFeeds, maskUrl, providerLabel } from "@/lib/schoolFeeds";
 import { listActivityFeeds, maskActivityUrl } from "@/lib/activityFeeds";
 
 export type SourceKind = "school" | "activity";
@@ -45,7 +45,7 @@ export async function listSources(householdId: string): Promise<Source[]> {
     listActivityFeeds(householdId).catch(() => []),
   ]);
   return [
-    ...school.map((f): Source => ({ id: f.id, kind: "school", householdId: f.householdId, childId: f.childId, label: providerLabel(f.provider), createdAt: new Date(f.createdAt), lastSyncAt: asDate(f.lastSyncAt), lastStatus: f.lastStatus, lastCount: f.lastCount })),
+    ...school.map((f): Source => ({ id: f.id, kind: "school", householdId: f.householdId, childId: f.childId, label: f.provider === "ical" ? maskUrl(f.url) : providerLabel(f.provider), createdAt: new Date(f.createdAt), lastSyncAt: asDate(f.lastSyncAt), lastStatus: f.lastStatus, lastCount: f.lastCount })),
     ...activity.map((f): Source => ({ id: f.id, kind: "activity", householdId: f.householdId, childId: f.childId, label: f.label || maskActivityUrl(f.url), createdAt: new Date(f.createdAt), lastSyncAt: asDate(f.lastSyncAt), lastStatus: f.lastStatus, lastCount: f.lastCount })),
   ];
 }

@@ -1,0 +1,20 @@
+// 2026-10-25 (masterbrief Etapp 2): Settings → Calendars & integrations
+export const sources = {
+  title: "Calendars & integrations",
+  intro: "Every school and club calendar the family has connected. They update by themselves once or twice a day — you only need to look here if something's wrong.",
+  adultsOnly: "Only adults in the family see the calendar links.",
+  none: "No calendars connected yet. Connect the school platform or a club calendar and homework, tests, trainings and matches come in by themselves.",
+  lastSync: (when: string) => `synced ${when}`,
+  notYet: "not yet",
+  items: (n: number) => (n === 1 ? "1 item" : `${n} items`),
+  failed: "Not syncing",
+  stale: "Hasn't synced for a while",
+  syncNow: "Sync now",
+  syncing: "Syncing…",
+  synced: "✓ Synced",
+  manage: "Manage →",
+  addSchool: "+ Connect school",
+  addActivity: "+ Connect club calendar",
+  settingsRow: "Calendars & integrations",
+  settingsHint: "School and club calendars, sync status",
+};

@@ -39,10 +39,15 @@ export const MAX_FEEDS_PER_CHILD = 3;
 // ── Providers ───────────────────────────────────────────────────────────────
 // Only these hosts are fetched (the server fetches whatever is pasted, so an
 // open URL would let anyone make our server call arbitrary addresses).
-export type ProviderId = "schoolsoft" | "studybee";
+// 2026-10-25 (masterbrief Etapp 2 "generell iCal/WebCal"): "ical" = any other
+// school platform's calendar link (Unikum, Vklass, InfoMentor, a school's own
+// Google/Outlook calendar …). Those are fetched through the same SSRF-guarded
+// fetch as club calendars (public hosts only, redirects checked per hop).
+export type ProviderId = "schoolsoft" | "studybee" | "ical";
 export const PROVIDERS: Record<ProviderId, { label: string; hosts: string[] }> = {
   schoolsoft: { label: "SchoolSoft", hosts: ["schoolsoft.se"] },
   studybee: { label: "Studybee", hosts: ["studybee.io", "studybee.se"] },
+  ical: { label: "iCal", hosts: [] },
 };
 function providerForHost(hostname: string): ProviderId | null {
   const host = hostname.toLowerCase();
@@ -102,8 +107,7 @@ export function normalizeFeedUrl(raw: unknown): { url: string; provider: Provide
   let u: URL;
   try { u = new URL(s); } catch { return { error: "That doesn't look like a link" }; }
   if (u.protocol !== "https:") return { error: "The link must start with https://" };
-  const provider = providerForHost(u.hostname);
-  if (!provider) return { error: "Only SchoolSoft and Studybee links can be connected for now" };
+  const provider = providerForHost(u.hostname) ?? "ical";
   if (s.length > 2000) return { error: "The link is too long" };
   return { url: u.toString(), provider };
 }
@@ -237,7 +241,13 @@ export function parseIcs(text: string): ParsedEntry[] {
 // ── Fetch + sync ────────────────────────────────────────────────────────────
 async function fetchFeed(url: string): Promise<string> {
   const provider = providerForHost(new URL(url).hostname);
-  if (!provider) throw new Error("Only SchoolSoft and Studybee links can be connected for now");
+  // 2026-10-25: any other platform → the guarded public-calendar fetch.
+  if (!provider) {
+    const { fetchPublicCalendar } = await import("@/lib/activityFeeds");
+    const text = await fetchPublicCalendar(url);
+    if (text.length > MAX_BYTES) throw new Error("The calendar is too big");
+    return text;
+  }
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 12_000);
   try {

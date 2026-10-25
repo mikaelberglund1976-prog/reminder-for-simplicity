@@ -23,6 +23,7 @@ import { landing } from "./landing";
 import { language } from "./language";
 import { members } from "./members";
 import { more } from "./more";
+import { sources } from "./sources";
 import { meta } from "./meta";
 import { nav } from "./nav";
 import { newBooking } from "./newBooking";
@@ -69,6 +70,7 @@ export const sv: Messages = {
   language,
   members,
   more,
+  sources,
   meta,
   nav,
   newBooking,

@@ -29,6 +29,12 @@ export const schoolsoft = {
   removeImported: "Remove imported",
   disconnect: "Disconnect",
   platform: "Platform",
+  // 2026-10-25 (Etapp 2): any other school platform's calendar link
+  otherPlatform: "Other",
+  otherLabel: "the school platform",
+  otherStep1: (name: string) => `Log in to ${name}'s school platform (e.g. Unikum, Vklass, InfoMentor) or the school's calendar.`,
+  otherStep2: "Look for \"Subscribe\", \"Export calendar\", \"iCal\" or \"webcal\" and copy the link.",
+  otherStep3: "Paste it below. Tests and homework are recognised by words like \"prov\" and \"läxa\" in the title.",
   howTo: (name: string, label: string) => `How to get ${name}'s link in ${label}`,
   step1: (name: string) => `In the SchoolSoft app, log in as ${name}'s guardian and pick ${name}.`,
   step2a: "Open ", step2b: " → ", step2c: ".",
