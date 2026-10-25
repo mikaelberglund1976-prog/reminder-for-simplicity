@@ -510,34 +510,13 @@ export default function CalendarPage() {
               <button onClick={() => goToMonth(1)} aria-label={t.nextMonth} style={navBtnStyle}><IcRight /></button>
             </div>
 
-            {/* 2026-10-18: one compact filter button; the person/type/colour
-                controls open under it. The count says how many filters are on. */}
-            {(() => {
-              const active = (isChildView ? 0 : selectedPeople.size) + hiddenKinds.size;
-              return (
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, margin: "-6px 0 12px" }}>
-                  {active > 0 && !filtersOpen && (
-                    <button onClick={() => { savePeople(new Set()); setHiddenKinds(new Set()); }} style={{ border: "none", background: "none", color: "var(--muted)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
-                      {t.clearFilters}
-                    </button>
-                  )}
-                  <button onClick={() => setFiltersOpen((v) => !v)} aria-expanded={filtersOpen} style={{
-                    display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 50, cursor: "pointer", fontFamily: FONT,
-                    border: active > 0 ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
-                    background: active > 0 || filtersOpen ? "var(--tint-accent)" : "var(--surface)",
-                    color: active > 0 ? "var(--accent-strong)" : "var(--fg-2)", fontSize: 12.5, fontWeight: 700,
-                  }}>
-                    <svg width={14} height={14} viewBox="0 0 24 24" {...STR}><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
-                    {t.filter}{active > 0 ? ` · ${active}` : ""}
-                  </button>
-                </div>
-              );
-            })()}
-            {filtersOpen && (
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 12px 2px", marginBottom: 14 }}>
-            {/* 2026-10-09: per-person filter (not for a child — they only see their own). */}
+            {/* 2026-10-25: people + Filter on one row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "-6px 0 12px" }}>
+            {/* 2026-10-09: per-person filter (not for a child — they only see their own).
+                2026-10-25 (masterbrief §14 "person first"): always visible above
+                the calendar, not inside Filter — "Who goes where tomorrow?" */}
             {!isChildView && people.length > 1 && (
-              <div className="rfs-hscroll" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 -12px 10px", padding: "2px 12px 4px" }}>
+              <div className="rfs-hscroll" style={{ display: "flex", gap: 8, overflowX: "auto", flex: 1, minWidth: 0, padding: "2px 2px 4px" }}>
                 <button onClick={() => savePeople(new Set())} aria-pressed={selectedPeople.size === 0} style={{ ...personChip(selectedPeople.size === 0), paddingLeft: 12 }}>
                   {t.everyone}
                 </button>
@@ -553,6 +532,33 @@ export default function CalendarPage() {
               </div>
             )}
 
+            {/* 2026-10-18: one compact filter button; the person/type/colour
+                controls open under it. The count says how many filters are on. */}
+            {(() => {
+              // 2026-10-25: people are chosen in the row above — the count is the types.
+              const active = hiddenKinds.size;
+              return (
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginLeft: "auto", flexShrink: 0 }}>
+                  {active > 0 && !filtersOpen && (
+                    <button onClick={() => setHiddenKinds(new Set())} style={{ border: "none", background: "none", color: "var(--muted)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}>
+                      {t.clearFilters}
+                    </button>
+                  )}
+                  <button onClick={() => setFiltersOpen((v) => !v)} aria-expanded={filtersOpen} style={{
+                    display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 50, cursor: "pointer", fontFamily: FONT,
+                    border: active > 0 ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
+                    background: active > 0 || filtersOpen ? "var(--tint-accent)" : "var(--surface)",
+                    color: active > 0 ? "var(--accent-strong)" : "var(--fg-2)", fontSize: 12.5, fontWeight: 700,
+                  }}>
+                    <svg width={14} height={14} viewBox="0 0 24 24" {...STR}><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
+                    {t.filter}{active > 0 ? ` · ${active}` : ""}
+                  </button>
+                </div>
+              );
+            })()}
+            </div>
+            {filtersOpen && (
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "12px 12px 2px", marginBottom: 14 }}>
             {/* Type filter / color legend — 2026-07-28 */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
               {(Object.keys(KIND_META) as CalendarEntry["kind"][]).map((kind) => {

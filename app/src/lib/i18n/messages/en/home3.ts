@@ -9,6 +9,9 @@ export const home3 = {
   attTestSoon: (who: string, title: string, when: string) => `${who}: ${title} ${when}`,
   attUnassigned: (n: number) => (n === 1 ? "1 activity has no one assigned" : `${n} activities have no one assigned`),
   attFix: "Fix",
+  // 2026-10-25 (§15/§19)
+  attBirthday: (who: string, days: number) => `${who} ${days === 0 ? "— today!" : days === 1 ? "tomorrow" : `in ${days} days`}`,
+  attWishlist: "Wishlist",
   // 2026-10-25 (Etapp 0 G8): a school/activity link that stopped syncing
   attFeedFailed: (source: string, who: string) => `${source}${who ? ` for ${who}` : ""} isn't syncing`,
   attFeedStale: (source: string, who: string, since: string) => `${source}${who ? ` for ${who}` : ""} hasn't synced since ${since}`,
@@ -24,6 +27,7 @@ export const home3 = {
   showCalendar: "Show calendar",
   showAll: "Show all",
   comingUp: "Coming up",
+  needsDoing: "Needs doing", // 2026-10-25 (§13)
   // Child's Home (row 62)
   nextLesson: "Next lesson",
   testsHomework: "Tests & homework",

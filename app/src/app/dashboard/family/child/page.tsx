@@ -231,7 +231,13 @@ function ChildViewContent() {
   const todayKey = dateKey(today0);
   // "Passerat är passerat": what's already over today leaves the list.
   const todayRows = rows.filter((r) => dateKey(r.day) === todayKey && !(r.kind === "ACTIVITY" && (r.endTime ?? r.startTime) && (r.endTime ?? r.startTime)! < nowHm)).sort(byTime);
-  const upcoming = rows.filter((r) => r.day > today0).sort(byTime);
+  // 2026-10-25 (masterbrief §13): Today → Needs doing → Next. Tests and
+  // homework due within two days are "needs doing"; they're left out of
+  // Coming up so nothing shows twice.
+  const needSchool = schoolOpen.filter((s) => daysUntil(s.date) <= 2);
+  const needKeys = new Set(needSchool.map((s) => `s-${s.id}`));
+  const needRows = rows.filter((r) => needKeys.has(r.key) && dateKey(r.day) !== todayKey).sort(byTime);
+  const upcoming = rows.filter((r) => r.day > today0 && !needKeys.has(r.key)).sort(byTime);
   const activitiesToday = todayRows.filter((r) => r.kind === "ACTIVITY");
   const nextSchool = schoolOpen[0];
 
@@ -375,6 +381,22 @@ function ChildViewContent() {
           <div id="sec-today" style={{ scrollMarginTop: 80, marginBottom: 22 }}>
             {sectionHead(h.today)}
             {rowList(todayRows, false)}
+          </div>
+        )}
+
+        {/* 2026-10-25 (§13): Needs doing — tests/homework in the next two days + chores left. */}
+        {(needRows.length > 0 || (access !== "LOCKED" && todo.length > 0)) && (
+          <div id="sec-need" style={{ scrollMarginTop: 80, marginBottom: 22 }}>
+            {sectionHead(h.needsDoing)}
+            {needRows.length > 0 && rowList(needRows, true)}
+            {access !== "LOCKED" && todo.length > 0 && (
+              <button type="button" onClick={() => document.getElementById("sec-chores")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginTop: needRows.length ? 8 : 0, minHeight: 44, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "10px 14px", cursor: "pointer", fontFamily: FONT, textAlign: "left" }}>
+                <span aria-hidden>✅</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{h.choresLeft(todo.length)}</span>
+                <span style={{ color: "var(--accent)", fontWeight: 800 }}>›</span>
+              </button>
+            )}
           </div>
         )}
 

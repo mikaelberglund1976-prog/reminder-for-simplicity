@@ -25,8 +25,10 @@ export type SoonSchool = { key: string; who: string; title: string; day: Date; k
 
 // 2026-10-25 (Etapp 0 G6): overdue one-off reminders, ticked off right here.
 export type OverdueReminder = { id: string; name: string; date: string };
+// 2026-10-25 (§15/§19): a birthday within 14 days, with where to act.
+export type SoonBirthday = { id: string; name: string; days: number; href: string; wishlist: boolean };
 
-export default function AttentionCard({ soon, unassigned, overdue = [], onDone }: { soon: SoonSchool[]; unassigned: number; overdue?: OverdueReminder[]; onDone?: (id: string) => void }) {
+export default function AttentionCard({ soon, unassigned, overdue = [], onDone, birthdays = [] }: { soon: SoonSchool[]; unassigned: number; overdue?: OverdueReminder[]; onDone?: (id: string) => void; birthdays?: SoonBirthday[] }) {
   const { m, dateLocale } = useI18n();
   const t = m.home3;
   const a = m.assist;
@@ -43,7 +45,7 @@ export default function AttentionCard({ soon, unassigned, overdue = [], onDone }
   const alerts = changes?.alerts ?? [];
   const clashes = plan?.clashes ?? [];
   const noRide = plan?.isAdult ? plan.items.filter((i) => i.needsRide && !i.driverId) : [];
-  if (alerts.length === 0 && clashes.length === 0 && noRide.length === 0 && soon.length === 0 && unassigned === 0 && feedIssues.length === 0 && overdue.length === 0) return null;
+  if (alerts.length === 0 && clashes.length === 0 && noRide.length === 0 && soon.length === 0 && unassigned === 0 && feedIssues.length === 0 && overdue.length === 0 && birthdays.length === 0) return null;
 
   const day = (ymd: string | null) => ymd ? new Date(ymd + "T12:00:00Z").toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }) : "";
   const changeLine = (x: Alert) => {
@@ -82,7 +84,7 @@ export default function AttentionCard({ soon, unassigned, overdue = [], onDone }
     );
     const style: React.CSSProperties = { display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0", fontSize: 14, lineHeight: 1.4, textDecoration: "none", borderTop: "1px solid var(--border-soft)" };
     // 2026-10-25 (G7): which kinds of attention rows lead to action.
-    const kind = key.startsWith("c") ? "clash" : key.startsWith("r") ? "ride" : key.startsWith("f") ? "feed" : key === "unassigned" ? "unassigned" : "school";
+    const kind = key.startsWith("c") ? "clash" : key.startsWith("r") ? "ride" : key.startsWith("f") ? "feed" : key.startsWith("b") ? "birthday" : key === "unassigned" ? "unassigned" : "school";
     return href ? <Link key={key} href={href} style={style} onClick={() => track("attention_clicked", { kind })}>{inner}</Link> : <div key={key} style={style}>{inner}</div>;
   };
 
@@ -115,6 +117,7 @@ export default function AttentionCard({ soon, unassigned, overdue = [], onDone }
           )}
         </div>
       ))}
+      {birthdays.map((b) => row(`b${b.id}`, "🎁", t.attBirthday(b.name.startsWith("🎂") ? b.name.slice(2).trim() : b.name, b.days), b.href, b.wishlist ? t.attWishlist : undefined))}
       {feedIssues.map((f) => row(`f${f.id}`, "🔌", feedLine(f), f.kind === "school" ? "/dashboard/school" : "/dashboard/training", t.attCheck))}
       {unassigned > 0 && row("unassigned", "👤", t.attUnassigned(unassigned), "/dashboard/training", t.attFix)}
     </section>

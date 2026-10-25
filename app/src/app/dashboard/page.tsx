@@ -174,6 +174,17 @@ export default function DashboardPage() {
   // attention" (with Done right there) instead of Coming up.
   const overdueOnce = hasHousehold ? reminders.filter((r) => canTickOff(r) && getDaysUntil(r.date) < 0) : [];
   const overdueIds = new Set(overdueOnce.map((r) => r.id));
+  // 2026-10-25 (masterbrief §15 + §19): a birthday within 14 days becomes
+  // something to act on — "Tyra turns 13 · in 8 days → Wishlist".
+  const memberIds = new Set(householdMembers.map((m) => m.userId));
+  const birthdaysSoon = hasHousehold ? reminders
+    .filter((r) => r.category === "BIRTHDAY" && getDaysUntil(r.date) >= 0 && getDaysUntil(r.date) <= 14)
+    .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date)).slice(0, 2)
+    .map((r) => {
+      const pid = (r as Reminder & { birthday?: { personId: string | null } | null }).birthday?.personId ?? null;
+      return { id: r.id, name: r.name, days: getDaysUntil(r.date), href: pid && memberIds.has(pid) ? "/dashboard/wishlist" : "/dashboard/birthdays", wishlist: !!pid && memberIds.has(pid) };
+    }) : [];
+  for (const b of birthdaysSoon) overdueIds.add(b.id); // not again under Coming up
   async function tickOff(id: string) {
     const r = reminders.find((x) => x.id === id);
     setReminders((p) => p.filter((x) => x.id !== id));
@@ -401,7 +412,7 @@ export default function DashboardPage() {
 
         {/* 2026-10-24 (row 59): what wants a decision — only when something's there. */}
         {hasHousehold && <AttentionCard soon={soonSchool} unassigned={unassignedActivities}
-          overdue={overdueOnce.map((r) => ({ id: r.id, name: r.name, date: r.date }))} onDone={tickOff} />}
+          overdue={overdueOnce.map((r) => ({ id: r.id, name: r.name, date: r.date }))} onDone={tickOff} birthdays={birthdaysSoon} />}
 
         {/* 2026-10-09: wishlists other families have shared with me. */}
         <GiftSharesCard />
