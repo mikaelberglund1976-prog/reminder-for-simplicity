@@ -23,4 +23,11 @@ export const reminders: Messages["reminders"] = {
   overdue: "Försenad",
   overdueOn: (date) => `Försenad · ${date}`,
   schoolKinds: { TEST: "Prov", HOMEWORK: "Läxa", OTHER: "Skola" },
+  markDone: "Markera som klar",
+  markNotDone: "Markera som inte klar",
+  doneToast: (name) => `Klart: ${name}`,
+  undo: "Ångra",
+  done: "Klart",
+  doneRecent: (n) => `Klara senaste 30 dagarna (${n})`,
+  attOverdue: (name, date) => `Försenad: ${name} (${date})`,
 };

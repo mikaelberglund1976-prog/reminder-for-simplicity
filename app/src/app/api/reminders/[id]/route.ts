@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trackServer } from "@/lib/analyticsStore";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
@@ -77,6 +78,23 @@ export async function PATCH(
   }
 
   const found = await findReminderFor(session.user.id, params.id);
+
+  // 2026-10-25 (Etapp 0 G6): PATCH { done: true | false } — tick a one-off
+  // reminder off as done (or undo). Allowed for whoever may edit it AND for the
+  // person it's assigned to (they're the one who does it).
+  const peek = await req.clone().json().catch(() => null);
+  if (found && typeof peek?.done === "boolean") {
+    const r = found.reminder;
+    if (!found.canEdit && r.assignedTo !== session.user.id) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+    if (r.recurrence !== "ONCE" || ["CHORE", "TRAINING", "SCHOOL", "BIRTHDAY"].includes(r.category as string)) {
+      return NextResponse.json({ error: "Only one-off reminders can be ticked off" }, { status: 400 });
+    }
+    const completedAt = peek.done ? new Date() : null;
+    await prisma.reminder.update({ where: { id: r.id }, data: { completedAt } });
+    const m = r.householdId ? await prisma.householdMember.findFirst({ where: { userId: session.user.id, householdId: r.householdId }, select: { role: true } }) : null;
+    await trackServer("reminder_done", { undo: !peek.done }, { householdId: r.householdId, userId: session.user.id, isChild: m?.role === "CHILD" });
+    return NextResponse.json({ id: r.id, completedAt });
+  }
 
   if (!found || !found.canEdit) {
     return NextResponse.json({ error: "Hittades inte" }, { status: 404 });

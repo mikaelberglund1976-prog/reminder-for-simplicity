@@ -165,8 +165,15 @@ export const VISIBILITY_CHIP: Record<string, { icon: string; bg: string; color: 
   // the other badges.
 };
 
-export function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, householdMembers = [], hasHousehold = false }: {
+// 2026-10-25 (Etapp 0 G6): a one-off reminder can be ticked off as done.
+export function canTickOff(r: { recurrence: string; category: string }) {
+  return r.recurrence === "ONCE" && r.category !== "BIRTHDAY";
+}
+
+export function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, householdMembers = [], hasHousehold = false, onDone, done = false }: {
   reminder: Reminder; badge: { bg: string; color: string }; isFirst: boolean; onClick: () => void; currentUserId?: string; householdMembers?: HouseholdMember[]; hasHousehold?: boolean;
+  // G6: shows a round tick button for one-off reminders; `done` = already ticked off
+  onDone?: () => void; done?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const { m: msg, dateLocale } = useI18n();
@@ -184,10 +191,17 @@ export function ReminderRow({ reminder, badge, isFirst, onClick, currentUserId, 
         borderTop: isFirst ? "none" : "1px solid var(--border-soft)", cursor: "pointer",
         background: hovered ? "var(--surface-2)" : "transparent", transition: "background 0.12s",
       }}>
+      {onDone && canTickOff(reminder) && (
+        <button type="button" onClick={(e) => { e.stopPropagation(); onDone(); }} aria-label={done ? msg.reminders.markNotDone : msg.reminders.markDone} title={done ? msg.reminders.markNotDone : msg.reminders.markDone}
+          style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center",
+            border: done ? "none" : "2px solid var(--accent-border)", background: done ? "#16A34A" : "var(--surface)", color: "#fff", fontSize: 15, fontWeight: 800 }}>
+          {done ? "✓" : ""}
+        </button>
+      )}
       <ServiceLogo name={reminder.name} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{reminder.name}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: done ? "var(--subtle)" : "var(--fg)", textDecoration: done ? "line-through" : "none" }}>{reminder.name}</span>
           <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: 50, fontSize: 11, fontWeight: 600, background: badge.bg, color: badge.color }}>
             {msg.reminders.categories[reminder.category] ?? reminder.category}
           </span>

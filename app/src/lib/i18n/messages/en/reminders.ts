@@ -22,4 +22,12 @@ export const reminders = {
   overdue: "Overdue",
   overdueOn: (date: string) => `Overdue · ${date}`,
   schoolKinds: { TEST: "Test", HOMEWORK: "Homework", OTHER: "School" } as Record<string, string>,
+  // 2026-10-25 (Etapp 0 G6): tick a one-off reminder off
+  markDone: "Mark as done",
+  markNotDone: "Mark as not done",
+  doneToast: (name: string) => `Done: ${name}`,
+  undo: "Undo",
+  done: "Done",
+  doneRecent: (n: number) => `Done in the last 30 days (${n})`,
+  attOverdue: (name: string, date: string) => `Overdue: ${name} (${date})`,
 };

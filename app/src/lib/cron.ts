@@ -141,7 +141,8 @@ export async function runReminderCron() {
     if (importedActivities.has(reminder.id)) { skipped++; continue; }
 
     // 2026-09-27: homework/tests already ticked off don't need a reminder.
-    if (reminder.category === "SCHOOL" && reminder.completedAt) { skipped++; continue; }
+    // 2026-10-25 (G6): same for one-off reminders ticked off as done.
+    if (reminder.completedAt) { skipped++; continue; }
 
     const startOfToday = new Date(todayStr + "T00:00:00.000Z");
     const alreadySent = await prisma.reminderLog.findFirst({

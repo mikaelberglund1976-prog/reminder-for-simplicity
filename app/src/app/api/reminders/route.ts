@@ -19,7 +19,15 @@ const reminderSchema = z.object({
 });
 
 // GET /api/reminders
-export async function GET() {
+// 2026-10-25 (Etapp 0 G6): reminders ticked off as done (completedAt) are left
+// out of every list — Home, Reminders, Calendar and More all read this route.
+// `?done=1` returns the ones ticked off in the last 30 days instead (for
+// "Done" + undo on the Reminders page). Until now completedAt was only ever
+// set on school items, which this route doesn't return, so nothing that
+// existed before changes.
+export async function GET(req: Request) {
+  const showDone = new URL(req.url).searchParams.get("done") === "1";
+  const doneFilter = showDone ? { completedAt: { gte: new Date(Date.now() - 30 * 86400000) } } : { completedAt: null };
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Inte inloggad" }, { status: 401 });
@@ -40,6 +48,7 @@ export async function GET() {
     reminders = await prisma.reminder.findMany({
       where: {
         isActive: true,
+        ...doneFilter,
         category: { notIn: ["CHORE", "TRAINING", "SCHOOL"] as never },
         OR: [
           { userId: session.user.id },
@@ -60,7 +69,7 @@ export async function GET() {
     });
   } else {
     reminders = await prisma.reminder.findMany({
-      where: { userId: session.user.id, isActive: true, category: { not: "CHORE" as never } },
+      where: { userId: session.user.id, isActive: true, ...doneFilter, category: { not: "CHORE" as never } },
       orderBy: { date: "asc" },
       include: {
         user: { select: { id: true, name: true } },

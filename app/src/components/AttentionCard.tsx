@@ -23,7 +23,10 @@ const ICON: Record<Alert["kind"], string> = { MOVED: "📅", TIME: "⏰", CANCEL
 
 export type SoonSchool = { key: string; who: string; title: string; day: Date; kind: "TEST" | "HOMEWORK" | "OTHER"; href: string };
 
-export default function AttentionCard({ soon, unassigned }: { soon: SoonSchool[]; unassigned: number }) {
+// 2026-10-25 (Etapp 0 G6): overdue one-off reminders, ticked off right here.
+export type OverdueReminder = { id: string; name: string; date: string };
+
+export default function AttentionCard({ soon, unassigned, overdue = [], onDone }: { soon: SoonSchool[]; unassigned: number; overdue?: OverdueReminder[]; onDone?: (id: string) => void }) {
   const { m, dateLocale } = useI18n();
   const t = m.home3;
   const a = m.assist;
@@ -40,7 +43,7 @@ export default function AttentionCard({ soon, unassigned }: { soon: SoonSchool[]
   const alerts = changes?.alerts ?? [];
   const clashes = plan?.clashes ?? [];
   const noRide = plan?.isAdult ? plan.items.filter((i) => i.needsRide && !i.driverId) : [];
-  if (alerts.length === 0 && clashes.length === 0 && noRide.length === 0 && soon.length === 0 && unassigned === 0 && feedIssues.length === 0) return null;
+  if (alerts.length === 0 && clashes.length === 0 && noRide.length === 0 && soon.length === 0 && unassigned === 0 && feedIssues.length === 0 && overdue.length === 0) return null;
 
   const day = (ymd: string | null) => ymd ? new Date(ymd + "T12:00:00Z").toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }) : "";
   const changeLine = (x: Alert) => {
@@ -98,6 +101,20 @@ export default function AttentionCard({ soon, unassigned }: { soon: SoonSchool[]
         return row(`a${x.id}`, ICON[x.kind], <>{who && <strong>{who}: </strong>}{changeLine(x)}</>);
       })}
       {soon.map((s) => row(s.key, s.kind === "TEST" ? "📝" : "📚", t.attTestSoon(s.who, s.title, when(s.day)), s.href))}
+      {overdue.slice(0, 4).map((r) => (
+        <div key={`o${r.id}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", fontSize: 14, lineHeight: 1.4, borderTop: "1px solid var(--border-soft)" }}>
+          <span aria-hidden style={{ flexShrink: 0, width: 20, textAlign: "center" }}>🔔</span>
+          <Link href={`/dashboard/${r.id}`} onClick={() => track("attention_clicked", { kind: "overdue" })} style={{ flex: 1, minWidth: 0, color: "var(--fg)", fontWeight: 500, textDecoration: "none" }}>
+            {m.reminders.attOverdue(shortTitle(r.name), new Date(r.date).toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" }))}
+          </Link>
+          {onDone && (
+            <button type="button" onClick={() => { track("attention_clicked", { kind: "overdue_done" }); onDone(r.id); }}
+              style={{ flexShrink: 0, minHeight: 34, border: "none", borderRadius: 50, padding: "6px 12px", background: "var(--surface)", color: "var(--success)", fontWeight: 800, fontSize: 12.5, cursor: "pointer", fontFamily: FONT }}>
+              ✓ {m.reminders.done}
+            </button>
+          )}
+        </div>
+      ))}
       {feedIssues.map((f) => row(`f${f.id}`, "🔌", feedLine(f), f.kind === "school" ? "/dashboard/school" : "/dashboard/training", t.attCheck))}
       {unassigned > 0 && row("unassigned", "👤", t.attUnassigned(unassigned), "/dashboard/training", t.attFix)}
     </section>

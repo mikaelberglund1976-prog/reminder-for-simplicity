@@ -33,6 +33,10 @@ export default function RemindersPage() {
   const [hasHousehold, setHasHousehold] = useState(false);
   const [filter, setFilter] = useState("ALL");
   const [sortBy, setSort] = useState("date_asc");
+  // 2026-10-25 (G6): ticked-off reminders (last 30 days) + undo
+  const [doneList, setDoneList] = useState<Reminder[]>([]);
+  const [showDone, setShowDone] = useState(false);
+  const [toast, setToast] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => { if (status === "unauthenticated") router.push("/login"); }, [status, router]);
 
@@ -45,6 +49,9 @@ export default function RemindersPage() {
     fetch("/api/reminders").then((r) => r.json()).then((data) => {
       setReminders(Array.isArray(data) ? data.map(withNextDate).map((r: Reminder) => ({ ...r, name: reminderDisplayName(r, new Date(r.date), msg.birthdays) })) : []);
     }).catch(() => {}).finally(() => setLoading(false));
+    fetch("/api/reminders?done=1").then((r) => (r.ok ? r.json() : [])).then((data) => {
+      setDoneList(Array.isArray(data) ? data.map((r: Reminder) => ({ ...r, name: reminderDisplayName(r, new Date(r.date), msg.birthdays) })) : []);
+    }).catch(() => {});
     fetch("/api/household").then((r) => (r.ok ? r.json() : null)).then((d) => {
       if (d?.household) { setHasHousehold(true); setMembers(d.household.members ?? []); }
     }).catch(() => {});
@@ -52,6 +59,18 @@ export default function RemindersPage() {
   }, [status]);
 
   const me = session?.user?.id;
+
+  async function setDone(r: Reminder, done: boolean) {
+    // Optimistic: move the row between the lists, put it back on failure.
+    if (done) { setReminders((p) => p.filter((x) => x.id !== r.id)); setDoneList((p) => [r, ...p]); setToast({ id: r.id, name: r.name }); }
+    else { setDoneList((p) => p.filter((x) => x.id !== r.id)); setReminders((p) => [...p, r]); setToast(null); }
+    const res = await fetch(`/api/reminders/${r.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ done }) }).catch(() => null);
+    if (!res?.ok) {
+      if (done) { setDoneList((p) => p.filter((x) => x.id !== r.id)); setReminders((p) => [...p, r]); setToast(null); }
+      else { setReminders((p) => p.filter((x) => x.id !== r.id)); setDoneList((p) => [r, ...p]); }
+    }
+  }
+  useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 6000); return () => clearTimeout(id); }, [toast]);
   const overdue = reminders.filter((r) => getDaysUntil(r.date) < 0).length;
   const yearly = reminders.filter((r) => r.amount != null && r.amount > 0).reduce((sum, r) => {
     const a = r.amount ?? 0;
@@ -142,13 +161,40 @@ export default function RemindersPage() {
               <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)", overflow: "hidden", boxShadow: "var(--shadow)" }}>
                 {list.map((r, i) => (
                   <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER} isFirst={i === 0}
-                    onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={me} householdMembers={members} hasHousehold={hasHousehold} />
+                    onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={me} householdMembers={members} hasHousehold={hasHousehold}
+                    onDone={() => setDone(r, true)} />
                 ))}
+              </div>
+            )}
+            {/* 2026-10-25 (G6): what was ticked off lately, with undo */}
+            {doneList.length > 0 && (
+              <div style={{ marginTop: 18 }}>
+                <button type="button" onClick={() => setShowDone((v) => !v)} aria-expanded={showDone}
+                  style={{ all: "unset", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "var(--muted)", padding: "6px 2px" }}>
+                  {showDone ? "▾" : "▸"} {msg.reminders.doneRecent(doneList.length)}
+                </button>
+                {showDone && (
+                  <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)", overflow: "hidden", marginTop: 8 }}>
+                    {doneList.map((r, i) => (
+                      <ReminderRow key={r.id} reminder={r} badge={CATEGORY_BADGE[r.category] ?? CATEGORY_BADGE.OTHER} isFirst={i === 0}
+                        onClick={() => router.push(`/dashboard/${r.id}`)} currentUserId={me} householdMembers={members} hasHousehold={hasHousehold}
+                        onDone={() => setDone(r, false)} done />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </>
         )}
       </main>
+      {toast && (
+        <div role="status" style={{ position: "fixed", left: 16, right: 16, bottom: "calc(84px + env(safe-area-inset-bottom))", maxWidth: 480, margin: "0 auto", zIndex: 40,
+          background: "var(--ink)", color: "#fff", borderRadius: 14, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, fontSize: 14, boxShadow: "0 6px 24px rgba(0,0,0,0.25)" }}>
+          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>✓ {msg.reminders.doneToast(toast.name)}</span>
+          <button type="button" onClick={() => { const r = doneList.find((x) => x.id === toast.id); if (r) setDone(r, false); }}
+            style={{ border: "none", background: "transparent", color: "#FFB27A", fontWeight: 800, fontSize: 14, cursor: "pointer", padding: "4px 2px", fontFamily: FONT }}>{msg.reminders.undo}</button>
+        </div>
+      )}
     </div>
   );
 }

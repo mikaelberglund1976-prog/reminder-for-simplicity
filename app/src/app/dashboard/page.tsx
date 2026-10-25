@@ -24,7 +24,7 @@ import { reminderDisplayName, type BirthdayMeta } from "@/lib/birthdayLabel";
 import { normalizeHomePrefs, type HomePrefs } from "@/lib/homePrefs";
 import { formatTimeRange } from "@/lib/timeFormat";
 import { useI18n } from "@/lib/i18n/client";
-import { CATEGORY_BADGE, ServiceLogo, ReminderRow, getDaysUntil, formatDate, type Reminder, type HouseholdMember } from "@/components/ReminderParts";
+import { CATEGORY_BADGE, ServiceLogo, ReminderRow, getDaysUntil, formatDate, canTickOff, type Reminder, type HouseholdMember } from "@/components/ReminderParts";
 import { relativeDay } from "@/lib/i18n/relative";
 
 
@@ -170,8 +170,18 @@ export default function DashboardPage() {
     } catch (e) { console.error(e); }
   }
 
+  // 2026-10-25 (Etapp 0 G6): overdue one-off reminders go to "Needs your
+  // attention" (with Done right there) instead of Coming up.
+  const overdueOnce = hasHousehold ? reminders.filter((r) => canTickOff(r) && getDaysUntil(r.date) < 0) : [];
+  const overdueIds = new Set(overdueOnce.map((r) => r.id));
+  async function tickOff(id: string) {
+    const r = reminders.find((x) => x.id === id);
+    setReminders((p) => p.filter((x) => x.id !== id));
+    const res = await fetch(`/api/reminders/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ done: true }) }).catch(() => null);
+    if (!res?.ok && r) setReminders((p) => [...p, r]);
+  }
   const attentionItems = [...reminders]
-    .filter(r => getDaysUntil(r.date) <= 7)
+    .filter(r => getDaysUntil(r.date) <= 7 && !overdueIds.has(r.id))
     .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date));
 
   const sorted = [...reminders].sort((a, b) => {
@@ -390,7 +400,8 @@ export default function DashboardPage() {
         )}
 
         {/* 2026-10-24 (row 59): what wants a decision — only when something's there. */}
-        {hasHousehold && <AttentionCard soon={soonSchool} unassigned={unassignedActivities} />}
+        {hasHousehold && <AttentionCard soon={soonSchool} unassigned={unassignedActivities}
+          overdue={overdueOnce.map((r) => ({ id: r.id, name: r.name, date: r.date }))} onDone={tickOff} />}
 
         {/* 2026-10-09: wishlists other families have shared with me. */}
         <GiftSharesCard />

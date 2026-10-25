@@ -98,6 +98,7 @@ type Reminder = {
   urgencyLevel: string;
   canEdit?: boolean;
   skipDates?: string[];
+  completedAt?: string | null;
 };
 
 function formatDate(dateStr: string, dateLocale: string) {
@@ -172,6 +173,7 @@ export default function ReminderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [doneBusy, setDoneBusy] = useState(false); // 2026-10-25 (G6)
   const [notFound, setNotFound] = useState(false);
 
   // Household & handover state
@@ -488,6 +490,24 @@ export default function ReminderDetailPage() {
             </div>
             <div style={{ fontSize: 12, color: "#8B80C8", marginTop: 10, fontWeight: 600 }}>{t.askAdmin}</div>
           </div>
+        )}
+
+        {/* 2026-10-25 (Etapp 0 G6): tick a one-off reminder off — for whoever
+            may edit it and for the person it's assigned to. */}
+        {reminder.recurrence === "ONCE" && reminder.category !== "BIRTHDAY" && (canEdit || reminder.assignedTo === session?.user?.id) && (
+          <button type="button" disabled={doneBusy} onClick={async () => {
+            setDoneBusy(true);
+            const done = !reminder.completedAt;
+            const res = await fetch(`/api/reminders/${reminder.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ done }) }).catch(() => null);
+            setDoneBusy(false);
+            if (res?.ok) { if (done) router.push("/dashboard/reminders"); else setReminder({ ...reminder, completedAt: null }); }
+          }} style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "16px", borderRadius: 50, marginBottom: 10,
+            background: reminder.completedAt ? "var(--surface)" : "var(--tint-success)", border: reminder.completedAt ? "1.5px solid var(--border)" : "1.5px solid var(--success)",
+            fontSize: 15.5, fontWeight: 800, color: reminder.completedAt ? "var(--fg-2)" : "var(--success)", cursor: "pointer", fontFamily: FONT, opacity: doneBusy ? 0.6 : 1,
+          }}>
+            {reminder.completedAt ? msg.reminders.markNotDone : `✓ ${msg.reminders.markDone}`}
+          </button>
         )}
 
         {canEdit ? (<>
