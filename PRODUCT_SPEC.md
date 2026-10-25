@@ -1,5 +1,6 @@
 # Product Spec – Reminder for Simplicity
-**Version:** 2.26 | **Uppdaterad:** 2026-10-25 | **Ägare:** Mikael Berglund
+**Version:** 2.27 | **Uppdaterad:** 2026-10-25 (kväll) | **Ägare:** Mikael Berglund
+**Not (2026-10-25 kväll, live):** masterbriefens etapp 1–7 genomförda så långt webbappen räcker: 4b.64–4b.72 tillagda (notisförval, kortare skapa-flöden, kalender person först, Barnets dag, födelsedag som åtgärd, inga dubbletter i inköp, Kalendrar & integrationer + skollänk från valfri plattform, delningslänk för önskelista bakom flagga, ikoner + tillgänglighet, röst/dela till appen/offline, WhatsApp-utredning). Se `RELEASE_2026-10-25d.md`.
 **Not (2026-10-25, live):** Produktens riktning styrs nu av `ASSISTIQ_MASTERBRIEF.md` (Mikaels masterbrief 24 okt: enkel på ytan, kraftfull under ytan; Core/Supporting/Contextual; etapp 0–7). Etapp 0 (Foundations) är klar: 4b.57–4b.63 tillagda (synkfel på Hem, källan syns, flytta importerad post, språk per person, nyckeltal, Barnvakt/släkt-roll, Klart för påminnelser, gemensam källmodell). Datamodellen nedan kompletterad. Se `RELEASE_2026-10-25.md`, `RELEASE_2026-10-25b.md` (ny Mer-meny), `RELEASE_2026-10-25c.md` och `NEXT_STEPS.md`.
 **Not (2026-10-24, live):** 4b.55 (nya startsidor för förälder och barn) och 4b.56 (Om mig) tillagda; 4b.10/4b.51 kompletteras av 4b.55. 4b.54 växelvis boende är nu en framtida feature. Se `RELEASE_2026-10-24.md`.
 **Not (2026-10-23, live):** 4b.45–4b.54 tillagda (releaserna 10–23 okt: Studybee och flera skollänkar, egna färger, inköpslistan, ändringsvakten, skriv vad som helst, I morgon-kortet, Resor, serier, Navigation 2.0, schemat, mejlval, skolstart, växelvis boende förberett). §7.4 uppdaterad med vilka nya funktioner som är Free respektive Pro. Se `RELEASE_2026-10-10e.md` … `RELEASE_2026-10-23.md` och `CUSTODY_PLAN.md`.
@@ -545,6 +546,33 @@ Engångspåminnelser bockas av (rad i Påminnelser med Ångra, knapp på påminn
 
 ### 4b.63 Ny Mer-meny (2026-10-25, live)
 Sök, snabbval och levande status per rad – se `RELEASE_2026-10-25b.md`.
+
+### 4b.64 Notiser: Viktigt / Balanserat / Allt / Anpassa (2026-10-25, live – §26–27)
+Förval först, detaljreglagen under Anpassa. Viktigt = påminnelser + ändringar (mejl bara påminnelser); Balanserat (rekommenderas) = + läxor & prov, aktiviteter, kvällssammanfattning (mejl påminnelser + skola); Allt = allt. Ingens befintliga val ändras förrän hen väljer. Tryck på notiser mäts (§38).
+
+### 4b.65 Kortare skapa-flöden (2026-10-25, live – §33)
+Ny påminnelse: Vad → Vem gäller det? → När → Spara; upprepning, belopp, kategori, påminn mig, anteckning, synlighet under *Fler alternativ* med en sammanfattningsrad. Ny påminnelse utan mall = engångs + Övrigt (förut månadsvis + Abonnemang). Aktivitet/syssla: godkännande + anteckning under *Fler alternativ*.
+
+### 4b.66 Kalender person först, Barnets dag, födelsedag som åtgärd (2026-10-25, live – §13–15, §19)
+Personvalet ligger alltid överst i kalendern (Filter = typer). Barnets dag: I dag → **Behöver göras** (prov/läxor inom 2 dagar, sysslor kvar) → I morgon → Kommande → Sysslor. Födelsedag inom 14 dagar = rad i *Behöver din uppmärksamhet* med länk till önskelistan.
+
+### 4b.67 Inköp utan dubbletter (2026-10-25, live – §17)
+Samma vara som redan står okryssad på listan läggs inte till igen ("Mjölk finns redan på listan"), även från "Skriv vad som helst".
+
+### 4b.68 Kalendrar & integrationer + skollänk från valfri plattform (2026-10-25, live – Etapp 2, §30)
+`/dashboard/sources`: alla skol- och klubblänkar med status, fel, antal poster, Synka nu. Skolkortet har *SchoolSoft / Studybee / Annan* – vilken iCal/webcal-länk som helst (skyddad hämtning). Inställningar i briefens ordning: Mitt konto · Familjen · Notiser · Kalendrar & integrationer · Anpassa appen · Utseende · Plan · Integritet & data · Hjälp & feedback.
+
+### 4b.69 Delningslänk för önskelista (byggd 2026-10-25, **av** – §20)
+Bakom `FEATURE_WISHLIST_LINK`. En länk per lista, återkallbar, 90 dagar; släkt reserverar med bara namn utan konto; barnet ser aldrig reservationer. Avvaktar Mikaels beslut (2 aug: konto krävs).
+
+### 4b.70 Ikonsystem och tillgänglighet (2026-10-25, live – §31–32, §37)
+`components/icons.tsx`; zoom tillåten; WCAG AA-kontrast för sekundär/röd text; etiketter på fält. axe-core utan fel på huvudsidorna.
+
+### 4b.71 Röst, dela till appen, offline i butiken (2026-10-25, live – §8, §35)
+Mikrofon i "Skriv vad som helst" (webbläsarens taligenkänning); appen är share target på Android (`/share` → Hem ifylld); avbockningar på inköpslistan utan nät köas och skickas när nätet är tillbaka.
+
+### 4b.72 WhatsApp V1 (utrett 2026-10-25, inte byggt – §28)
+`WHATSAPP_PLAN.md`: Meta Cloud API, utility-mallar ~0,017 USD/meddelande (Sverige, okt 2026), ~15 kr/hushåll/månad med daglig sammanfattning → Pro; en tredje kanal bredvid mejl och push. Väntar på bolag, Meta-konto och mallgodkännande.
 
 ## 5. Fas 2 – Tillväxtfunktioner (efter MVP-validering)
 

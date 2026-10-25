@@ -1,6 +1,7 @@
 # Operations – Reminder for Simplicity
 **Skapad:** 2026-07-27, enligt `CLAUDE_COMPANY_FRAMEWORK.md`s föreslagna projektstruktur.
-**Uppdaterad:** 2026-10-25 – Etapp 0 ur masterbriefen (`ASSISTIQ_MASTERBRIEF.md`): grundregeln om befintlig data (§5b), kolumner och enum-värden som appen lägger till själv (§5c), nyckeltalen i admin (§3d), språk per person (§7b), synkhälsa och gemensam källmodell (§1). Se `RELEASE_2026-10-25.md` och `RELEASE_2026-10-25c.md`.
+**Uppdaterad:** 2026-10-25 (kväll) – masterbriefens etapp 1–7 (`RELEASE_2026-10-25d.md`): Kalendrar & integrationer-sidan (§1), notismätning (§3d), nya tabeller och flaggan `FEATURE_WISHLIST_LINK` (§4, §5a), tillgänglighet och färgvariabler (§7c), offline-kön på inköpslistan (§7c), WhatsApp-utredningen (`WHATSAPP_PLAN.md`).
+**Uppdaterad (förmiddag):** 2026-10-25 – Etapp 0 ur masterbriefen (`ASSISTIQ_MASTERBRIEF.md`): grundregeln om befintlig data (§5b), kolumner och enum-värden som appen lägger till själv (§5c), nyckeltalen i admin (§3d), språk per person (§7b), synkhälsa och gemensam källmodell (§1). Se `RELEASE_2026-10-25.md` och `RELEASE_2026-10-25c.md`.
 **Uppdaterad tidigare:** 2026-10-23 – kvällskörningen, alla tabeller som skapar sig själva, nya miljövariabler (`ANTHROPIC_API_KEY`, `VAPID_*`, `REQUIRE_SIGNUP_APPROVAL`, `FEATURE_CUSTODY`) och hur Claude pushar nu.
 **Syfte:** Hur den löpande driften faktiskt fungerar i den här kodbasen – vad som körs automatiskt, vad som kräver manuell koll, och vad Claude kan göra åt saken när något går fel.
 
@@ -34,6 +35,8 @@
 
 **Kalenderlänkar – synkhälsa och källmodell (sedan 2026-10-25)**
 - Alla skol- och klubblänkar läses genom `lib/feedSources.ts` (`listSources`) och synkas av samma slinga (`runDueSyncs`) på morgonen och kvällen.
+- **Inställningar → Kalendrar & integrationer** (`/dashboard/sources`, sedan 25 okt kväll): alla länkar i en lista med senaste synk, fel i klartext, antal poster och *Synka nu*. Första stället att titta vid support ("SchoolSoft kommer inte in").
+- Skollänkar från **vilken plattform som helst** (Unikum, Vklass, InfoMentor, skolans egen kalender) sparas med `provider = 'ical'` och hämtas genom samma SSRF-skyddade hämtning som klubbkalendrar (`fetchPublicCalendar` i `lib/activityFeeds.ts`). SchoolSoft och Studybee hämtas som förut.
 - En länk som misslyckats, eller inte synkat på 48 h, syns för familjens vuxna i **Behöver din uppmärksamhet** på Hem ("SchoolSoft för Tyra har inte synkat sedan …", `/api/family/feed-health`). Mikael behöver alltså inte bevaka det själv – men samma lista är första stället att titta när en familj säger att något inte kommit in.
 - Engångspåminnelser som bockats av (`completedAt`) mejlas inte (`cron.ts`).
 
@@ -96,6 +99,7 @@ Admin kan se appen som en person i sin egen familj: Family members → "👁 Vie
 - **Automatiskt inhämtat (30 d)** – poster från länkar delat med (dem + poster gjorda för hand). **Rättade importer (30 d)** – `import_corrected` (flyttad, ändrad, borttagen) delat med nya importerade. **Lyckade synkar (30 d)**.
 - Händelser sparas i `analytics_events` med **pseudonymer** (`hh`/`ph` = HMAC-SHA256 av hushålls-/person-id med `NEXTAUTH_SECRET`, 16 tecken). **Byts `NEXTAUTH_SECRET` bryts kedjan**: hushåll räknas då som nya och kvarhållningen nollställs. Händelser rensas efter 180 dagar av morgonkörningen. Alla händelser listas i `lib/analyticsStore.ts` (`ANALYTICS_EVENTS` från klienten, `SERVER_EVENTS` från servern).
 - Data finns från 25 okt 2026. D7 kan visa något tidigast 1 nov och D30 tidigast 24 nov.
+- **Öppnade notiser (30 d)** (sedan 25 okt kväll): `notification_opened` (service workern skickar när någon trycker på en notis) delat med `notification_sent` (en per push som nått minst en enhet). `notify_preset_chosen` visar vilka förval (Viktigt/Balanserat/Allt) som används.
 
 ## 4. Miljöer & secrets
 
@@ -110,6 +114,7 @@ Admin kan se appen som en person i sin egen familj: Family members → "👁 Vie
 | AI (veckobrev, "Skriv vad som helst") | `ANTHROPIC_API_KEY`, valfritt `ANTHROPIC_MODEL` | **Saknas i Vercel (23 okt)** – då är veckobrevsskanningen av och snabbinmatningen klarar bara inköp och enkla påminnelser. Production + Preview, Sensitive. Se `GDPR.md` §5 innan den sätts. |
 | Registreringsgate | `REQUIRE_SIGNUP_APPROVAL` | Av som standard sedan 2026-10-09. `true` = nya konton måste godkännas i `/admin` igen. |
 | Växelvis boende | `FEATURE_CUSTODY` | Av (saknas). `true` slår på den förberedda funktionen – testa först i Preview, se `CUSTODY_PLAN.md`. |
+| Önskelista via länk utan konto | `FEATURE_WISHLIST_LINK` | **Av (saknas), byggd 25 okt.** `true` = vuxna kan skapa en delningslänk per önskelista (`/w/<token>`), släkt reserverar med bara namn. Väntar på Mikaels beslut – 2 aug beslutades att delning kräver konto. Se `RELEASE_2026-10-25d.md` §6 och `GDPR.md` #5. |
 
 Om en nyckel roteras (t.ex. ny Resend-nyckel): uppdatera både `.env.local` och Vercels environment variables, redeploya.
 
@@ -162,6 +167,7 @@ Nya, rent additiva tabeller skapas av appen vid första användning med `CREATE 
 | `school_start_settings`, `school_start_rules`, `school_start_overrides` | Skolstart: A/B, väckning, egna tider, sovmorgon/lediga dagar (undantag rensas efter 7 dagar) | `lib/schoolStart.ts` | 23 okt |
 | `custody_schedules`, `custody_overrides` | Växelvis boende – skapas bara med `FEATURE_CUSTODY=true` | `lib/custody.ts` | förberett 23 okt |
 
+| `wishlist_links`, `wishlist_link_reservations` | Delningslänk per önskelista + släktens reservationer med namn – skapas bara med `FEATURE_WISHLIST_LINK=true` | `lib/wishlistLinks.ts` | byggt 25 okt (av) |
 | `analytics_events` | Produktanalys (Mer-menyn 24–25 okt). Sedan 25 okt även pseudonymerna `hh`/`ph`, se §3d | `lib/analyticsStore.ts` | 24 okt |
 
 Mönstret passar bara nya tabeller. Nya kolumner i befintliga tabeller görs fortfarande enligt 5b – utom de rent additiva i 5c.
@@ -225,6 +231,16 @@ Dessa är kända luckor, inte akuta – men bör tas i tur och ordning i takt me
 - Familjens språk sparas i `households.language`; kolumnen skapas automatiskt av appen (ingen `db push`). Support: en familj som "fastnat" på fel språk byter själv under Family members → Language (admin), eller så sätts kolumnen direkt i Supabase.
 - **Sedan 2026-10-25: språk per person.** `users.language` (null = följ familjen). Var och en väljer under Inställningar → Språk → *Mitt språk*; familjens språk är standard för de som inte valt. Mejl och push går på personens språk (`getLocaleForUser`: person → familj → enhet). Support: "fel språk för en person" → nollställ `users.language` för den personen.
 - Nytt språk: se receptet i `RELEASE_2026-10-04b.md`.
+
+## 7c. Tillgänglighet, ikoner och offline (sedan 2026-10-25)
+
+- **Tillgänglighet (masterbrief §37):** sidorna granskas med axe-core (WCAG 2.1 A/AA) i ljust och mörkt läge. Senast 25 okt: noll fel på Hem, Påminnelser, Ny påminnelse, Kalender, Skola, Aktiviteter, Inköpslista, Önskelista, Barnets dag, Inställningar, Kalendrar & integrationer, delad önskelista och Logga in.
+  - **Zoom är tillåten.** Lägg aldrig tillbaka `maximumScale`/`userScalable` i `app/layout.tsx`.
+  - Fält har 16 px på mobil (`globals.css`), så att iPhone inte zoomar in när man trycker i dem.
+  - **Färgvariabler:** text ska ha minst 4,5:1 mot bakgrunden. `--subtle` (#66727C i ljust läge) är den ljusaste tillåtna textfärgen. `--faint` är bara för dekor (chevroner, streck), aldrig för text man ska läsa.
+  - Nya fält och knappar utan synlig etikett ska ha `aria-label`.
+- **Ikoner (§32):** `components/icons.tsx` (`<Icon name="school" />` …) är appens ikonsystem. Använd den för nya ytor i stället för emoji eller egna SVG:er. Emoji används bara som känslomässig accent i text.
+- **Offline på inköpslistan (§35):** avbockningar utan uppkoppling köas i `localStorage` (`rfs:shop-queue`, bara varans id och bockad eller inte) och skickas när nätet är tillbaka. Senaste avbockningen gäller. Sidor cachas fortfarande inte (service workern, beslut 4 okt), så en sida som inte redan är öppen visar `/offline.html`.
 
 ## 8. Säkerhetsgranskning av användardata (2026-08-02)
 

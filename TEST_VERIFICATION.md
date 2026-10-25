@@ -1,5 +1,5 @@
 # Test & Verifiering – öppna punkter
-**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-10-25 (§34 = Etapp 0 + Mer-menyn) · 2026-10-23 (§23–§31 = releaserna 10–22 okt, §32 = 23 okt) · 2026-10-10 (§16–§20 = releaserna 7–10 okt, §21 = Lotuvi ljust + mörkt; §15 steg 2 och 5: ikonen är nu Lotuvi-symbolen) · tidigare 2026-10-04 (§13 = mobiltestets fynd 4 okt) – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
+**Skapat:** 2026-07-28 | **Uppdaterad:** 2026-10-25 (§34 = Etapp 0 + Mer-menyn, §35 = etapp 1–7) · 2026-10-23 (§23–§31 = releaserna 10–22 okt, §32 = 23 okt) · 2026-10-10 (§16–§20 = releaserna 7–10 okt, §21 = Lotuvi ljust + mörkt; §15 steg 2 och 5: ikonen är nu Lotuvi-symbolen) · tidigare 2026-10-04 (§13 = mobiltestets fynd 4 okt) – allt i §0–§11 är live i produktion (§7–§8 sedan 28/9, §9 = mobiltestets fynd rad 36–48, §10 = barnkonton/Google, §11 = GDPR). PIN-rader i §2–3 är inaktuella – PIN pensionerad. Inget av nedan är klicktestat i produktion av en människa; §8–§11 är automattestade lokalt med testfamilj.
 
 Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader utan `[x]` betyder "inte verifierat".
 
@@ -312,4 +312,22 @@ Bocka av varje rad efter att du testat den skarpt (inte bara läst koden). Rader
 - [ ] Påminnelsens sida: "Markera som klar" → tillbaka till listan; avbockad påminnelse mejlas inte och räknas inte i Mer:s "försenade".
 - [ ] Återkommande påminnelse och födelsedag har ingen avbockning.
 **Mer-menyn** – se `RELEASE_2026-10-25b.md`.
+
+## 35. Masterbriefens etapp 1–7 (2026-10-25 kväll) – se `RELEASE_2026-10-25d.md`
+- [ ] Inställningar → Notiser: "Hur mycket vill du höra?" visar "Allt" (om du aldrig ändrat). Välj Balanserat → reglagen under Anpassa följer med; Anpassa visar detaljerna.
+- [ ] Tryck på en push-notis → Admin → Nyckeltal "Öppnade notiser" räknar upp (dagen efter).
+- [ ] Ny påminnelse: Namn → Vem → Datum → Spara; *Fler alternativ* visar "Upprepas: En gång · Övrigt · Bara jag"; en mall (Abonnemang) sätter Månadsvis.
+- [ ] Ny aktivitet/syssla: godkännande + anteckning under *Fler alternativ*; ändra en aktivitet med anteckning → delen är öppen.
+- [ ] Kalender: Alla / Tyra / Filip överst på samma rad som Filter; Filter räknar bara typer.
+- [ ] Barnets dag: Behöver göras visar prov/läxa i morgon och "N kvar" för sysslor; samma prov står inte också under Kommande.
+- [ ] Födelsedag om ≤14 dagar → 🎁-rad i Behöver din uppmärksamhet → Önskelista.
+- [ ] Inköp: lägg till "mjölk" när "Mjölk" redan står → "Mjölk finns redan på listan", ingen ny rad.
+- [ ] Inställningar → Kalendrar & integrationer: alla länkar, Synka nu fungerar, felet syns i klartext. Skola → Koppla → *Annan* → klistra in en iCal-länk från annan plattform → poster kommer in.
+- [ ] Inställningarnas grupper i ordningen Mitt konto · Familjen · Notiser · Kalendrar & integrationer · Anpassa appen · Utseende · Plan · Integritet & data · Hjälp.
+- [ ] (Bara om `FEATURE_WISHLIST_LINK=true` i Preview) Önskelista → Dela med länk → öppna i privat fönster utan inloggning → reservera med namn → vuxen ser "Reserverad av …", barnet ser ingenting; Stäng av länken → sidan säger att länken inte fungerar.
+- [ ] Zooma med två fingrar fungerar; tryck i ett fält på iPhone → sidan zoomar inte in.
+- [ ] Sekundär text och röd text är tydligt läsbar i ljust läge.
+- [ ] Mikrofonen i "Skriv vad som helst" (iPhone Safari / Android Chrome): säg "mjölk och bröd" → hamnar på inköpslistan.
+- [ ] Android: dela en text från en annan app till Assistiq → Hem öppnas med texten i skrivfältet.
+- [ ] Inköpslistan i flygplansläge: bocka av → rutan "Ingen uppkoppling…"; slå av flygplansläget → avbockningen sparas (syns på en annan enhet).
 

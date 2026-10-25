@@ -2,6 +2,8 @@
 
 *Sparad 24 okt 2026 (Mikaels brief, komprimerad formatering, innehåll oförändrat). Gap-analys mot koden: projekt-doc `claude/etapp-0-analys-2026-10-24.md`. Status och plan: `ROADMAP.md` ("Masterbriefens etapper") och `NEXT_STEPS.md`.*
 
+**Status 25 okt 2026 (kväll):** etapp 0–5 och alla allmänna krav (§26, §30–33, §37) är genomförda i webbappen. Etapp 6 är gjord så långt en webbapp räcker (röst, dela till appen på Android, offline-kö, push), och Etapp 7 (WhatsApp) är utredd. Delningslänken för önskelistan är byggd men avstängd tills Mikael har bestämt sig. Detaljer finns i `ROADMAP.md` ("Masterbriefens etapper") och `RELEASE_2026-10-25*.md`, och det som återstår i `NEXT_STEPS.md`.
+
 **Grundregel från Mikael (24 okt):** de två befintliga användarnas data ska vara orörd i allt arbete enligt denna brief.
 
 ## 1. Syfte

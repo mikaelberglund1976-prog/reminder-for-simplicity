@@ -1,4 +1,5 @@
 # Roadmap – Reminder for Simplicity
+**Uppdaterad igen:** 2026-10-25 (kväll) – masterbriefens etapp 1–7 genomförda så långt webbappen räcker (Fas 1.17, `RELEASE_2026-10-25d.md`); tabellen "Masterbriefens etapper" uppdaterad.
 **Uppdaterad igen:** 2026-10-25 – Masterbriefen (`ASSISTIQ_MASTERBRIEF.md`) är nu produktens riktning; Fas 1.16 (Etapp 0 – Foundations klar, ny Mer-meny) tillagd och etapp 1–7 lagda som plan framåt (se "Masterbriefens etapper" nedan och `NEXT_STEPS.md`).
 **Uppdaterad igen:** 2026-10-24 – Fas 1.15 (nya startsidor, rad 57–64) tillagd; todo-genomgång med Mikael: vuxnas kalendrar, växelvis boende och Koppla Claude flyttade till Fas 2 (framtida), Free/Pro till före lansering.
 **Uppdaterad igen:** 2026-10-23 – Fas 1.13 (10–11 okt: Studybee, egna färger, inköpslistan, ändringsvakten, skriv vad som helst, I morgon-kortet, Resor) och Fas 1.14 (17–23 okt: serier, Navigation 2.0, schemat, mejlval, skolstart, växelvis boende förberett) tillagda.
@@ -186,17 +187,21 @@ Underlag: `ASSISTIQ_MASTERBRIEF.md`, gap-analysen (projekt-doc `etapp-0-analys-2
 - Ny Mer-meny (sök, snabbval, status per rad, första analyshändelserna)
 - Exit-kriteriet uppfyllt: SchoolSoft-händelse → barnet → Kalender → Hem → Barnets dag går via en rad utan kopior.
 
+## Fas 1.17 – Masterbriefens etapp 1–7 (25 okt 2026 kväll, LIVE)
+`RELEASE_2026-10-25d.md`: notisförval + mätning, kortare skapa-flöden, kalender person först, Barnets dag, födelsedag som åtgärd, inköp utan dubbletter, Kalendrar & integrationer + valfri skolplattform, Inställningar i briefens ordning, delningslänk önskelista (flagga av), ikonsystem + tillgänglighet (WCAG AA), röst + share target + offline-kö, WhatsApp-utredning.
+
 ## Masterbriefens etapper – status och nästa (2026-10-25)
 | Etapp | Innehåll | Status |
 |---|---|---|
-| 0 Foundations | Datamodell, källa/person, synk, roller, språk, analys | ✅ klar 25 okt (kvar: sammanslagen matchningsmotor, se `NEXT_STEPS.md`) |
-| 1 Hem + Quick Capture | Mindre header, Idag, Behöver din uppmärksamhet, Nästa per barn, text-capture | 🟡 i stort sett klar (18–25 okt; standardmenyn är redan Hem–Kalender–Inköp–Skola–Mer); kvar: 5-sekunderstest med riktiga föräldrar, röst-capture |
-| 2 Person + skola + aktivitet | Källhantering, MyClub/iCal, flytta, transparens, synk-/feltillstånd | 🟡 delvis (G1/G2/G8); kvar: en sida för alla källor, samma händelse från två källor, motor |
-| 3 Kalender + Barnets dag + Actions | Person-först-filter, Barnets dag, gemensamt action-lager | ⬜ nästa |
-| 4 Supporting | Inköp (dedupe, snabbare), Sysslor, Födelsedagar på Hem | ⬜ |
-| 5 Contextual | Delningslänk för önskelista, kontextuella födelsedagar/resor | ⬜ |
-| 6 Native | Offline, push, share sheet, röst, kamera, widgets | ⬜ (`APP_STORE_READINESS.md`) |
-| 7 WhatsApp V1 | Påminnelser, ändringar, sammanfattning – efter kostnadsutredning | ⬜ |
+| 0 Foundations | Datamodell, källa/person, synk, roller, språk, analys | ✅ 25 okt (kvar: sammanslagen matchningsmotor – kräver testdatabas) |
+| 1 Hem + Quick Capture | Mindre header, Idag, Behöver din uppmärksamhet, Nästa per barn, text-capture | ✅ (18–25 okt); kvar: 5-sekunderstest med riktiga föräldrar |
+| 2 Person + skola + aktivitet | Källhantering, iCal, flytta, transparens, synk-/feltillstånd | ✅ 25 okt (Kalendrar & integrationer, valfri skolplattform); kvar: samma händelse från två *olika* typer av källor |
+| 3 Kalender + Barnets dag + Actions | Person först, Idag→Behöver göras→Nästa, gemensamt Klart, födelsedag som åtgärd | ✅ 25 okt |
+| 4 Supporting | Inköp utan dubbletter, sysslor kortare, födelsedagar på Hem | ✅ 25 okt |
+| 5 Contextual | Delningslänk önskelista, kontextuella födelsedagar/resor | 🟡 länken byggd bakom flagga (beslut Mikael); födelsedagar/resor ✅ |
+| 6 Native | Offline, push, share sheet, röst, kamera, widgets | 🟡 i webbappen: röst, share target (Android), offline-kö inköp, push finns sedan 9 okt; native-appen = eget projekt (`APP_STORE_READINESS.md`) |
+| 7 WhatsApp V1 | Påminnelser, ändringar, sammanfattning | 🟡 utredd (`WHATSAPP_PLAN.md`); väntar på bolag + Meta-konto |
+| Tvärs | Notisförval §26, Inställningar §30, ikoner §32, skapa-flöden §33, tillgänglighet §37 | ✅ 25 okt |
 
 ## USP:ar och prioritet inför användartester (2026-07-28)
 

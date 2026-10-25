@@ -2,6 +2,7 @@
 
 > **För aktuell, omprioriterad status: se `LAUNCH_CHECKLIST.md`.** Det dokumentet är den avdubblerade sanningen om vad som är kvar, organiserat i faser (A–G). Den här filen (`TODO.md`) är den kronologiska arbetsloggen/historiken – bra för "varför gjorde vi X", men inte längre det första stället att kolla "vad är kvar".
 
+**Uppdaterad igen:** 2026-10-25 kväll – punkt 49: masterbriefens etapp 1–7, se `RELEASE_2026-10-25d.md`.
 **Uppdaterad igen:** 2026-10-25 – punkt 48: masterbriefen (`ASSISTIQ_MASTERBRIEF.md`), Etapp 0 och ny Mer-meny live, se `RELEASE_2026-10-25*.md` och `NEXT_STEPS.md`.
 **Uppdaterad igen:** 2026-10-24 – punkt 47: nya startsidor (rad 57–64), buggar 66–69, todo-genomgång (50–53 flyttade), se `RELEASE_2026-10-24.md`.
 **Uppdaterad igen:** 2026-10-10 (eftermiddag) – punkt 44: födelsedagar (familj, släkt, kompisar och husdjur, gäller alla eller en person), se `RELEASE_2026-10-10d.md`.
@@ -887,4 +888,17 @@ Se `RELEASE_2026-10-04.md`, klicktest `TEST_VERIFICATION.md` §13.
 - [ ] Klicktest på riktig data: `TEST_VERIFICATION.md` §34.
 - [ ] Kvar för Mikael: `/privacy` om produktanalysen; GitHub-repot är publikt – gör det privat om koden inte ska vara öppen.
 - [ ] Nästa: `NEXT_STEPS.md`.
+
+## 49. 25 okt kväll (live) – masterbriefens etapp 1–7 – se `RELEASE_2026-10-25d.md`
+- [x] Notisförval Viktigt/Balanserat/Allt/Anpassa + mätning av öppnade notiser.
+- [x] Kortare skapa-flöden (Vad → Vem → När → Spara, resten under Fler alternativ).
+- [x] Etapp 3: kalender person först, Barnets dag (Behöver göras), födelsedag som åtgärd.
+- [x] Etapp 4: inköp utan dubbletter.
+- [x] Etapp 2: Kalendrar & integrationer-sidan, skollänk från valfri plattform; Inställningar i briefens ordning.
+- [x] Etapp 5: delningslänk för önskelista – byggd bakom `FEATURE_WISHLIST_LINK` (av).
+- [x] Ikonsystem (`components/icons.tsx`) + tillgänglighet (axe utan fel, zoom tillåten, AA-kontrast).
+- [x] Etapp 6 i webbappen: röst, share target, offline-kö på inköpslistan.
+- [x] Etapp 7: WhatsApp utrett (`WHATSAPP_PLAN.md`).
+- [ ] Klicktest: `TEST_VERIFICATION.md` §35.
+- [ ] Beslut Mikael: önskelistelänk, WhatsApp, testdatabas (`LAUNCH_CHECKLIST.md`).
 
