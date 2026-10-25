@@ -12,6 +12,7 @@
 // A parent can open the same page for one child (?id=…) from Chores.
 import { useSession } from "next-auth/react";
 import { track } from "@/lib/analytics";
+import { Icon, type IconName } from "@/components/icons";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import HamburgerMenu from "@/components/HamburgerMenu";
@@ -247,19 +248,19 @@ function ChildViewContent() {
     : k === "REMINDER" ? { bg: "var(--tint-accent)", fg: "var(--accent)", label: msg.homePrefs.kindReminder }
     : { bg: "var(--surface-3)", fg: "var(--muted)", label: msg.homePrefs.kindSchool };
 
-  const tiles: { id: string; emoji: string; value: string; label: string; sub: string; tint: string; color: string; href?: string; target?: string }[] = [
+  const tiles: { id: string; icon: IconName; value: string; label: string; sub: string; tint: string; color: string; href?: string; target?: string }[] = [
     {
-      id: "school", emoji: "📚", value: String(schoolOpen.length), label: h.testsHomework,
+      id: "school", icon: "school" as IconName, value: String(schoolOpen.length), label: h.testsHomework,
       sub: nextSchool ? `${nextSchool.schoolKind === "TEST" ? t.test : t.next} ${whenText(nextSchool.date, msg, dateLocale).toLowerCase()}` : h.allClear,
       tint: "var(--tint-school)", color: "var(--school)", href: "/dashboard/school",
     },
     {
-      id: "activities", emoji: "🎯", value: String(activitiesToday.length), label: h.activities,
+      id: "activities", icon: "activity" as IconName, value: String(activitiesToday.length), label: h.activities,
       sub: activitiesToday[0] ? shortTitle(activitiesToday[0].title) : h.noneToday,
       tint: "var(--tint-warning)", color: "#D85A30", target: todayRows.length ? "sec-today" : "sec-coming",
     },
     {
-      id: "chores", emoji: "✅", value: access === "LOCKED" ? "–" : String(todo.length), label: h.chores,
+      id: "chores", icon: "chores" as IconName, value: access === "LOCKED" ? "–" : String(todo.length), label: h.chores,
       sub: chores.length ? (todo.length ? h.choresLeft(todo.length) : h.choresDone) : h.nothing,
       tint: "var(--tint-success)", color: "var(--success)", target: "sec-chores",
     },
@@ -363,7 +364,7 @@ function ChildViewContent() {
           {tiles.map((tile) => {
             const body = (
               <>
-                <span style={{ display: "inline-flex", width: 30, height: 30, borderRadius: 9, background: tile.tint, alignItems: "center", justifyContent: "center", fontSize: 15, marginBottom: 8 }}>{tile.emoji}</span>
+                <span style={{ display: "inline-flex", width: 30, height: 30, borderRadius: 9, background: tile.tint, alignItems: "center", justifyContent: "center", marginBottom: 8, color: tile.color }}><Icon name={tile.icon} size={16} /></span>
                 <div style={{ fontSize: 22, fontWeight: 800, color: tile.color, lineHeight: 1 }}>{tile.value}</div>
                 <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--fg)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tile.label}</div>
                 <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tile.sub}</div>
@@ -392,7 +393,7 @@ function ChildViewContent() {
             {access !== "LOCKED" && todo.length > 0 && (
               <button type="button" onClick={() => document.getElementById("sec-chores")?.scrollIntoView({ behavior: "smooth", block: "start" })}
                 style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginTop: needRows.length ? 8 : 0, minHeight: 44, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "10px 14px", cursor: "pointer", fontFamily: FONT, textAlign: "left" }}>
-                <span aria-hidden>✅</span>
+                <span aria-hidden style={{ color: "var(--success)", display: "flex" }}><Icon name="chores" size={18} /></span>
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{h.choresLeft(todo.length)}</span>
                 <span style={{ color: "var(--accent)", fontWeight: 800 }}>›</span>
               </button>

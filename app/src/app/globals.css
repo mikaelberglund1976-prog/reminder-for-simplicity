@@ -22,7 +22,7 @@
   --fg: #142B3A;
   --fg-2: #3E5260;
   --muted: #5F6E79;
-  --subtle: #98A3AB;
+  --subtle: #66727C; /* 2026-10-25 (masterbrief §37): was #98A3AB (2.4:1) — now 4.6:1 on the page */
   --faint: #C5CCD1;
   --border: #ECE6DD;
   --border-soft: #F4EFE8;
@@ -44,7 +44,7 @@
   --tint-success: #DDF3E6;
   --warning: #B45309;
   --tint-warning: #FFF3CC;
-  --danger: #D94F4F;
+  --danger: #C43F3F; /* 2026-10-25 (§37): was #D94F4F (4.0:1) — now 5.1:1 on white */
   --tint-danger: #FFF0F0;
   --border-danger: #F5CCCC;
   --school: #3730A3;
@@ -54,7 +54,7 @@
   --tint-pink: #FFE8F5;
   --violet: #6A44CC;
   --tint-violet: #EDE8FF;
-  --slate: #5A6B78;
+  --slate: #526270; /* 2026-10-25 (§37): was #5A6B78 — 5.1:1 on the "Other" badge */
   --shadow: 0 1px 6px rgba(20,43,58,0.05);
   --nav-bg: rgba(255,255,255,0.92);
   --hero-grad: linear-gradient(135deg, #142B3A 0%, #24475C 100%);
@@ -253,3 +253,10 @@ input[type="date"], input[type="time"], input[type="datetime-local"], input[type
 input[type="date"]::-webkit-date-and-time-value,
 input[type="time"]::-webkit-date-and-time-value,
 input[type="datetime-local"]::-webkit-date-and-time-value { text-align: left; }
+
+/* 2026-10-25 (masterbrief §37): pinch-zoom is allowed again (layout.tsx). On a
+   phone, iOS zooms into any field with text under 16px when it gets focus —
+   so fields are 16px on small screens instead of blocking zoom for everyone. */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 16px !important; }
+}

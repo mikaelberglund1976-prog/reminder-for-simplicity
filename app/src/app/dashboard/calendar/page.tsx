@@ -655,7 +655,7 @@ export default function CalendarPage() {
                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
                       <span style={{
                         fontSize: 11.5, fontWeight: isToday ? 800 : 600,
-                        color: isToday ? "var(--on-accent)" : inMonth ? "var(--fg)" : "var(--faint)",
+                        color: isToday ? "var(--on-accent)" : inMonth ? "var(--fg)" : "var(--subtle)", // 2026-10-25 (§37): readable, still quieter than this month
                         background: isToday ? "var(--accent-bg)" : "transparent",
                         width: 19, height: 19, borderRadius: "50%",
                         display: "flex", alignItems: "center", justifyContent: "center",

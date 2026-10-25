@@ -65,7 +65,7 @@ export default function SharedWishlistPage({ params }: { params: { token: string
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, overflow: "hidden" }}>
               {data.items.length === 0 && <div style={{ padding: 16, fontSize: 14, color: "var(--muted)" }}>{t.empty}</div>}
               {data.items.map((it, i) => (
-                <div key={it.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 14px", borderTop: i ? "1px solid var(--border-soft)" : "none", opacity: it.taken && !mine.has(it.id) ? 0.55 : 1 }}>
+                <div key={it.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 14px", borderTop: i ? "1px solid var(--border-soft)" : "none" }}>
                   {it.imageUrl
                     ? <img src={it.imageUrl} alt="" width={48} height={48} style={{ borderRadius: 10, objectFit: "cover", flexShrink: 0, background: "var(--surface-3)" }} />
                     : <span aria-hidden style={{ width: 48, height: 48, borderRadius: 10, background: "var(--surface-3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🎁</span>}
@@ -79,7 +79,7 @@ export default function SharedWishlistPage({ params }: { params: { token: string
                   {mine.has(it.id) ? (
                     <span style={{ fontSize: 12.5, fontWeight: 800, color: "var(--success)", flexShrink: 0 }}>✓ {t.yours}</span>
                   ) : it.taken ? (
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--subtle)", flexShrink: 0 }}>{t.taken}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--muted)", flexShrink: 0 }}>{t.taken}</span>
                   ) : picking === it.id ? (
                     <button type="button" onClick={() => reserve(it.id)} style={{ minHeight: 40, padding: "8px 12px", borderRadius: 50, border: "none", background: "var(--ink)", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: FONT, flexShrink: 0 }}>{t.confirm}</button>
                   ) : (

@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useI18n } from "@/lib/i18n/client";
 import { shortTitle } from "@/lib/displayTitle";
 import { track } from "@/lib/analytics";
+import { Icon, type IconName } from "@/components/icons";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 type Alert = { id: string; childId: string; kind: "MOVED" | "TIME" | "CANCELLED" | "NEW_TEST" | "NEW" | "MANY"; title: string; oldYmd: string | null; newYmd: string | null; oldTime: string | null; newTime: string | null; count: number | null };
@@ -19,7 +20,8 @@ type TItem = { reminderId: string; title: string; who: string | null; needsRide:
 type Plan = { isAdult: boolean; items: TItem[]; clashes: string[] };
 // 2026-10-25 (Etapp 0 G8): links that stopped syncing — see /api/family/feed-health.
 type FeedIssue = { id: string; kind: "school" | "activity"; who: string; source: string; lastSyncAt: string | null; failed: boolean };
-const ICON: Record<Alert["kind"], string> = { MOVED: "📅", TIME: "⏰", CANCELLED: "🚫", NEW_TEST: "📝", NEW: "✨", MANY: "🔄" };
+// 2026-10-25 (§32): the shared icon set instead of emoji.
+const ICON: Record<Alert["kind"], IconName> = { MOVED: "moved", TIME: "clock", CANCELLED: "cancelled", NEW_TEST: "test", NEW: "plus", MANY: "refresh" };
 
 export type SoonSchool = { key: string; who: string; title: string; day: Date; kind: "TEST" | "HOMEWORK" | "OTHER"; href: string };
 
@@ -74,10 +76,10 @@ export default function AttentionCard({ soon, unassigned, overdue = [], onDone, 
     await fetch("/api/changes", { method: "POST" }).catch(() => {});
   }
 
-  const row = (key: string, icon: string, text: React.ReactNode, href?: string, action?: string, tone: "warn" | "danger" = "warn") => {
+  const row = (key: string, icon: IconName, text: React.ReactNode, href?: string, action?: string, tone: "warn" | "danger" = "warn") => {
     const inner = (
       <>
-        <span aria-hidden style={{ flexShrink: 0, width: 20, textAlign: "center" }}>{icon}</span>
+        <span aria-hidden style={{ flexShrink: 0, width: 20, display: "flex", justifyContent: "center", paddingTop: 1, color: tone === "danger" ? "var(--danger)" : "var(--fg-2)" }}><Icon name={icon} size={18} /></span>
         <span style={{ flex: 1, minWidth: 0, color: tone === "danger" ? "var(--danger)" : "var(--fg)", fontWeight: tone === "danger" ? 700 : 500 }}>{text}</span>
         {href && <span style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: "var(--accent)" }}>{action ?? "›"}</span>}
       </>
@@ -96,16 +98,16 @@ export default function AttentionCard({ soon, unassigned, overdue = [], onDone, 
           <button type="button" onClick={seen} title={a.changesTitle} style={{ border: "none", background: "var(--surface-3)", color: "var(--fg-2)", borderRadius: 50, padding: "5px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: FONT }}>{t.attSeen}</button>
         )}
       </div>
-      {clashes.map((c, i) => row(`c${i}`, "⚠️", t.attClash(c), "#tomorrow", undefined, "danger"))}
-      {noRide.map((it) => row(`r${it.reminderId}`, "🚗", t.attNoRide(shortTitle(it.title), it.who), "#tomorrow"))}
+      {clashes.map((c, i) => row(`c${i}`, "alert", t.attClash(c), "#tomorrow", undefined, "danger"))}
+      {noRide.map((it) => row(`r${it.reminderId}`, "car", t.attNoRide(shortTitle(it.title), it.who), "#tomorrow"))}
       {alerts.slice(0, 6).map((x) => {
         const who = changes && x.childId !== changes.me ? changes.names[x.childId] : null;
         return row(`a${x.id}`, ICON[x.kind], <>{who && <strong>{who}: </strong>}{changeLine(x)}</>);
       })}
-      {soon.map((s) => row(s.key, s.kind === "TEST" ? "📝" : "📚", t.attTestSoon(s.who, s.title, when(s.day)), s.href))}
+      {soon.map((s) => row(s.key, s.kind === "TEST" ? "test" : "homework", t.attTestSoon(s.who, s.title, when(s.day)), s.href))}
       {overdue.slice(0, 4).map((r) => (
         <div key={`o${r.id}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", fontSize: 14, lineHeight: 1.4, borderTop: "1px solid var(--border-soft)" }}>
-          <span aria-hidden style={{ flexShrink: 0, width: 20, textAlign: "center" }}>🔔</span>
+          <span aria-hidden style={{ flexShrink: 0, width: 20, display: "flex", justifyContent: "center", color: "var(--danger)" }}><Icon name="reminder" size={18} /></span>
           <Link href={`/dashboard/${r.id}`} onClick={() => track("attention_clicked", { kind: "overdue" })} style={{ flex: 1, minWidth: 0, color: "var(--fg)", fontWeight: 500, textDecoration: "none" }}>
             {m.reminders.attOverdue(shortTitle(r.name), new Date(r.date).toLocaleDateString(dateLocale, { weekday: "short", day: "numeric", month: "short" }))}
           </Link>
@@ -117,9 +119,9 @@ export default function AttentionCard({ soon, unassigned, overdue = [], onDone, 
           )}
         </div>
       ))}
-      {birthdays.map((b) => row(`b${b.id}`, "🎁", t.attBirthday(b.name.startsWith("🎂") ? b.name.slice(2).trim() : b.name, b.days), b.href, b.wishlist ? t.attWishlist : undefined))}
-      {feedIssues.map((f) => row(`f${f.id}`, "🔌", feedLine(f), "/dashboard/sources", t.attCheck))}
-      {unassigned > 0 && row("unassigned", "👤", t.attUnassigned(unassigned), "/dashboard/training", t.attFix)}
+      {birthdays.map((b) => row(`b${b.id}`, "gift", t.attBirthday(b.name.startsWith("🎂") ? b.name.slice(2).trim() : b.name, b.days), b.href, b.wishlist ? t.attWishlist : undefined))}
+      {feedIssues.map((f) => row(`f${f.id}`, "link", feedLine(f), "/dashboard/sources", t.attCheck))}
+      {unassigned > 0 && row("unassigned", "user", t.attUnassigned(unassigned), "/dashboard/training", t.attFix)}
     </section>
   );
 }

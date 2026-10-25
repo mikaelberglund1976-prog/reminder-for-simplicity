@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n/client";
+import { Icon } from "@/components/icons";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif";
 type Src = { id: string; kind: "school" | "activity"; childId: string; who: string; label: string; lastSyncAt: string | null; lastStatus: string | null; problem: { failed: boolean } | null; items: number; manage: string };
@@ -67,7 +68,7 @@ export default function SourcesPage() {
             {list.map((s, i) => (
               <div key={s.id} style={{ padding: "12px 14px", borderTop: i ? "1px solid var(--border-soft)" : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span aria-hidden style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: s.kind === "school" ? "var(--tint-school)" : "var(--tint-warning)", fontSize: 16, flexShrink: 0 }}>{s.kind === "school" ? "📚" : "🎯"}</span>
+                  <span aria-hidden style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: s.kind === "school" ? "var(--tint-school)" : "var(--tint-warning)", flexShrink: 0, color: s.kind === "school" ? "var(--school)" : "#D85A30" }}><Icon name={s.kind === "school" ? "school" : "activity"} size={18} /></span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14.5, fontWeight: 800, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label} · {s.who}</div>
                     <div style={{ fontSize: 12, color: s.problem ? "var(--danger)" : "var(--muted)", marginTop: 2 }}>

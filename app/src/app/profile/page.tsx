@@ -490,7 +490,7 @@ export default function ProfilePage() {
             <Field label={t.emailAddress}>
               <input
                 type="email" value={profile?.email || session?.user?.email || ""}
-                readOnly disabled
+                readOnly disabled aria-label={t.emailAddress}
                 style={{ ...inputStyle, color: "var(--subtle)", cursor: "not-allowed" }}
               />
               <Hint>{t.emailCannotChange}</Hint>
@@ -513,6 +513,7 @@ export default function ProfilePage() {
                 <select
                   value={form.preferredCurrency}
                   onChange={e => set("preferredCurrency", e.target.value)}
+                  aria-label={t.currency}
                   style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 36, cursor: "pointer" }}
                 >
                   {CURRENCIES.map(c => <option key={c.value} value={c.value}>{t.currencies[c.value]}</option>)}
@@ -526,6 +527,7 @@ export default function ProfilePage() {
                 <select
                   value={form.timezone}
                   onChange={e => set("timezone", e.target.value)}
+                  aria-label={t.timezone}
                   style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 36, cursor: "pointer" }}
                 >
                   {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz.replace("_", " ")}</option>)}
@@ -539,6 +541,7 @@ export default function ProfilePage() {
                 <select
                   value={form.defaultReminderTime}
                   onChange={e => set("defaultReminderTime", e.target.value)}
+                  aria-label={t.reminderTime}
                   style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none", paddingRight: 36, cursor: "pointer" }}
                 >
                   {REMINDER_TIMES.map(rt => <option key={rt} value={rt}>{rt}</option>)}
@@ -912,6 +915,7 @@ export default function ProfilePage() {
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
                     readOnly
+                    aria-label={t.calendarSync}
                     value={calendarFeedUrl}
                     onFocus={(e) => e.target.select()}
                     style={{

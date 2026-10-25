@@ -332,6 +332,7 @@ function NewReminderForm() {
                 type="date"
                 value={form.date}
                 onChange={e => set("date", e.target.value)}
+                aria-label={t.dueDate.replace(" *", "")}
                 required
                 style={{ ...inputStyle, color: form.date ? "var(--fg)" : "var(--subtle)", paddingRight: 44 }}
               />
