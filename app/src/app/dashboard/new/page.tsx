@@ -94,9 +94,12 @@ function NewReminderForm() {
 
   const [form, setFormState] = useState({
     name: "",
-    category: "SUBSCRIPTION",
+    // 2026-10-25 (§33): a plain reminder is a one-off "Other" by default —
+    // repeats and category now live under "More options" (shown in its summary
+    // line), so nothing repeats unless someone picks it or a template.
+    category: "OTHER",
     date: dateFromQuery ?? defaultDate(),
-    recurrence: "MONTHLY",
+    recurrence: "ONCE",
     amount: "",
     currency: "SEK",
     note: "",
@@ -267,7 +270,43 @@ function NewReminderForm() {
             />
           </Section>
 
-          {/* 2. Due date */}
+          {/* 2. Who — 2026-10-25 (masterbrief §33): Vad → Vem → När → Spara */}
+          {hasHousehold && householdMembers.length > 1 && (
+            <Section label={t.whoLabel}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => set("assignedTo", "")}
+                  style={pillStyle(form.assignedTo === "")}
+                >
+                  {form.assignedTo === "" && (
+                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                  {t.unassigned}
+                </button>
+                {householdMembers.map(m => (
+                  <button
+                    key={m.userId}
+                    type="button"
+                    onClick={() => set("assignedTo", m.userId)}
+                    style={pillStyle(form.assignedTo === m.userId)}
+                  >
+                    {form.assignedTo === m.userId && (
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                    {m.user.name ?? m.user.email.split("@")[0]}
+                    {m.userId === currentUserId ? t.meSuffix : ""}
+                  </button>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* 3. When */}
           <Section label={t.dueDate}>
             <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
               {QUICK_DATES.map(qd => (
@@ -320,82 +359,6 @@ function NewReminderForm() {
             </div>
           </Section>
 
-          {/* 3. Repeats */}
-          <Section label={t.repeats}>
-            <div style={{
-              display: "flex", gap: 0, background: "var(--surface-3)", borderRadius: 50,
-              padding: 3, width: "fit-content", alignItems: "center",
-            }}>
-              {allRec.map(rec => (
-                <button
-                  key={rec.value}
-                  type="button"
-                  onClick={() => set("recurrence", rec.value)}
-                  style={{
-                    padding: "9px 18px", borderRadius: 50, border: "none",
-                    fontSize: 13, fontWeight: 600, cursor: "pointer",
-                    background: form.recurrence === rec.value ? "var(--accent-bg)" : "transparent",
-                    color: form.recurrence === rec.value ? "var(--on-accent)" : "var(--muted)",
-                    transition: "all 0.15s", fontFamily: FONT,
-                  }}
-                >
-                  {msg.reminders.recurrence[rec.value]}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setShowMoreRec(v => !v)}
-                style={{
-                  padding: "9px 14px", borderRadius: 50, border: "none",
-                  fontSize: 13, fontWeight: 600, cursor: "pointer",
-                  background: "transparent", color: "var(--muted)",
-                  display: "flex", alignItems: "center", fontFamily: FONT,
-                }}
-              >
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
-                  style={{ transform: showMoreRec ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-            </div>
-          </Section>
-
-          {/* 4. Owner — surfaced early for household positioning */}
-          {hasHousehold && householdMembers.length > 1 && (
-            <Section label={t.owner}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => set("assignedTo", "")}
-                  style={pillStyle(form.assignedTo === "")}
-                >
-                  {form.assignedTo === "" && (
-                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                  {t.unassigned}
-                </button>
-                {householdMembers.map(m => (
-                  <button
-                    key={m.userId}
-                    type="button"
-                    onClick={() => set("assignedTo", m.userId)}
-                    style={pillStyle(form.assignedTo === m.userId)}
-                  >
-                    {form.assignedTo === m.userId && (
-                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                    {m.user.name ?? m.user.email.split("@")[0]}
-                    {m.userId === currentUserId ? t.meSuffix : ""}
-                  </button>
-                ))}
-              </div>
-            </Section>
-          )}
-
           {/* 5. More details — collapsible */}
           <div style={{ marginBottom: 24 }}>
             <button
@@ -412,7 +375,14 @@ function NewReminderForm() {
                 boxSizing: "border-box" as const,
               }}
             >
-              {t.moreDetails}
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, minWidth: 0 }}>
+                <span>{t.moreDetails}</span>
+                {!showMoreDetails && (
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "var(--subtle)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+                    {[`${t.repeats}: ${msg.reminders.recurrence[form.recurrence] ?? form.recurrence}`, msg.reminders.categories[form.category] ?? form.category, t.visibilityOptions[form.visibility]].filter(Boolean).join(" · ")}
+                  </span>
+                )}
+              </span>
               <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
                 style={{ transform: showMoreDetails ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
                 <polyline points="6 9 12 15 18 9" />
@@ -421,6 +391,46 @@ function NewReminderForm() {
 
             {showMoreDetails && (
               <div style={{ paddingTop: 16 }}>
+                    {/* Repeats — 2026-10-25 (§33): moved under "More options" */}
+              <Section label={t.repeats}>
+                <div style={{
+                  display: "flex", gap: 0, background: "var(--surface-3)", borderRadius: 50,
+                  padding: 3, width: "fit-content", alignItems: "center",
+                }}>
+                  {allRec.map(rec => (
+                    <button
+                      key={rec.value}
+                      type="button"
+                      onClick={() => set("recurrence", rec.value)}
+                      style={{
+                        padding: "9px 18px", borderRadius: 50, border: "none",
+                        fontSize: 13, fontWeight: 600, cursor: "pointer",
+                        background: form.recurrence === rec.value ? "var(--accent-bg)" : "transparent",
+                        color: form.recurrence === rec.value ? "var(--on-accent)" : "var(--muted)",
+                        transition: "all 0.15s", fontFamily: FONT,
+                      }}
+                    >
+                      {msg.reminders.recurrence[rec.value]}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowMoreRec(v => !v)}
+                    style={{
+                      padding: "9px 14px", borderRadius: 50, border: "none",
+                      fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      background: "transparent", color: "var(--muted)",
+                      display: "flex", alignItems: "center", fontFamily: FONT,
+                    }}
+                  >
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+                      style={{ transform: showMoreRec ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                </div>
+              </Section>
+
 
                 {/* Amount */}
                 <Section label={t.amount}>

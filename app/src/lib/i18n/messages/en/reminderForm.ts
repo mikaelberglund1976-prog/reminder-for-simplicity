@@ -25,7 +25,9 @@ export const reminderForm = {
   owner: "Owner",
   unassigned: "Unassigned",
   meSuffix: " (me)",
-  moreDetails: "More details",
+  moreDetails: "More options",
+  // 2026-10-25 (masterbrief §33): What → Who → When → Save
+  whoLabel: "Who is it for?",
   amount: "Amount",
   category: "Category",
   remindMe: "Remind me",

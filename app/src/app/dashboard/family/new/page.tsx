@@ -74,6 +74,8 @@ function NewBookingContent() {
   const [weeklyDay, setWeeklyDay] = useState<number>(() => new Date((searchParams.get("date") ?? new Date().toISOString().split("T")[0]) + "T12:00:00").getDay());
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [note, setNote] = useState("");
+  // 2026-10-25 (masterbrief §33): approval + notes live under "More options"
+  const [moreOpen, setMoreOpen] = useState(false);
   // 2026-08-18: assignable to ANY household member, not just children — see
   // Mikael's feedback ("chores kan utföras av en familjemedlem, inte bara
   // barn"). Was `childMembers`/`children`; now `householdMembers`/`members`.
@@ -445,42 +447,54 @@ function NewBookingContent() {
             </div>
           )}
 
-          {/* Requires approval toggle — a CHORE-only concept, no one "approves" a training booking */}
-          {!isTraining && (
-            <div style={{ background: "var(--surface)", borderRadius: 14, border: "1.5px solid var(--border)", padding: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{t.requiresApproval}</div>
-                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
-                    {t.approvalHint}
-                  </div>
-                </div>
-                <button type="button" onClick={() => setRequiresApproval(p => !p)}
-                  style={{
-                    width: 48, height: 28, borderRadius: 50, border: "none", cursor: "pointer",
-                    background: requiresApproval ? "var(--accent-bg)" : "var(--border)",
-                    transition: "background 0.2s", position: "relative", flexShrink: 0,
-                  }}>
-                  <div style={{
-                    width: 22, height: 22, borderRadius: "50%", background: "var(--surface)",
-                    position: "absolute", top: 3,
-                    left: requiresApproval ? 23 : 3,
-                    transition: "left 0.2s",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-                  }} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Notes (optional) */}
+          {/* 2026-10-25 (§33): What → Who → When → Save; the rest behind "More options".
+              Opens by itself when there's already something in it. */}
           <div>
-            <label style={label}>{t.notes} <span style={{ fontWeight: 400, color: "var(--subtle)" }}>{t.optional}</span></label>
-            <textarea value={note} onChange={e => setNote(e.target.value)}
-              placeholder={isTraining ? t.activityNotePlaceholder : t.choreNotePlaceholder}
-              rows={3}
-              style={{ ...inp, resize: "none" as const }} />
+            <button type="button" onClick={() => setMoreOpen((v) => !v)} aria-expanded={moreOpen || !!note || requiresApproval}
+              style={{ width: "100%", minHeight: 48, padding: "12px 16px", borderRadius: 14, background: "var(--surface)", border: "1.5px solid var(--border)", fontSize: 14, fontWeight: 600, color: "var(--muted)", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "space-between", boxSizing: "border-box" }}>
+              {msg.reminderForm.moreDetails}
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ transform: (moreOpen || !!note || requiresApproval) ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}><polyline points="6 9 12 15 18 9" /></svg>
+            </button>
           </div>
+          {(moreOpen || !!note || requiresApproval) && (<>
+            {/* Requires approval toggle — a CHORE-only concept, no one "approves" a training booking */}
+            {!isTraining && (
+              <div style={{ background: "var(--surface)", borderRadius: 14, border: "1.5px solid var(--border)", padding: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--fg)" }}>{t.requiresApproval}</div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
+                      {t.approvalHint}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => setRequiresApproval(p => !p)}
+                    style={{
+                      width: 48, height: 28, borderRadius: 50, border: "none", cursor: "pointer",
+                      background: requiresApproval ? "var(--accent-bg)" : "var(--border)",
+                      transition: "background 0.2s", position: "relative", flexShrink: 0,
+                    }}>
+                    <div style={{
+                      width: 22, height: 22, borderRadius: "50%", background: "var(--surface)",
+                      position: "absolute", top: 3,
+                      left: requiresApproval ? 23 : 3,
+                      transition: "left 0.2s",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+                    }} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Notes (optional) */}
+            <div>
+              <label style={label}>{t.notes} <span style={{ fontWeight: 400, color: "var(--subtle)" }}>{t.optional}</span></label>
+              <textarea value={note} onChange={e => setNote(e.target.value)}
+                placeholder={isTraining ? t.activityNotePlaceholder : t.choreNotePlaceholder}
+                rows={3}
+                style={{ ...inp, resize: "none" as const }} />
+            </div>
+
+          </>)}
 
           {/* Error */}
           {error && (
