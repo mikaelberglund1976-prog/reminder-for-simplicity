@@ -98,7 +98,10 @@ export async function GET(_req: Request, { params }: { params: { token: string }
           // the phone's own calendar too.
           title: r.category === "SCHOOL"
             ? `${r.schoolKind === "TEST" ? "🧪 Test" : r.schoolKind === "HOMEWORK" ? "📝 Homework" : "📚 School"}: ${r.subject ? r.subject + " – " : ""}${r.name}`
-            : bm && bdays.has(r.id) ? birthdayTitle(r.name, bdays.get(r.id)!.birthYear, occ, bm, bdays.get(r.id)!.kind)
+            // 2026-11-02 (Mikael): the age ("turns 13") stays inside the app.
+            // The feed goes to Google/Apple/Outlook, so it only says "… has a
+            // birthday" — no birth year leaves the app this way.
+            : bm && bdays.has(r.id) ? birthdayTitle(r.name, null, occ, bm, bdays.get(r.id)!.kind)
             : r.name,
           date: occ,
           startTime: time?.startTime ?? null,
