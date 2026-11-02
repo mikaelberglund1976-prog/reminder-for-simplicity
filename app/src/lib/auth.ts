@@ -11,6 +11,8 @@ import { checkRateLimit, recordFailedAttempt, clearRateLimit } from "@/lib/rateL
 import { EMAIL_NOT_VERIFIED_MESSAGE, ACCOUNT_DELETED_MESSAGE } from "@/lib/verification";
 import { autoJoinPendingInvite, findPendingInvite } from "@/lib/invites";
 import { endImpersonation, IMPERSONATION_MAX_MS, startImpersonation } from "@/lib/impersonation";
+import { cookies } from "next/headers";
+import { INVITE_CODE_REQUIRED, SIGNUP_CODE_COOKIE, redeemCode, releaseCode, recordCodeUse } from "@/lib/signupCodes";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
 
@@ -51,25 +53,25 @@ providers.push(
       // lockout across both the password and PIN providers, since both are
       // ultimately "log in as this account" attempts.
       const rateLimitKey = `login:${credentials.email.toLowerCase()}`;
-      checkRateLimit(rateLimitKey);
+      await checkRateLimit(rateLimitKey);
 
       const user = await prisma.user.findUnique({
         where: { email: credentials.email.toLowerCase() },
       });
 
       if (!user || !user.password) {
-        recordFailedAttempt(rateLimitKey);
+        await recordFailedAttempt(rateLimitKey);
         throw new Error("Incorrect email or password");
       }
 
       const isValid = await bcrypt.compare(credentials.password, user.password);
 
       if (!isValid) {
-        recordFailedAttempt(rateLimitKey);
+        await recordFailedAttempt(rateLimitKey);
         throw new Error("Incorrect email or password");
       }
 
-      clearRateLimit(rateLimitKey);
+      await clearRateLimit(rateLimitKey);
 
       // 2026-09-27: order matters — deleted first (don't tell a deleted
       // account to go verify), then email verification, then admin approval.
@@ -150,6 +152,19 @@ export const authOptions: NextAuthOptions = {
           // PENDING_APPROVAL_MESSAGE above and /admin), except the admin's
           // own email, which bootstraps itself in approved.
           const isAdmin = user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+          // 2026-11-02 (C-09): a brand-new account needs an invite code (set
+          // as a cookie by /api/auth/signup-code from the sign-up page) unless
+          // a family has invited this address. No code → no account.
+          let codeId: string | null = null;
+          if (INVITE_CODE_REQUIRED && !isAdmin && !(await findPendingInvite(user.email))) {
+            let raw: string | undefined;
+            try { raw = cookies().get(SIGNUP_CODE_COOKIE)?.value; } catch { raw = undefined; }
+            codeId = raw ? await redeemCode(raw).catch(() => null) : null;
+            if (!codeId) return "/register?error=InviteCodeRequired";
+          }
+
+          try {
           dbUser = await prisma.user.create({
             data: {
               email: user.email,
@@ -160,6 +175,11 @@ export const authOptions: NextAuthOptions = {
               // password is null for Google users
             },
           });
+          } catch (e) {
+            if (codeId) await releaseCode(codeId).catch(() => {});
+            throw e;
+          }
+          if (codeId) await recordCodeUse(codeId, dbUser.id, dbUser.email).catch((e) => console.error("Code use log failed:", e));
 
           // Create a private household for the user (ready for family sharing)
           const household = await prisma.household.create({

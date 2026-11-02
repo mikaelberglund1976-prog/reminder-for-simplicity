@@ -91,4 +91,9 @@ export const auth = {
   joining: "Joining…",
   acceptJoin: (name: string | null) => `Accept & join ${name ?? "household"}`,
   joinNote: "By joining, you agree to share your reminders visibility with household members.",
+  // 2026-11-02: invite codes (lib/signupCodes.ts)
+  inviteCode: "Invite code",
+  inviteCodePlaceholder: "e.g. ABCD-2345",
+  inviteCodeHint: "We're letting people in by invitation. Invited by your family? Then you don't need a code — just use the email they invited.",
+  inviteCodeNeededGoogle: "To create a new account you need an invite code. Enter it above and press “Continue with Google” again.",
 };

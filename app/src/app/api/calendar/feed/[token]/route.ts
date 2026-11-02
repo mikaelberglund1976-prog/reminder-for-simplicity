@@ -26,7 +26,8 @@ export async function GET(_req: Request, { params }: { params: { token: string }
 
   try {
     const user = await prisma.user.findUnique({ where: { calendarFeedToken: rawToken } });
-    if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    // 2026-11-02 (H-Reminder-21-001, finding 10): a soft-deleted account's feed stops at once.
+    if (!user || user.deletedAt) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const membership = await prisma.householdMember.findFirst({ where: { userId: user.id } });
 

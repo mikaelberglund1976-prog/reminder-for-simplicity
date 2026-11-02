@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ household });
   } catch (err) {
     console.error("Create household error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 
@@ -59,7 +59,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ household });
   } catch (err) {
     console.error("Rename household error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 
@@ -102,6 +102,6 @@ export async function GET() {
     });
   } catch (err) {
     console.error("Get household error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

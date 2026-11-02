@@ -536,6 +536,8 @@ export default function AdminPage() {
               <Link href="/admin/ads" style={{ alignSelf: "center", fontSize: 13, fontWeight: 700, color: "#7BB8FF", textDecoration: "none", padding: "8px 6px" }}>Ads →</Link>
               {/* 2026-10-25 (G7): product metrics */}
               <Link href="/admin/metrics" style={{ alignSelf: "center", fontSize: 13, fontWeight: 700, color: "#7BB8FF", textDecoration: "none", padding: "8px 6px" }}>Nyckeltal →</Link>
+              {/* 2026-11-02: invite codes + database protection */}
+              <Link href="/admin/access" style={{ alignSelf: "center", fontSize: 13, fontWeight: 700, color: "#7BB8FF", textDecoration: "none", padding: "8px 6px" }}>Inbjudningskoder →</Link>
             </div>
             <input
               type="search"

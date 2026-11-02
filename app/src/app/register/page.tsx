@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useI18n } from "@/lib/i18n/client";
@@ -17,7 +17,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", inviteCode: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -27,9 +27,35 @@ export default function RegisterPage() {
   const { m: msg, err } = useI18n();
   const t = msg.auth;
 
+  // 2026-11-02: invite codes. A link like /register?code=ABCD-2345 fills the
+  // code in; Google sign-in comes back with ?error=InviteCodeRequired when a
+  // brand-new account had no (valid) code.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (code) setForm((f) => ({ ...f, inviteCode: code }));
+    if (params.get("error") === "InviteCodeRequired") setError(t.inviteCodeNeededGoogle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
     setError("");
+    // With a code: check it and keep it (cookie) for the Google round trip.
+    // Without one Google still works for existing accounts and people a
+    // family has invited.
+    if (form.inviteCode.trim()) {
+      const res = await fetch("/api/auth/signup-code", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: form.inviteCode }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setError(d.error ? err(d.error) : t.tryAgain);
+        setGoogleLoading(false);
+        return;
+      }
+    }
     await signIn("google", { callbackUrl: "/dashboard" });
   }
 
@@ -106,6 +132,23 @@ export default function RegisterPage() {
             {t.createYourAccount}
           </h1>
           <p style={{ fontSize: 14, color: "var(--muted)", margin: "6px 0 0" }}>{t.freeQuick}</p>
+        </div>
+
+        {/* 2026-11-02: invite code — used by both Google and the email form */}
+        <div style={{ marginBottom: 18 }}>
+          <label htmlFor="invite-code" style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>{t.inviteCode}</label>
+          <input
+            id="invite-code"
+            type="text"
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={t.inviteCodePlaceholder}
+            value={form.inviteCode}
+            onChange={e => setForm({ ...form, inviteCode: e.target.value })}
+            style={{ ...inputStyle, letterSpacing: "1px", textTransform: "uppercase" }}
+          />
+          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.5 }}>{t.inviteCodeHint}</div>
         </div>
 
         {/* 2026-09-29: families are joined by invite only (no searching for

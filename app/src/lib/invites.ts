@@ -8,7 +8,13 @@
 // that email as a child now sends an invite instead of failing with "email
 // already used"; accepting it moves the account into the family AS A CHILD
 // (isChildProfile), so they only see their own things.
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
+
+/** 2026-11-02 (H-Reminder-21-001, finding 6): invite links use 192 random bits, not cuid(). */
+export function newInviteToken(): string {
+  return randomBytes(24).toString("base64url");
+}
 
 type InviteRow = { id: string; householdId: string; role: string | null };
 

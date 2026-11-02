@@ -14,10 +14,10 @@ export async function POST(req: Request) {
   if (!email) return generic;
 
   const key = `verify:${email}`;
-  try { checkRateLimit(key); } catch (e) {
+  try { await checkRateLimit(key); } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Too many attempts" }, { status: 429 });
   }
-  recordFailedAttempt(key);
+  await recordFailedAttempt(key);
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (user && !user.emailVerified && !user.deletedAt) {

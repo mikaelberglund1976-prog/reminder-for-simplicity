@@ -22,6 +22,14 @@ export async function POST(req: Request) {
     if (invite.usedAt) return NextResponse.json({ error: "This invite has already been used" }, { status: 400 });
     if (invite.expiresAt < new Date()) return NextResponse.json({ error: "This invite has expired" }, { status: 400 });
 
+    // 2026-11-02 (H-Reminder-21-001, finding 5): an invite is for one email
+    // address. A forwarded link must not let someone else in with the
+    // invite's role.
+    const signedInEmail = (session.user.email ?? "").trim().toLowerCase();
+    if (!signedInEmail || signedInEmail !== invite.email.trim().toLowerCase()) {
+      return NextResponse.json({ error: "This invite was sent to another email address. Log in with that address to accept it." }, { status: 403 });
+    }
+
     const already = await prisma.householdMember.findFirst({
       where: { userId: session.user.id, householdId: invite.householdId },
     });
@@ -34,7 +42,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, householdName: invite.household.name });
   } catch (err) {
     console.error("Join error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 
@@ -62,6 +70,7 @@ export async function GET(req: Request) {
       invitedEmail: invite.email,
     });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("Join preview error:", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

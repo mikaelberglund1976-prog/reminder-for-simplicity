@@ -88,4 +88,8 @@ export const auth: Messages["auth"] = {
   joining: "Går med…",
   acceptJoin: (name) => `Tacka ja & gå med i ${name ?? "familjen"}`,
   joinNote: "När du går med kan familjens medlemmar se de påminnelser du delar.",
+  inviteCode: "Inbjudningskod",
+  inviteCodePlaceholder: "t.ex. ABCD-2345",
+  inviteCodeHint: "Vi släpper in via inbjudan. Har din familj bjudit in dig? Då behövs ingen kod – använd bara e-postadressen de bjöd in.",
+  inviteCodeNeededGoogle: "För att skapa ett nytt konto behövs en inbjudningskod. Skriv in den ovan och tryck ”Fortsätt med Google” igen.",
 };

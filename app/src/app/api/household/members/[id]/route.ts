@@ -74,6 +74,6 @@ export async function DELETE(
     });
   } catch (err) {
     console.error("Remove member error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

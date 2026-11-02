@@ -219,4 +219,8 @@ export const serverErrors: Record<string, string> = {
   "Couldn't save": "Kunde inte spara",
   "Only an adult can change this": "Bara en vuxen kan ändra det här",
   "Fill in both parents, the pattern and the start date": "Fyll i båda föräldrarna, schemat och startdagen",
+  // 2026-11-02
+  "An invite code is required to create an account.": "Det behövs en inbjudningskod för att skapa ett konto.",
+  "That invite code isn't valid (wrong, used up, paused or expired).": "Inbjudningskoden fungerar inte (fel, förbrukad, pausad eller utgången).",
+  "This invite was sent to another email address. Log in with that address to accept it.": "Inbjudan skickades till en annan e-postadress. Logga in med den adressen för att tacka ja.",
 };

@@ -1,3 +1,4 @@
+import { newInviteToken } from "@/lib/invites";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -91,6 +92,7 @@ export async function POST(req: Request) {
       await prisma.householdInvite.deleteMany({ where: { email, householdId: membership.householdId, usedAt: null } });
       const invite = await prisma.householdInvite.create({
         data: {
+          token: newInviteToken(),
           householdId: membership.householdId,
           email,
           role: "CHILD",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { sendVerificationOrSetup } from "@/lib/verification";
+import { sendVerificationOrSetup, hashToken } from "@/lib/verification";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
 
@@ -28,14 +29,18 @@ export async function POST(req: Request) {
     if (user && !user.deletedAt && !user.password && !user.emailVerified) {
       await sendVerificationOrSetup(user).catch((err) => console.error("Setup email failed:", err));
     } else if (user?.password && !user.deletedAt) {
-      const token = await prisma.passwordResetToken.create({
+      // 2026-11-02 (H-Reminder-21-001, finding 6): 256 random bits; only the
+      // sha256 hash is stored, so a database leak gives no usable links.
+      const rawToken = randomBytes(32).toString("base64url");
+      await prisma.passwordResetToken.create({
         data: {
+          token: hashToken(rawToken),
           userId: user.id,
           expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
         },
       });
 
-      const resetUrl = `${APP_URL}/reset-password?token=${token.token}`;
+      const resetUrl = `${APP_URL}/reset-password?token=${rawToken}`;
 
       try {
         await sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl });

@@ -7,6 +7,11 @@ import { REQUIRE_SIGNUP_APPROVAL } from "@/lib/signupGate";
 import { passwordSchema } from "@/lib/passwordSchema";
 import { sendVerification } from "@/lib/verification";
 import { findPendingInvite } from "@/lib/invites";
+import { checkRateLimit, recordFailedAttempt } from "@/lib/rateLimit";
+import {
+  INVITE_CODE_REQUIRED, INVITE_CODE_REQUIRED_MESSAGE, INVITE_CODE_INVALID_MESSAGE,
+  redeemCode, releaseCode, recordCodeUse,
+} from "@/lib/signupCodes";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "mikaelberglund1976@gmail.com";
 
@@ -14,6 +19,9 @@ const registerSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   email: z.string().email("Invalid email address"),
   password: passwordSchema,
+  // 2026-11-02: invite code (lib/signupCodes.ts) — required unless the
+  // person already has a family invite.
+  inviteCode: z.string().max(60).optional(),
 });
 
 export async function POST(req: Request) {
@@ -48,8 +56,31 @@ export async function POST(req: Request) {
     // 2026-09-29: someone a family has invited (child or adult) doesn't need
     // admin approval — they join that family at their first sign-in.
     const invited = !!(await findPendingInvite(data.email));
+
+    // 2026-11-02 (C-09 / R-5): only people with an invite code — or a family
+    // invite — can create an account. The code is used up atomically here and
+    // given back if creating the account fails below.
+    let codeId: string | null = null;
+    if (INVITE_CODE_REQUIRED && !isAdmin && !invited) {
+      if (!data.inviteCode?.trim()) {
+        return NextResponse.json({ error: INVITE_CODE_REQUIRED_MESSAGE, code: "INVITE_CODE_REQUIRED" }, { status: 400 });
+      }
+      const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+      const rlKey = `signupcode:${ip}`;
+      try { await checkRateLimit(rlKey); } catch (e) {
+        return NextResponse.json({ error: (e as Error).message }, { status: 429 });
+      }
+      codeId = await redeemCode(data.inviteCode);
+      if (!codeId) {
+        await recordFailedAttempt(rlKey);
+        return NextResponse.json({ error: INVITE_CODE_INVALID_MESSAGE, code: "INVITE_CODE_INVALID" }, { status: 400 });
+      }
+    }
+
     const preApproved = isAdmin || invited || !REQUIRE_SIGNUP_APPROVAL;
-    const user = await prisma.user.create({
+    let user;
+    try {
+    user = await prisma.user.create({
       data: {
         name: data.name,
         email: data.email.toLowerCase(),
@@ -58,6 +89,11 @@ export async function POST(req: Request) {
         approvedAt: preApproved ? new Date() : null,
       },
     });
+    } catch (e) {
+      if (codeId) await releaseCode(codeId).catch(() => {});
+      throw e;
+    }
+    if (codeId) await recordCodeUse(codeId, user.id, user.email).catch((e) => console.error("Code use log failed:", e));
 
     // 2026-09-27: every new account must confirm its email before logging in.
     // Awaited (not fire-and-forget) so a send failure is visible in logs and

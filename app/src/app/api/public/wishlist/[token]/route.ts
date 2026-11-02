@@ -27,9 +27,9 @@ export async function GET(_req: Request, { params }: { params: { token: string }
 export async function POST(req: Request, { params }: { params: { token: string } }) {
   if (!WISHLIST_LINK_ENABLED) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const key = `wishlink:${params.token.slice(0, 12)}`;
-  try { checkRateLimit(key); } catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 429 }); }
+  try { await checkRateLimit(key); } catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 429 }); }
   const link = await linkByToken(params.token);
-  if (!link) { recordFailedAttempt(key); return NextResponse.json({ error: "This link has expired or been turned off" }, { status: 404 }); }
+  if (!link) { await recordFailedAttempt(key); return NextResponse.json({ error: "This link has expired or been turned off" }, { status: 404 }); }
   const body = await req.json().catch(() => ({}));
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   if (!name) return NextResponse.json({ error: "Write your name so the family knows" }, { status: 400 });

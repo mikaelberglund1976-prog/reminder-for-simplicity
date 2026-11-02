@@ -73,7 +73,7 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Handover initiate error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 
@@ -150,6 +150,6 @@ export async function PUT(
     return NextResponse.json({ success: true, action });
   } catch (err) {
     console.error("Handover response error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

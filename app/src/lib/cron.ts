@@ -17,6 +17,8 @@ import { sendBirthdayReminder, sendBirthdayDayPushes } from "@/lib/birthdayCron"
 import { notifyChanges } from "@/lib/changeWatch";
 import { runTripNudges } from "@/lib/tripNudges";
 import { emailAllowed, kindForCategory, unsubscribeUrl } from "@/lib/notifyPrefs";
+import { enableRlsEverywhere } from "@/lib/dbSecurity";
+import { purgeOldRateLimits } from "@/lib/rateLimit";
 
 function toDateStr(d: Date): string {
   return d.toISOString().split("T")[0];
@@ -321,6 +323,25 @@ export async function runReminderCron() {
     if (old) log.push(`Removed old analytics events: ${old}`);
   } catch (err) {
     console.error("Analytics cleanup failed:", err);
+  }
+
+  // 2026-11-02 (H-Reminder-21-001): rate-limit rows past their window.
+  try {
+    const n = await purgeOldRateLimits();
+    if (n) log.push(`Removed old rate-limit rows: ${n}`);
+  } catch (err) {
+    console.error("Rate-limit cleanup failed:", err);
+  }
+
+  // 2026-11-02 (H-Reminder-21-001, finding 1): tables created at runtime since
+  // the last build get Row Level Security too (lib/dbSecurity.ts).
+  try {
+    const rls = await enableRlsEverywhere();
+    if (rls.enabled.length) log.push(`RLS enabled on: ${rls.enabled.join(", ")}`);
+    if (rls.remaining.length) log.push(`RLS WARNING — still without RLS: ${rls.remaining.join(", ")}`);
+  } catch (err) {
+    console.error("RLS check failed:", err);
+    log.push(`RLS check ERROR`);
   }
 
   return { success: true, sent, skipped, errors, todayStr, log };

@@ -1,3 +1,4 @@
+import { newInviteToken } from "@/lib/invites";
 import { NextResponse } from "next/server";
 import { ensureCaregiverRole } from "@/lib/roles";
 import { getServerSession } from "next-auth";
@@ -54,6 +55,7 @@ export async function POST(req: Request) {
     // Create invite (expires in 48h)
     const invite = await prisma.householdInvite.create({
       data: {
+        token: newInviteToken(),
         householdId: membership.householdId,
         email,
         role: inviteRole as "PARENT" | "ADULT" | "CAREGIVER" | "CHILD" | "MEMBER",
@@ -80,6 +82,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, existingUser: !!existingUser });
   } catch (err) {
     console.error("Invite error:", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
