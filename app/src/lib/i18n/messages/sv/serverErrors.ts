@@ -223,4 +223,6 @@ export const serverErrors: Record<string, string> = {
   "An invite code is required to create an account.": "Det behövs en inbjudningskod för att skapa ett konto.",
   "That invite code isn't valid (wrong, used up, paused or expired).": "Inbjudningskoden fungerar inte (fel, förbrukad, pausad eller utgången).",
   "This invite was sent to another email address. Log in with that address to accept it.": "Inbjudan skickades till en annan e-postadress. Logga in med den adressen för att tacka ja.",
+  "Add a name and the check-in and check-out dates": "Fyll i namn och datum för in- och utcheckning (utcheckning efter incheckning)",
+  "Pick the date": "Välj datum",
 };

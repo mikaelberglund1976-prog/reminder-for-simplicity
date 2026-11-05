@@ -17,11 +17,14 @@ import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { setTime } from "@/lib/reminderTimes";
 import type { Messages } from "@/lib/i18n/messages";
+import { MOVE_MODES, type MoveMode, type PlanLeg, type PlanStay } from "@/lib/tripPlan";
 
 export const ADULT = ["OWNER", "PARENT", "ADULT"];
 export type TripKind = "BEACH" | "SKI" | "CITY" | "CUP" | "OTHER";
 export const TRIP_KINDS: TripKind[] = ["BEACH", "SKI", "CITY", "CUP", "OTHER"];
-export type ItemKind = "PACK" | "IDEA" | "FLIGHT" | "TODO";
+// 2026-11-05: STAY (hotel, flat, family), MOVE (train, bus, boat, car, transfer)
+// and DISMISS (a plan warning someone chose to ignore; label = warning key).
+export type ItemKind = "PACK" | "IDEA" | "FLIGHT" | "TODO" | "STAY" | "MOVE" | "DISMISS";
 
 export type TripRow = {
   id: string; householdId: string; name: string; destination: string | null; startYmd: string; endYmd: string;
@@ -149,8 +152,14 @@ export function flightTitle(f: FlightData) {
   return `✈️ ${f.flightNo ? f.flightNo.toUpperCase() : ""}${route}`.trim();
 }
 export async function saveFlightReminder(trip: TripRow, f: FlightData, userId: string, existingId: string | null): Promise<string> {
-  const name = `${flightTitle(f)} · ${trip.name}`.slice(0, 120);
-  const date = new Date(f.depYmd + "T10:00:00.000Z");
+  const arr = f.arrTime && !f.arrNextDay && f.arrTime > f.depTime ? f.arrTime : null;
+  return saveTripReminder(trip, flightTitle(f), f.depYmd, f.depTime, arr, userId, existingId);
+}
+/** 2026-11-05: any leg of the trip as a normal calendar item (flights and moves).
+ *  The note starts with 🧳 — the outgoing calendar feed shows such items only as "Trip". */
+export async function saveTripReminder(trip: TripRow, title: string, depYmd: string, depTime: string | null | undefined, arr: string | null, userId: string, existingId: string | null): Promise<string> {
+  const name = `${title} · ${trip.name}`.slice(0, 120);
+  const date = new Date(depYmd + "T10:00:00.000Z");
   let id = existingId;
   if (id) {
     const r = await prisma.reminder.findFirst({ where: { id, householdId: trip.householdId } });
@@ -164,9 +173,8 @@ export async function saveFlightReminder(trip: TripRow, f: FlightData, userId: s
     });
     id = r.id;
   }
-  const arr = f.arrTime && !f.arrNextDay && f.arrTime > f.depTime ? f.arrTime : null;
-  await setTime(id, { startTime: f.depTime, endTime: arr });
-  return id;
+  await setTime(id, { startTime: depTime ?? null, endTime: depTime ? arr : null });
+  return id!;
 }
 
 // ── the "before the trip" timeline ──────────────────────────────────────────
@@ -251,4 +259,71 @@ export function ideaUrl(i: ItemRow): string | null {
 
 export function parseFlight(i: ItemRow): FlightData | null {
   try { const d = JSON.parse(i.data ?? "null"); return d && isYmd(d.depYmd) && isHhmm(d.depTime) ? d : null; } catch { return null; }
+}
+
+// ── 2026-11-05: stays and moves (the route) ─────────────────────────────────
+export type StayData = {
+  name: string; checkIn: string; checkOut: string; checkInTime?: string | null; checkOutTime?: string | null;
+  address?: string; localAddress?: string; bookingRef?: string; phone?: string; url?: string | null; note?: string;
+};
+export type MoveData = {
+  mode: MoveMode; ref?: string; from?: string; to?: string; depYmd: string; depTime?: string | null; arrTime?: string | null; arrNextDay?: boolean;
+  bookingRef?: string; note?: string;
+};
+const str = (v: unknown, n: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, n) : undefined);
+
+/** Reads a stay from a request body. Check-out must be after check-in. */
+export function stayFromBody(b: Record<string, unknown>): StayData | null {
+  const name = str(b.name, 80);
+  if (!name || !isYmd(b.checkIn) || !isYmd(b.checkOut) || b.checkOut <= b.checkIn) return null;
+  const phone = str(b.phone, 30);
+  return {
+    name, checkIn: b.checkIn, checkOut: b.checkOut,
+    checkInTime: isHhmm(b.checkInTime) ? b.checkInTime : null, checkOutTime: isHhmm(b.checkOutTime) ? b.checkOutTime : null,
+    address: str(b.address, 200), localAddress: str(b.localAddress, 200), bookingRef: str(b.bookingRef, 40),
+    phone: phone && /^[+0-9 ()-]{3,30}$/.test(phone) ? phone : undefined, url: cleanUrl(b.url), note: str(b.note, 300),
+  };
+}
+/** Reads a train / bus / boat / car / transfer from a request body. */
+export function moveFromBody(b: Record<string, unknown>): MoveData | null {
+  if (!isYmd(b.depYmd)) return null;
+  const mode: MoveMode = MOVE_MODES.includes(b.mode as MoveMode) ? (b.mode as MoveMode) : "OTHER";
+  return {
+    mode, ref: str(b.ref, 20), from: str(b.from, 60), to: str(b.to, 60), depYmd: b.depYmd,
+    depTime: isHhmm(b.depTime) ? b.depTime : null, arrTime: isHhmm(b.arrTime) ? b.arrTime : null, arrNextDay: !!b.arrNextDay,
+    bookingRef: str(b.bookingRef, 40), note: str(b.note, 300),
+  };
+}
+export function parseStay(i: ItemRow): StayData | null {
+  try { const d = JSON.parse(i.data ?? "null"); return d && isYmd(d.checkIn) && isYmd(d.checkOut) && typeof d.name === "string" ? d : null; } catch { return null; }
+}
+export function parseMove(i: ItemRow): MoveData | null {
+  try { const d = JSON.parse(i.data ?? "null"); return d && isYmd(d.depYmd) && MOVE_MODES.includes(d.mode) ? d : null; } catch { return null; }
+}
+export const MOVE_ICON: Record<MoveMode, string> = { TRAIN: "🚄", BUS: "🚌", BOAT: "⛴️", CAR: "🚗", TRANSFER: "🚐", OTHER: "🧭" };
+export function moveTitle(m: MoveData) {
+  const route = m.from && m.to ? ` ${m.from} → ${m.to}` : m.to ? ` → ${m.to}` : "";
+  return `${MOVE_ICON[m.mode]} ${m.ref ?? ""}${route}`.replace(/\s+/g, " ").trim();
+}
+export function saveMoveReminder(trip: TripRow, m: MoveData, userId: string, existingId: string | null) {
+  const arr = m.depTime && m.arrTime && !m.arrNextDay && m.arrTime > m.depTime ? m.arrTime : null;
+  return saveTripReminder(trip, moveTitle(m), m.depYmd, m.depTime, arr, userId, existingId);
+}
+
+/** The trip's flights and moves, and its stays, in the shape lib/tripPlan.ts wants. */
+export function planInput(items: ItemRow[]): { legs: PlanLeg[]; stays: PlanStay[]; dismissed: Set<string> } {
+  const legs: PlanLeg[] = [];
+  for (const i of items) {
+    if (i.kind === "FLIGHT") {
+      const f = parseFlight(i);
+      if (f) legs.push({ id: i.id, kind: "FLIGHT", title: flightTitle(f), from: f.from?.toUpperCase(), to: f.to?.toUpperCase(), depYmd: f.depYmd, depTime: f.depTime, arrYmd: f.arrNextDay ? addDays(f.depYmd, 1) : f.depYmd, arrTime: f.arrTime ?? null, connection: !!f.connection });
+    } else if (i.kind === "MOVE") {
+      const m = parseMove(i);
+      if (m) legs.push({ id: i.id, kind: "MOVE", mode: m.mode, title: moveTitle(m), from: m.from, to: m.to, depYmd: m.depYmd, depTime: m.depTime ?? null, arrYmd: m.arrNextDay ? addDays(m.depYmd, 1) : m.depYmd, arrTime: m.arrTime ?? null });
+    }
+  }
+  const stays: PlanStay[] = [];
+  for (const i of items.filter((x) => x.kind === "STAY")) { const s = parseStay(i); if (s) stays.push({ id: i.id, name: s.name, checkIn: s.checkIn, checkOut: s.checkOut }); }
+  const dismissed = new Set(items.filter((x) => x.kind === "DISMISS").map((x) => x.label));
+  return { legs, stays, dismissed };
 }

@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { tripCtx } from "../_ctx";
 import {
   TRIP_KINDS, ideaUrl, addDays, buildSteps, daysBetween, deleteTrip, getTrip, insertItem, isYmd, layoverMinutes, leaveFor, parseFlight,
-  passportDates, stockholmToday, travellersOf, tripItems,
+  passportDates, stockholmToday, travellersOf, tripItems, parseStay, parseMove, moveTitle, planInput,
 } from "@/lib/trips";
+import { buildPlan } from "@/lib/tripPlan";
 
 // GET    → the whole trip: trip, travellers, steps, flights, packing, ideas, passports
 // PATCH  { name?, destination?, startYmd?, endYmd?, kind?, travellers?, vaccine?, homeToAirportMin?, airportBufferMin? } (adults)
@@ -34,10 +35,24 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       layover: d!.connection && prev ? layoverMinutes(prev, d!) : null, layoverAt: d!.connection ? d!.from ?? prev?.to ?? null : null,
     };
   });
+  // 2026-11-05: the route — stays, trains/buses/transfers and the nights that
+  // still need somewhere to sleep (lib/tripPlan.ts). Warnings never block.
+  const pi = planInput(items);
+  const plan = buildPlan(trip, pi.legs, pi.stays, pi.dismissed);
+  const stays = items.filter((i) => i.kind === "STAY").map((i) => ({ i, d: parseStay(i) })).filter((x) => x.d)
+    .map(({ i, d }) => ({ id: i.id, ...d!, nights: daysBetween(d!.checkIn, d!.checkOut) }))
+    .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+  const moves = items.filter((i) => i.kind === "MOVE").map((i) => ({ i, d: parseMove(i) })).filter((x) => x.d)
+    .map(({ i, d }) => ({ id: i.id, ...d!, title: moveTitle(d!) }))
+    .sort((a, b) => (a.depYmd + (a.depTime ?? "12:00")).localeCompare(b.depYmd + (b.depTime ?? "12:00")));
+  const legTitle = new Map(pi.legs.map((l) => [l.id, l.title]));
+  const stayName = new Map(pi.stays.map((s) => [s.id, s.name]));
+  const warnings = plan.warnings.map((w) => ({ ...w, legTitle: w.legId ? legTitle.get(w.legId) ?? null : null, stayNames: (w.stayIds ?? []).map((x) => stayName.get(x) ?? "?") }));
   return NextResponse.json({
+    stays, moves, warnings, dismissed: plan.dismissed, frame: { start: plan.frameStart, end: plan.frameEnd },
     trip, me: c.uid, isAdult: c.isAdult, people: c.people, travellers,
     daysTo: daysBetween(today, trip.startYmd), daysLeft: daysBetween(today, trip.endYmd),
-    steps, stepsLeft: steps.filter((s) => !s.done && s.level !== "ok" && s.ymd >= addDays(today, -365)).length,
+    steps, stepsLeft: steps.filter((s) => !s.done && s.level !== "ok" && s.ymd >= addDays(today, -365)).length + plan.warnings.length,
     passports: Object.fromEntries(travellerIds.map((id) => [id, passports.get(id) ?? null])),
     flights,
     pack: items.filter((i) => i.kind === "PACK").map((i) => ({ id: i.id, label: i.label, personId: i.personId, checked: i.checked })),

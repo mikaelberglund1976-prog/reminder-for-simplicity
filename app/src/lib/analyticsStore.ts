@@ -41,6 +41,8 @@ export const SERVER_EVENTS = [
   "quick_capture_saved", // { shopping, other, ai }
   "reminder_done",     // { undo } — G6
   "notification_sent", // { kind } — one per push that reached ≥1 device
+  "trip_plan_added",   // 2026-11-05 { what: stay|move, mode? }
+  "trip_plan_warning", // 2026-11-05 { action: dismissed, kind } (solved = the warning just disappears)
 ] as const;
 export type ServerEvent = (typeof SERVER_EVENTS)[number];
 

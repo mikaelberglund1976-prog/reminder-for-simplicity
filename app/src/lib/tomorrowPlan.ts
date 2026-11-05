@@ -19,7 +19,7 @@ import { getOccurrencesInRange, type RecurrenceRule } from "@/lib/recurrence";
 import { getTimes } from "@/lib/reminderTimes";
 import { getSkips } from "@/lib/reminderSkips";
 import type { Messages } from "@/lib/i18n/messages";
-import { ensureTripTables, flightTitle, leaveFor, parseFlight, type ItemRow, type TripRow } from "@/lib/trips";
+import { ensureTripTables, flightTitle, leaveFor, parseFlight, type ItemRow, type TripRow, parseMove, moveTitle } from "@/lib/trips";
 import { startsOn } from "@/lib/schoolStart";
 import { CUSTODY_ENABLED, custodyDays, loadCustodyOverrides, loadSchedules } from "@/lib/custody";
 
@@ -132,8 +132,14 @@ export async function buildPlan(userId: string, t: Messages["assist"], ymd = tom
     for (const trip of trips) {
       const going = (trip.travellers ?? "").split(",").filter(Boolean);
       if (!isAdult && going.length && !going.includes(userId)) continue;
-      const flights = await prisma.$queryRaw<ItemRow[]>`SELECT * FROM "trip_items" WHERE "tripId" = ${trip.id} AND "kind" = 'FLIGHT'`;
-      for (const f of flights) {
+      const flights = await prisma.$queryRaw<ItemRow[]>`SELECT * FROM "trip_items" WHERE "tripId" = ${trip.id} AND "kind" IN ('FLIGHT', 'MOVE')`;
+      // 2026-11-05: trains, buses and transfers tomorrow too.
+      for (const mv of flights.filter((x) => x.kind === "MOVE")) {
+        const d = parseMove(mv);
+        if (!d || d.depYmd !== ymd) continue;
+        items.push({ reminderId: mv.id, title: moveTitle(d), kind: "TRIP", childId: null, who: trip.name, startTime: d.depTime ?? null, endTime: d.arrTime ?? null, place: null, needsRide: false, driverId: null, driver: null, href: `/dashboard/trips/${trip.id}` });
+      }
+      for (const f of flights.filter((x) => x.kind === "FLIGHT")) {
         const d = parseFlight(f);
         if (!d || d.depYmd !== ymd) continue;
         const leave = leaveFor(trip, d);

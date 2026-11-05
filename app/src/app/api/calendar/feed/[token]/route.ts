@@ -81,6 +81,11 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     // 2026-10-10: birthdays get "🎂 Elsa turns 13" in the person's language.
     const bdays = await getBirthdayRows(reminders.filter((r) => r.category === "BIRTHDAY").map((r) => r.id)).catch(() => new Map());
     const bm = bdays.size ? getMessages(await getLocaleForUser(user.id)).birthdays : null;
+    // 2026-11-05 (Mikael, BESLUTAD): trip items (flights, trains, transfers —
+    // note starts with 🧳) leave the app only as "Trip": no flight number,
+    // places, hotel or note in Google/Apple/Outlook.
+    const isTrip = (r: { note: string | null }) => !!r.note && r.note.startsWith("🧳");
+    const tripLabel = reminders.some(isTrip) ? getMessages(await getLocaleForUser(user.id)).trips.feedTitle : "";
     const events: IcsEvent[] = [];
     for (const r of reminders) {
       const time = times.get(r.id);
@@ -90,13 +95,14 @@ export async function GET(_req: Request, { params }: { params: { token: string }
       const schoolBits = r.category === "SCHOOL"
         ? [r.schoolKind === "TEST" ? "Test" : r.schoolKind === "HOMEWORK" ? "Homework" : null, r.subject].filter(Boolean).join(" · ")
         : "";
-      const descriptionParts = [categoryLabel + who, schoolBits, r.note].filter(Boolean);
+      const descriptionParts = isTrip(r) ? [] : [categoryLabel + who, schoolBits, r.note].filter(Boolean);
       for (const occ of occs) {
         events.push({
           uid: `${r.id}-${occ.getFullYear()}${occ.getMonth() + 1}${occ.getDate()}`,
           // 2026-09-28 (row 41): make a test stand out from homework in
           // the phone's own calendar too.
-          title: r.category === "SCHOOL"
+          title: isTrip(r) ? tripLabel
+            : r.category === "SCHOOL"
             ? `${r.schoolKind === "TEST" ? "🧪 Test" : r.schoolKind === "HOMEWORK" ? "📝 Homework" : "📚 School"}: ${r.subject ? r.subject + " – " : ""}${r.name}`
             // 2026-11-02 (Mikael): the age ("turns 13") stays inside the app.
             // The feed goes to Google/Apple/Outlook, so it only says "… has a
