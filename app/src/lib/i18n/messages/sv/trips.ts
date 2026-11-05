@@ -132,4 +132,7 @@ export const trips: Messages["trips"] = {
   allCovered: (n) => `Alla ${n} nätter har boende ✓`,
   seeRoute: "Visa resväg →",
   warnHint: "Bara en varning – du kan spara ändå.",
+  filterAll: "Allt",
+  filters: { FLIGHT: "✈️ Flyg", GROUND: "🚄 Tåg / buss", TRANSFER: "🚐 Transfer", STAY: "🏨 Boende", WARN: "⚠️ Att lösa" },
+  less: "Mindre",
 };

@@ -137,4 +137,7 @@ export const trips = {
   allCovered: (n: number) => `All ${n} nights have somewhere to sleep ✓`,
   seeRoute: "See the route →",
   warnHint: "Only a warning — you can save it anyway.",
+  filterAll: "All",
+  filters: { FLIGHT: "✈️ Flights", GROUND: "🚄 Train / bus", TRANSFER: "🚐 Transfer", STAY: "🏨 Stays", WARN: "⚠️ To sort" } as Record<string, string>,
+  less: "Less",
 };

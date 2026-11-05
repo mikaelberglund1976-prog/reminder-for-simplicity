@@ -60,6 +60,9 @@ export default function TripPage() {
   const [stay, setStay] = useState<StayDraft | null>(null);
   const [move, setMove] = useState<MoveDraft | null>(null);
   const [taxi, setTaxi] = useState<Stay | null>(null);
+  const [routeFilter, setRouteFilter] = useState<string[]>([]);
+  const [openRows, setOpenRows] = useState<Set<string>>(new Set());
+  useEffect(() => { try { const v = JSON.parse(localStorage.getItem(`rfs-trip-filter-${id}`) ?? "[]"); if (Array.isArray(v)) setRouteFilter(v.filter((x) => typeof x === "string")); } catch { /* ignore */ } }, [id]);
 
   const load = useCallback(async () => {
     const r = await fetch(`/api/trips/${id}`);
@@ -404,9 +407,11 @@ export default function TripPage() {
 
         {tab === "flights" && (() => {
           // 2026-11-05: one timeline — flights, trains/buses/transfers, stays and the warnings, by time.
-          type Entry = { key: string; at: string; node: JSX.Element };
+          // 2026-11-05 (Mikael 17:57): filter chips on top and compact rows by day — tap a row for details.
+          type Cat = "FLIGHT" | "GROUND" | "TRANSFER" | "STAY" | "WARN";
+          type Entry = { key: string; at: string; node: JSX.Element; cat?: Cat; icon?: string; time?: string; title?: string; sub?: string; editing?: boolean };
           const entries: Entry[] = [];
-          for (const f of data.flights) entries.push({ key: f.id, at: `${f.depYmd}T${f.depTime}`, node: flight?.id === f.id ? <div key={f.id}>{flightForm}</div> : (
+          for (const f of data.flights) entries.push({ key: f.id, at: `${f.depYmd}T${f.depTime}`, cat: "FLIGHT", icon: "✈️", time: `${f.depTime}${f.arrTime ? `–${f.arrTime}${f.arrNextDay ? " +1" : ""}` : ""}`, title: `${f.flightNo?.toUpperCase() ?? ""} ${f.from && f.to ? `${f.from.toUpperCase()} → ${f.to.toUpperCase()}` : ""}`.trim(), sub: f.connection ? t.layover(f.layoverAt, f.layover) : f.leave ? t.leaveHome(f.leave, f.leaveDayBefore) : undefined, editing: flight?.id === f.id, node: flight?.id === f.id ? <div key={f.id}>{flightForm}</div> : (
             <div key={f.id}>
               {f.connection && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "-2px 0 8px 18px", fontSize: 13, fontWeight: 700, color: f.layover !== null && f.layover < 60 ? "var(--danger)" : "var(--muted)" }}>
@@ -434,7 +439,7 @@ export default function TripPage() {
               </div>
             </div>
           ) });
-          for (const mv of data.moves) entries.push({ key: mv.id, at: `${mv.depYmd}T${mv.depTime || "12:00"}`, node: move?.id === mv.id ? <div key={mv.id}>{moveForm}</div> : (
+          for (const mv of data.moves) entries.push({ key: mv.id, at: `${mv.depYmd}T${mv.depTime || "12:00"}`, cat: mv.mode === "TRANSFER" ? "TRANSFER" : "GROUND", icon: mv.title.split(" ")[0], time: mv.depTime ? `${mv.depTime}${mv.arrTime ? `–${mv.arrTime}${mv.arrNextDay ? " +1" : ""}` : ""}` : undefined, title: mv.title.split(" ").slice(1).join(" ") || t.modes[mv.mode], editing: move?.id === mv.id, node: move?.id === mv.id ? <div key={mv.id}>{moveForm}</div> : (
             <div key={mv.id} role={data.isAdult ? "button" : undefined} tabIndex={data.isAdult ? 0 : undefined} onClick={() => data.isAdult && openMove(mv)} onKeyDown={(e) => { if (data.isAdult && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openMove(mv); } }}
               style={{ ...card, padding: "14px 16px", marginBottom: 10, cursor: data.isAdult ? "pointer" : "default" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
@@ -448,7 +453,7 @@ export default function TripPage() {
           for (const st of data.stays) {
             const q = st.address || st.name;
             const ml = mapLinks(q);
-            entries.push({ key: st.id, at: `${st.checkIn}T23:00`, node: stay?.id === st.id ? <div key={st.id}>{stayForm}</div> : (
+            entries.push({ key: st.id, at: `${st.checkIn}T23:00`, cat: "STAY", icon: "🏨", title: st.name, sub: `${t.nights(st.nights)} → ${day(st.checkOut)}`, editing: stay?.id === st.id, node: stay?.id === st.id ? <div key={st.id}>{stayForm}</div> : (
               <div key={st.id} role={data.isAdult ? "button" : undefined} tabIndex={data.isAdult ? 0 : undefined} onClick={() => data.isAdult && openStay(st)} onKeyDown={(e) => { if (data.isAdult && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openStay(st); } }}
                 style={{ ...card, padding: "14px 16px", marginBottom: 10, cursor: data.isAdult ? "pointer" : "default", borderLeft: "4px solid var(--accent)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
@@ -468,14 +473,58 @@ export default function TripPage() {
               </div>
             ) });
           }
-          for (const w of data.warnings) entries.push({ key: w.key, at: w.at, node: warnCard(w) });
+          for (const w of data.warnings) entries.push({ key: w.key, at: w.at, cat: "WARN", node: warnCard(w) });
           entries.sort((a, b) => a.at.localeCompare(b.at));
+          const CATS: Cat[] = ["FLIGHT", "GROUND", "TRANSFER", "STAY", "WARN"];
+          const present = CATS.filter((c) => entries.some((e) => e.cat === c));
+          const active = routeFilter.filter((c) => present.includes(c as Cat));
+          // "All" = nothing picked. Warnings show under All and under "To sort".
+          const shown = entries.filter((e) => (active.length ? active.includes(e.cat!) : true));
+          const byDay: { ymd: string; list: Entry[] }[] = [];
+          for (const e of shown) { const ymd = e.at.slice(0, 10); const last = byDay[byDay.length - 1]; if (last?.ymd === ymd) last.list.push(e); else byDay.push({ ymd, list: [e] }); }
+          const chip = (key: string, label: string, on: boolean, onClick: () => void) => (
+            <button key={key} type="button" aria-pressed={on} onClick={onClick}
+              style={{ flexShrink: 0, padding: "7px 13px", borderRadius: 50, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT, border: on ? "1.5px solid var(--accent)" : "1.5px solid var(--border)", background: on ? "var(--tint-accent)" : "var(--surface)", color: on ? "var(--accent-strong)" : "var(--fg-2)" }}>{label}</button>
+          );
+          const pickFilter = (c: Cat | "ALL") => {
+            const next = c === "ALL" ? [] : active.includes(c) ? active.filter((x) => x !== c) : [...active, c];
+            setRouteFilter(next);
+            try { localStorage.setItem(`rfs-trip-filter-${id}`, JSON.stringify(next)); } catch { /* ignore */ }
+          };
+          const toggleOpen = (k: string) => setOpenRows((o) => { const n = new Set(o); if (n.has(k)) n.delete(k); else n.add(k); return n; });
           const nightCount = Math.max(0, Math.round((Date.parse(data.frame.end) - Date.parse(data.frame.start)) / 86400000));
           return (
             <>
               <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 2px 12px", lineHeight: 1.5 }}>{t.routeIntro} {t.flightsIntro}{data.isAdult && entries.length > 0 ? ` ${t.tapToEdit}` : ""}</p>
               {data.stays.length > 0 && data.warnings.length === 0 && <div style={{ fontSize: 13.5, fontWeight: 800, color: "var(--success)", margin: "0 2px 12px" }}>{t.allCovered(nightCount)}</div>}
-              {entries.map((e) => <div key={e.key}>{e.node}</div>)}
+              {present.length > 1 && (
+                <div className="rfs-hscroll" style={{ display: "flex", gap: 6, overflowX: "auto", margin: "0 -20px 12px", padding: "0 20px 2px" }}>
+                  {chip("ALL", t.filterAll, active.length === 0, () => pickFilter("ALL"))}
+                  {present.map((c) => chip(c, c === "WARN" ? `${t.filters[c]} (${data.warnings.length})` : t.filters[c], active.includes(c), () => pickFilter(c)))}
+                </div>
+              )}
+              {byDay.map((g) => (
+                <section key={g.ymd} style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "4px 4px 6px" }}>{day(g.ymd, { weekday: "short", day: "numeric", month: "short" })}</div>
+                  {g.list.map((e) => (e.cat === "WARN" || e.editing || openRows.has(e.key)) ? (
+                    <div key={e.key}>
+                      {e.node}
+                      {!e.editing && e.cat !== "WARN" && <button type="button" onClick={() => toggleOpen(e.key)} style={{ ...btn, background: "none", color: "var(--muted)", fontSize: 12, padding: "0 4px 10px", marginTop: -4 }}>▲ {t.less}</button>}
+                    </div>
+                  ) : (
+                    <button key={e.key} type="button" onClick={() => toggleOpen(e.key)} aria-expanded={false}
+                      style={{ ...card, width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", marginBottom: 8, cursor: "pointer", fontFamily: FONT, borderLeft: e.cat === "STAY" ? "4px solid var(--accent)" : "1px solid var(--border)" }}>
+                      <span aria-hidden style={{ fontSize: 18, width: 24, textAlign: "center", flexShrink: 0 }}>{e.icon}</span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: "block", fontSize: 14.5, fontWeight: 800, color: "var(--fg)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.title}</span>
+                        {e.sub && <span style={{ display: "block", fontSize: 12.5, color: "var(--muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.sub}</span>}
+                      </span>
+                      {e.time && <span style={{ fontSize: 13, fontWeight: 700, color: "var(--fg-2)", flexShrink: 0 }}>{e.time}</span>}
+                      <span aria-hidden style={{ color: "var(--subtle)", fontSize: 12 }}>▼</span>
+                    </button>
+                  ))}
+                </section>
+              ))}
               {flight && !flight.id && flightForm}
               {stay && !stay.id && stayForm}
               {move && !move.id && moveForm}
