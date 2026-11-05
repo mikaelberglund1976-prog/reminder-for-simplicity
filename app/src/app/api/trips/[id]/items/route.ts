@@ -123,7 +123,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (b.url && !url) return NextResponse.json({ error: "That doesn't look like a link" }, { status: 400 });
     await prisma.$executeRaw`UPDATE "trip_items" SET "data" = ${url ? JSON.stringify({ url }) : null} WHERE "id" = ${item.id}`;
   }
-  if (typeof b.label === "string" && b.label.trim() && !ADULT_ONLY.includes(item.kind)) await prisma.$executeRaw`UPDATE "trip_items" SET "label" = ${b.label.trim().slice(0, 120)} WHERE "id" = ${item.id}`;
+  if (typeof b.label === "string" && b.label.trim() && !["FLIGHT", "STAY", "MOVE", "DISMISS"].includes(item.kind)) await prisma.$executeRaw`UPDATE "trip_items" SET "label" = ${b.label.trim().slice(0, 120)} WHERE "id" = ${item.id}`;
   return NextResponse.json({ ok: true });
 }
 

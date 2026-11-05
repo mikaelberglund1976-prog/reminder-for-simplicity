@@ -110,7 +110,9 @@ export function buildPlan(trip: { startYmd: string; endYmd: string }, legs: Plan
 
   // 5. Arriving late on the check-in day.
   for (const s of stays) {
-    const late = sorted.filter((l) => l.arrYmd === s.checkIn && !!l.arrTime && l.arrTime >= "22:00").map((l) => l.arrTime!).sort().pop();
+    // Landing 22:00 or later on the check-in day, or after midnight before 06:00.
+    const lateLegs = sorted.filter((l) => !!l.arrTime && ((l.arrYmd === s.checkIn && l.arrTime >= "22:00") || (l.arrYmd === day(s.checkIn, 1) && l.arrTime < "06:00" && l.depYmd <= s.checkIn)));
+    const late = lateLegs.sort((a, b) => (a.arrYmd + a.arrTime).localeCompare(b.arrYmd + b.arrTime)).pop()?.arrTime ?? null;
     if (late) all.push({ key: `late:${s.id}`, kind: "LATE", at: `${s.checkIn}T23:59~`, stayIds: [s.id], time: late });
   }
 

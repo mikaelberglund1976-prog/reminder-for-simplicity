@@ -39,20 +39,24 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   // still need somewhere to sleep (lib/tripPlan.ts). Warnings never block.
   const pi = planInput(items);
   const plan = buildPlan(trip, pi.legs, pi.stays, pi.dismissed);
+  // Warnings are for the adults who can act on them, and only once the route
+  // has started (a flight, a move or a stay) — an empty trip stays quiet.
+  const showWarnings = c.isAdult && (pi.legs.length > 0 || pi.stays.length > 0);
+  const planWarnings = showWarnings ? plan.warnings : [];
   const stays = items.filter((i) => i.kind === "STAY").map((i) => ({ i, d: parseStay(i) })).filter((x) => x.d)
-    .map(({ i, d }) => ({ id: i.id, ...d!, nights: daysBetween(d!.checkIn, d!.checkOut) }))
+    .map(({ i, d }) => ({ id: i.id, ...d!, bookingRef: c.isAdult ? d!.bookingRef : undefined, nights: daysBetween(d!.checkIn, d!.checkOut) }))
     .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
   const moves = items.filter((i) => i.kind === "MOVE").map((i) => ({ i, d: parseMove(i) })).filter((x) => x.d)
-    .map(({ i, d }) => ({ id: i.id, ...d!, title: moveTitle(d!) }))
+    .map(({ i, d }) => ({ id: i.id, ...d!, bookingRef: c.isAdult ? d!.bookingRef : undefined, title: moveTitle(d!) }))
     .sort((a, b) => (a.depYmd + (a.depTime ?? "12:00")).localeCompare(b.depYmd + (b.depTime ?? "12:00")));
   const legTitle = new Map(pi.legs.map((l) => [l.id, l.title]));
   const stayName = new Map(pi.stays.map((s) => [s.id, s.name]));
-  const warnings = plan.warnings.map((w) => ({ ...w, legTitle: w.legId ? legTitle.get(w.legId) ?? null : null, stayNames: (w.stayIds ?? []).map((x) => stayName.get(x) ?? "?") }));
+  const warnings = planWarnings.map((w) => ({ ...w, legTitle: w.legId ? legTitle.get(w.legId) ?? null : null, stayNames: (w.stayIds ?? []).map((x) => stayName.get(x) ?? "?") }));
   return NextResponse.json({
     stays, moves, warnings, dismissed: plan.dismissed, frame: { start: plan.frameStart, end: plan.frameEnd },
     trip, me: c.uid, isAdult: c.isAdult, people: c.people, travellers,
     daysTo: daysBetween(today, trip.startYmd), daysLeft: daysBetween(today, trip.endYmd),
-    steps, stepsLeft: steps.filter((s) => !s.done && s.level !== "ok" && s.ymd >= addDays(today, -365)).length + plan.warnings.length,
+    steps, stepsLeft: steps.filter((s) => !s.done && s.level !== "ok" && s.ymd >= addDays(today, -365)).length + planWarnings.length,
     passports: Object.fromEntries(travellerIds.map((id) => [id, passports.get(id) ?? null])),
     flights,
     pack: items.filter((i) => i.kind === "PACK").map((i) => ({ id: i.id, label: i.label, personId: i.personId, checked: i.checked })),
